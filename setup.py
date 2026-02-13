@@ -1,65 +1,50 @@
-from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext as _build_ext
+from __future__ import annotations
+
+from pathlib import Path
+import subprocess
+
 from Cython.Build import cythonize
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext as _build_ext
+
+ROOT = Path(__file__).parent.resolve()
 
 
 class BuildRvo2Ext(_build_ext):
-    """Builds RVO2 before our module."""
+    """Builds the native RVO2 library before compiling Cython bindings."""
 
-    def run(self):
-        # Build RVO2
-        import os
-        import os.path
-        import subprocess
+    def run(self) -> None:
+        build_dir = Path(self.build_temp) / "rvo2"
+        build_dir.mkdir(parents=True, exist_ok=True)
 
-        build_dir = os.path.abspath('build/RVO2')
-        if not os.path.exists(build_dir):
-            os.makedirs(build_dir)
-            subprocess.check_call(['cmake', '../..', '-DCMAKE_CXX_FLAGS=-fPIC'],
-                                  cwd=build_dir)
-        subprocess.check_call(['cmake', '--build', '.'], cwd=build_dir)
+        cmake_args = [
+            "cmake",
+            str(ROOT),
+            "-DCMAKE_CXX_FLAGS=-fPIC",
+            "-DRVO_BUILD_EXAMPLES=OFF",
+            "-DCMAKE_BUILD_TYPE=Release",
+        ]
+        subprocess.check_call(cmake_args, cwd=build_dir)
+        subprocess.check_call(["cmake", "--build", "."], cwd=build_dir)
 
-        _build_ext.run(self)
+        for ext in self.extensions:
+            ext.library_dirs = [str(build_dir / "src")]
+
+        super().run()
 
 
 extensions = [
-    Extension('rvo2', ['src/*.pyx'],
-              include_dirs=['src'],
-              libraries=['RVO'],
-              library_dirs=['build/RVO2/src'],
-              extra_compile_args=['-fPIC']),
+    Extension(
+        "rvo2",
+        ["src/rvo2.pyx"],
+        include_dirs=["src"],
+        libraries=["RVO"],
+        extra_compile_args=["-fPIC"],
+        language="c++",
+    )
 ]
 
 setup(
-    name="indoorca",
-    ext_modules=cythonize(extensions),
-    cmdclass={'build_ext': BuildRvo2Ext},
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Education',
-        'Intended Audience :: Information Technology',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Cython',
-        'Topic :: Games/Entertainment :: Simulation',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-    ],
-    packages=find_packages(exclude=('test*',)),
-    include_package_data=True,
-    install_requires=[
-        'numpy>=1.19.5',
-        'Cython==0.21.1',
-        'jupyter>=1.0.0',
-        'jupytext>=1.2.0',
-        'Pillow>=5.4.0',
-        'networkx>=2.0',
-        'opencv-python>=3.4.8',
-        'matplotlib==3.3.4',
-        'shapely==1.7.1',
-        'scikit-image==0.17.2'
-    ]
+    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    cmdclass={"build_ext": BuildRvo2Ext},
 )

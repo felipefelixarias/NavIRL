@@ -1,0 +1,65 @@
+id: kitchen_congestion
+description: Congested kitchen-like environment with obstacle islands.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: kitchen
+seed: 21
+horizon:
+  steps: 360
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: false
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false
+      hesitation_prob: 0.07
+      accel_limit: 1.5
+  count: 4
+  starts:
+    - [-1.2, -0.9]
+    - [-1.0, 0.72]
+    - [0.95, -0.98]
+    - [1.02, 0.86]
+  goals:
+    - [1.18, 0.9]
+    - [1.02, -0.82]
+    - [-1.02, 0.88]
+    - [-1.2, -0.82]
+  radius: 0.15
+  max_speed: 0.8
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 10
+      target_lookahead: 3
+      velocity_smoothing: 0.58
+      max_speed: 0.85
+  start: [-1.38, 0.98]
+  goal: [1.38, 0.98]
+  radius: 0.15
+  max_speed: 0.85
+evaluation:
+  intrusion_delta: 0.45
+  max_speed: 1.25
+  max_accel: 5.0
+  teleport_thresh: 1.0
+  deadlock_seconds: 5.5
+  deadlock_resample_attempts: 10
+  traversability_offset_max: 0.08
+  min_robot_progress: 0.05
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.24
+  max_agent_stop_seconds: 10.0
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 12
+  video: false
+  playback_speed: 2.0

@@ -1,0 +1,62 @@
+id: doorway_token_yield
+description: Doorway etiquette with ORCA+ tokenized yielding.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: doorway
+seed: 13
+horizon:
+  steps: 320
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: true
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false
+      doorway:
+        center: [0.0, 0.0]
+        half_extents: [0.3, 0.2]
+        approach_margin: 0.65
+      hesitation_prob: 0.03
+      accel_limit: 1.8
+  count: 2
+  starts:
+    - [-0.98, -0.24]
+    - [0.98, 0.24]
+  goals:
+    - [1.02, 0.24]
+    - [-1.02, -0.24]
+  radius: 0.16
+  max_speed: 0.75
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 10
+      target_lookahead: 3
+      velocity_smoothing: 0.6
+  start: [-1.18, 0.62]
+  goal: [-1.18, -0.62]
+  radius: 0.18
+  max_speed: 0.9
+evaluation:
+  intrusion_delta: 0.42
+  max_speed: 1.2
+  max_accel: 4.8
+  teleport_thresh: 0.95
+  deadlock_seconds: 6.0
+  deadlock_resample_attempts: 8
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.16
+  max_agent_stop_seconds: 10.0
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 12
+  video: true
+  playback_speed: 2.0

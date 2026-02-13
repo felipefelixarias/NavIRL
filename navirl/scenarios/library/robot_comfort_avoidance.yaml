@@ -1,0 +1,65 @@
+id: robot_comfort_avoidance
+description: Robot comfort-avoidance baseline in narrow corridor with oncoming pedestrians.
+scene:
+  backend: grid2d
+  orca:
+    neighbor_dist: 5.0
+    max_neighbors: 20
+    time_horizon: 4.0
+    time_horizon_obst: 4.5
+  map:
+    source: builtin
+    id: comfort
+seed: 44
+horizon:
+  steps: 340
+  dt: 0.1
+humans:
+  controller:
+    type: orca
+    params:
+      goal_tolerance: 0.2
+  count: 4
+  starts:
+    - [-1.2, -0.22]
+    - [-0.98, 0.24]
+    - [-0.78, -0.3]
+    - [-0.62, 0.3]
+  goals:
+    - [1.2, -0.22]
+    - [0.96, 0.24]
+    - [0.78, -0.3]
+    - [0.62, 0.3]
+  radius: 0.16
+  max_speed: 0.75
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 9
+      target_lookahead: 3
+      velocity_smoothing: 0.64
+      max_speed: 0.8
+  start: [-1.38, 0.0]
+  goal: [1.38, 0.0]
+  radius: 0.18
+  max_speed: 0.82
+evaluation:
+  intrusion_delta: 0.45
+  max_speed: 1.15
+  max_accel: 4.6
+  teleport_thresh: 0.95
+  deadlock_seconds: 5.0
+  deadlock_resample_attempts: 8
+  traversability_offset_max: 0.08
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.25
+  max_agent_stop_seconds: 8.5
+  min_robot_progress: 0.05
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 12
+  video: false
+  playback_speed: 1.95

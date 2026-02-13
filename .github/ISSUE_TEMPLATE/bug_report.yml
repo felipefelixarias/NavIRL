@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible problem in IndoorORCA
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for filing a bug. Please include minimal repro steps and environment details."
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened and what you expected.
+      placeholder: "When I run ..., I expected ..., but ..."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Steps to reproduce the issue.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or stack trace
+      description: Paste relevant logs or stack traces.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `python -c "import indoorca; print(indoorca.__version__)"`
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      description: Output of `python --version`
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other

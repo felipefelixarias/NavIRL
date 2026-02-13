@@ -1,0 +1,75 @@
+id: wainscott_main_demo
+description: Main demo on thesis floorplan with long-horizon social navigation and unit-aware map scaling.
+scene:
+  backend: grid2d
+  map:
+    source: path
+    path: ../../../data/maps/Wainscott_0.png
+    pixels_per_meter: 100.0
+    downsample: 2.0
+  orca:
+    neighbor_dist: 3.8
+    max_neighbors: 24
+    time_horizon: 3.8
+    time_horizon_obst: 3.0
+    wall_clearance_buffer_m: 0.0
+seed: 73
+horizon:
+  steps: 320
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: false
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false
+      hesitation_prob: 0.03
+      accel_limit: 1.65
+      waypoint_tolerance: 0.22
+  count: 2
+  starts:
+    - [-2.8, -4.91]
+    - [-1.8, -2.5]
+  goals:
+    - [-1.8, -2.5]
+    - [-2.8, -4.91]
+  radius: 0.12
+  max_speed: 0.78
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 120
+      target_lookahead: 24
+      velocity_smoothing: 0.45
+      slowdown_dist: 1.4
+      max_speed: 0.88
+  start: [2.8, 8.6]
+  goal: [3.8, 4.8]
+  radius: 0.13
+  max_speed: 0.9
+evaluation:
+  intrusion_delta: 0.45
+  max_speed: 1.2
+  max_accel: 4.8
+  teleport_thresh: 1.0
+  deadlock_seconds: 6.0
+  deadlock_speed_thresh: 0.015
+  min_robot_progress: 0.7
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.35
+  max_heading_flip_rate: 0.8
+  jitter_speed_thresh: 0.06
+  max_agent_stop_seconds: 12.0
+  stop_speed_thresh: 0.02
+render:
+  enabled: true
+  fps: 12
+  video: true
+  playback_speed: 2.2
+  trail_length: 100
+  pixel_scale: 1.0
+  max_canvas_dim: 1600

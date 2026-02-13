@@ -30,12 +30,22 @@
 # <http://gamma.cs.unc.edu/RVO2/>
 #
 
-cmake_minimum_required(VERSION 2.8)
-project(RVO)
+cmake_minimum_required(VERSION 3.16)
+project(RVO LANGUAGES CXX)
 
 include(CTest)
+include(GNUInstallDirs)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+option(RVO_BUILD_EXAMPLES "Build RVO2 examples" OFF)
 
 add_subdirectory(src)
-add_subdirectory(examples)
+
+if(RVO_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 include(CPack)

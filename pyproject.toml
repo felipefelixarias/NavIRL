@@ -1,0 +1,86 @@
+[build-system]
+requires = [
+  "setuptools>=68",
+  "wheel",
+  "Cython>=3.0",
+  "cmake>=3.16",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "navirl"
+description = "NavIRL: indoor social-navigation simulation, evaluation, and debugging toolkit"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { file = "LICENSE" }
+authors = [
+  { name = "IndoorORCA Contributors" }
+]
+keywords = ["orca", "multi-agent", "navigation", "simulation", "robotics"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Cython",
+  "Programming Language :: C++",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+  "numpy>=1.23",
+  "Pillow>=9.0",
+  "opencv-python>=4.6",
+  "scikit-image>=0.21",
+  "networkx>=3.1",
+  "shapely>=2.0",
+  "matplotlib>=3.7",
+  "PyYAML>=6.0",
+]
+dynamic = ["version"]
+
+[project.scripts]
+navirl = "navirl.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+  "ruff>=0.3",
+  "black>=24.3",
+  "pre-commit>=3.6",
+  "build>=1.0",
+  "twine>=4.0",
+]
+notebooks = [
+  "jupyter>=1.0",
+  "jupytext>=1.15",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*", "docs*", "research*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "navirl._version.__version__" }
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.black]
+line-length = 100

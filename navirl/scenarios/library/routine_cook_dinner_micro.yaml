@@ -1,0 +1,69 @@
+id: routine_cook_dinner_micro
+description: Deterministic daily-life micro-routine in apartment scene.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: apartment_micro
+seed: 58
+horizon:
+  steps: 360
+  dt: 0.1
+humans:
+  controller:
+    type: scripted
+    params:
+      max_speed: 0.65
+      waypoints:
+        "0":
+          - [-1.1, -0.8]
+          - [0.2, -0.35]
+          - [0.95, -0.65]
+          - [0.2, -0.35]
+        "1":
+          - [-1.0, -0.65]
+          - [0.1, -0.15]
+          - [1.1, 0.65]
+          - [0.1, -0.15]
+  count: 2
+  starts:
+    - [-1.25, -0.85]
+    - [-1.2, -0.6]
+  goals:
+    - [1.1, -0.65]
+    - [1.15, 0.65]
+  radius: 0.16
+  max_speed: 0.7
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 12
+      target_lookahead: 3
+      velocity_smoothing: 0.62
+      max_speed: 0.82
+  start: [-0.2, 1.0]
+  goal: [1.2, 1.0]
+  radius: 0.18
+  max_speed: 0.85
+routine:
+  name: cook_dinner
+  steps:
+    - go_to_kitchen
+    - prep_counter
+    - return_table
+evaluation:
+  intrusion_delta: 0.42
+  max_speed: 1.2
+  max_accel: 4.7
+  teleport_thresh: 0.95
+  deadlock_seconds: 8.0
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.2
+  max_agent_stop_seconds: 7.0
+render:
+  enabled: true
+  fps: 12
+  video: true
+  playback_speed: 2.1
