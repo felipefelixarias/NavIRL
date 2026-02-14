@@ -119,18 +119,26 @@ def _run_native_json(
     with tempfile.TemporaryDirectory(prefix="navirl-aegis-native-") as td:
         td_path = Path(td)
         prompt_path = td_path / "prompt.json"
+        schema_path = td_path / "schema.json"
         output_path = td_path / "response.json"
+        selected_images = [str(p) for p in image_paths[: max(0, int(config.max_images))]]
 
         prompt_payload = {
             "prompt": prompt,
-            "image_paths": image_paths,
+            "image_paths": selected_images,
             "schema": schema,
         }
         prompt_path.write_text(json.dumps(prompt_payload, indent=2), encoding="utf-8")
+        schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
+        image_flags = " ".join(f"-i {shlex.quote(p)}" for p in selected_images)
+        image_paths_json = json.dumps(selected_images)
 
         fmt = {
             "prompt_file": str(prompt_path),
+            "schema_file": str(schema_path),
             "output_file": str(output_path),
+            "image_flags": image_flags,
+            "image_paths_json": image_paths_json,
         }
         if "{" in cmd_template:
             cmd = shlex.split(cmd_template.format(**fmt))

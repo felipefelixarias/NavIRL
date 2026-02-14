@@ -4,10 +4,12 @@ import copy
 import json
 import math
 import random
+import sys
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 import yaml
 
@@ -74,6 +76,11 @@ class TrialScenarioResult:
     judge_confidence: float
     score: float
     metrics: dict
+
+
+def _emit_progress(message: str) -> None:
+    ts = datetime.utcnow().strftime("%H:%M:%S")
+    print(f"[navirl tune {ts}] {message}", file=sys.stderr, flush=True)
 
 
 def _resolve_default_scenario_paths(suite: str) -> list[Path]:
@@ -345,6 +352,16 @@ def run_tuning(
     scenario_paths = _resolve_scenarios(scenarios, suite=suite)
     scenario_templates = [load_scenario(p) for p in scenario_paths]
     search_space = _load_search_space(search_space_path)
+    _emit_progress(f"run_dir={run_dir}")
+    _emit_progress(
+        "config: "
+        f"suite={suite} trials={trials} seed={seed} scenarios={len(scenario_templates)} "
+        f"judge_mode={judge_mode} judge_provider={judge_provider} "
+        f"judge_allow_fallback={judge_allow_fallback} max_frames={max_frames} "
+        f"video={video} retention_hours={resolved_retention_hours}"
+    )
+    if pruned_runs:
+        _emit_progress(f"pruned_old_runs={len(pruned_runs)}")
 
     rng = random.Random(seed)
     ranking: list[dict] = []
@@ -352,6 +369,8 @@ def run_tuning(
 
     with trials_path.open("w", encoding="utf-8") as trials_file:
         for trial_idx in range(trials):
+            trial_t0 = perf_counter()
+            _emit_progress(f"trial {trial_idx + 1}/{trials}: start")
             overrides = _sample_overrides(rng, search_space)
             trial_scenarios: list[TrialScenarioResult] = []
 
@@ -360,6 +379,10 @@ def run_tuning(
                 scenario_id = str(scenario["id"])
                 trial_out = run_dir / "trials" / f"trial_{trial_idx:03d}"
                 run_id = f"trial_{trial_idx:03d}_{scenario_id}"
+                _emit_progress(
+                    f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: "
+                    "run simulation"
+                )
 
                 try:
                     log = run_scenario_dict(
@@ -382,6 +405,10 @@ def run_tuning(
                             score=-120.0,
                             metrics={"run_error": str(exc)},
                         )
+                    )
+                    _emit_progress(
+                        f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: "
+                        f"run_error={exc}"
                     )
                     continue
 
@@ -410,6 +437,9 @@ def run_tuning(
                 metrics = dict(summary.get("metrics", {}))
                 metrics["_retry_count"] = int(len(summary.get("retry_history", [])))
                 scenario_score = _score_scenario(metrics, invariants, judge_payload)
+                provider_trace = judge_payload.get("provider_trace", {})
+                provider_used = bool(provider_trace.get("provider_used", False))
+                fallback_used = bool(provider_trace.get("fallback_used", False))
                 trial_scenarios.append(
                     TrialScenarioResult(
                         scenario_id=scenario_id,
@@ -421,6 +451,13 @@ def run_tuning(
                         score=scenario_score,
                         metrics=metrics,
                     )
+                )
+                _emit_progress(
+                    f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: "
+                    f"invariants={'pass' if invariants.get('overall_pass', False) else 'fail'} "
+                    f"judge={judge_payload.get('status', 'fail')} "
+                    f"conf={float(judge_payload.get('confidence', 0.0)):.2f} "
+                    f"provider_used={provider_used} fallback_used={fallback_used}"
                 )
 
             pass_count = sum(1 for r in trial_scenarios if r.invariants_pass and r.judge_pass)
@@ -455,6 +492,12 @@ def run_tuning(
             trial_record = _sanitize_json_value(trial_record)
             ranking.append(trial_record)
             trials_file.write(json.dumps(trial_record, sort_keys=True) + "\n")
+            _emit_progress(
+                f"trial {trial_idx + 1}/{trials}: done "
+                f"score={aggregate_score:.3f} pass_rate={pass_rate:.2f} "
+                f"mean_judge_conf={mean_judge_conf:.2f} "
+                f"elapsed_s={perf_counter() - trial_t0:.1f}"
+            )
 
     ranking.sort(
         key=lambda r: (
@@ -475,6 +518,7 @@ def run_tuning(
         "status": "skipped",
     }
     if aegis_rerank and ranking:
+        _emit_progress(f"aegis_rerank: start top_k={max(1, int(aegis_top_k))}")
         rerank_info = run_aegis_rerank(
             ranking,
             mode=judge_mode,
@@ -500,6 +544,11 @@ def run_tuning(
             ),
             reverse=True,
         )
+        _emit_progress(
+            "aegis_rerank: "
+            f"status={rerank_info.get('status', 'unknown')} "
+            f"provider_used={bool(rerank_info.get('provider_used', False))}"
+        )
 
     best = _sanitize_json_value(ranking[0]) if ranking else {}
 
@@ -522,6 +571,11 @@ def run_tuning(
     rerank_path = run_dir / "AEGIS_RERANK.json"
     with rerank_path.open("w", encoding="utf-8") as f:
         json.dump(_sanitize_json_value(rerank_info), f, indent=2, sort_keys=True)
+    _emit_progress(
+        "completed: "
+        f"report={report_path} best_params={best_path} "
+        f"best_trial_idx={best.get('trial_idx', 'n/a')}"
+    )
 
     return _sanitize_json_value(
         {

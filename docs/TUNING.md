@@ -18,7 +18,8 @@ python -m navirl tune --suite quick --trials 24 --out out/tune/
 VLM-backed overseer mode:
 
 ```bash
-python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex
+export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file} --output-last-message {output_file} {image_flags} < {prompt_file}"'
+python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
 ```
 
 Retention is enabled by default to avoid unbounded artifact growth (default:

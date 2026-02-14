@@ -29,10 +29,29 @@ def _ensure_points(
     min_dist: float,
 ) -> list[tuple[float, float]]:
     pts = [tuple(map(float, p)) for p in existing]
+    cur_min_dist = max(0.0, float(min_dist))
+    min_floor = min(0.08, cur_min_dist) if cur_min_dist > 0.0 else 0.0
+    attempts_per_point = 2500
+
     while len(pts) < count:
-        cand = tuple(map(float, sampler()))
-        if all(math.hypot(cand[0] - p[0], cand[1] - p[1]) >= min_dist for p in pts):
-            pts.append(cand)
+        found = None
+        for _ in range(attempts_per_point):
+            cand = tuple(map(float, sampler()))
+            if all(math.hypot(cand[0] - p[0], cand[1] - p[1]) >= cur_min_dist for p in pts):
+                found = cand
+                break
+
+        if found is not None:
+            pts.append(found)
+            continue
+
+        # If strict spacing is infeasible for dense scenes, relax gradually.
+        if cur_min_dist > min_floor:
+            cur_min_dist = max(min_floor, cur_min_dist * 0.85)
+            continue
+
+        # Final fallback: keep moving by accepting a free sample point.
+        pts.append(tuple(map(float, sampler())))
     return pts
 
 

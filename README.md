@@ -5,22 +5,26 @@ simulation, rigorous verification, and high-quality demo generation.
 
 ## Watch Latest Aegis Demos
 
-Best showcase videos (latest Aegis-generated artifacts linked in this README):
+### Wainscott Main Demo (Thesis Floorplan, high-density crowd)
+![Wainscott Main Demo](docs/assets/showcase/wainscott_main_demo.gif)
 
-1. **Wainscott Main Demo (Thesis Floorplan, high-density crowd)**  
-   [`docs/assets/showcase/wainscott_main_demo.mp4`](docs/assets/showcase/wainscott_main_demo.mp4)
-2. **Group Cohesion**  
-   [`docs/assets/showcase/group_cohesion.mp4`](docs/assets/showcase/group_cohesion.mp4)
-3. **Kitchen Congestion**  
-   [`docs/assets/showcase/kitchen_congestion.mp4`](docs/assets/showcase/kitchen_congestion.mp4)
-4. **Robot Comfort Avoidance**  
-   [`docs/assets/showcase/robot_comfort_avoidance.mp4`](docs/assets/showcase/robot_comfort_avoidance.mp4)
-5. **Hallway Pass**  
-   [`docs/assets/showcase/hallway_pass.mp4`](docs/assets/showcase/hallway_pass.mp4)
-6. **Doorway Token Yield**  
-   [`docs/assets/showcase/doorway_token_yield.mp4`](docs/assets/showcase/doorway_token_yield.mp4)
-7. **Routine Cook Dinner Micro**  
-   [`docs/assets/showcase/routine_cook_dinner_micro.mp4`](docs/assets/showcase/routine_cook_dinner_micro.mp4)
+### Group Cohesion
+![Group Cohesion](docs/assets/showcase/group_cohesion.gif)
+
+### Kitchen Congestion
+![Kitchen Congestion](docs/assets/showcase/kitchen_congestion.gif)
+
+### Robot Comfort Avoidance
+![Robot Comfort Avoidance](docs/assets/showcase/robot_comfort_avoidance.gif)
+
+### Hallway Pass
+![Hallway Pass](docs/assets/showcase/hallway_pass.gif)
+
+### Doorway Token Yield
+![Doorway Token Yield](docs/assets/showcase/doorway_token_yield.gif)
+
+### Routine Cook Dinner Micro
+![Routine Cook Dinner Micro](docs/assets/showcase/routine_cook_dinner_micro.gif)
 
 ## Why NavIRL
 
@@ -54,7 +58,8 @@ python -m navirl verify --suite full
 Run Aegis-backed tuning:
 
 ```bash
-python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex
+export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file} --output-last-message {output_file} {image_flags} < {prompt_file}"'
+python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
 ```
 
 Run thesis floorplan demo:
