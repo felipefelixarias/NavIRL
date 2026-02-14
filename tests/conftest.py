@@ -35,3 +35,8 @@ def pytest_sessionstart(session) -> None:
         prefixes=("tune_",),
         keep_latest=2,
     )
+    prune_old_run_dirs(
+        repo_root / "out" / "verify",
+        ttl_hours=ttl_hours,
+        keep_latest=2,
+    )

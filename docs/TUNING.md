@@ -15,6 +15,12 @@ It jointly tunes:
 python -m navirl tune --suite quick --trials 24 --out out/tune/
 ```
 
+VLM-backed overseer mode:
+
+```bash
+python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex
+```
+
 Retention is enabled by default to avoid unbounded artifact growth (default:
 `168` hours, while keeping the latest 3 tuning runs). Override as needed:
 
@@ -45,6 +51,24 @@ Artifacts:
 - `trials.jsonl`: one JSON record per trial
 - `best_params.json`: best-ranked trial
 - `REPORT.md`: top-ranked candidates and reproduction command
+- `AEGIS_RERANK.json`: overseer rerank diagnostics and provider trace
+
+## Overseer reranking
+
+When `--aegis-rerank` is enabled (default), Aegis applies a realism rerank pass:
+
+- computes deterministic realism scores across scenarios per trial
+- optionally asks a configured VLM provider to rank top trials (`--aegis-top-k`)
+- blends provider ranking with heuristic realism score
+
+Provider controls are shared with verify:
+
+- `--judge-provider`
+- `--judge-model`
+- `--judge-endpoint`
+- `--judge-api-key-env`
+- `--judge-native-cmd`
+- `--judge-allow-fallback`
 
 ## Search-space format
 

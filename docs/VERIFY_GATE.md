@@ -16,6 +16,22 @@ Full suite:
 python -m navirl verify --suite full
 ```
 
+VLM-backed overseer mode:
+
+```bash
+python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex
+```
+
+Optional provider knobs:
+
+- `--judge-provider {codex,claude,native,openai_compatible,kimi}`
+- `--judge-model ...`
+- `--judge-endpoint ...`
+- `--judge-api-key-env NAVIRL_VLM_API_KEY`
+- `--judge-native-cmd "..."`
+- `--judge-allow-fallback / --no-judge-allow-fallback`
+- `--retention-hours ...`
+
 ## Exit codes
 
 - `0`: PASS
@@ -89,6 +105,17 @@ The default heuristic judge (`heuristic_rigorous`) also validates:
 - trajectory-trail density
 - overlay text clutter
 - frame detail and motion quality
+
+In `--judge-mode vlm`, Aegis Overseer merges:
+
+- strict heuristic-rigorous checks
+- qualitative findings (visible deadlock/wall hits/jitter/scale/speed plausibility)
+- optional provider verdict when available
+
+If provider access is unavailable and fallback is enabled, judge outputs:
+
+- `judge_type: aegis_vlm_fallback_heuristic`
+- `provider_trace` with the error and fallback marker
 
 ## Generated artifacts
 

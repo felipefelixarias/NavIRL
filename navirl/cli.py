@@ -4,8 +4,11 @@ import argparse
 import json
 from pathlib import Path
 
+import yaml
+
 from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
 from navirl.metrics import aggregate_reports, compute_metrics_from_bundle
+from navirl.overseer import apply_layout_to_scenario, suggest_layout
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
 from navirl.scenarios import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
@@ -121,6 +124,13 @@ def _cmd_verify(args: argparse.Namespace) -> int:
         out_root=args.out,
         judge_mode=args.judge_mode,
         judge_confidence_min=judge_conf_min,
+        judge_provider=args.judge_provider,
+        judge_model=args.judge_model,
+        judge_endpoint=args.judge_endpoint,
+        judge_api_key_env=args.judge_api_key_env,
+        judge_native_cmd=args.judge_native_cmd,
+        judge_allow_fallback=args.judge_allow_fallback,
+        retention_hours=args.retention_hours,
     )
 
 
@@ -133,12 +143,48 @@ def _cmd_tune(args: argparse.Namespace) -> int:
         seed=args.seed,
         judge_mode=args.judge_mode,
         judge_confidence_min=args.judge_confidence_min,
+        judge_provider=args.judge_provider,
+        judge_model=args.judge_model,
+        judge_endpoint=args.judge_endpoint,
+        judge_api_key_env=args.judge_api_key_env,
+        judge_native_cmd=args.judge_native_cmd,
+        judge_allow_fallback=args.judge_allow_fallback,
         max_frames=args.max_frames,
         video=args.video,
         search_space_path=args.search_space,
         retention_hours=args.retention_hours,
+        aegis_rerank=args.aegis_rerank,
+        aegis_top_k=args.aegis_top_k,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
+
+
+def _cmd_overseer_layout(args: argparse.Namespace) -> int:
+    scenario_path = Path(args.scenario)
+    with scenario_path.open("r", encoding="utf-8") as f:
+        raw_scenario = yaml.safe_load(f)
+    if not isinstance(raw_scenario, dict):
+        raise ValueError("Scenario file must decode into an object.")
+    validate_scenario_dict(raw_scenario)
+
+    resolved = load_scenario(scenario_path, validate=False)
+    suggestion = suggest_layout(
+        resolved,
+        objective=args.objective,
+        humans_count=args.humans_count,
+        seed=args.seed,
+    )
+
+    out = {"suggestion": suggestion}
+    if args.write_scenario:
+        patched = apply_layout_to_scenario(raw_scenario, suggestion)
+        out_path = Path(args.write_scenario)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(yaml.safe_dump(patched, sort_keys=False), encoding="utf-8")
+        out["scenario_out"] = str(out_path)
+
+    print(json.dumps(out, indent=2, sort_keys=True))
     return 0
 
 
@@ -187,6 +233,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument("--out", type=str, default="out/verify")
     p_verify.add_argument("--judge-mode", choices=["heuristic", "vlm"], default="heuristic")
     p_verify.add_argument("--judge-confidence-min", type=float, default=None)
+    p_verify.add_argument(
+        "--judge-provider",
+        choices=["codex", "claude", "native", "openai_compatible", "kimi"],
+        default="codex",
+    )
+    p_verify.add_argument("--judge-model", type=str, default=None)
+    p_verify.add_argument("--judge-endpoint", type=str, default=None)
+    p_verify.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
+    p_verify.add_argument("--judge-native-cmd", type=str, default=None)
+    p_verify.add_argument("--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True)
+    p_verify.add_argument("--retention-hours", type=float, default=None)
     p_verify.set_defaults(func=_cmd_verify)
 
     p_tune = sub.add_parser(
@@ -205,11 +262,38 @@ def build_parser() -> argparse.ArgumentParser:
     p_tune.add_argument("--out", type=str, default="out/tune")
     p_tune.add_argument("--judge-mode", choices=["heuristic", "vlm"], default="heuristic")
     p_tune.add_argument("--judge-confidence-min", type=float, default=0.7)
+    p_tune.add_argument(
+        "--judge-provider",
+        choices=["codex", "claude", "native", "openai_compatible", "kimi"],
+        default="codex",
+    )
+    p_tune.add_argument("--judge-model", type=str, default=None)
+    p_tune.add_argument("--judge-endpoint", type=str, default=None)
+    p_tune.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
+    p_tune.add_argument("--judge-native-cmd", type=str, default=None)
+    p_tune.add_argument("--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True)
+    p_tune.add_argument("--aegis-rerank", action=argparse.BooleanOptionalAction, default=True)
+    p_tune.add_argument("--aegis-top-k", type=int, default=6)
     p_tune.add_argument("--max-frames", type=int, default=10)
     p_tune.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
     p_tune.add_argument("--search-space", type=str, default=None)
     p_tune.add_argument("--retention-hours", type=float, default=None)
     p_tune.set_defaults(func=_cmd_tune)
+
+    p_layout = sub.add_parser(
+        "overseer-layout",
+        help="Suggest map-aware starts/goals for realistic showcase scenarios",
+    )
+    p_layout.add_argument("scenario", type=str)
+    p_layout.add_argument(
+        "--objective",
+        choices=["auto", "cross_flow", "bottleneck_showcase", "comfort_showcase", "comfort"],
+        default="auto",
+    )
+    p_layout.add_argument("--humans-count", type=int, default=None)
+    p_layout.add_argument("--seed", type=int, default=17)
+    p_layout.add_argument("--write-scenario", type=str, default=None)
+    p_layout.set_defaults(func=_cmd_overseer_layout)
 
     return parser
 

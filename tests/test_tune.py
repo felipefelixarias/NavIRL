@@ -34,13 +34,15 @@ def test_tuning_smoke_single_scenario(tmp_path: Path):
     report_path = Path(result["report_path"])
     best_path = Path(result["best_params_path"])
     trials_path = Path(result["trials_path"])
+    rerank_path = Path(result["aegis_rerank_path"])
 
     assert report_path.exists()
     assert best_path.exists()
     assert trials_path.exists()
+    assert rerank_path.exists()
 
     best = json.loads(best_path.read_text(encoding="utf-8"))
     assert "overrides" in best
     assert "scenarios" in best
+    assert "aegis_realism_score" in best
     assert len(best["scenarios"]) == 1
-

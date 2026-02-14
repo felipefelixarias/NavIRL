@@ -6,6 +6,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from navirl.overseer.provider import ProviderConfig
+from navirl.overseer.review import AEGIS_NAME, run_aegis_review
+
 
 JUDGE_OUTPUT_SCHEMA = {
     "type": "object",
@@ -435,34 +438,43 @@ def run_visual_judge(
     confidence_threshold: float = 0.6,
     mode: str = "heuristic",
     require_video: bool = False,
+    provider: str = "codex",
+    model: str | None = None,
+    endpoint: str | None = None,
+    api_key_env: str = "NAVIRL_VLM_API_KEY",
+    native_cmd: str | None = None,
+    allow_fallback: bool = True,
 ) -> dict:
     """Run visual E2E judge and return strict JSON-compatible payload."""
 
-    _ = bundle_dir
-
-    if mode == "vlm":
-        # Interface placeholder for model-based judge integration.
-        return {
-            "overall_pass": False,
-            "confidence": 0.0,
-            "violations": [
-                {
-                    "type": "vlm_unavailable",
-                    "evidence": "No VLM provider configured.",
-                    "severity": "blocker",
-                }
-            ],
-            "status": "needs_human_review",
-            "judge_type": "vlm",
-            "notes": "Configure a VLM provider to enable automated visual judging.",
-        }
-
-    return _heuristic_judge(
+    heuristic_payload = _heuristic_judge(
         summary,
         frame_paths=frame_paths,
         confidence_threshold=confidence_threshold,
         require_video=require_video,
     )
+    if mode != "vlm":
+        return heuristic_payload
+
+    provider_cfg = ProviderConfig(
+        provider=provider,
+        model=model,
+        endpoint=endpoint,
+        api_key_env=api_key_env,
+        native_cmd=native_cmd,
+    )
+    payload = run_aegis_review(
+        bundle_dir=bundle_dir,
+        summary=summary,
+        frame_paths=frame_paths,
+        heuristic_payload=heuristic_payload,
+        provider_config=provider_cfg,
+        confidence_threshold=confidence_threshold,
+        require_video=require_video,
+        allow_fallback=allow_fallback,
+    )
+    payload.setdefault("overseer_name", AEGIS_NAME)
+    return payload
 
 
 def write_judge_output(path: Path, payload: dict) -> None:

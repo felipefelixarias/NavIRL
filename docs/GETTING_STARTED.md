@@ -45,6 +45,7 @@ Quick suite:
 
 ```bash
 python -m navirl verify --suite quick
+python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex
 ```
 
 Full suite:
@@ -52,6 +53,9 @@ Full suite:
 ```bash
 python -m navirl verify --suite full
 ```
+
+`verify` applies artifact retention by default (7-day TTL). Override with
+`--retention-hours` or `NAVIRL_VERIFY_TTL_HOURS`.
 
 ## Hyperparameter tuning
 

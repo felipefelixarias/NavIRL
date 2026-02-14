@@ -12,6 +12,7 @@ from pathlib import Path
 import yaml
 
 from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
+from navirl.overseer import ProviderConfig, run_aegis_rerank
 from navirl.pipeline import run_scenario_dict
 from navirl.scenarios.load import load_scenario
 from navirl.verify.judge import run_visual_judge, write_judge_output
@@ -260,15 +261,17 @@ def _write_report(
             "",
             "## Top Trials",
             "",
-            "| Rank | Trial | Score | Pass Rate | Mean Judge Conf | Overrides |",
-            "|---|---:|---:|---:|---:|---|",
+            "| Rank | Trial | Score | Pass Rate | Mean Judge Conf | Aegis Realism | Overrides |",
+            "|---|---:|---:|---:|---:|---:|---|",
         ]
     )
     for idx, row in enumerate(ranking[:5], start=1):
+        aegis_val = row.get("aegis_realism_score")
+        aegis_txt = f"{float(aegis_val):.3f}" if aegis_val is not None else "-"
         lines.append(
             f"| {idx} | {row['trial_idx']} | {row['aggregate_score']:.3f} | "
             f"{row['pass_rate']:.2f} | {row['mean_judge_confidence']:.2f} | "
-            f"`{json.dumps(row['overrides'], sort_keys=True)}` |"
+            f"{aegis_txt} | `{json.dumps(row['overrides'], sort_keys=True)}` |"
         )
 
     if ranking:
@@ -304,10 +307,18 @@ def run_tuning(
     seed: int = 17,
     judge_mode: str = "heuristic",
     judge_confidence_min: float = 0.7,
+    judge_provider: str = "codex",
+    judge_model: str | None = None,
+    judge_endpoint: str | None = None,
+    judge_api_key_env: str = "NAVIRL_VLM_API_KEY",
+    judge_native_cmd: str | None = None,
+    judge_allow_fallback: bool = True,
     max_frames: int = 10,
     video: bool = False,
     search_space_path: str | Path | None = None,
     retention_hours: float | None = None,
+    aegis_rerank: bool = True,
+    aegis_top_k: int = 6,
 ) -> dict:
     if trials <= 0:
         raise ValueError("trials must be positive")
@@ -387,6 +398,12 @@ def run_tuning(
                     confidence_threshold=judge_confidence_min,
                     mode=judge_mode,
                     require_video=video,
+                    provider=judge_provider,
+                    model=judge_model,
+                    endpoint=judge_endpoint,
+                    api_key_env=judge_api_key_env,
+                    native_cmd=judge_native_cmd,
+                    allow_fallback=judge_allow_fallback,
                 )
                 write_judge_output(bundle_dir / "judge.json", judge_payload)
 
@@ -447,6 +464,43 @@ def run_tuning(
         ),
         reverse=True,
     )
+
+    rerank_info = {
+        "applied": False,
+        "provider_used": False,
+        "provider_error": "",
+        "provider_ranking": [],
+        "heuristic_scores": {},
+        "blended_scores": {},
+        "status": "skipped",
+    }
+    if aegis_rerank and ranking:
+        rerank_info = run_aegis_rerank(
+            ranking,
+            mode=judge_mode,
+            provider_config=ProviderConfig(
+                provider=judge_provider,
+                model=judge_model,
+                endpoint=judge_endpoint,
+                api_key_env=judge_api_key_env,
+                native_cmd=judge_native_cmd,
+            ),
+            top_k=max(1, int(aegis_top_k)),
+            allow_fallback=judge_allow_fallback,
+        )
+        score_map = {int(k): float(v) for k, v in rerank_info.get("blended_scores", {}).items()}
+        for row in ranking:
+            trial_idx = int(row["trial_idx"])
+            row["aegis_realism_score"] = float(score_map.get(trial_idx, 0.0))
+        ranking.sort(
+            key=lambda r: (
+                int(r["pass_count"]),
+                float(r["aggregate_score"]) + 0.35 * float(r.get("aegis_realism_score", 0.0)),
+                float(r["mean_judge_confidence"]),
+            ),
+            reverse=True,
+        )
+
     best = _sanitize_json_value(ranking[0]) if ranking else {}
 
     best_path = run_dir / "best_params.json"
@@ -465,6 +519,9 @@ def run_tuning(
         search_space=search_space,
         ranking=ranking,
     )
+    rerank_path = run_dir / "AEGIS_RERANK.json"
+    with rerank_path.open("w", encoding="utf-8") as f:
+        json.dump(_sanitize_json_value(rerank_info), f, indent=2, sort_keys=True)
 
     return _sanitize_json_value(
         {
@@ -475,5 +532,6 @@ def run_tuning(
             "best_trial": best,
             "retention_hours": resolved_retention_hours,
             "pruned_runs": [str(p) for p in pruned_runs],
+            "aegis_rerank_path": str(rerank_path),
         }
     )

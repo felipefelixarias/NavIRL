@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
 from navirl.pipeline import run_scenario_file
 from navirl.verify.judge import run_visual_judge, write_judge_output
 from navirl.verify.validators import (
@@ -18,6 +19,8 @@ from navirl.verify.validators import (
 PASS = 0
 FAIL = 10
 NEEDS_HUMAN_REVIEW = 20
+
+DEFAULT_VERIFY_RETENTION_HOURS = 168.0
 
 CANONICAL_SCENARIOS = [
     "hallway_pass.yaml",
@@ -136,10 +139,28 @@ def run_verify(
     *,
     judge_mode: str = "heuristic",
     judge_confidence_min: float = 0.6,
+    judge_provider: str = "codex",
+    judge_model: str | None = None,
+    judge_endpoint: str | None = None,
+    judge_api_key_env: str = "NAVIRL_VLM_API_KEY",
+    judge_native_cmd: str | None = None,
+    judge_allow_fallback: bool = True,
+    retention_hours: float | None = None,
 ) -> int:
     out_root = Path(out_root)
     verify_root = out_root / suite
     verify_root.mkdir(parents=True, exist_ok=True)
+    resolved_retention_hours = resolve_retention_hours(
+        retention_hours,
+        env_var="NAVIRL_VERIFY_TTL_HOURS",
+        default_hours=DEFAULT_VERIFY_RETENTION_HOURS,
+    )
+    prune_old_run_dirs(
+        verify_root,
+        ttl_hours=resolved_retention_hours,
+        prefixes=(f"verify_{suite}_",),
+        keep_latest=2,
+    )
 
     pytest_ok, pytest_out = _run_pytest()
 
@@ -191,6 +212,12 @@ def run_verify(
             confidence_threshold=judge_confidence_min,
             mode=judge_mode,
             require_video=(suite == "full"),
+            provider=judge_provider,
+            model=judge_model,
+            endpoint=judge_endpoint,
+            api_key_env=judge_api_key_env,
+            native_cmd=judge_native_cmd,
+            allow_fallback=judge_allow_fallback,
         )
         write_judge_output(bundle_dir / "judge.json", judge_payload)
 
