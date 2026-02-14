@@ -91,6 +91,41 @@ def _encode_images_as_data_urls(image_paths: list[str], max_images: int) -> list
     return out
 
 
+def _strict_json_schema_for_codex(schema: dict) -> dict:
+    """Codex JSON schema mode requires object nodes to set additionalProperties=false."""
+
+    def _convert(node):
+        if isinstance(node, dict):
+            out = {str(k): _convert(v) for k, v in node.items()}
+            node_type = out.get("type")
+            is_object = (
+                node_type == "object"
+                or (isinstance(node_type, list) and "object" in node_type)
+                or ("properties" in out and "type" not in out)
+            )
+            if is_object:
+                props = out.get("properties")
+                if not isinstance(props, dict):
+                    props = {}
+                out["properties"] = props
+                out["required"] = [str(k) for k in props.keys()]
+                out["additionalProperties"] = False
+            return out
+        if isinstance(node, list):
+            return [_convert(v) for v in node]
+        return node
+
+    converted = _convert(schema)
+    if not isinstance(converted, dict):
+        return {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        }
+    return converted
+
+
 def _resolve_native_command(config: ProviderConfig) -> str:
     if config.native_cmd:
         return str(config.native_cmd)
@@ -122,14 +157,20 @@ def _run_native_json(
         schema_path = td_path / "schema.json"
         output_path = td_path / "response.json"
         selected_images = [str(p) for p in image_paths[: max(0, int(config.max_images))]]
+        provider = config.normalized_provider()
+        response_schema = (
+            _strict_json_schema_for_codex(schema)
+            if provider == "codex"
+            else schema
+        )
 
         prompt_payload = {
             "prompt": prompt,
             "image_paths": selected_images,
-            "schema": schema,
+            "schema": response_schema,
         }
         prompt_path.write_text(json.dumps(prompt_payload, indent=2), encoding="utf-8")
-        schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
+        schema_path.write_text(json.dumps(response_schema, indent=2), encoding="utf-8")
         image_flags = " ".join(f"-i {shlex.quote(p)}" for p in selected_images)
         image_paths_json = json.dumps(selected_images)
 
@@ -145,12 +186,18 @@ def _run_native_json(
         else:
             cmd = shlex.split(cmd_template) + [str(prompt_path)]
 
-        proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=max(1.0, float(config.timeout_s)),
-        )
+        try:
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=max(1.0, float(config.timeout_s)),
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ProviderCallError(
+                "Native provider command timed out "
+                f"after {max(1.0, float(config.timeout_s)):.1f}s: {' '.join(cmd)}"
+            ) from exc
         if proc.returncode != 0:
             raise ProviderCallError(
                 f"Native provider command failed with code {proc.returncode}: {proc.stderr.strip()}"

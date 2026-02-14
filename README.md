@@ -7,6 +7,13 @@ simulation, rigorous verification, and high-quality demo generation.
 
 ### Wainscott Main Demo (Thesis Floorplan, high-density crowd)
 ![Wainscott Main Demo](docs/assets/showcase/wainscott_main_demo.gif)
+[Best Full-Run Video (MP4)](docs/assets/showcase/wainscott_main_demo.mp4) |
+[Stability-Focused Comparison (MP4)](docs/assets/showcase/wainscott_main_demo_focused.mp4)
+
+Source artifacts:
+`out/tune_wainscott_vlm/tune_quick_20260214_051921_998e5d/trials/trial_022/trial_022_wainscott_main_demo/bundle`
+and
+`out/tune_wainscott_vlm_focus/tune_quick_20260214_062836_4892bf/trials/trial_022/trial_022_wainscott_main_demo/bundle`
 
 ### Group Cohesion
 ![Group Cohesion](docs/assets/showcase/group_cohesion.gif)
@@ -59,7 +66,8 @@ Run Aegis-backed tuning:
 
 ```bash
 export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file} --output-last-message {output_file} {image_flags} < {prompt_file}"'
-python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
+./scripts/run_wainscott_vlm_tune.sh preflight
+./scripts/run_wainscott_vlm_tune.sh full
 ```
 
 Run thesis floorplan demo:
