@@ -22,6 +22,22 @@ export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file
 python -m navirl tune --suite quick --trials 24 --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
 ```
 
+Wainscott helper script (recommended for reproducible preflight/full runs):
+
+```bash
+./scripts/run_wainscott_vlm_tune.sh preflight
+./scripts/run_wainscott_vlm_tune.sh full
+```
+
+Focused sweep with custom search space:
+
+```bash
+NAVIRL_TRIALS=32 \
+NAVIRL_OUT_DIR=out/tune_wainscott_vlm_focus \
+NAVIRL_SEARCH_SPACE=out/wainscott_stability_search_space.yaml \
+./scripts/run_wainscott_vlm_tune.sh full
+```
+
 Retention is enabled by default to avoid unbounded artifact growth (default:
 `168` hours, while keeping the latest 3 tuning runs). Override as needed:
 
@@ -40,6 +56,12 @@ export NAVIRL_TUNE_TTL_HOURS=48
 - scenario set (`--suite` or `--scenarios ...`)
 - search space (built-in default, or `--search-space path/to/space.yaml`)
 - tuning budget (`--trials`)
+
+## Cost-efficient iteration policy
+
+- Start with `preflight` (1 trial) to verify provider wiring before expensive sweeps.
+- Keep VLM fallback disabled when validating provider reliability.
+- Use tighter search spaces after an initial broad run to reduce wasted trials.
 
 ## Outputs
 

@@ -1,22 +1,25 @@
 # Roadmap
 
+This roadmap is tracked one item per GitHub issue. Keep issue state and this
+document synchronized: mark an item done only after its issue is closed.
+
 ## Near-term
 
-- Expand scenario library with stronger indoor daily-life coverage
-- Harden controller plugin APIs for external user controllers
-- Improve report readability for verify failures and regressions
-- Add richer baseline robot planners (social-cost A*, PRM variants)
+- [ ] Expand scenario library with stronger indoor daily-life coverage ([#1](https://github.com/felipefelixarias/NavIRL/issues/1))
+- [ ] Harden controller plugin APIs for external user controllers ([#2](https://github.com/felipefelixarias/NavIRL/issues/2))
+- [ ] Improve report readability for verify failures and regressions ([#3](https://github.com/felipefelixarias/NavIRL/issues/3))
+- [ ] Add richer baseline robot planners (social-cost A*, PRM variants) ([#4](https://github.com/felipefelixarias/NavIRL/issues/4))
 
 ## Mid-term
 
-- Add routine compiler from structured routine specs to executable behaviors
-- Add policy-controller hooks for learned human and robot policies
-- Add large-scale batch experiment templates and aggregated study reports
-- Add standardized experiment packs for cross-lab reproducibility
+- [ ] Add routine compiler from structured routine specs to executable behaviors ([#5](https://github.com/felipefelixarias/NavIRL/issues/5))
+- [ ] Add policy-controller hooks for learned human and robot policies ([#6](https://github.com/felipefelixarias/NavIRL/issues/6))
+- [ ] Add large-scale batch experiment templates and aggregated study reports ([#7](https://github.com/felipefelixarias/NavIRL/issues/7))
+- [ ] Add standardized experiment packs for cross-lab reproducibility ([#8](https://github.com/felipefelixarias/NavIRL/issues/8))
 
 ## Long-term
 
-- Add optional multi-backend support beyond `grid2d`
-- Add distributed simulation orchestration for large parameter sweeps
-- Release formal reproducibility package tied to published studies
-- Continue agent-driven development with stricter E2E verification depth
+- [ ] Add optional multi-backend support beyond `grid2d` ([#9](https://github.com/felipefelixarias/NavIRL/issues/9))
+- [ ] Add distributed simulation orchestration for large parameter sweeps ([#10](https://github.com/felipefelixarias/NavIRL/issues/10))
+- [ ] Release formal reproducibility package tied to published studies ([#11](https://github.com/felipefelixarias/NavIRL/issues/11))
+- [ ] Continue agent-driven development with stricter E2E verification depth ([#12](https://github.com/felipefelixarias/NavIRL/issues/12))

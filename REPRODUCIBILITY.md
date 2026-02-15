@@ -21,6 +21,9 @@ When core simulator/controllers/planners/metrics change:
 python -m navirl verify --suite full
 ```
 
+If using the repo-managed interpreter, replace `python` with
+`.venv311/bin/python`.
+
 ## Seed policy
 
 - Every scenario has an explicit `seed`.
@@ -67,3 +70,8 @@ cases. Always record:
 - Python version
 - package versions
 - CPU architecture
+
+## Roadmap tracking policy
+
+- Each roadmap item in `ROADMAP.md` must map to exactly one GitHub issue.
+- Keep roadmap checkboxes and issue state synchronized.

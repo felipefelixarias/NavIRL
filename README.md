@@ -40,6 +40,12 @@ and
 - Aegis overseer pipeline for qualitative realism checks and tuning rerank
 - End-to-end artifact traces for debugging and reproducibility
 
+## Roadmap And Backlog
+
+- Roadmap source of truth: `ROADMAP.md`
+- Open implementation tickets:
+  - `gh issue list --state open --limit 100`
+
 ## Quickstart
 
 Install:
@@ -85,6 +91,8 @@ layout (`16` humans) while preserving the thesis floorplan scale and robot route
 
 For full specs and workflows:
 
+- `ROADMAP.md`
+- `REPRODUCIBILITY.md`
 - `docs/GETTING_STARTED.md`
 - `docs/SCENARIO_SPEC.md`
 - `docs/VERIFY_GATE.md`

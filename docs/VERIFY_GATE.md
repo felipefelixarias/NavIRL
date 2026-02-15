@@ -23,6 +23,12 @@ export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file
 python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
 ```
 
+For Wainscott-specific provider sanity checks before tuning, run:
+
+```bash
+./scripts/run_wainscott_vlm_tune.sh preflight
+```
+
 Optional provider knobs:
 
 - `--judge-provider {codex,claude,native,openai_compatible,kimi}`

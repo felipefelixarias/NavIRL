@@ -20,6 +20,8 @@ This folder contains the technical and research documentation for NavIRL.
 - `docs/VERIFY_GATE.md`
 - `docs/TUNING.md`
 - `docs/RESEARCH_CONTEXT.md`
+- `REPRODUCIBILITY.md`
+- `ROADMAP.md`
 
 ## Recommended reading order
 
@@ -29,3 +31,5 @@ This folder contains the technical and research documentation for NavIRL.
 4. `docs/METRICS_SPEC.md`
 5. `docs/VERIFY_GATE.md`
 6. `docs/TUNING.md`
+7. `REPRODUCIBILITY.md`
+8. `ROADMAP.md`

@@ -7,6 +7,12 @@ python -m pip install -U pip
 python -m pip install -e .[dev]
 ```
 
+If you use the repo-managed Python, run commands as:
+
+```bash
+.venv311/bin/python -m navirl --help
+```
+
 ## Three-command workflow
 
 1. Run a scenario:
@@ -64,6 +70,13 @@ Run ORCA/controller tuning with visual-judge scoring:
 
 ```bash
 python -m navirl tune --suite quick --trials 24 --out out/tune/
+```
+
+Wainscott VLM workflow (strict no-fallback preflight + full run):
+
+```bash
+./scripts/run_wainscott_vlm_tune.sh preflight
+./scripts/run_wainscott_vlm_tune.sh full
 ```
 
 Exit codes:
