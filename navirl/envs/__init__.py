@@ -29,38 +29,41 @@ IntersectionCrossing, GroupNavigation, DenseRoom, OpenField,
 ScenarioDifficultyScaler, ProceduralScenarioGenerator
 """
 
-from navirl.envs.base_env import NavEnv, NavEnvConfig
-from navirl.envs.crowd_env import CrowdNavEnv, CrowdNavConfig
-from navirl.envs.multi_agent_env import MultiAgentNavEnv, MultiAgentNavConfig
-from navirl.envs.scenarios import (
-    CircleCrossing,
-    CorridorPassing,
-    DenseRoom,
-    DoorwayNegotiation,
-    GroupNavigation,
-    IntersectionCrossing,
-    OpenField,
-    ProceduralScenarioGenerator,
-    RandomGoal,
-    ScenarioDifficultyScaler,
-)
-from navirl.envs.wrappers import (
-    ActionRepeat,
-    ClipAction,
-    CurriculumWrapper,
-    DomainRandomization,
-    FlattenObservation,
-    FrameStack,
-    GoalConditioned,
-    MonitorWrapper,
-    NormalizeObservation,
-    NormalizeReward,
-    RecordEpisode,
-    RelativeObservation,
-    RewardShaping,
-    TimeLimit,
-    VecEnvWrapper,
-)
+try:
+    from navirl.envs.base_env import NavEnv, NavEnvConfig
+    from navirl.envs.crowd_env import CrowdNavEnv, CrowdNavConfig
+    from navirl.envs.multi_agent_env import MultiAgentNavEnv, MultiAgentNavConfig
+    from navirl.envs.scenarios import (
+        CircleCrossing,
+        CorridorPassing,
+        DenseRoom,
+        DoorwayNegotiation,
+        GroupNavigation,
+        IntersectionCrossing,
+        OpenField,
+        ProceduralScenarioGenerator,
+        RandomGoal,
+        ScenarioDifficultyScaler,
+    )
+    from navirl.envs.wrappers import (
+        ActionRepeat,
+        ClipAction,
+        CurriculumWrapper,
+        DomainRandomization,
+        FlattenObservation,
+        FrameStack,
+        GoalConditioned,
+        MonitorWrapper,
+        NormalizeObservation,
+        NormalizeReward,
+        RecordEpisode,
+        RelativeObservation,
+        RewardShaping,
+        TimeLimit,
+        VecEnvWrapper,
+    )
+except ImportError:
+    pass  # gymnasium not installed; envs available only with pip install gymnasium
 
 __all__ = [
     # Core environments
