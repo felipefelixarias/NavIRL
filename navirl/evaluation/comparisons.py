@@ -13,7 +13,6 @@ from navirl.evaluation.benchmark import (
 )
 
 
-@staticmethod
 def _try_import_scipy():
     """Lazy import for scipy.stats to keep it optional."""
     try:
