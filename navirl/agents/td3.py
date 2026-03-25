@@ -8,9 +8,20 @@ pedestrian navigation framework.
 
 TD3 addresses overestimation bias in actor-critic methods through three
 key mechanisms:
-* Clipped double Q-learning (twin critics with minimum operator).
-* Delayed policy updates (actor updates less frequently than critics).
-* Target policy smoothing (noise added to target actions).
+
+* **Clipped double Q-learning** -- twin critics with minimum operator.
+* **Delayed policy updates** -- actor updates less frequently than critics.
+* **Target policy smoothing** -- noise added to target actions.
+
+Additional features in this implementation:
+
+* **Configurable exploration noise schedules** -- linear decay, cosine
+  decay, or constant noise for action-space exploration.
+* **Observation normalization** via running mean/variance statistics.
+* **Per-component noise scaling** -- different noise levels per action
+  dimension for heterogeneous action spaces.
+* **Gradient clipping** with configurable max norm.
+* **Warmup period** with random actions before training begins.
 
 References
 ----------
@@ -23,19 +34,213 @@ from __future__ import annotations
 
 import copy
 import logging
+import math
 import pathlib
-from dataclasses import dataclass
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
-from navirl.agents.base import BaseAgent, HyperParameters
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+
+    _TORCH_AVAILABLE = True
+except ImportError:
+    _TORCH_AVAILABLE = False
+
+from navirl.agents.base import BaseAgent, HyperParameters, RunningMeanStd
 from navirl.agents.networks import MLP, DeterministicPolicyHead, QValueHead
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Exploration noise schedules
+# ---------------------------------------------------------------------------
+
+
+class NoiseSchedule:
+    """Base class for exploration noise schedules.
+
+    Subclasses implement the ``value`` method which returns the current
+    noise standard deviation given the training step.
+    """
+
+    def value(self, step: int) -> float:
+        """Return the noise standard deviation at the given step.
+
+        Parameters
+        ----------
+        step : int
+            Current training step.
+
+        Returns
+        -------
+        float
+            Noise standard deviation.
+        """
+        raise NotImplementedError
+
+
+class ConstantNoise(NoiseSchedule):
+    """Constant exploration noise.
+
+    Parameters
+    ----------
+    sigma : float
+        Fixed noise standard deviation.
+    """
+
+    def __init__(self, sigma: float = 0.1) -> None:
+        self.sigma = sigma
+
+    def value(self, step: int) -> float:
+        """Return constant noise level regardless of step.
+
+        Parameters
+        ----------
+        step : int
+            Current training step (unused).
+
+        Returns
+        -------
+        float
+            The constant sigma value.
+        """
+        return self.sigma
+
+    def __repr__(self) -> str:
+        return f"ConstantNoise(sigma={self.sigma})"
+
+
+class LinearDecayNoise(NoiseSchedule):
+    """Linearly decaying exploration noise.
+
+    Parameters
+    ----------
+    start : float
+        Initial noise standard deviation.
+    end : float
+        Final noise standard deviation.
+    decay_steps : int
+        Number of steps over which the decay occurs.
+    """
+
+    def __init__(
+        self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000
+    ) -> None:
+        self.start = start
+        self.end = end
+        self.decay_steps = max(decay_steps, 1)
+
+    def value(self, step: int) -> float:
+        """Return linearly interpolated noise level.
+
+        Parameters
+        ----------
+        step : int
+            Current training step.
+
+        Returns
+        -------
+        float
+            Interpolated noise standard deviation.
+        """
+        fraction = min(1.0, step / self.decay_steps)
+        return self.start + fraction * (self.end - self.start)
+
+    def __repr__(self) -> str:
+        return (
+            f"LinearDecayNoise(start={self.start}, end={self.end}, "
+            f"decay_steps={self.decay_steps})"
+        )
+
+
+class CosineDecayNoise(NoiseSchedule):
+    """Cosine-annealing exploration noise schedule.
+
+    Parameters
+    ----------
+    start : float
+        Initial noise standard deviation.
+    end : float
+        Minimum noise standard deviation.
+    decay_steps : int
+        Number of steps for one cosine half-period.
+    """
+
+    def __init__(
+        self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000
+    ) -> None:
+        self.start = start
+        self.end = end
+        self.decay_steps = max(decay_steps, 1)
+
+    def value(self, step: int) -> float:
+        """Return cosine-annealed noise level.
+
+        Parameters
+        ----------
+        step : int
+            Current training step.
+
+        Returns
+        -------
+        float
+            Cosine-annealed noise standard deviation.
+        """
+        progress = min(step / self.decay_steps, 1.0)
+        return self.end + 0.5 * (self.start - self.end) * (1.0 + math.cos(math.pi * progress))
+
+    def __repr__(self) -> str:
+        return (
+            f"CosineDecayNoise(start={self.start}, end={self.end}, "
+            f"decay_steps={self.decay_steps})"
+        )
+
+
+def make_noise_schedule(
+    schedule_type: str,
+    start: float = 0.3,
+    end: float = 0.05,
+    decay_steps: int = 500_000,
+) -> NoiseSchedule:
+    """Factory function for exploration noise schedules.
+
+    Parameters
+    ----------
+    schedule_type : str
+        One of ``"constant"``, ``"linear"``, or ``"cosine"``.
+    start : float
+        Initial noise level.
+    end : float
+        Final noise level (ignored for constant).
+    decay_steps : int
+        Decay horizon (ignored for constant).
+
+    Returns
+    -------
+    NoiseSchedule
+        The constructed schedule.
+
+    Raises
+    ------
+    ValueError
+        If *schedule_type* is not recognised.
+    """
+    if schedule_type == "constant":
+        return ConstantNoise(sigma=start)
+    elif schedule_type == "linear":
+        return LinearDecayNoise(start=start, end=end, decay_steps=decay_steps)
+    elif schedule_type == "cosine":
+        return CosineDecayNoise(start=start, end=end, decay_steps=decay_steps)
+    else:
+        raise ValueError(
+            f"Unknown noise schedule {schedule_type!r}; "
+            f"expected one of 'constant', 'linear', 'cosine'."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -71,10 +276,25 @@ class TD3Config(HyperParameters):
     batch_size : int
         Mini-batch size for each gradient update.
     exploration_noise : float
-        Standard deviation of Gaussian noise added to actions during
-        exploration (at act time).
+        Initial standard deviation of exploration noise.
+    exploration_noise_end : float
+        Final exploration noise level (for decaying schedules).
+    noise_schedule : str
+        Exploration noise schedule: ``"constant"``, ``"linear"``, or
+        ``"cosine"``.
+    noise_decay_steps : int
+        Number of steps over which noise decays.
     max_grad_norm : float or None
         If set, gradients are clipped to this maximum norm.
+    normalize_observations : bool
+        Whether to normalize observations via running statistics.
+    observation_clip : float
+        Clipping range for normalized observations.
+    warmup_steps : int
+        Number of initial steps with random actions (no learning).
+    action_noise_per_dim : list of float or None
+        Per-dimension noise scaling factors.  If ``None``, uniform noise
+        is used across all action dimensions.
     """
 
     lr_actor: float = 3e-4
@@ -88,7 +308,14 @@ class TD3Config(HyperParameters):
     activation: str = "relu"
     batch_size: int = 256
     exploration_noise: float = 0.1
+    exploration_noise_end: float = 0.05
+    noise_schedule: str = "constant"
+    noise_decay_steps: int = 500_000
     max_grad_norm: Optional[float] = None
+    normalize_observations: bool = False
+    observation_clip: float = 10.0
+    warmup_steps: int = 10_000
+    action_noise_per_dim: Optional[List[float]] = None
 
 
 # ---------------------------------------------------------------------------
@@ -99,6 +326,10 @@ class TD3Config(HyperParameters):
 class TD3Agent(BaseAgent):
     """Twin Delayed DDPG agent for continuous control.
 
+    Implements TD3 with configurable exploration noise schedules,
+    delayed policy updates, target policy smoothing, and optional
+    observation normalization.
+
     Parameters
     ----------
     config : TD3Config
@@ -106,7 +337,8 @@ class TD3Agent(BaseAgent):
     observation_space
         Environment observation space (must expose ``.shape``).
     action_space
-        Environment action space (must expose ``.shape``, ``.low``, ``.high``).
+        Environment action space (must expose ``.shape``, ``.low``,
+        ``.high``).
     device : str or torch.device
         Compute device.
     seed : int or None
@@ -120,7 +352,7 @@ class TD3Agent(BaseAgent):
         config: TD3Config,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, torch.device] = "cpu",
+        device: Union[str, "torch.device"] = "cpu",
         seed: Optional[int] = None,
         metrics_callback: Any = None,
     ) -> None:
@@ -130,8 +362,37 @@ class TD3Agent(BaseAgent):
         action_dim = int(np.prod(action_space.shape))
 
         # Action bounds for clipping
-        self._action_low = torch.tensor(action_space.low, dtype=torch.float32, device=self._device)
-        self._action_high = torch.tensor(action_space.high, dtype=torch.float32, device=self._device)
+        self._action_low = torch.tensor(
+            action_space.low, dtype=torch.float32, device=self._device,
+        )
+        self._action_high = torch.tensor(
+            action_space.high, dtype=torch.float32, device=self._device,
+        )
+
+        # ---- Observation normalization ----
+        self._obs_rms: Optional[RunningMeanStd] = None
+        if config.normalize_observations:
+            self._obs_rms = RunningMeanStd(shape=observation_space.shape)
+
+        # ---- Exploration noise schedule ----
+        self._noise_schedule = make_noise_schedule(
+            schedule_type=config.noise_schedule,
+            start=config.exploration_noise,
+            end=config.exploration_noise_end,
+            decay_steps=config.noise_decay_steps,
+        )
+
+        # Per-dimension noise scaling
+        if config.action_noise_per_dim is not None:
+            self._noise_scale = torch.tensor(
+                config.action_noise_per_dim,
+                dtype=torch.float32,
+                device=self._device,
+            )
+        else:
+            self._noise_scale = torch.ones(
+                action_dim, dtype=torch.float32, device=self._device,
+            )
 
         # ---- Actor ----
         self.actor_trunk = MLP(
@@ -198,10 +459,38 @@ class TD3Agent(BaseAgent):
         # ---- Update counter for delayed policy updates ----
         self._update_count: int = 0
 
+        # ---- Random state for warmup ----
+        self._rng = np.random.RandomState(seed)
+
         self._log_module_summary("actor_trunk", self.actor_trunk)
         self._log_module_summary("actor_head", self.actor_head)
         self._log_module_summary("q1", self.q1)
         self._log_module_summary("q2", self.q2)
+        self._logger.info("Noise schedule: %s", self._noise_schedule)
+
+    # ------------------------------------------------------------------
+    # Observation normalization
+    # ------------------------------------------------------------------
+
+    def _normalize_obs(self, obs: np.ndarray) -> np.ndarray:
+        """Normalize observations using running statistics if enabled.
+
+        Parameters
+        ----------
+        obs : np.ndarray
+            Raw observation.
+
+        Returns
+        -------
+        np.ndarray
+            Possibly normalized observation.
+        """
+        cfg: TD3Config = self._config  # type: ignore[assignment]
+        if self._obs_rms is not None:
+            if self._training:
+                self._obs_rms.update(obs)
+            return self._obs_rms.normalize(obs, clip=cfg.observation_clip).astype(np.float32)
+        return obs
 
     # ------------------------------------------------------------------
     # Action selection
@@ -213,6 +502,10 @@ class TD3Agent(BaseAgent):
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         """Select an action given an observation.
+
+        During the warmup period, returns uniformly random actions.
+        After warmup, uses the deterministic policy with additive
+        Gaussian exploration noise (unless *deterministic* is True).
 
         Parameters
         ----------
@@ -227,9 +520,20 @@ class TD3Agent(BaseAgent):
         action : np.ndarray
             The chosen action, clipped to the action space bounds.
         info : dict
-            Empty dict (TD3 does not produce auxiliary info at act time).
+            Contains ``"noise_sigma"`` indicating the current noise level.
         """
         cfg: TD3Config = self._config  # type: ignore[assignment]
+
+        # Warmup: random actions
+        if self._training and self._total_steps < cfg.warmup_steps:
+            action = self._rng.uniform(
+                low=self._action_low.cpu().numpy(),
+                high=self._action_high.cpu().numpy(),
+            ).astype(np.float32)
+            return action, {"noise_sigma": float("nan")}
+
+        observation = self._normalize_obs(observation)
+        current_sigma = self._noise_schedule.value(self._total_steps)
 
         with torch.no_grad():
             obs_t = self._to_tensor(observation, dtype=torch.float32)
@@ -240,12 +544,12 @@ class TD3Agent(BaseAgent):
             action = self.actor_head(features)
 
             if not deterministic:
-                noise = torch.randn_like(action) * cfg.exploration_noise
+                noise = torch.randn_like(action) * current_sigma * self._noise_scale
                 action = action + noise
 
             action = action.clamp(self._action_low, self._action_high)
 
-        return self._to_numpy(action.squeeze(0)), {}
+        return self._to_numpy(action.squeeze(0)), {"noise_sigma": current_sigma}
 
     # ------------------------------------------------------------------
     # Update
@@ -254,8 +558,8 @@ class TD3Agent(BaseAgent):
     def update(self, batch: Any) -> Dict[str, float]:
         """Perform a single TD3 gradient step on a batch of transitions.
 
-        The critic is updated every call. The actor and target networks are
-        updated only every ``policy_delay`` calls.
+        The critic is updated every call.  The actor and target networks
+        are updated only every ``policy_delay`` calls.
 
         Parameters
         ----------
@@ -266,8 +570,9 @@ class TD3Agent(BaseAgent):
         Returns
         -------
         dict
-            Scalar training metrics: ``q_loss`` (always present),
-            ``actor_loss`` (present on actor update steps).
+            Scalar training metrics: ``q_loss``, ``q1_mean``, ``q2_mean``
+            (always present), and ``actor_loss``, ``noise_sigma``
+            (present on actor update steps).
         """
         cfg: TD3Config = self._config  # type: ignore[assignment]
 
@@ -285,10 +590,13 @@ class TD3Agent(BaseAgent):
             next_features = self.actor_trunk_target(next_obs)
             next_action = self.actor_head_target(next_features)
 
+            # Add clipped noise for target policy smoothing
             noise = (torch.randn_like(next_action) * cfg.policy_noise).clamp(
-                -cfg.noise_clip, cfg.noise_clip
+                -cfg.noise_clip, cfg.noise_clip,
             )
-            next_action = (next_action + noise).clamp(self._action_low, self._action_high)
+            next_action = (next_action + noise).clamp(
+                self._action_low, self._action_high,
+            )
 
             # Clipped double Q
             q1_target = self.q1_target(next_obs, next_action)
@@ -308,10 +616,18 @@ class TD3Agent(BaseAgent):
             self._clip_grad_norm(critic_params, cfg.max_grad_norm)
         self.critic_optimizer.step()
 
-        metrics: Dict[str, float] = {"q_loss": q_loss.item()}
+        metrics: Dict[str, float] = {
+            "q_loss": q_loss.item(),
+            "q1_mean": float(q1_pred.mean().item()),
+            "q2_mean": float(q2_pred.mean().item()),
+        }
 
         # ---- 3. Delayed actor update ----
         if self._update_count % cfg.policy_delay == 0:
+            # Freeze Q-networks to avoid computing gradients for them
+            for p in self.q1.parameters():
+                p.requires_grad = False
+
             features = self.actor_trunk(obs)
             actor_action = self.actor_head(features)
             actor_loss = -self.q1(obs, actor_action).mean()
@@ -319,11 +635,19 @@ class TD3Agent(BaseAgent):
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             if cfg.max_grad_norm is not None:
-                actor_params = list(self.actor_trunk.parameters()) + list(self.actor_head.parameters())
+                actor_params = (
+                    list(self.actor_trunk.parameters())
+                    + list(self.actor_head.parameters())
+                )
                 self._clip_grad_norm(actor_params, cfg.max_grad_norm)
             self.actor_optimizer.step()
 
+            # Unfreeze Q-networks
+            for p in self.q1.parameters():
+                p.requires_grad = True
+
             metrics["actor_loss"] = actor_loss.item()
+            metrics["noise_sigma"] = self._noise_schedule.value(self._total_steps)
 
             # ---- 4. Soft update target networks (also delayed) ----
             self._soft_update(self.q1_target, self.q1, cfg.tau)
@@ -336,18 +660,70 @@ class TD3Agent(BaseAgent):
         return metrics
 
     # ------------------------------------------------------------------
+    # Evaluation helpers
+    # ------------------------------------------------------------------
+
+    def get_q_values(
+        self, observation: np.ndarray, action: np.ndarray
+    ) -> Tuple[float, float]:
+        """Compute Q-values for a given state-action pair.
+
+        Useful for debugging and analysis.
+
+        Parameters
+        ----------
+        observation : np.ndarray
+            Single observation.
+        action : np.ndarray
+            Single action.
+
+        Returns
+        -------
+        q1, q2 : float
+            Q-values from both critic networks.
+        """
+        with torch.no_grad():
+            obs_t = self._to_tensor(observation, dtype=torch.float32).unsqueeze(0)
+            act_t = self._to_tensor(action, dtype=torch.float32).unsqueeze(0)
+            q1 = self.q1(obs_t, act_t).item()
+            q2 = self.q2(obs_t, act_t).item()
+        return q1, q2
+
+    def get_target_action(self, observation: np.ndarray) -> np.ndarray:
+        """Compute the target policy action for a given observation.
+
+        Parameters
+        ----------
+        observation : np.ndarray
+            Single observation.
+
+        Returns
+        -------
+        np.ndarray
+            Target policy action.
+        """
+        with torch.no_grad():
+            obs_t = self._to_tensor(observation, dtype=torch.float32).unsqueeze(0)
+            features = self.actor_trunk_target(obs_t)
+            action = self.actor_head_target(features)
+        return self._to_numpy(action.squeeze(0))
+
+    # ------------------------------------------------------------------
     # Save / Load
     # ------------------------------------------------------------------
 
     def save(self, path: Union[str, pathlib.Path]) -> None:
         """Save agent checkpoint to disk.
 
+        Persists all networks, target networks, optimizers, and
+        normalization statistics.
+
         Parameters
         ----------
         path : str or Path
             Directory or file path for the checkpoint.
         """
-        state_dicts = {
+        state_dicts: Dict[str, Any] = {
             "actor_trunk": self.actor_trunk.state_dict(),
             "actor_head": self.actor_head.state_dict(),
             "actor_trunk_target": self.actor_trunk_target.state_dict(),
@@ -358,10 +734,15 @@ class TD3Agent(BaseAgent):
             "q2_target": self.q2_target.state_dict(),
             "update_count": self._update_count,
         }
+        if self._obs_rms is not None:
+            state_dicts["obs_rms"] = self._obs_rms.state_dict()
         self._save_checkpoint(path, state_dicts)
 
     def load(self, path: Union[str, pathlib.Path]) -> None:
         """Load agent checkpoint from disk.
+
+        Restores all networks, target networks, and normalization
+        statistics.
 
         Parameters
         ----------
@@ -382,3 +763,5 @@ class TD3Agent(BaseAgent):
 
         if "update_count" in model:
             self._update_count = model["update_count"]
+        if "obs_rms" in model and self._obs_rms is not None:
+            self._obs_rms.load_state_dict(model["obs_rms"])
