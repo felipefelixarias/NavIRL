@@ -747,7 +747,7 @@ class PPOAgent(BaseAgent):
 
                 self._optimizer.zero_grad()
                 loss.backward()
-                grad_norm = self._clip_grad_norm(
+                self._clip_grad_norm(
                     list(self._actor_backbone.parameters())
                     + list(self._policy_head.parameters())
                     + list(self._critic_backbone.parameters())

@@ -232,7 +232,6 @@ class TransformManager:
     ) -> np.ndarray:
         """Transform a 2-D point from *source_frame* to *target_frame*."""
         x, y, yaw = self.lookup(target_frame, source_frame)
-        pose = (x, y, yaw)
         # The lookup gives source in target -> we apply the inverse
         # to transform a point expressed in source into target.
         p = np.asarray(point, dtype=np.float64).ravel()[:2]

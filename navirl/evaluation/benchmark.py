@@ -95,7 +95,6 @@ class BenchmarkResults:
         if not self.metrics:
             return "% No results"
         metric_names = sorted(self.metrics.keys())
-        n_cols = len(metric_names) + 1
         lines = [
             r"\begin{tabular}{" + "l" + "r" * len(metric_names) + "}",
             r"\toprule",

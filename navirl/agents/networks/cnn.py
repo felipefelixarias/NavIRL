@@ -813,10 +813,6 @@ class MultiScaleFeatureExtractor(nn.Module):
         total_flat = 0
 
         for ch, scale in zip(branch_channels, scales):
-            # Determine spatial size at this scale
-            sh = max(int(input_height * scale), 1)
-            sw = max(int(input_width * scale), 1)
-
             branch = nn.Sequential(
                 nn.Conv2d(input_channels, ch, kernel_size=3, stride=2, padding=1),
                 nn.BatchNorm2d(ch),

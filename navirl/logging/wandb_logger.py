@@ -905,7 +905,6 @@ class WandbLogger:
         table = wandb.Table(columns=columns, data=rows)
 
         if chart_id in self._custom_charts:
-            spec = self._custom_charts[chart_id]
             self.log(
                 {
                     chart_id: wandb.plot_table(

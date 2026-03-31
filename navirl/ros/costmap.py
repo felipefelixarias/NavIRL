@@ -278,8 +278,6 @@ class InflationCostmapLayer(_CostmapLayerBase):
             return
         radius_cells = max(int(round(self.inflation_radius / self._resolution)), 1)
         kernel_size = 2 * radius_cells + 1
-        sigma = radius_cells / 2.0
-        kernel = _gaussian_kernel(kernel_size, sigma)
 
         from scipy.ndimage import maximum_filter  # type: ignore[import-untyped]
 

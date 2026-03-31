@@ -210,7 +210,6 @@ class GridMap:
         for a in angles:
             dist, _ = self.ray_cast(x, y, a, max_range)
             hit_x = x + dist * np.cos(a)
-            hit_y = y + dist * np.sin(a)
             results.append((float(a), dist, float(hit_x)))
         return results
 
