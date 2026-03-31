@@ -303,7 +303,7 @@ class TestDatasetEdgeCases:
 class TestDiscriminatorTraining:
     def test_single_update(self, expert_data):
         from navirl.imitation.gail import Discriminator
-        disc = Discriminator(state_dim=8, action_dim=2, hidden_dims=(32,))
+        disc = Discriminator(obs_dim=8, action_dim=2, hidden_dims=(32,))  # Changed state_dim to obs_dim
         optimizer = torch.optim.Adam(disc.parameters(), lr=1e-3)
 
         expert_s = torch.from_numpy(expert_data["observations"][:16])
@@ -314,7 +314,11 @@ class TestDiscriminatorTraining:
         expert_out = disc(expert_s, expert_a)
         policy_out = disc(policy_s, policy_a)
 
-        loss = -(torch.log(expert_out + 1e-8).mean() + torch.log(1 - policy_out + 1e-8).mean())
+        # Apply sigmoid to convert logits to probabilities
+        expert_prob = torch.sigmoid(expert_out)
+        policy_prob = torch.sigmoid(policy_out)
+
+        loss = -(torch.log(expert_prob + 1e-8).mean() + torch.log(1 - policy_prob + 1e-8).mean())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -324,7 +328,7 @@ class TestDiscriminatorTraining:
     def test_discriminator_different_sizes(self):
         from navirl.imitation.gail import Discriminator
         for hdims in [(16,), (32, 32), (64, 32, 16)]:
-            disc = Discriminator(state_dim=4, action_dim=2, hidden_dims=hdims)
+            disc = Discriminator(obs_dim=4, action_dim=2, hidden_dims=hdims)  # Changed state_dim to obs_dim
             out = disc(torch.randn(1, 4), torch.randn(1, 2))
             assert out.shape == (1, 1)
 
@@ -339,14 +343,19 @@ class TestRewardLearningIntegration:
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
 
         cfg = MaxEntIRLConfig(feature_dim=4, lr=0.5)
-        irl = MaxEntIRL(cfg)
+        # Add required feature_fn parameter
+        feature_fn = lambda obs: obs[:4] if len(obs) >= 4 else np.pad(obs, (0, 4 - len(obs)))
+        irl = MaxEntIRL(cfg, feature_fn)
 
         expert_features = np.array([1.0, 1.0, 1.0, 1.0])
         policy_features = np.array([0.0, 0.0, 0.0, 0.0])
 
         for _ in range(50):
-            irl.update(expert_features, policy_features)
+            irl.update_step(expert_features, policy_features)  # Changed update to update_step
 
-        r_expert = irl.compute_reward(expert_features)
-        r_policy = irl.compute_reward(policy_features)
+        # Since reward() expects observations (not features), we use observations that will produce the desired features
+        expert_obs = np.array([1.0, 1.0, 1.0, 1.0])  # This will produce expert_features through feature_fn
+        policy_obs = np.array([0.0, 0.0, 0.0, 0.0])  # This will produce policy_features through feature_fn
+        r_expert = irl.reward(expert_obs)
+        r_policy = irl.reward(policy_obs)
         assert r_expert > r_policy
