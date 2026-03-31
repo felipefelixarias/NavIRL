@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -68,13 +69,13 @@ class DAggerConfig(HyperParameters):
     batch_size: int = 64
     num_iterations: int = 20
     epochs_per_iter: int = 10
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    hidden_dims: tuple[int, ...] = (256, 256)
     weight_decay: float = 1e-4
     dropout: float = 0.1
     action_type: str = "continuous"
     rollout_steps: int = 1000
-    beta_schedule: Optional[Callable[[int], float]] = None
-    expert_policy_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    beta_schedule: Callable[[int], float] | None = None
+    expert_policy_fn: Callable[[np.ndarray], np.ndarray] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +88,7 @@ def _build_dagger_policy(
     action_dim: int,
     hidden_dims: Sequence[int],
     dropout: float,
-) -> "nn.Module":
+) -> nn.Module:
     """Build a simple MLP policy for DAgger."""
     layers: list[nn.Module] = []
     prev_dim = obs_dim
@@ -135,8 +136,8 @@ class DAggerAgent(BaseAgent):
         config: DAggerConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(
@@ -172,8 +173,8 @@ class DAggerAgent(BaseAgent):
         self._optimizers["policy"] = self._optimizer
 
         # Aggregated dataset stored as growing numpy arrays.
-        self._all_obs: Optional[np.ndarray] = None
-        self._all_actions: Optional[np.ndarray] = None
+        self._all_obs: np.ndarray | None = None
+        self._all_actions: np.ndarray | None = None
 
         self._log_module_summary("dagger_policy", self._policy)
 
@@ -231,7 +232,7 @@ class DAggerAgent(BaseAgent):
         expert_fn: Callable[[np.ndarray], np.ndarray],
         n_steps: int,
         beta: float,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Roll out the current policy, querying the expert for labels.
 
         At each step, with probability *beta* the expert action is executed;
@@ -256,8 +257,8 @@ class DAggerAgent(BaseAgent):
         act_data : np.ndarray
             Expert-labelled actions, shape ``(n_steps, action_dim)``.
         """
-        obs_list: List[np.ndarray] = []
-        act_list: List[np.ndarray] = []
+        obs_list: list[np.ndarray] = []
+        act_list: list[np.ndarray] = []
 
         obs, _ = env.reset()
         for _ in range(n_steps):
@@ -317,9 +318,7 @@ class DAggerAgent(BaseAgent):
 
                 pred = self._policy(obs_batch)
                 if cfg.action_type == "discrete":
-                    loss = nn.functional.cross_entropy(
-                        pred, act_batch.long().squeeze(-1)
-                    )
+                    loss = nn.functional.cross_entropy(pred, act_batch.long().squeeze(-1))
                 else:
                     loss = nn.functional.mse_loss(pred, act_batch)
 
@@ -343,7 +342,7 @@ class DAggerAgent(BaseAgent):
         demo_buffer: Any = None,
         *,
         verbose: bool = True,
-    ) -> Dict[str, List[float]]:
+    ) -> dict[str, list[float]]:
         """Run the full DAgger training procedure.
 
         Parameters
@@ -370,9 +369,7 @@ class DAggerAgent(BaseAgent):
 
         expert_fn = cfg.expert_policy_fn
         if expert_fn is None:
-            raise ValueError(
-                "DAggerConfig.expert_policy_fn must be set before calling train()."
-            )
+            raise ValueError("DAggerConfig.expert_policy_fn must be set before calling train().")
 
         # Seed with initial demonstrations if available
         if demo_buffer is not None and len(demo_buffer) > 0:
@@ -381,8 +378,8 @@ class DAggerAgent(BaseAgent):
             initial_act = demo_buffer.actions[:n].reshape(n, -1)
             self._aggregate(initial_obs, initial_act)
 
-        losses: List[float] = []
-        betas: List[float] = []
+        losses: list[float] = []
+        betas: list[float] = []
 
         self.on_training_start()
 
@@ -393,9 +390,7 @@ class DAggerAgent(BaseAgent):
             betas.append(beta)
 
             # Collect on-policy data with expert labels
-            new_obs, new_actions = self.collect_rollouts(
-                env, expert_fn, cfg.rollout_steps, beta
-            )
+            new_obs, new_actions = self.collect_rollouts(env, expert_fn, cfg.rollout_steps, beta)
             self._aggregate(new_obs, new_actions)
 
             # Retrain on aggregated data
@@ -435,7 +430,7 @@ class DAggerAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -470,7 +465,7 @@ class DAggerAgent(BaseAgent):
             self._policy.train()
         return action, {}
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Run a single supervised-learning update on a batch.
 
         Parameters
@@ -484,9 +479,7 @@ class DAggerAgent(BaseAgent):
             ``{"dagger/loss": <float>}``.
         """
         cfg: DAggerConfig = self._config  # type: ignore[assignment]
-        obs_t = self._to_tensor(batch["obs"], dtype=torch.float32).reshape(
-            -1, self._obs_dim
-        )
+        obs_t = self._to_tensor(batch["obs"], dtype=torch.float32).reshape(-1, self._obs_dim)
         act_t = self._to_tensor(batch["actions"], dtype=torch.float32)
 
         pred = self._policy(obs_t)
@@ -502,9 +495,9 @@ class DAggerAgent(BaseAgent):
         self._total_steps += 1
         return {"dagger/loss": loss.item()}
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Persist the DAgger agent to disk."""
-        extra: Dict[str, Any] = {}
+        extra: dict[str, Any] = {}
         if self._all_obs is not None:
             extra["dataset_size"] = len(self._all_obs)
         self._save_checkpoint(
@@ -513,7 +506,7 @@ class DAggerAgent(BaseAgent):
             extra=extra,
         )
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Restore the DAgger agent from a checkpoint."""
         payload = self._load_checkpoint(path)
         self._policy.load_state_dict(payload["model"]["policy"])

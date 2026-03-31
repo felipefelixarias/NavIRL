@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 # Exports: Schedule, LinearSchedule, CosineAnnealingSchedule, StepSchedule,
 #          ExponentialSchedule, CyclicSchedule, WarmupSchedule,
@@ -136,7 +136,7 @@ class StepSchedule(Schedule):
 
     def value(self, step: int) -> float:
         n_drops = step // self.step_size
-        val = self.initial_value * (self.factor ** n_drops)
+        val = self.initial_value * (self.factor**n_drops)
         return max(val, self.min_value)
 
 
@@ -293,7 +293,7 @@ class ReduceOnPlateauSchedule(Schedule):
         self.mode = mode
 
         self._current_value = initial_value
-        self._best_metric: Optional[float] = None
+        self._best_metric: float | None = None
         self._no_improvement_count: int = 0
 
     def report(self, metric: float) -> None:
@@ -315,9 +315,7 @@ class ReduceOnPlateauSchedule(Schedule):
             self._no_improvement_count += 1
 
         if self._no_improvement_count >= self.patience:
-            self._current_value = max(
-                self._current_value * self.factor, self.min_value
-            )
+            self._current_value = max(self._current_value * self.factor, self.min_value)
             self._no_improvement_count = 0
 
     def value(self, step: int) -> float:  # noqa: ARG002 (step unused)
@@ -385,8 +383,8 @@ class OneCycleSchedule(Schedule):
         self,
         max_value: float,
         total_steps: int,
-        initial_value: Optional[float] = None,
-        final_value: Optional[float] = None,
+        initial_value: float | None = None,
+        final_value: float | None = None,
         pct_start: float = 0.3,
     ) -> None:
         self.max_value = max_value
@@ -425,8 +423,8 @@ class CompositeSchedule(Schedule):
         Sequence of ``(Schedule, n_steps)`` pairs.
     """
 
-    def __init__(self, phases: Sequence[Tuple[Schedule, int]]) -> None:
-        self.phases: List[Tuple[Schedule, int]] = list(phases)
+    def __init__(self, phases: Sequence[tuple[Schedule, int]]) -> None:
+        self.phases: list[tuple[Schedule, int]] = list(phases)
 
     def value(self, step: int) -> float:
         remaining = step
@@ -473,10 +471,8 @@ class ExplorationSchedule(Schedule):
             # Compute decay rate so that at total_steps we reach final_eps.
             if self.initial_eps <= 0:
                 return self.final_eps
-            decay_rate = (self.final_eps / self.initial_eps) ** (
-                1.0 / self.total_steps
-            )
-            val = self.initial_eps * (decay_rate ** step)
+            decay_rate = (self.final_eps / self.initial_eps) ** (1.0 / self.total_steps)
+            val = self.initial_eps * (decay_rate**step)
             return max(val, self.final_eps)
         else:
             # Linear decay

@@ -13,9 +13,9 @@ NavEnvConfig    -- dataclass holding every knob the environment exposes
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Literal
 
 import numpy as np
 
@@ -38,7 +38,6 @@ from navirl.core.constants import (
     SIM,
 )
 from navirl.core.env import SceneBackend
-from navirl.core.types import Action, AgentState
 
 # ---------------------------------------------------------------------------
 #  Default discrete-action table  (stop / +x / -x / +y / -y)
@@ -46,10 +45,10 @@ from navirl.core.types import Action, AgentState
 
 _DISCRETE_ACTIONS: np.ndarray = np.array(
     [
-        [0.0, 0.0],   # 0 – stop
-        [1.0, 0.0],   # 1 – forward  (+x)
+        [0.0, 0.0],  # 0 – stop
+        [1.0, 0.0],  # 1 – forward  (+x)
         [-1.0, 0.0],  # 2 – backward (-x)
-        [0.0, 1.0],   # 3 – left     (+y)
+        [0.0, 1.0],  # 3 – left     (+y)
         [0.0, -1.0],  # 4 – right    (-y)
     ],
     dtype=np.float32,
@@ -103,7 +102,7 @@ class NavEnvConfig:
     """
 
     # Scenario source
-    scenario_path: Optional[str] = None
+    scenario_path: str | None = None
     map_name: str = "empty_30x30"
     num_humans: int = 5
 
@@ -117,7 +116,7 @@ class NavEnvConfig:
     dt: float = SIM.dt
 
     # Rendering
-    render_mode: Optional[str] = None
+    render_mode: str | None = None
 
     # World geometry (used only when scenario_path is None)
     world_width: float = SIM.default_world_width
@@ -128,8 +127,8 @@ class NavEnvConfig:
     robot_max_speed: float = ROBOT_MAX_SPEED
 
     # Human body (ranges for randomisation)
-    human_radius_range: Tuple[float, float] = (0.2, 0.35)
-    human_speed_range: Tuple[float, float] = (0.6, 1.5)
+    human_radius_range: tuple[float, float] = (0.2, 0.35)
+    human_speed_range: tuple[float, float] = (0.6, 1.5)
 
     # Sensor
     lidar_num_beams: int = LIDAR.num_beams
@@ -156,7 +155,9 @@ def _build_backend(config: NavEnvConfig) -> SceneBackend:
     from navirl.backends.grid2d.backend import Grid2DBackend
 
     if config.scenario_path is not None:
-        import json, yaml  # noqa: E401
+        import json  # noqa: E401
+
+        import yaml
 
         path = Path(config.scenario_path)
         text = path.read_text()
@@ -169,12 +170,12 @@ def _build_backend(config: NavEnvConfig) -> SceneBackend:
         return Grid2DBackend(scene_cfg, horizon_cfg, base_dir=path.parent)
 
     # Procedural / inline configuration
-    scene_cfg: Dict[str, Any] = {
+    scene_cfg: dict[str, Any] = {
         "id": config.map_name,
         "map": {"name": config.map_name},
         "orca": {"units": "meters"},
     }
-    horizon_cfg: Dict[str, Any] = {"dt": config.dt}
+    horizon_cfg: dict[str, Any] = {"dt": config.dt}
     return Grid2DBackend(scene_cfg, horizon_cfg)
 
 
@@ -202,14 +203,14 @@ class NavEnv(gym.Env):
         self.render_mode = self.config.render_mode
 
         # Placeholders initialised on first reset
-        self._backend: Optional[SceneBackend] = None
+        self._backend: SceneBackend | None = None
         self._rng: np.random.Generator = np.random.default_rng()
 
         # Agent bookkeeping
         self._robot_id: int = 0
-        self._human_ids: List[int] = []
+        self._human_ids: list[int] = []
         self._robot_goal: np.ndarray = np.zeros(2, dtype=np.float32)
-        self._human_goals: Dict[int, np.ndarray] = {}
+        self._human_goals: dict[int, np.ndarray] = {}
         self._step_count: int = 0
         self._prev_dist_to_goal: float = 0.0
 
@@ -281,9 +282,9 @@ class NavEnv(gym.Env):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Any, Dict[str, Any]]:
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[Any, dict[str, Any]]:
         super().reset(seed=seed)
         self._rng = np.random.default_rng(seed)
 
@@ -320,9 +321,7 @@ class NavEnv(gym.Env):
         info = self._make_info()
         return obs, info
 
-    def step(
-        self, action: Union[np.ndarray, int]
-    ) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: np.ndarray | int) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         assert self._backend is not None, "Call reset() before step()."
 
         # --- Convert action to preferred velocity ---
@@ -346,7 +345,7 @@ class NavEnv(gym.Env):
         info.update(self._make_info())
         return obs, reward, terminated, truncated, info
 
-    def render(self) -> Optional[np.ndarray]:
+    def render(self) -> np.ndarray | None:
         if self._backend is None:
             return None
         img = self._backend.map_image()
@@ -418,7 +417,7 @@ class NavEnv(gym.Env):
         robot_part = np.array([rx, ry, rvx, rvy, gx, gy, dist], dtype=np.float32)
 
         # Per-human relative state, sorted by distance
-        human_entries: List[Tuple[float, np.ndarray]] = []
+        human_entries: list[tuple[float, np.ndarray]] = []
         for hid in self._human_ids:
             hx, hy = self._backend.get_position(hid)
             hvx, hvy = self._backend.get_velocity(hid)
@@ -477,13 +476,13 @@ class NavEnv(gym.Env):
     #  Reward
     # -----------------------------------------------------------------
 
-    def _compute_reward(self) -> Tuple[float, bool, Dict[str, Any]]:
+    def _compute_reward(self) -> tuple[float, bool, dict[str, Any]]:
         """Return (reward, terminated, info_dict)."""
         assert self._backend is not None
         cfg = self.config
 
         if cfg.reward_type == "custom" and cfg.custom_reward_fn is not None:
-            info: Dict[str, Any] = {}
+            info: dict[str, Any] = {}
             reward = float(cfg.custom_reward_fn(self, None, info))
             terminated = info.get("terminated", False)
             return reward, terminated, info
@@ -492,7 +491,7 @@ class NavEnv(gym.Env):
         robot_pos = np.array([rx, ry], dtype=np.float32)
         dist_to_goal = float(np.linalg.norm(robot_pos - self._robot_goal))
 
-        info: Dict[str, Any] = {"dist_to_goal": dist_to_goal}
+        info: dict[str, Any] = {"dist_to_goal": dist_to_goal}
         reward = 0.0
         terminated = False
 
@@ -540,7 +539,7 @@ class NavEnv(gym.Env):
     #  Action conversion
     # -----------------------------------------------------------------
 
-    def _action_to_velocity(self, action: Union[np.ndarray, int]) -> np.ndarray:
+    def _action_to_velocity(self, action: np.ndarray | int) -> np.ndarray:
         cfg = self.config
         if cfg.action_type == "discrete":
             idx = int(action)
@@ -601,7 +600,7 @@ class NavEnv(gym.Env):
         pt = self._backend.sample_free_point()
         return np.array(pt, dtype=np.float32)
 
-    def _make_info(self) -> Dict[str, Any]:
+    def _make_info(self) -> dict[str, Any]:
         """Assemble the info dict returned alongside observations."""
         assert self._backend is not None
         rx, ry = self._backend.get_position(self._robot_id)
@@ -615,7 +614,7 @@ class NavEnv(gym.Env):
 
     # Read-only accessors for downstream wrappers / reward functions
     @property
-    def backend(self) -> Optional[SceneBackend]:
+    def backend(self) -> SceneBackend | None:
         return self._backend
 
     @property
@@ -627,7 +626,7 @@ class NavEnv(gym.Env):
         return self._robot_goal
 
     @property
-    def human_ids(self) -> List[int]:
+    def human_ids(self) -> list[int]:
         return list(self._human_ids)
 
 

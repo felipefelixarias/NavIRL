@@ -39,8 +39,9 @@ from __future__ import annotations
 import copy
 import logging
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -109,8 +110,8 @@ class DistributionalTwinQ(nn.Module):
         self.delta_z = (v_max - v_min) / (n_atoms - 1)
 
         input_dim = state_dim + action_dim
-        layers1: List[nn.Module] = []
-        layers2: List[nn.Module] = []
+        layers1: list[nn.Module] = []
+        layers2: list[nn.Module] = []
         prev = input_dim
         for h in hidden_dims:
             layers1.extend([nn.Linear(prev, h), nn.ReLU()])
@@ -123,8 +124,8 @@ class DistributionalTwinQ(nn.Module):
         self.net2 = nn.Sequential(*layers2)
 
     def forward(
-        self, state: "torch.Tensor", action: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor"]:
+        self, state: torch.Tensor, action: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute Q-value distributions for both networks.
 
         Parameters
@@ -141,8 +142,8 @@ class DistributionalTwinQ(nn.Module):
         return self.net1(sa), self.net2(sa)
 
     def q_values(
-        self, state: "torch.Tensor", action: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor"]:
+        self, state: torch.Tensor, action: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute scalar Q-values as expectations over the distributions.
 
         Parameters
@@ -228,11 +229,11 @@ class SACConfig(HyperParameters):
     tau: float = 0.005
     alpha: float = 0.2
     auto_alpha: bool = True
-    target_entropy: Optional[float] = None
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    target_entropy: float | None = None
+    hidden_dims: tuple[int, ...] = (256, 256)
     activation: str = "relu"
     batch_size: int = 256
-    max_grad_norm: Optional[float] = None
+    max_grad_norm: float | None = None
     reward_scale: float = 1.0
     normalize_observations: bool = False
     observation_clip: float = 10.0
@@ -278,8 +279,8 @@ class SACAgent(BaseAgent):
         config: SACConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(config, observation_space, action_space, device, seed, metrics_callback)
@@ -288,7 +289,7 @@ class SACAgent(BaseAgent):
         action_dim = int(np.prod(action_space.shape))
 
         # ---- Observation normalization ----
-        self._obs_rms: Optional[RunningMeanStd] = None
+        self._obs_rms: RunningMeanStd | None = None
         if config.normalize_observations:
             self._obs_rms = RunningMeanStd(shape=observation_space.shape)
 
@@ -332,22 +333,24 @@ class SACAgent(BaseAgent):
         # ---- Entropy temperature (alpha) ----
         if config.auto_alpha:
             self.target_entropy = (
-                config.target_entropy
-                if config.target_entropy is not None
-                else -float(action_dim)
+                config.target_entropy if config.target_entropy is not None else -float(action_dim)
             )
             self.log_alpha = torch.tensor(
-                np.log(config.alpha), dtype=torch.float32,
-                device=self._device, requires_grad=True,
+                np.log(config.alpha),
+                dtype=torch.float32,
+                device=self._device,
+                requires_grad=True,
             )
             self.alpha_optimizer = torch.optim.Adam(
-                [self.log_alpha], lr=config.lr_alpha,
+                [self.log_alpha],
+                lr=config.lr_alpha,
             )
             self._optimizers["alpha"] = self.alpha_optimizer
         else:
             self.target_entropy = None
             self.log_alpha = torch.tensor(
-                np.log(config.alpha), dtype=torch.float32,
+                np.log(config.alpha),
+                dtype=torch.float32,
                 device=self._device,
             )
             self.alpha_optimizer = None
@@ -358,17 +361,22 @@ class SACAgent(BaseAgent):
         actor_params = list(self.actor_trunk.parameters()) + list(self.actor_head.parameters())
         self.actor_optimizer = torch.optim.Adam(actor_params, lr=config.lr_actor)
         self.critic_optimizer = torch.optim.Adam(
-            self.critic.parameters(), lr=config.lr_critic,
+            self.critic.parameters(),
+            lr=config.lr_critic,
         )
 
         self._optimizers["actor"] = self.actor_optimizer
         self._optimizers["critic"] = self.critic_optimizer
 
         # ---- Register modules for train/eval toggling ----
-        self._modules.extend([
-            self.actor_trunk, self.actor_head,
-            self.critic, self.critic_target,
-        ])
+        self._modules.extend(
+            [
+                self.actor_trunk,
+                self.actor_head,
+                self.critic,
+                self.critic_target,
+            ]
+        )
 
         # ---- Update counter for actor update frequency ----
         self._critic_update_count: int = 0
@@ -418,7 +426,7 @@ class SACAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given an observation.
 
         Parameters
@@ -461,13 +469,13 @@ class SACAgent(BaseAgent):
 
     def _compute_distributional_critic_loss(
         self,
-        obs: "torch.Tensor",
-        action: "torch.Tensor",
-        reward: "torch.Tensor",
-        next_obs: "torch.Tensor",
-        done: "torch.Tensor",
-        current_alpha: "torch.Tensor",
-    ) -> "torch.Tensor":
+        obs: torch.Tensor,
+        action: torch.Tensor,
+        reward: torch.Tensor,
+        next_obs: torch.Tensor,
+        done: torch.Tensor,
+        current_alpha: torch.Tensor,
+    ) -> torch.Tensor:
         """Compute categorical cross-entropy loss for distributional critics.
 
         Uses the projected Bellman update to compute target distributions
@@ -522,11 +530,13 @@ class SACAgent(BaseAgent):
             # Distribute probability mass
             offset = torch.arange(obs.size(0), device=obs.device).unsqueeze(1) * cfg.n_atoms
             target_dist.view(-1).index_add_(
-                0, (lower + offset).view(-1),
+                0,
+                (lower + offset).view(-1),
                 (tgt_probs * (upper.float() - b)).view(-1),
             )
             target_dist.view(-1).index_add_(
-                0, (upper + offset).view(-1),
+                0,
+                (upper + offset).view(-1),
                 (tgt_probs * (b - lower.float())).view(-1),
             )
 
@@ -544,7 +554,7 @@ class SACAgent(BaseAgent):
     # Update
     # ------------------------------------------------------------------
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Perform a single SAC gradient step on a batch of transitions.
 
         Sequentially updates: (1) critic, (2) actor (every
@@ -578,7 +588,12 @@ class SACAgent(BaseAgent):
         # ---- 1. Critic update ----
         if cfg.distributional:
             q_loss = self._compute_distributional_critic_loss(
-                obs, action, reward, next_obs, done, current_alpha,
+                obs,
+                action,
+                reward,
+                next_obs,
+                done,
+                current_alpha,
             )
             # For logging, compute scalar Q-values
             with torch.no_grad():
@@ -628,9 +643,8 @@ class SACAgent(BaseAgent):
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             if cfg.max_grad_norm is not None:
-                actor_params = (
-                    list(self.actor_trunk.parameters())
-                    + list(self.actor_head.parameters())
+                actor_params = list(self.actor_trunk.parameters()) + list(
+                    self.actor_head.parameters()
                 )
                 self._clip_grad_norm(actor_params, cfg.max_grad_norm)
             self.actor_optimizer.step()
@@ -640,9 +654,7 @@ class SACAgent(BaseAgent):
 
             # ---- 3. Alpha (temperature) update ----
             if cfg.auto_alpha and self.alpha_optimizer is not None:
-                alpha_loss = -(
-                    self.log_alpha * (log_prob.detach() + self.target_entropy)
-                ).mean()
+                alpha_loss = -(self.log_alpha * (log_prob.detach() + self.target_entropy)).mean()
                 self.alpha_optimizer.zero_grad()
                 alpha_loss.backward()
                 self.alpha_optimizer.step()
@@ -669,7 +681,7 @@ class SACAgent(BaseAgent):
     # Batch update for higher UTD ratios
     # ------------------------------------------------------------------
 
-    def update_multi(self, replay_buffer: Any, batch_size: Optional[int] = None) -> Dict[str, float]:
+    def update_multi(self, replay_buffer: Any, batch_size: int | None = None) -> dict[str, float]:
         """Perform multiple gradient updates per environment step.
 
         Useful for high Update-To-Data (UTD) ratio training, where the
@@ -691,7 +703,7 @@ class SACAgent(BaseAgent):
         """
         cfg: SACConfig = self._config  # type: ignore[assignment]
         bs = batch_size or cfg.batch_size
-        all_metrics: List[Dict[str, float]] = []
+        all_metrics: list[dict[str, float]] = []
 
         for _ in range(cfg.updates_per_step):
             batch = replay_buffer.sample(bs)
@@ -699,7 +711,7 @@ class SACAgent(BaseAgent):
             all_metrics.append(m)
 
         # Average metrics
-        avg: Dict[str, float] = {}
+        avg: dict[str, float] = {}
         if all_metrics:
             for key in all_metrics[0]:
                 avg[key] = float(np.mean([m[key] for m in all_metrics]))
@@ -709,7 +721,7 @@ class SACAgent(BaseAgent):
     # Save / Load
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Save agent checkpoint to disk.
 
         Persists actor, critic, target critic, entropy temperature,
@@ -720,7 +732,7 @@ class SACAgent(BaseAgent):
         path : str or Path
             Directory or file path for the checkpoint.
         """
-        state_dicts: Dict[str, Any] = {
+        state_dicts: dict[str, Any] = {
             "actor_trunk": self.actor_trunk.state_dict(),
             "actor_head": self.actor_head.state_dict(),
             "critic": self.critic.state_dict(),
@@ -732,7 +744,7 @@ class SACAgent(BaseAgent):
             state_dicts["obs_rms"] = self._obs_rms.state_dict()
         self._save_checkpoint(path, state_dicts)
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Load agent checkpoint from disk.
 
         Restores actor, critic, target critic, entropy temperature,
@@ -762,7 +774,7 @@ class SACAgent(BaseAgent):
     # Informational helpers
     # ------------------------------------------------------------------
 
-    def get_diagnostics(self, batch: Any) -> Dict[str, float]:
+    def get_diagnostics(self, batch: Any) -> dict[str, float]:
         """Compute diagnostic statistics on a batch without updating.
 
         Parameters

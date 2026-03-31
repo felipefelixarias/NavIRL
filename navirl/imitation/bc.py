@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -61,7 +62,7 @@ class BCConfig(HyperParameters):
     lr: float = 1e-3
     batch_size: int = 64
     epochs: int = 100
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    hidden_dims: tuple[int, ...] = (256, 256)
     weight_decay: float = 1e-4
     dropout: float = 0.1
     action_type: str = "continuous"
@@ -79,7 +80,7 @@ def _build_bc_policy(
     hidden_dims: Sequence[int],
     dropout: float,
     action_type: str,
-) -> "nn.Module":
+) -> nn.Module:
     """Build a simple MLP policy for behavioral cloning.
 
     Parameters
@@ -145,8 +146,8 @@ class BCAgent(BaseAgent):
         config: BCConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(
@@ -182,8 +183,8 @@ class BCAgent(BaseAgent):
         )
         self._optimizers["policy"] = self._optimizer
 
-        self._train_losses: List[float] = []
-        self._val_losses: List[float] = []
+        self._train_losses: list[float] = []
+        self._val_losses: list[float] = []
 
         self._log_module_summary("bc_policy", self._policy)
 
@@ -193,9 +194,9 @@ class BCAgent(BaseAgent):
 
     def _compute_loss(
         self,
-        pred: "torch.Tensor",
-        target: "torch.Tensor",
-    ) -> "torch.Tensor":
+        pred: torch.Tensor,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
         """Compute the imitation loss.
 
         Parameters
@@ -226,7 +227,7 @@ class BCAgent(BaseAgent):
         *,
         verbose: bool = True,
         patience: int = 10,
-    ) -> Dict[str, List[float]]:
+    ) -> dict[str, list[float]]:
         """Train the policy from an expert demonstration buffer.
 
         Parameters
@@ -249,12 +250,8 @@ class BCAgent(BaseAgent):
 
         # -- Build tensors from buffer ------------------------------------
         n = len(demo_buffer)
-        obs_t = torch.as_tensor(
-            demo_buffer.observations[:n], dtype=torch.float32
-        )
-        act_t = torch.as_tensor(
-            demo_buffer.actions[:n], dtype=torch.float32
-        )
+        obs_t = torch.as_tensor(demo_buffer.observations[:n], dtype=torch.float32)
+        act_t = torch.as_tensor(demo_buffer.actions[:n], dtype=torch.float32)
 
         # Flatten observations if needed
         obs_t = obs_t.reshape(n, -1)
@@ -337,9 +334,7 @@ class BCAgent(BaseAgent):
                 if avg_val_loss < best_val_loss:
                     best_val_loss = avg_val_loss
                     epochs_without_improvement = 0
-                    best_state = {
-                        k: v.clone() for k, v in self._policy.state_dict().items()
-                    }
+                    best_state = {k: v.clone() for k, v in self._policy.state_dict().items()}
                 else:
                     epochs_without_improvement += 1
 
@@ -381,7 +376,7 @@ class BCAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -400,9 +395,7 @@ class BCAgent(BaseAgent):
             Empty dictionary (no auxiliary information for BC).
         """
         self._policy.eval()
-        obs_t = self._to_tensor(
-            observation.reshape(1, -1).astype(np.float32), dtype=torch.float32
-        )
+        obs_t = self._to_tensor(observation.reshape(1, -1).astype(np.float32), dtype=torch.float32)
         with torch.no_grad():
             pred = self._policy(obs_t)
 
@@ -417,7 +410,7 @@ class BCAgent(BaseAgent):
 
         return action, {}
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Run a single supervised-learning update step.
 
         Parameters
@@ -446,7 +439,7 @@ class BCAgent(BaseAgent):
         self._total_steps += 1
         return {"bc/loss": loss.item()}
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Persist the BC agent to disk.
 
         Parameters
@@ -459,7 +452,7 @@ class BCAgent(BaseAgent):
             state_dicts={"policy": self._policy.state_dict()},
         )
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Restore the BC agent from a checkpoint.
 
         Parameters

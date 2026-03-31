@@ -130,7 +130,9 @@ class ORCAHumanController(HumanController):
         speed = min(speed, state.max_speed)
         return ux * speed, uy * speed
 
-    def _smooth_preferred_velocity(self, human_id: int, state: AgentState, vx: float, vy: float) -> tuple[float, float]:
+    def _smooth_preferred_velocity(
+        self, human_id: int, state: AgentState, vx: float, vy: float
+    ) -> tuple[float, float]:
         alpha = max(0.0, min(1.0, self.velocity_smoothing))
         prev_vx, prev_vy = self.last_pref.get(human_id, (0.0, 0.0))
         svx = prev_vx * (1.0 - alpha) + vx * alpha

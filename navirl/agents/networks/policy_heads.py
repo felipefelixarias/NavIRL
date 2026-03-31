@@ -33,7 +33,7 @@ TwinQHead
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
@@ -68,7 +68,7 @@ class GaussianPolicyHead(nn.Module):
         self,
         input_dim: int,
         action_dim: int,
-        log_std_bounds: Tuple[float, float] = (-20.0, 2.0),
+        log_std_bounds: tuple[float, float] = (-20.0, 2.0),
     ) -> None:
         super().__init__()
         self.input_dim = input_dim
@@ -85,7 +85,7 @@ class GaussianPolicyHead(nn.Module):
         nn.init.uniform_(self.log_std_head.bias, -3e-3, 3e-3)
 
     # ------------------------------------------------------------------
-    def forward(self, features: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, features: Tensor) -> tuple[Tensor, Tensor]:
         """Compute mean and log_std.
 
         Parameters
@@ -103,7 +103,7 @@ class GaussianPolicyHead(nn.Module):
         return mean, log_std
 
     # ------------------------------------------------------------------
-    def sample(self, features: Tensor) -> Tuple[Tensor, Tensor]:
+    def sample(self, features: Tensor) -> tuple[Tensor, Tensor]:
         """Sample an action and compute its log-probability.
 
         Parameters
@@ -145,7 +145,7 @@ class SquashedGaussianHead(nn.Module):
         self,
         input_dim: int,
         action_dim: int,
-        log_std_bounds: Tuple[float, float] = (-20.0, 2.0),
+        log_std_bounds: tuple[float, float] = (-20.0, 2.0),
     ) -> None:
         super().__init__()
         self.input_dim = input_dim
@@ -161,7 +161,7 @@ class SquashedGaussianHead(nn.Module):
         nn.init.uniform_(self.log_std_head.bias, -3e-3, 3e-3)
 
     # ------------------------------------------------------------------
-    def forward(self, features: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, features: Tensor) -> tuple[Tensor, Tensor]:
         """Compute mean and log_std (before squashing).
 
         Parameters
@@ -179,7 +179,7 @@ class SquashedGaussianHead(nn.Module):
         return mean, log_std
 
     # ------------------------------------------------------------------
-    def sample(self, features: Tensor) -> Tuple[Tensor, Tensor]:
+    def sample(self, features: Tensor) -> tuple[Tensor, Tensor]:
         """Sample a squashed action and compute the corrected log-probability.
 
         Parameters
@@ -239,7 +239,7 @@ class CategoricalPolicyHead(nn.Module):
         return self.logits_head(features)
 
     # ------------------------------------------------------------------
-    def sample(self, features: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+    def sample(self, features: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """Sample an action and compute log-probability and entropy.
 
         Parameters
@@ -283,7 +283,7 @@ class MultiDiscreteHead(nn.Module):
         self.heads = nn.ModuleList([nn.Linear(input_dim, n) for n in self.nvec])
 
     # ------------------------------------------------------------------
-    def forward(self, features: Tensor) -> List[Tensor]:
+    def forward(self, features: Tensor) -> list[Tensor]:
         """Return logits for each sub-action dimension.
 
         Parameters
@@ -297,7 +297,7 @@ class MultiDiscreteHead(nn.Module):
         return [head(features) for head in self.heads]
 
     # ------------------------------------------------------------------
-    def sample(self, features: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+    def sample(self, features: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """Sample from each sub-action independently.
 
         Parameters
@@ -594,8 +594,10 @@ class TwinQHead(nn.Module):
 
     # ------------------------------------------------------------------
     def forward(
-        self, state: Tensor, action: Tensor,
-    ) -> Tuple[Tensor, Tensor]:
+        self,
+        state: Tensor,
+        action: Tensor,
+    ) -> tuple[Tensor, Tensor]:
         """Compute Q-values from both networks.
 
         Parameters

@@ -10,23 +10,23 @@ from __future__ import annotations
 import os
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml  # PyYAML -- already a NavIRL dependency
-
 
 # ---------------------------------------------------------------------------
 # Launch description generator
 # ---------------------------------------------------------------------------
 
+
 def generate_launch_description(
-    agent_config: Dict[str, Any],
+    agent_config: dict[str, Any],
     *,
     executable: str = "navirl_node",
     package: str = "navirl",
     namespace: str = "",
     output: str = "screen",
-    extra_remappings: Optional[Dict[str, str]] = None,
+    extra_remappings: dict[str, str] | None = None,
 ) -> str:
     """Return a complete ROS2 Python launch-file string.
 
@@ -65,9 +65,7 @@ def generate_launch_description(
 
     remappings_lines = ""
     if extra_remappings:
-        pairs = ", ".join(
-            f'("{src}", "{dst}")' for src, dst in extra_remappings.items()
-        )
+        pairs = ", ".join(f'("{src}", "{dst}")' for src, dst in extra_remappings.items())
         remappings_lines = f"        remappings=[{pairs}],"
 
     params_repr = repr(params)
@@ -100,8 +98,9 @@ def generate_launch_description(
 # Parameter file writer
 # ---------------------------------------------------------------------------
 
+
 def create_param_file(
-    config: Dict[str, Any],
+    config: dict[str, Any],
     path: str | Path | None = None,
     node_name: str = "navirl_node",
 ) -> str:
@@ -148,6 +147,7 @@ def create_param_file(
 # ---------------------------------------------------------------------------
 # Workspace scaffolding
 # ---------------------------------------------------------------------------
+
 
 def setup_workspace(
     path: str | Path,
@@ -257,8 +257,6 @@ def setup_workspace(
     (resource_dir / package_name).touch()
 
     # Python package __init__
-    (pkg_py / "__init__.py").write_text(
-        f'"""ROS2 package wrapper for NavIRL."""\n'
-    )
+    (pkg_py / "__init__.py").write_text('"""ROS2 package wrapper for NavIRL."""\n')
 
     return ws

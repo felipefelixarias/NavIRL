@@ -10,13 +10,6 @@ from navirl.config.presets import (
     merge_presets,
 )
 from navirl.config.registry import ComponentRegistry
-from navirl.config.validation import (
-    ConfigValidator,
-    SchemaBuilder,
-    validate_agent_config,
-    validate_env_config,
-    validate_training_config,
-)
 from navirl.config.serialization import (
     cli_args_to_config,
     config_to_cli_args,
@@ -24,6 +17,13 @@ from navirl.config.serialization import (
     load_config,
     merge_configs,
     save_config,
+)
+from navirl.config.validation import (
+    ConfigValidator,
+    SchemaBuilder,
+    validate_agent_config,
+    validate_env_config,
+    validate_training_config,
 )
 
 __all__ = [

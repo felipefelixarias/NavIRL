@@ -9,24 +9,21 @@ Uses pre-computed sin/cos tables from :mod:`navirl.core.constants` for speed.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import (
     EPSILON,
     LIDAR,
-    LIDAR_COS_TABLE,
-    LIDAR_SIN_TABLE,
-    TWO_PI,
 )
 from navirl.sensors.base import GaussianNoise, NoiseModel, SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  Configuration
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class LidarConfig:
@@ -53,6 +50,7 @@ class LidarConfig:
 # ---------------------------------------------------------------------------
 #  Ray-geometry intersection helpers (vectorised)
 # ---------------------------------------------------------------------------
+
 
 def _ray_circle_intersection(
     origin: np.ndarray,
@@ -100,10 +98,10 @@ def _ray_circle_intersection(
 
     # Perpendicular distance squared from ray to centre:
     #   |oc|^2 - proj^2
-    oc_sq = np.sum(oc ** 2, axis=1, keepdims=True)  # (N, 1)
-    perp_sq = oc_sq - proj ** 2  # (N, B)
+    oc_sq = np.sum(oc**2, axis=1, keepdims=True)  # (N, 1)
+    perp_sq = oc_sq - proj**2  # (N, B)
 
-    radii_sq = (radii ** 2)[:, np.newaxis]  # (N, 1)
+    radii_sq = (radii**2)[:, np.newaxis]  # (N, 1)
 
     # Discriminant: positive means the ray intersects the circle
     disc = radii_sq - perp_sq  # (N, B)
@@ -197,6 +195,7 @@ def _ray_segment_intersection(
 #  LidarSensor
 # ---------------------------------------------------------------------------
 
+
 class LidarSensor(SensorBase):
     """Simulated 2-D planar LiDAR.
 
@@ -216,8 +215,8 @@ class LidarSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[LidarConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: LidarConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         config = config or LidarConfig()
         if noise_model is None and config.noise_std > 0:
@@ -231,7 +230,7 @@ class LidarSensor(SensorBase):
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "shape": (self.config.num_beams,),
             "dtype": np.float64,
@@ -239,7 +238,7 @@ class LidarSensor(SensorBase):
             "high": self.config.max_range,
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> np.ndarray:
+    def _raw_observe(self, world_state: dict[str, Any]) -> np.ndarray:
         pos = np.asarray(world_state["robot_pos"], dtype=np.float64)
         heading = float(world_state.get("robot_heading", 0.0))
 
@@ -248,8 +247,7 @@ class LidarSensor(SensorBase):
         world_cos = self._cos * cos_h - self._sin * sin_h
         world_sin = self._cos * sin_h + self._sin * cos_h
 
-        ranges = np.full(self.config.num_beams, self.config.max_range,
-                         dtype=np.float64)
+        ranges = np.full(self.config.num_beams, self.config.max_range, dtype=np.float64)
 
         # --- Obstacle segments (walls) ---
         segments = world_state.get("obstacles_segments", None)
@@ -257,7 +255,10 @@ class LidarSensor(SensorBase):
             segments = np.asarray(segments, dtype=np.float64)
             if segments.ndim == 3 and segments.shape[0] > 0:
                 seg_ranges = _ray_segment_intersection(
-                    pos, world_cos, world_sin, segments,
+                    pos,
+                    world_cos,
+                    world_sin,
+                    segments,
                     self.config.max_range,
                 )
                 ranges = np.minimum(ranges, seg_ranges)
@@ -269,7 +270,11 @@ class LidarSensor(SensorBase):
             radii = np.asarray(obs_circles["radii"], dtype=np.float64)
             if centres.shape[0] > 0:
                 circ_ranges = _ray_circle_intersection(
-                    pos, world_cos, world_sin, centres, radii,
+                    pos,
+                    world_cos,
+                    world_sin,
+                    centres,
+                    radii,
                     self.config.max_range,
                 )
                 ranges = np.minimum(ranges, circ_ranges)
@@ -286,7 +291,11 @@ class LidarSensor(SensorBase):
                 centres = agents_arr[:, :2]
                 radii = agents_arr[:, 2]
             agent_ranges = _ray_circle_intersection(
-                pos, world_cos, world_sin, centres, radii,
+                pos,
+                world_cos,
+                world_sin,
+                centres,
+                radii,
                 self.config.max_range,
             )
             ranges = np.minimum(ranges, agent_ranges)
@@ -310,8 +319,7 @@ class LidarSensor(SensorBase):
         sectors = trimmed.reshape(n, beams_per_sector)
         return sectors.min(axis=1)
 
-    def ranges_to_cartesian(self, ranges: np.ndarray,
-                            heading: float = 0.0) -> np.ndarray:
+    def ranges_to_cartesian(self, ranges: np.ndarray, heading: float = 0.0) -> np.ndarray:
         """Convert range measurements to 2-D Cartesian points (sensor frame).
 
         Parameters

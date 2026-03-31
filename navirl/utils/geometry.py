@@ -5,17 +5,17 @@ in pedestrian simulation and robot navigation, including angle
 manipulation, distance computation, line intersection, and polygon
 operations.
 """
+
 from __future__ import annotations
 
 import math
-from typing import Sequence, Tuple
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Angle utilities
 # ---------------------------------------------------------------------------
+
 
 def normalize_angle(angle: float) -> float:
     """Normalize an angle to the range [-pi, pi].
@@ -156,6 +156,7 @@ def angular_velocity(
 # Basic 2-D operations
 # ---------------------------------------------------------------------------
 
+
 def cross2d(u: np.ndarray, v: np.ndarray) -> float:
     """Compute the 2-D cross product (z-component of 3-D cross product).
 
@@ -245,10 +246,12 @@ def rotate_point(
     translated = point - center
     cos_a = math.cos(angle)
     sin_a = math.sin(angle)
-    rotated = np.array([
-        cos_a * translated[0] - sin_a * translated[1],
-        sin_a * translated[0] + cos_a * translated[1],
-    ])
+    rotated = np.array(
+        [
+            cos_a * translated[0] - sin_a * translated[1],
+            sin_a * translated[0] + cos_a * translated[1],
+        ]
+    )
     return rotated + center
 
 
@@ -290,6 +293,7 @@ def rotate_points(
 # ---------------------------------------------------------------------------
 # Line / segment operations
 # ---------------------------------------------------------------------------
+
 
 def closest_point_on_line(
     point: np.ndarray,
@@ -553,6 +557,7 @@ def circle_line_intersection(
 # Polygon operations
 # ---------------------------------------------------------------------------
 
+
 def point_in_polygon(
     point: np.ndarray,
     polygon: np.ndarray,
@@ -582,9 +587,7 @@ def point_in_polygon(
         xi, yi = polygon[i]
         xj, yj = polygon[j]
 
-        if ((yi > py) != (yj > py)) and (
-            px < (xj - xi) * (py - yi) / (yj - yi) + xi
-        ):
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi) + xi):
             inside = not inside
         j = i
 
@@ -746,16 +749,20 @@ def minimum_bounding_rectangle(points: np.ndarray) -> tuple[np.ndarray, float, f
             best_height = height
             best_angle = angle
 
-            rect_corners = np.array([
-                [min_x, min_y],
-                [max_x, min_y],
-                [max_x, max_y],
-                [min_x, max_y],
-            ])
-            inv_rot = np.array([
-                [math.cos(angle), -math.sin(angle)],
-                [math.sin(angle), math.cos(angle)],
-            ])
+            rect_corners = np.array(
+                [
+                    [min_x, min_y],
+                    [max_x, min_y],
+                    [max_x, max_y],
+                    [min_x, max_y],
+                ]
+            )
+            inv_rot = np.array(
+                [
+                    [math.cos(angle), -math.sin(angle)],
+                    [math.sin(angle), math.cos(angle)],
+                ]
+            )
             best_corners = rect_corners @ inv_rot.T
 
     if best_corners is None:
@@ -767,6 +774,7 @@ def minimum_bounding_rectangle(points: np.ndarray) -> tuple[np.ndarray, float, f
 # ---------------------------------------------------------------------------
 # Transformation utilities
 # ---------------------------------------------------------------------------
+
 
 def transform_2d(
     points: np.ndarray,
@@ -840,11 +848,13 @@ def build_transform_matrix(
     """
     cos_r = math.cos(rotation) * scale
     sin_r = math.sin(rotation) * scale
-    return np.array([
-        [cos_r, -sin_r, tx],
-        [sin_r, cos_r, ty],
-        [0.0, 0.0, 1.0],
-    ])
+    return np.array(
+        [
+            [cos_r, -sin_r, tx],
+            [sin_r, cos_r, ty],
+            [0.0, 0.0, 1.0],
+        ]
+    )
 
 
 def apply_transform_matrix(
@@ -880,6 +890,7 @@ def apply_transform_matrix(
 # ---------------------------------------------------------------------------
 # Miscellaneous
 # ---------------------------------------------------------------------------
+
 
 def compute_curvature(
     positions: np.ndarray,

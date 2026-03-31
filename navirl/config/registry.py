@@ -6,8 +6,9 @@ Provides a generic, type-safe registry that maps string names to classes
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Type, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -15,6 +16,7 @@ T = TypeVar("T")
 # ---------------------------------------------------------------------------
 # Generic registry
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class _Entry:
@@ -69,9 +71,7 @@ class ComponentRegistry:
             If *name* is already registered.
         """
         if name in self._entries:
-            raise ValueError(
-                f"'{name}' is already registered in the '{self.name}' registry."
-            )
+            raise ValueError(f"'{name}' is already registered in the '{self.name}' registry.")
         self._entries[name] = _Entry(cls=cls, metadata=metadata or {})
 
     # -- queries ------------------------------------------------------------
@@ -87,8 +87,7 @@ class ComponentRegistry:
         if name not in self._entries:
             available = ", ".join(sorted(self._entries))
             raise KeyError(
-                f"'{name}' not found in '{self.name}' registry. "
-                f"Available: {available}"
+                f"'{name}' not found in '{self.name}' registry. " f"Available: {available}"
             )
         return self._entries[name].cls
 

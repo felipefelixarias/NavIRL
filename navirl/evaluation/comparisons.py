@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -142,9 +143,7 @@ class AgentComparison:
         fig, ax = plt.subplots(figsize=(max(8, n_metrics * 1.5), 5))
         for idx, agent_name in enumerate(agent_names):
             res = results[agent_name]
-            means = [
-                float(np.mean(res.metrics.get(m, [0.0]))) for m in metrics
-            ]
+            means = [float(np.mean(res.metrics.get(m, [0.0]))) for m in metrics]
             offset = (idx - n_agents / 2 + 0.5) * width
             ax.bar(x + offset, means, width, label=agent_name)
 

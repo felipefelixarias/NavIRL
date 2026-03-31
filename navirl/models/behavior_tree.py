@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
-from navirl.core.constants import COMFORT, EPSILON, PROXEMICS
+from navirl.core.constants import COMFORT, EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
 
@@ -237,6 +237,7 @@ class IsObstacleAhead(Condition):
 
 class ActionNode(Node):
     """Base for leaf nodes that produce motor commands."""
+
     pass
 
 
@@ -471,7 +472,7 @@ class BehaviorTree:
     # -- factory for a sensible default pedestrian tree -----------------
 
     @classmethod
-    def default_pedestrian_tree(cls) -> "BehaviorTree":
+    def default_pedestrian_tree(cls) -> BehaviorTree:
         """Create a general-purpose pedestrian behavior tree.
 
         Priority (highest first):
@@ -482,20 +483,26 @@ class BehaviorTree:
             5. Maintain comfortable distance from neighbours.
             6. Go to goal.
         """
-        root = Selector([
-            WaitInQueue(),
-            YieldAtDoorway(),
-            Sequence([
+        root = Selector(
+            [
+                WaitInQueue(),
+                YieldAtDoorway(),
+                Sequence(
+                    [
+                        GoToGoal(),
+                        AvoidCollision(),
+                        MaintainDistance(),
+                    ]
+                ),
+                Sequence(
+                    [
+                        FollowGroup(),
+                        GoToGoal(),
+                    ]
+                ),
                 GoToGoal(),
-                AvoidCollision(),
-                MaintainDistance(),
-            ]),
-            Sequence([
-                FollowGroup(),
-                GoToGoal(),
-            ]),
-            GoToGoal(),
-        ])
+            ]
+        )
         return cls(root)
 
 
@@ -560,10 +567,14 @@ class BehaviorTreeHumanController(HumanController):
                 prev = self.goals[hid]
                 self.goals[hid] = self.starts[hid]
                 self.starts[hid] = prev
-                emit_event("goal_swap", hid, {
-                    "new_goal": list(self.goals[hid]),
-                    "new_start": list(self.starts[hid]),
-                })
+                emit_event(
+                    "goal_swap",
+                    hid,
+                    {
+                        "new_goal": list(self.goals[hid]),
+                        "new_start": list(self.starts[hid]),
+                    },
+                )
                 gx, gy = self.goals[hid]
 
             # Build neighbour list.

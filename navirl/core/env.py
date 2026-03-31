@@ -55,7 +55,9 @@ class SceneBackend(ABC):
     def map_image(self):
         raise NotImplementedError
 
-    def nearest_clear_point(self, position: tuple[float, float], radius: float) -> tuple[float, float]:
+    def nearest_clear_point(
+        self, position: tuple[float, float], radius: float
+    ) -> tuple[float, float]:
         return tuple(map(float, position))
 
     def map_metadata(self) -> dict:

@@ -10,20 +10,11 @@ progress reporting.
 from __future__ import annotations
 
 import concurrent.futures
-import copy
-import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
 )
 
 import numpy as np
@@ -31,12 +22,12 @@ import numpy as np
 from navirl.simulation.clock import SimulationClock
 from navirl.simulation.events import EventBus, EventRecord, EventType
 from navirl.simulation.physics import SimplePhysics
-from navirl.simulation.world import CollisionResult, World
-
+from navirl.simulation.world import World
 
 # ---------------------------------------------------------------------------
 # Episode result
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class EpisodeResult:
@@ -48,11 +39,11 @@ class EpisodeResult:
     wall_time: float = 0.0
     steps: int = 0
     total_collisions: int = 0
-    events: List[EventRecord] = field(default_factory=list)
-    final_positions: Dict[int, List[float]] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    events: list[EventRecord] = field(default_factory=list)
+    final_positions: dict[int, list[float]] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict."""
         return {
             "episode_id": self.episode_id,
@@ -70,6 +61,7 @@ class EpisodeResult:
 # ---------------------------------------------------------------------------
 # Progress callback protocol
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ProgressInfo:
@@ -96,6 +88,7 @@ ProgressCallback = Callable[[ProgressInfo], None]
 # ---------------------------------------------------------------------------
 # SimulationRunner
 # ---------------------------------------------------------------------------
+
 
 class SimulationRunner:
     """High-level simulation orchestrator.
@@ -133,17 +126,17 @@ class SimulationRunner:
         self.rng = np.random.default_rng(seed)
 
         # Callbacks
-        self._pre_step_callbacks: List[StepCallback] = []
-        self._post_step_callbacks: List[StepCallback] = []
-        self._episode_end_callbacks: List[EpisodeCallback] = []
-        self._progress_callbacks: List[ProgressCallback] = []
-        self._termination_conditions: List[Callable[[SimulationRunner], bool]] = []
+        self._pre_step_callbacks: list[StepCallback] = []
+        self._post_step_callbacks: list[StepCallback] = []
+        self._episode_end_callbacks: list[EpisodeCallback] = []
+        self._progress_callbacks: list[ProgressCallback] = []
+        self._termination_conditions: list[Callable[[SimulationRunner], bool]] = []
 
         # State
         self._running: bool = False
         self._episode_id: int = 0
-        self._initial_snapshot: Dict[str, Any] | None = None
-        self._snapshots: Dict[str, Dict[str, Any]] = {}
+        self._initial_snapshot: dict[str, Any] | None = None
+        self._snapshots: dict[str, dict[str, Any]] = {}
 
         # Metrics per episode
         self._episode_collisions: int = 0
@@ -169,9 +162,7 @@ class SimulationRunner:
         """Register a progress reporting callback."""
         self._progress_callbacks.append(callback)
 
-    def add_termination_condition(
-        self, condition: Callable[[SimulationRunner], bool]
-    ) -> None:
+    def add_termination_condition(self, condition: Callable[[SimulationRunner], bool]) -> None:
         """Add a custom termination condition.
 
         The callable receives the runner and should return ``True`` to
@@ -413,7 +404,7 @@ class SimulationRunner:
         max_time_per_episode: float = 0.0,
         reset_between: bool = True,
         report_interval: int = 100,
-    ) -> List[EpisodeResult]:
+    ) -> list[EpisodeResult]:
         """Run multiple episodes sequentially.
 
         Parameters
@@ -436,7 +427,7 @@ class SimulationRunner:
         if self._initial_snapshot is None:
             self.save_initial_state()
 
-        results: List[EpisodeResult] = []
+        results: list[EpisodeResult] = []
         for ep in range(n_episodes):
             if reset_between:
                 self.reset()
@@ -454,13 +445,13 @@ class SimulationRunner:
 
     @staticmethod
     def _run_single_episode(
-        world_dict: Dict[str, Any],
+        world_dict: dict[str, Any],
         clock_dt: float,
         max_steps: int,
         physics_method: str,
         seed: int,
         episode_id: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Worker function for parallel episode execution.
 
         Reconstructs the world from a dict so it can be pickled across
@@ -488,7 +479,7 @@ class SimulationRunner:
         max_steps_per_episode: int = 1000,
         max_workers: int = 4,
         base_seed: int = 42,
-    ) -> List[EpisodeResult]:
+    ) -> list[EpisodeResult]:
         """Run episodes in parallel using a thread pool.
 
         Parameters
@@ -510,7 +501,7 @@ class SimulationRunner:
         clock_dt = self.clock.dt
         physics_method = self.physics.integration_method
 
-        futures: List[concurrent.futures.Future[Dict[str, Any]]] = []
+        futures: list[concurrent.futures.Future[dict[str, Any]]] = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
             for i in range(n_episodes):
                 fut = pool.submit(
@@ -524,7 +515,7 @@ class SimulationRunner:
                 )
                 futures.append(fut)
 
-            results: List[EpisodeResult] = []
+            results: list[EpisodeResult] = []
             for i, fut in enumerate(concurrent.futures.as_completed(futures)):
                 rd = fut.result()
                 er = EpisodeResult(
@@ -540,15 +531,17 @@ class SimulationRunner:
                 results.append(er)
                 # Report progress
                 for cb in self._progress_callbacks:
-                    cb(ProgressInfo(
-                        episode=len(results),
-                        total_episodes=n_episodes,
-                        step=0,
-                        sim_time=er.sim_time,
-                        wall_time=er.wall_time,
-                        done=len(results) == n_episodes,
-                        message=f"Episode {er.episode_id} complete",
-                    ))
+                    cb(
+                        ProgressInfo(
+                            episode=len(results),
+                            total_episodes=n_episodes,
+                            step=0,
+                            sim_time=er.sim_time,
+                            wall_time=er.wall_time,
+                            done=len(results) == n_episodes,
+                            message=f"Episode {er.episode_id} complete",
+                        )
+                    )
 
         results.sort(key=lambda r: r.episode_id)
         return results
@@ -559,9 +552,9 @@ class SimulationRunner:
 
     def run_batch(
         self,
-        configs: List[Dict[str, Any]],
+        configs: list[dict[str, Any]],
         max_steps: int = 1000,
-    ) -> List[EpisodeResult]:
+    ) -> list[EpisodeResult]:
         """Run a batch of episodes with different configurations.
 
         Each config dict can contain:
@@ -574,7 +567,7 @@ class SimulationRunner:
         if self._initial_snapshot is None:
             self.save_initial_state()
 
-        results: List[EpisodeResult] = []
+        results: list[EpisodeResult] = []
         for idx, cfg in enumerate(configs):
             self.reset()
             # Apply config
@@ -594,11 +587,9 @@ class SimulationRunner:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _build_result(
-        self, steps: int, wall_time: float, terminated: bool
-    ) -> EpisodeResult:
+    def _build_result(self, steps: int, wall_time: float, terminated: bool) -> EpisodeResult:
         """Construct an :class:`EpisodeResult` from current state."""
-        final_pos: Dict[int, List[float]] = {}
+        final_pos: dict[int, list[float]] = {}
         for eid, edata in self.world.entities.items():
             final_pos[eid] = edata["position"].tolist()
 
@@ -645,7 +636,7 @@ class SimulationRunner:
         """Return (N, 2) array of entity velocities."""
         return self.world.velocities_array(kind)
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return combined statistics from clock, physics, and events."""
         return {
             "clock": self.clock.stats().as_dict(),

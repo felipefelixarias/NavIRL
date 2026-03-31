@@ -29,23 +29,9 @@ behavior_tree
     behavior subtrees.
 """
 
-from navirl.models.social_force import (
-    SocialForceConfig,
-    SocialForceModel,
-    SocialForceHumanController,
-)
-from navirl.models.velocity_obstacle import (
-    VOConfig,
-    VelocityObstacle,
-    ReciprocalVelocityObstacle,
-    HybridReciprocalVO,
-    ORCAPurePython,
-    VOHumanController,
-)
-from navirl.models.power_law import (
-    PowerLawConfig,
-    PowerLawModel,
-    PowerLawHumanController,
+from navirl.models.behavior_tree import (
+    BehaviorTree,
+    BehaviorTreeHumanController,
 )
 from navirl.models.crowd_dynamics import (
     CrowdAnalyzer,
@@ -53,16 +39,30 @@ from navirl.models.crowd_dynamics import (
     LevelOfService,
 )
 from navirl.models.group_behavior import (
-    GroupDetector,
     GroupBehaviorModel,
+    GroupDetector,
     GroupHumanController,
 )
 from navirl.models.learned_policy import (
     PolicyHumanController,
 )
-from navirl.models.behavior_tree import (
-    BehaviorTree,
-    BehaviorTreeHumanController,
+from navirl.models.power_law import (
+    PowerLawConfig,
+    PowerLawHumanController,
+    PowerLawModel,
+)
+from navirl.models.social_force import (
+    SocialForceConfig,
+    SocialForceHumanController,
+    SocialForceModel,
+)
+from navirl.models.velocity_obstacle import (
+    HybridReciprocalVO,
+    ORCAPurePython,
+    ReciprocalVelocityObstacle,
+    VelocityObstacle,
+    VOConfig,
+    VOHumanController,
 )
 
 __all__ = [

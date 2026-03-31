@@ -23,14 +23,13 @@ AttentionOverMemory
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
 
 # =====================================================================
 # LSTMCore
@@ -81,8 +80,8 @@ class LSTMCore(nn.Module):
     def reset_hidden(
         self,
         batch_size: int = 1,
-        device: Optional[torch.device] = None,
-    ) -> Tuple[Tensor, Tensor]:
+        device: torch.device | None = None,
+    ) -> tuple[Tensor, Tensor]:
         """Return a zero hidden state tuple ``(h_0, c_0)``.
 
         Parameters
@@ -100,20 +99,16 @@ class LSTMCore(nn.Module):
         """
         if device is None:
             device = next(self.parameters()).device
-        h_0 = torch.zeros(
-            self.num_layers, batch_size, self.hidden_size, device=device
-        )
-        c_0 = torch.zeros(
-            self.num_layers, batch_size, self.hidden_size, device=device
-        )
+        h_0 = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+        c_0 = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
         return (h_0, c_0)
 
     # ------------------------------------------------------------------
     def forward(
         self,
         x: Tensor,
-        hidden_state: Optional[Tuple[Tensor, Tensor]] = None,
-    ) -> Tuple[Tensor, Tuple[Tensor, Tensor]]:
+        hidden_state: tuple[Tensor, Tensor] | None = None,
+    ) -> tuple[Tensor, tuple[Tensor, Tensor]]:
         """Forward pass through the LSTM.
 
         Parameters
@@ -203,7 +198,7 @@ class GRUCore(nn.Module):
     def reset_hidden(
         self,
         batch_size: int = 1,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> Tensor:
         """Return a zero hidden state tensor ``h_0``.
 
@@ -222,16 +217,14 @@ class GRUCore(nn.Module):
         """
         if device is None:
             device = next(self.parameters()).device
-        return torch.zeros(
-            self.num_layers, batch_size, self.hidden_size, device=device
-        )
+        return torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
 
     # ------------------------------------------------------------------
     def forward(
         self,
         x: Tensor,
-        hidden_state: Optional[Tensor] = None,
-    ) -> Tuple[Tensor, Tensor]:
+        hidden_state: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor]:
         """Forward pass through the GRU.
 
         Parameters
@@ -320,7 +313,7 @@ class RecurrentPolicy(nn.Module):
         self.num_layers = num_layers
 
         # --- Feature extractor MLP ---
-        extractor_layers: List[nn.Module] = []
+        extractor_layers: list[nn.Module] = []
         prev_dim = input_dim
         for h_dim in extractor_hidden_dims:
             extractor_layers.append(nn.Linear(prev_dim, h_dim))
@@ -343,12 +336,10 @@ class RecurrentPolicy(nn.Module):
                 num_layers=num_layers,
             )
         else:
-            raise ValueError(
-                f"Unknown rnn_type '{rnn_type}'. Choose 'lstm' or 'gru'."
-            )
+            raise ValueError(f"Unknown rnn_type '{rnn_type}'. Choose 'lstm' or 'gru'.")
 
         # --- Policy head MLP ---
-        head_layers: List[nn.Module] = []
+        head_layers: list[nn.Module] = []
         prev_dim = hidden_size
         for h_dim in policy_hidden_dims:
             head_layers.append(nn.Linear(prev_dim, h_dim))
@@ -370,7 +361,7 @@ class RecurrentPolicy(nn.Module):
     def reset_hidden(
         self,
         batch_size: int = 1,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         """Reset the internal hidden state cache.
 
@@ -389,8 +380,8 @@ class RecurrentPolicy(nn.Module):
     def forward(
         self,
         x: Tensor,
-        hidden_state: Optional[Union[Tensor, Tuple[Tensor, Tensor]]] = None,
-    ) -> Tuple[Tensor, Union[Tensor, Tuple[Tensor, Tensor]]]:
+        hidden_state: Tensor | tuple[Tensor, Tensor] | None = None,
+    ) -> tuple[Tensor, Tensor | tuple[Tensor, Tensor]]:
         """Forward pass: extract features, run through RNN, apply policy head.
 
         Parameters
@@ -413,9 +404,9 @@ class RecurrentPolicy(nn.Module):
         is_sequence = x.dim() == 3
         if is_sequence:
             batch, seq_len, _ = x.shape
-            features = self.feature_extractor(
-                x.reshape(batch * seq_len, -1)
-            ).reshape(batch, seq_len, -1)
+            features = self.feature_extractor(x.reshape(batch * seq_len, -1)).reshape(
+                batch, seq_len, -1
+            )
         else:
             features = self.feature_extractor(x)
 
@@ -429,9 +420,9 @@ class RecurrentPolicy(nn.Module):
 
         if is_sequence:
             batch, seq_len, _ = rnn_out.shape
-            output = self.policy_head(
-                rnn_out.reshape(batch * seq_len, -1)
-            ).reshape(batch, seq_len, -1)
+            output = self.policy_head(rnn_out.reshape(batch * seq_len, -1)).reshape(
+                batch, seq_len, -1
+            )
         else:
             output = self.policy_head(rnn_out)
 
@@ -514,7 +505,7 @@ class SequenceEncoder(nn.Module):
     def forward(
         self,
         sequence: Tensor,
-        lengths: Optional[Tensor] = None,
+        lengths: Tensor | None = None,
     ) -> Tensor:
         """Encode a batch of sequences into fixed-size vectors.
 
@@ -543,9 +534,7 @@ class SequenceEncoder(nn.Module):
                 sequence, lengths_cpu, batch_first=True, enforce_sorted=False
             )
             rnn_out_packed, hidden = self.rnn(packed)
-            rnn_out, _ = pad_packed_sequence(
-                rnn_out_packed, batch_first=True
-            )
+            rnn_out, _ = pad_packed_sequence(rnn_out_packed, batch_first=True)
         else:
             rnn_out, hidden = self.rnn(sequence)
 
@@ -568,20 +557,17 @@ class SequenceEncoder(nn.Module):
             if lengths is not None:
                 # Mask padded positions before averaging
                 max_len = rnn_out.size(1)
-                mask = (
-                    torch.arange(max_len, device=rnn_out.device)
-                    .unsqueeze(0)
-                    .expand(batch_size, -1)
-                    < lengths.unsqueeze(1)
+                mask = torch.arange(max_len, device=rnn_out.device).unsqueeze(0).expand(
+                    batch_size, -1
+                ) < lengths.unsqueeze(
+                    1
                 )  # (batch, max_len)
                 mask = mask.unsqueeze(-1).float()  # (batch, max_len, 1)
                 encoded = (rnn_out * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
             else:
                 encoded = rnn_out.mean(dim=1)
         else:
-            raise ValueError(
-                f"Unknown pooling '{self.pooling}'. Choose 'last' or 'mean'."
-            )
+            raise ValueError(f"Unknown pooling '{self.pooling}'. Choose 'last' or 'mean'.")
 
         return encoded
 
@@ -734,7 +720,7 @@ class HiddenStateManager(nn.Module):
     # ------------------------------------------------------------------
     def reset(
         self,
-        env_indices: Optional[Union[Tensor, List[int], int]] = None,
+        env_indices: Tensor | list[int] | int | None = None,
     ) -> None:
         """Reset hidden states for the specified environments.
 
@@ -760,7 +746,7 @@ class HiddenStateManager(nn.Module):
             self._c[:, env_indices] = 0.0
 
     # ------------------------------------------------------------------
-    def get(self) -> Union[Tensor, Tuple[Tensor, Tensor]]:
+    def get(self) -> Tensor | tuple[Tensor, Tensor]:
         """Return the current hidden state(s).
 
         Returns
@@ -776,7 +762,7 @@ class HiddenStateManager(nn.Module):
     # ------------------------------------------------------------------
     def set(
         self,
-        hidden_state: Union[Tensor, Tuple[Tensor, Tensor]],
+        hidden_state: Tensor | tuple[Tensor, Tensor],
     ) -> None:
         """Replace the stored hidden state(s).
 
@@ -786,15 +772,13 @@ class HiddenStateManager(nn.Module):
             New hidden state to store.  Must match the expected shape.
         """
         if self.rnn_type == "lstm":
-            assert isinstance(hidden_state, tuple) and len(hidden_state) == 2, (
-                "LSTM hidden state must be a (h, c) tuple."
-            )
+            assert (
+                isinstance(hidden_state, tuple) and len(hidden_state) == 2
+            ), "LSTM hidden state must be a (h, c) tuple."
             self._h.copy_(hidden_state[0].detach())
             self._c.copy_(hidden_state[1].detach())
         else:
-            assert isinstance(hidden_state, Tensor), (
-                "GRU hidden state must be a single Tensor."
-            )
+            assert isinstance(hidden_state, Tensor), "GRU hidden state must be a single Tensor."
             self._h.copy_(hidden_state.detach())
 
     # ------------------------------------------------------------------
@@ -846,8 +830,7 @@ class AttentionOverMemory(nn.Module):
         # Use memory_dim as the internal dimension; must be divisible by num_heads
         if memory_dim % num_heads != 0:
             raise ValueError(
-                f"memory_dim ({memory_dim}) must be divisible by "
-                f"num_heads ({num_heads})."
+                f"memory_dim ({memory_dim}) must be divisible by " f"num_heads ({num_heads})."
             )
         self.head_dim = memory_dim // num_heads
 
@@ -857,7 +840,7 @@ class AttentionOverMemory(nn.Module):
         self.output_proj = nn.Linear(memory_dim, memory_dim)
 
         self.dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
-        self.scale = self.head_dim ** -0.5
+        self.scale = self.head_dim**-0.5
 
         self._feature_dim = memory_dim
 
@@ -872,7 +855,7 @@ class AttentionOverMemory(nn.Module):
         self,
         query: Tensor,
         memory_sequence: Tensor,
-        memory_mask: Optional[Tensor] = None,
+        memory_mask: Tensor | None = None,
     ) -> Tensor:
         """Attend over the memory sequence using the query.
 

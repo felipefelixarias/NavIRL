@@ -169,9 +169,7 @@ def _apply_overrides(scenario: dict, overrides: dict[str, object]) -> dict:
 
 def _score_scenario(metrics: dict, invariants: dict, judge_payload: dict) -> float:
     checks = {
-        str(c.get("name", "")): c
-        for c in invariants.get("checks", [])
-        if isinstance(c, dict)
+        str(c.get("name", "")): c for c in invariants.get("checks", []) if isinstance(c, dict)
     }
     horizon = max(1, int(metrics.get("horizon_steps", 1)))
     pair_rate = float(metrics.get("collisions_agent_agent", 0)) / float(horizon)
@@ -380,8 +378,7 @@ def run_tuning(
                 trial_out = run_dir / "trials" / f"trial_{trial_idx:03d}"
                 run_id = f"trial_{trial_idx:03d}_{scenario_id}"
                 _emit_progress(
-                    f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: "
-                    "run simulation"
+                    f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: " "run simulation"
                 )
 
                 try:

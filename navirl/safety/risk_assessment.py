@@ -6,15 +6,14 @@ collision models, and trajectory-prediction-based risk scoring.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Sequence
+from collections.abc import Callable
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # RiskEstimator
 # ---------------------------------------------------------------------------
+
 
 class RiskEstimator:
     """Estimates collision risk using geometric and probabilistic methods.
@@ -75,7 +74,7 @@ class RiskEstimator:
 
             a = float(dv @ dv)
             b = 2.0 * float(dp @ dv)
-            c = float(dp @ dp) - combined_radius ** 2
+            c = float(dp @ dp) - combined_radius**2
 
             if a < 1e-12:
                 # No relative motion; skip or already colliding.
@@ -196,12 +195,8 @@ class RiskEstimator:
         n_cells = int(2 * field_size / resolution)
         risk = np.zeros((n_cells, n_cells), dtype=np.float64)
 
-        xs = np.linspace(
-            position[0] - field_size, position[0] + field_size, n_cells
-        )
-        ys = np.linspace(
-            position[1] - field_size, position[1] + field_size, n_cells
-        )
+        xs = np.linspace(position[0] - field_size, position[0] + field_size, n_cells)
+        ys = np.linspace(position[1] - field_size, position[1] + field_size, n_cells)
         xx, yy = np.meshgrid(xs, ys, indexing="ij")
 
         for obs in obstacles:
@@ -215,6 +210,7 @@ class RiskEstimator:
 # ---------------------------------------------------------------------------
 # PredictiveRiskModel
 # ---------------------------------------------------------------------------
+
 
 class PredictiveRiskModel:
     """Uses trajectory prediction to estimate future risk.
@@ -246,9 +242,7 @@ class PredictiveRiskModel:
     # -- default predictor --------------------------------------------------
 
     @staticmethod
-    def _constant_velocity_predict(
-        current_states: np.ndarray, horizon: int
-    ) -> np.ndarray:
+    def _constant_velocity_predict(current_states: np.ndarray, horizon: int) -> np.ndarray:
         """Constant-velocity trajectory prediction.
 
         Parameters
@@ -266,16 +260,12 @@ class PredictiveRiskModel:
         n = current_states.shape[0]
         predictions = np.empty((n, horizon, 2))
         for t in range(horizon):
-            predictions[:, t, :] = (
-                current_states[:, :2] + current_states[:, 2:4] * (t + 1) * 0.1
-            )
+            predictions[:, t, :] = current_states[:, :2] + current_states[:, 2:4] * (t + 1) * 0.1
         return predictions
 
     # -- public API ---------------------------------------------------------
 
-    def predict_trajectories(
-        self, current_states: np.ndarray, horizon: int = 30
-    ) -> np.ndarray:
+    def predict_trajectories(self, current_states: np.ndarray, horizon: int = 30) -> np.ndarray:
         """Predict future trajectories for the given states.
 
         Returns
@@ -309,9 +299,7 @@ class PredictiveRiskModel:
         risks = np.zeros(T)
 
         for t in range(T):
-            dists = np.linalg.norm(
-                predicted_trajectories[:, t, :] - agent_trajectory[t], axis=1
-            )
+            dists = np.linalg.norm(predicted_trajectories[:, t, :] - agent_trajectory[t], axis=1)
             # Sigmoid-style risk: 1 when dist=0, ~0 when dist >> combined_r
             per_obs = np.exp(-((dists / combined_r) ** 2))
             risks[t] = float(np.max(per_obs)) if per_obs.size > 0 else 0.0

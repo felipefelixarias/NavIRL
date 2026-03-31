@@ -3,6 +3,7 @@
 Provides a high-level API that wraps the environment, physics, and
 obstacle systems into a unified backend interface.
 """
+
 from __future__ import annotations
 
 import math
@@ -16,14 +17,7 @@ from navirl.backends.continuous.environment import (
     ContinuousEnvironment,
     EnvironmentConfig,
 )
-from navirl.backends.continuous.obstacles import (
-    CircleObstacle,
-    LineObstacle,
-    ObstacleCollection,
-    PolygonObstacle,
-    RectangleObstacle,
-)
-from navirl.backends.continuous.physics import AgentState, PhysicsConfig
+from navirl.backends.continuous.physics import AgentState
 
 
 @dataclass
@@ -251,15 +245,19 @@ class ContinuousBackend:
         ids = []
         for i in range(num_pedestrians):
             angle = 2 * math.pi * i / num_pedestrians
-            pos = np.array([
-                center[0] + radius * math.cos(angle),
-                center[1] + radius * math.sin(angle),
-            ])
+            pos = np.array(
+                [
+                    center[0] + radius * math.cos(angle),
+                    center[1] + radius * math.sin(angle),
+                ]
+            )
             # Goal is diametrically opposite
-            goal = np.array([
-                center[0] - radius * math.cos(angle),
-                center[1] - radius * math.sin(angle),
-            ])
+            goal = np.array(
+                [
+                    center[0] - radius * math.cos(angle),
+                    center[1] - radius * math.sin(angle),
+                ]
+            )
             aid = self.add_pedestrian(pos, goal, preferred_speed=preferred_speed)
             ids.append(aid)
         return ids
@@ -356,11 +354,13 @@ class ContinuousBackend:
                 self._episode_rewards[aid] += r
 
         # Record frame data
-        self._episode_data.append({
-            "step": info["step"],
-            "positions": self._env.get_all_positions().tolist(),
-            "collisions": info["num_collisions"],
-        })
+        self._episode_data.append(
+            {
+                "step": info["step"],
+                "positions": self._env.get_all_positions().tolist(),
+                "collisions": info["num_collisions"],
+            }
+        )
 
         return obs, rewards, dones, info
 
@@ -446,13 +446,15 @@ class ContinuousBackend:
             diff = ped_state.position - state.position
             dist = float(np.linalg.norm(diff))
             if dist < 10.0:
-                nearby.append({
-                    "id": pid,
-                    "position": ped_state.position.copy(),
-                    "velocity": ped_state.velocity.copy(),
-                    "distance": dist,
-                    "radius": ped_state.radius,
-                })
+                nearby.append(
+                    {
+                        "id": pid,
+                        "position": ped_state.position.copy(),
+                        "velocity": ped_state.velocity.copy(),
+                        "distance": dist,
+                        "radius": ped_state.radius,
+                    }
+                )
 
         nearby.sort(key=lambda x: x["distance"])
 
@@ -504,8 +506,7 @@ class ContinuousBackend:
             Mapping from agent ID to trajectory array.
         """
         return {
-            aid: self._env.get_trajectory(aid)
-            for aid in self._robot_ids + self._pedestrian_ids
+            aid: self._env.get_trajectory(aid) for aid in self._robot_ids + self._pedestrian_ids
         }
 
     def run_episode(

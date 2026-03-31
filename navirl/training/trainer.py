@@ -22,15 +22,10 @@ import logging
 import os
 import pathlib
 import time
+from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, field
 from typing import (
     Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Union,
 )
 
 import numpy as np
@@ -80,12 +75,12 @@ class TrainerConfig:
 
     # -- helpers -------------------------------------------------------------
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Return a plain dict representation."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "TrainerConfig":
+    def from_dict(cls, d: dict[str, Any]) -> TrainerConfig:
         """Construct from a dict, ignoring unknown keys."""
         valid = {f.name for f in cls.__dataclass_fields__.values()}  # type: ignore[attr-defined]
         filtered = {k: v for k, v in d.items() if k in valid}
@@ -116,12 +111,12 @@ class TrainingLogger:
 
     def __init__(
         self,
-        log_dir: Optional[str] = None,
+        log_dir: str | None = None,
         use_tensorboard: bool = False,
         use_wandb: bool = False,
     ) -> None:
         self.log_dir = log_dir
-        self._history: Dict[str, List[tuple]] = {}
+        self._history: dict[str, list[tuple]] = {}
 
         # -- TensorBoard -----------------------------------------------------
         self._tb_writer = None
@@ -134,9 +129,7 @@ class TrainingLogger:
                 self._tb_writer = SummaryWriter(log_dir=tb_path)
                 logger.info("TensorBoard logging enabled at %s", tb_path)
             except ImportError:
-                logger.warning(
-                    "tensorboard not installed -- TensorBoard logging disabled"
-                )
+                logger.warning("tensorboard not installed -- TensorBoard logging disabled")
 
         # -- Weights & Biases ------------------------------------------------
         self._wandb = None
@@ -148,9 +141,7 @@ class TrainingLogger:
                     self._wandb = wandb
                     logger.info("W&B logging enabled (run=%s)", wandb.run.name)
                 else:
-                    logger.warning(
-                        "wandb imported but no active run -- W&B logging disabled"
-                    )
+                    logger.warning("wandb imported but no active run -- W&B logging disabled")
             except ImportError:
                 logger.warning("wandb not installed -- W&B logging disabled")
 
@@ -168,12 +159,12 @@ class TrainingLogger:
 
         logger.debug("[step=%d] %s = %.6g", step, key, value)
 
-    def log_dict(self, metrics: Dict[str, float], step: int) -> None:
+    def log_dict(self, metrics: dict[str, float], step: int) -> None:
         """Log every entry in *metrics* at *step*."""
         for key, value in metrics.items():
             self.log_scalar(key, value, step)
 
-    def get_history(self, key: str) -> List[tuple]:
+    def get_history(self, key: str) -> list[tuple]:
         """Return the list of ``(step, value)`` pairs for *key*."""
         return list(self._history.get(key, []))
 
@@ -213,10 +204,10 @@ class EvalResult:
     std_reward: float
     mean_length: float
     success_rate: float
-    per_episode_rewards: List[float] = field(default_factory=list)
-    per_episode_lengths: List[int] = field(default_factory=list)
+    per_episode_rewards: list[float] = field(default_factory=list)
+    per_episode_lengths: list[int] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -251,8 +242,8 @@ class Trainer:
         self,
         agent: Any,
         env_fn: Callable[[], Any],
-        config: Optional[TrainerConfig] = None,
-        callbacks: Optional[Sequence[Any]] = None,
+        config: TrainerConfig | None = None,
+        callbacks: Sequence[Any] | None = None,
     ) -> None:
         self.agent = agent
         self.env_fn = env_fn
@@ -279,7 +270,7 @@ class Trainer:
 
     # -- train ---------------------------------------------------------------
 
-    def train(self) -> Dict[str, Any]:
+    def train(self) -> dict[str, Any]:
         """Run the main training loop.
 
         Returns
@@ -301,9 +292,9 @@ class Trainer:
         self._fire("on_training_start")
 
         obs = envs.reset()
-        episode_rewards: List[float] = [0.0] * cfg.n_envs
-        episode_lengths: List[int] = [0] * cfg.n_envs
-        all_train_metrics: Dict[str, List[float]] = {}
+        episode_rewards: list[float] = [0.0] * cfg.n_envs
+        episode_lengths: list[int] = [0] * cfg.n_envs
+        all_train_metrics: dict[str, list[float]] = {}
         start_time = time.monotonic()
 
         while self._global_step < cfg.total_timesteps:
@@ -380,19 +371,13 @@ class Trainer:
                 )
                 if eval_result.mean_reward > self._best_mean_reward:
                     self._best_mean_reward = eval_result.mean_reward
-                    self.save_checkpoint(
-                        os.path.join(cfg.checkpoint_dir, "best_model")
-                    )
-                self._fire(
-                    "on_eval", step=self._global_step, eval_result=eval_result
-                )
+                    self.save_checkpoint(os.path.join(cfg.checkpoint_dir, "best_model"))
+                self._fire("on_eval", step=self._global_step, eval_result=eval_result)
 
             # 5. Save checkpoints.
             if self._global_step % cfg.save_interval < cfg.n_envs:
                 self.save_checkpoint(
-                    os.path.join(
-                        cfg.checkpoint_dir, f"checkpoint_{self._global_step}"
-                    )
+                    os.path.join(cfg.checkpoint_dir, f"checkpoint_{self._global_step}")
                 )
 
             self._fire("on_step_end", step=self._global_step)
@@ -414,7 +399,7 @@ class Trainer:
 
     # -- evaluation ----------------------------------------------------------
 
-    def evaluate(self, n_episodes: Optional[int] = None) -> EvalResult:
+    def evaluate(self, n_episodes: int | None = None) -> EvalResult:
         """Run *n_episodes* evaluation episodes and return an :class:`EvalResult`.
 
         The agent is switched to eval mode for the duration of evaluation and
@@ -425,9 +410,9 @@ class Trainer:
 
         self.agent.eval_mode()
 
-        ep_rewards: List[float] = []
-        ep_lengths: List[int] = []
-        successes: List[bool] = []
+        ep_rewards: list[float] = []
+        ep_lengths: list[int] = []
+        successes: list[bool] = []
 
         for _ in range(n_episodes):
             obs = env.reset()
@@ -472,7 +457,7 @@ class Trainer:
 
     # -- checkpointing -------------------------------------------------------
 
-    def save_checkpoint(self, path: Union[str, pathlib.Path]) -> None:
+    def save_checkpoint(self, path: str | pathlib.Path) -> None:
         """Save agent state and trainer metadata to *path*."""
         path = pathlib.Path(path)
         path.mkdir(parents=True, exist_ok=True)
@@ -492,7 +477,7 @@ class Trainer:
 
         logger.info("Checkpoint saved to %s (step=%d)", path, self._global_step)
 
-    def load_checkpoint(self, path: Union[str, pathlib.Path]) -> None:
+    def load_checkpoint(self, path: str | pathlib.Path) -> None:
         """Restore agent state and trainer metadata from *path*."""
         path = pathlib.Path(path)
 
@@ -505,9 +490,7 @@ class Trainer:
             self._global_step = meta.get("global_step", 0)
             self._episodes_done = meta.get("episodes_done", 0)
             self._best_mean_reward = meta.get("best_mean_reward", float("-inf"))
-            logger.info(
-                "Checkpoint loaded from %s (step=%d)", path, self._global_step
-            )
+            logger.info("Checkpoint loaded from %s (step=%d)", path, self._global_step)
         else:
             logger.warning("No trainer_meta.json at %s -- only agent state loaded", path)
 
@@ -521,15 +504,13 @@ class Trainer:
         """
         n = self.config.n_envs
         try:
-            from navirl.training.parallel import SubprocVecEnv, DummyVecEnv
+            from navirl.training.parallel import DummyVecEnv, SubprocVecEnv
 
             if n > 1:
                 return SubprocVecEnv([self.env_fn for _ in range(n)])
             return DummyVecEnv([self.env_fn])
         except Exception:
-            logger.warning(
-                "Vectorised env wrappers unavailable -- using a single-env shim"
-            )
+            logger.warning("Vectorised env wrappers unavailable -- using a single-env shim")
             return _SingleEnvShim(self.env_fn())
 
 

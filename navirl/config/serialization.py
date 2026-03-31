@@ -9,12 +9,13 @@ from __future__ import annotations
 import copy
 import json
 import pathlib
-from typing import Any, Sequence
-
+from collections.abc import Sequence
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Save / load
 # ---------------------------------------------------------------------------
+
 
 def save_config(
     config: dict[str, Any],
@@ -96,9 +97,8 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
 # CLI conversion
 # ---------------------------------------------------------------------------
 
-def config_to_cli_args(
-    config: dict[str, Any], prefix: str = "--"
-) -> list[str]:
+
+def config_to_cli_args(config: dict[str, Any], prefix: str = "--") -> list[str]:
     """Flatten *config* into a list of CLI arguments.
 
     Nested dicts use dot-separated keys::
@@ -139,20 +139,15 @@ def cli_args_to_config(args: Sequence[str]) -> dict[str, Any]:
 # Merge / diff
 # ---------------------------------------------------------------------------
 
-def merge_configs(
-    base: dict[str, Any], overrides: dict[str, Any]
-) -> dict[str, Any]:
+
+def merge_configs(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
     """Deep-merge *overrides* into *base* (non-destructive).
 
     Returns a new dict; neither input is modified.
     """
     merged = copy.deepcopy(base)
     for key, value in overrides.items():
-        if (
-            key in merged
-            and isinstance(merged[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
             merged[key] = merge_configs(merged[key], value)
         else:
             merged[key] = copy.deepcopy(value)
@@ -187,9 +182,7 @@ def diff_configs(
             if isinstance(v1, dict) and isinstance(v2, dict):
                 diffs.extend(diff_configs(v1, v2, full_path))
             elif v1 != v2:
-                diffs.append(
-                    {"path": full_path, "type": "changed", "old": v1, "new": v2}
-                )
+                diffs.append({"path": full_path, "type": "changed", "old": v1, "new": v2})
 
     return diffs
 
@@ -197,6 +190,7 @@ def diff_configs(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _resolve_format(path: pathlib.Path, explicit: str | None) -> str:
     if explicit is not None:
@@ -214,26 +208,26 @@ def _resolve_format(path: pathlib.Path, explicit: str | None) -> str:
 def _import_yaml() -> Any:
     try:
         import yaml  # type: ignore[import-untyped]
+
         return yaml
     except ImportError as exc:
-        raise ImportError(
-            "PyYAML is required for YAML support: pip install pyyaml"
-        ) from exc
+        raise ImportError("PyYAML is required for YAML support: pip install pyyaml") from exc
 
 
 def _import_toml_write() -> Any:
     try:
         import tomli_w as tw  # type: ignore[import-untyped]
+
         return tw
     except ImportError:
         pass
     try:
         import toml  # type: ignore[import-untyped]
+
         return toml
     except ImportError as exc:
         raise ImportError(
-            "tomli-w or toml is required for TOML writing: "
-            "pip install tomli-w"
+            "tomli-w or toml is required for TOML writing: " "pip install tomli-w"
         ) from exc
 
 
@@ -241,30 +235,31 @@ def _import_toml_read() -> Any:
     """Return a callable that reads TOML from a binary file handle."""
     try:
         import tomllib  # Python 3.11+
+
         return tomllib.load
     except ImportError:
         pass
     try:
         import tomli  # type: ignore[import-untyped]
+
         return tomli.load
     except ImportError:
         pass
     try:
         import toml  # type: ignore[import-untyped]
+
         # toml.load accepts a text file, not binary – wrap it.
         def _load_toml(fh: Any) -> dict[str, Any]:
             return toml.loads(fh.read().decode())
+
         return _load_toml
     except ImportError as exc:
         raise ImportError(
-            "tomllib (3.11+), tomli, or toml is required for TOML reading: "
-            "pip install tomli"
+            "tomllib (3.11+), tomli, or toml is required for TOML reading: " "pip install tomli"
         ) from exc
 
 
-def _flatten_to_args(
-    d: dict[str, Any], prefix: str, parent_key: str, out: list[str]
-) -> None:
+def _flatten_to_args(d: dict[str, Any], prefix: str, parent_key: str, out: list[str]) -> None:
     for key, value in d.items():
         full_key = f"{parent_key}.{key}" if parent_key else key
         if isinstance(value, dict):

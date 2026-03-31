@@ -10,7 +10,7 @@ numpy-level helpers will not need rclpy at all.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -19,8 +19,9 @@ import numpy as np
 # ---------------------------------------------------------------------------
 try:
     from geometry_msgs.msg import Twist
-    from sensor_msgs.msg import LaserScan, Image
     from nav_msgs.msg import Odometry
+    from sensor_msgs.msg import Image, LaserScan
+
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False
@@ -29,6 +30,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
     """Convert a quaternion to a yaw angle (radians)."""
@@ -40,6 +42,7 @@ def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
 # ---------------------------------------------------------------------------
 # Public conversion functions
 # ---------------------------------------------------------------------------
+
 
 def laser_scan_to_lidar_obs(msg: Any) -> np.ndarray:
     """Convert a ``sensor_msgs/LaserScan`` to a 1-D numpy float32 array.
@@ -71,7 +74,7 @@ def laser_scan_to_lidar_obs(msg: Any) -> np.ndarray:
     return ranges
 
 
-def odometry_to_state(msg: Any) -> Dict[str, Any]:
+def odometry_to_state(msg: Any) -> dict[str, Any]:
     """Convert a ``nav_msgs/Odometry`` to a state dictionary.
 
     Returns
@@ -129,9 +132,7 @@ def person_array_to_social_obs(msg: Any) -> np.ndarray:
 
         # Orientation
         ori = t.pose.pose.orientation
-        theta = _quat_to_yaw(
-            float(ori.x), float(ori.y), float(ori.z), float(ori.w)
-        )
+        theta = _quat_to_yaw(float(ori.x), float(ori.y), float(ori.z), float(ori.w))
 
         track_id = float(getattr(t, "track_id", getattr(t, "detection_id", 0)))
         score = float(getattr(t, "detection_score", getattr(t, "is_matched", 1.0)))
@@ -144,7 +145,7 @@ def person_array_to_social_obs(msg: Any) -> np.ndarray:
 def action_to_twist(
     action: np.ndarray,
     action_type: str = "continuous",
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Convert a NavIRL action array to a Twist-like dictionary.
 
     Parameters
@@ -166,13 +167,13 @@ def action_to_twist(
     if action_type == "discrete":
         # Map discrete indices to (linear_x, angular_z) pairs
         _DISCRETE_MAP = {
-            0: (0.0, 0.0),    # stop
-            1: (0.5, 0.0),    # forward
-            2: (-0.3, 0.0),   # backward
-            3: (0.2, 0.5),    # turn left
-            4: (0.2, -0.5),   # turn right
-            5: (0.5, 0.3),    # forward-left
-            6: (0.5, -0.3),   # forward-right
+            0: (0.0, 0.0),  # stop
+            1: (0.5, 0.0),  # forward
+            2: (-0.3, 0.0),  # backward
+            3: (0.2, 0.5),  # turn left
+            4: (0.2, -0.5),  # turn right
+            5: (0.5, 0.3),  # forward-left
+            6: (0.5, -0.3),  # forward-right
         }
         idx = int(action[0]) if action.size > 0 else 0
         linear_x, angular_z = _DISCRETE_MAP.get(idx, (0.0, 0.0))
@@ -190,7 +191,7 @@ def action_to_twist(
     }
 
 
-def pose_to_goal(msg: Any) -> Tuple[float, float]:
+def pose_to_goal(msg: Any) -> tuple[float, float]:
     """Extract an ``(x, y)`` goal from a Pose/PoseStamped message.
 
     Also accepts plain objects with ``position.x`` / ``position.y`` or

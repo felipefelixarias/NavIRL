@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 import rvo2
 
@@ -53,23 +53,23 @@ class IndoorORCASim:
     def get_max_speed(self) -> float:
         return self.config.max_speed
 
-    def add_agent(self, position: List[float], velocity: List[float] | None = None) -> int:
+    def add_agent(self, position: list[float], velocity: list[float] | None = None) -> int:
         _ = velocity
         return self.sim.addAgent(tuple(position))
 
-    def add_obstacle(self, vertices: List[List[float]]) -> int:
+    def add_obstacle(self, vertices: list[list[float]]) -> int:
         return self.sim.addObstacle(vertices)
 
-    def add_obstacles(self, obstacles: List[List[List[float]]]) -> List[int]:
+    def add_obstacles(self, obstacles: list[list[list[float]]]) -> list[int]:
         return [self.add_obstacle(obstacle) for obstacle in obstacles]
 
     def process_obstacles(self) -> None:
         self.sim.processObstacles()
 
-    def set_agent_pref_velocity(self, agent_no: int, pref_velocity: List[float]) -> None:
+    def set_agent_pref_velocity(self, agent_no: int, pref_velocity: list[float]) -> None:
         self.sim.setAgentPrefVelocity(agent_no, tuple(pref_velocity))
 
-    def set_agent_position(self, agent_no: int, position: List[float]) -> None:
+    def set_agent_position(self, agent_no: int, position: list[float]) -> None:
         self.sim.setAgentPosition(agent_no, tuple(position))
 
     def get_num_agents(self) -> int:
@@ -81,10 +81,10 @@ class IndoorORCASim:
     def get_num_obstacle_vertices(self) -> int:
         return self.sim.getNumObstacleVertices()
 
-    def get_agent_position(self, agent_no: int) -> List[float]:
+    def get_agent_position(self, agent_no: int) -> list[float]:
         return self.sim.getAgentPosition(agent_no)
 
-    def get_agent_velocity(self, agent_no: int) -> List[float]:
+    def get_agent_velocity(self, agent_no: int) -> list[float]:
         return self.sim.getAgentVelocity(agent_no)
 
     def get_global_time(self) -> float:

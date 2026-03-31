@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import csv
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -130,9 +131,7 @@ class ETHUCYDataset(TrajectoryDataset):
         super().__init__()
         for s in scenes:
             if s not in _ETH_UCY_SCENES:
-                raise ValueError(
-                    f"Unknown ETH/UCY scene '{s}'. Choose from {_ETH_UCY_SCENES}"
-                )
+                raise ValueError(f"Unknown ETH/UCY scene '{s}'. Choose from {_ETH_UCY_SCENES}")
         self.scene_names = list(scenes)
         self.delim = delim
 

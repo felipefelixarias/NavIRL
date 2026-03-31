@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -18,8 +19,9 @@ logger = logging.getLogger(__name__)
 # Guarded ROS2 imports
 # ---------------------------------------------------------------------------
 try:
-    from nav_msgs.msg import OccupancyGrid, MapMetaData
+    from nav_msgs.msg import MapMetaData, OccupancyGrid
     from std_msgs.msg import Header
+
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False
@@ -35,11 +37,14 @@ NO_INFORMATION = -1
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _world_to_grid(
-    wx: float, wy: float,
-    origin_x: float, origin_y: float,
+    wx: float,
+    wy: float,
+    origin_x: float,
+    origin_y: float,
     resolution: float,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Convert world coordinates to grid cell indices."""
     gx = int(round((wx - origin_x) / resolution))
     gy = int(round((wy - origin_y) / resolution))
@@ -47,10 +52,12 @@ def _world_to_grid(
 
 
 def _grid_to_world(
-    gx: int, gy: int,
-    origin_x: float, origin_y: float,
+    gx: int,
+    gy: int,
+    origin_x: float,
+    origin_y: float,
     resolution: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Convert grid cell indices to world coordinates (cell centre)."""
     wx = origin_x + gx * resolution
     wy = origin_y + gy * resolution
@@ -61,13 +68,14 @@ def _gaussian_kernel(size: int, sigma: float) -> np.ndarray:
     """Return a normalized 2-D Gaussian kernel."""
     ax = np.arange(-size // 2 + 1, size // 2 + 1, dtype=np.float64)
     xx, yy = np.meshgrid(ax, ax)
-    kernel = np.exp(-(xx ** 2 + yy ** 2) / (2.0 * sigma ** 2))
+    kernel = np.exp(-(xx**2 + yy**2) / (2.0 * sigma**2))
     return kernel / kernel.sum()
 
 
 # ---------------------------------------------------------------------------
 # CostmapManager
 # ---------------------------------------------------------------------------
+
 
 class CostmapManager:
     """Manages a stack of costmap layers and merges them into a single grid.
@@ -89,7 +97,7 @@ class CostmapManager:
         width: int = 200,
         height: int = 200,
         resolution: float = 0.05,
-        origin: Tuple[float, float] = (-5.0, -5.0),
+        origin: tuple[float, float] = (-5.0, -5.0),
     ) -> None:
         self.width = width
         self.height = height
@@ -100,11 +108,11 @@ class CostmapManager:
         self._master: np.ndarray = np.zeros((height, width), dtype=np.int8)
 
         # Registered layers: name -> layer object
-        self._layers: Dict[str, _CostmapLayerBase] = {}
+        self._layers: dict[str, _CostmapLayerBase] = {}
 
     # -- Layer management ---------------------------------------------------
 
-    def add_layer(self, name: str, layer: "_CostmapLayerBase") -> None:
+    def add_layer(self, name: str, layer: _CostmapLayerBase) -> None:
         layer.resize(self.width, self.height, self.resolution, self.origin_x, self.origin_y)
         self._layers[name] = layer
         logger.info("CostmapManager: added layer '%s'.", name)
@@ -112,7 +120,7 @@ class CostmapManager:
     def remove_layer(self, name: str) -> None:
         self._layers.pop(name, None)
 
-    def get_layer(self, name: str) -> Optional["_CostmapLayerBase"]:
+    def get_layer(self, name: str) -> _CostmapLayerBase | None:
         return self._layers.get(name)
 
     # -- Update / merge -----------------------------------------------------
@@ -171,7 +179,7 @@ class CostmapManager:
         }
 
     @classmethod
-    def from_occupancy_grid(cls, msg: Any) -> "CostmapManager":
+    def from_occupancy_grid(cls, msg: Any) -> CostmapManager:
         """Construct a CostmapManager from a ``nav_msgs/OccupancyGrid``."""
         width = int(msg.info.width)
         height = int(msg.info.height)
@@ -185,10 +193,10 @@ class CostmapManager:
 
     # -- Convenience --------------------------------------------------------
 
-    def world_to_grid(self, x: float, y: float) -> Tuple[int, int]:
+    def world_to_grid(self, x: float, y: float) -> tuple[int, int]:
         return _world_to_grid(x, y, self.origin_x, self.origin_y, self.resolution)
 
-    def grid_to_world(self, gx: int, gy: int) -> Tuple[float, float]:
+    def grid_to_world(self, gx: int, gy: int) -> tuple[float, float]:
         return _grid_to_world(gx, gy, self.origin_x, self.origin_y, self.resolution)
 
     def in_bounds(self, gx: int, gy: int) -> bool:
@@ -198,6 +206,7 @@ class CostmapManager:
 # ---------------------------------------------------------------------------
 # Layer base class
 # ---------------------------------------------------------------------------
+
 
 class _CostmapLayerBase:
     """Abstract base for costmap layers."""
@@ -211,8 +220,12 @@ class _CostmapLayerBase:
         self._origin_y = 0.0
 
     def resize(
-        self, width: int, height: int, resolution: float,
-        origin_x: float, origin_y: float,
+        self,
+        width: int,
+        height: int,
+        resolution: float,
+        origin_x: float,
+        origin_y: float,
     ) -> None:
         self._width = width
         self._height = height
@@ -236,6 +249,7 @@ class _CostmapLayerBase:
 # Static / inflation helpers
 # ---------------------------------------------------------------------------
 
+
 class StaticCostmapLayer(_CostmapLayerBase):
     """Layer loaded from a static map (e.g. SLAM output)."""
 
@@ -253,7 +267,7 @@ class InflationCostmapLayer(_CostmapLayerBase):
     def __init__(self, inflation_radius: float = 0.3) -> None:
         super().__init__()
         self.inflation_radius = inflation_radius
-        self._source_grid: Optional[np.ndarray] = None
+        self._source_grid: np.ndarray | None = None
 
     def set_source(self, grid: np.ndarray) -> None:
         self._source_grid = grid
@@ -280,6 +294,7 @@ class InflationCostmapLayer(_CostmapLayerBase):
 # ---------------------------------------------------------------------------
 # Social costmap layer
 # ---------------------------------------------------------------------------
+
 
 class SocialCostmapLayer(_CostmapLayerBase):
     """Encodes pedestrian proxemics zones into the costmap.
@@ -316,7 +331,7 @@ class SocialCostmapLayer(_CostmapLayerBase):
         the format produced by :func:`conversions.person_array_to_social_obs`.
         """
         self.clear()
-        peds: Optional[np.ndarray] = kwargs.get("pedestrians")
+        peds: np.ndarray | None = kwargs.get("pedestrians")
         if peds is None or peds.size == 0:
             return
 
@@ -362,7 +377,7 @@ class SocialCostmapLayer(_CostmapLayerBase):
 
         # Personal space -> high cost, social zone -> moderate
         personal_r2 = (self.personal_radius / self._resolution) ** 2
-        normalized = dist2 * (sigma_front ** 2)  # back to cell-distance scale
+        normalized = dist2 * (sigma_front**2)  # back to cell-distance scale
         blob = np.where(
             normalized < personal_r2,
             INSCRIBED_COST,
@@ -376,6 +391,7 @@ class SocialCostmapLayer(_CostmapLayerBase):
 # ---------------------------------------------------------------------------
 # Predictive costmap layer
 # ---------------------------------------------------------------------------
+
 
 class PredictiveCostmapLayer(_CostmapLayerBase):
     """Encodes *predicted* pedestrian trajectories into the costmap.
@@ -409,7 +425,7 @@ class PredictiveCostmapLayer(_CostmapLayerBase):
         prediction horizon length and columns are ``[x, y]``.
         """
         self.clear()
-        trajectories: Optional[Sequence[np.ndarray]] = kwargs.get("predicted_trajectories")
+        trajectories: Sequence[np.ndarray] | None = kwargs.get("predicted_trajectories")
         if not trajectories:
             return
 
@@ -422,15 +438,11 @@ class PredictiveCostmapLayer(_CostmapLayerBase):
             cost_scale = 1.0
             for t in range(traj.shape[0]):
                 wx, wy = float(traj[t, 0]), float(traj[t, 1])
-                cx, cy = _world_to_grid(
-                    wx, wy, self._origin_x, self._origin_y, self._resolution
-                )
+                cx, cy = _world_to_grid(wx, wy, self._origin_x, self._origin_y, self._resolution)
                 self._stamp_circle(cx, cy, radius_cells, cost_scale)
                 cost_scale *= self.decay_factor
 
-    def _stamp_circle(
-        self, cx: int, cy: int, radius: int, scale: float
-    ) -> None:
+    def _stamp_circle(self, cx: int, cy: int, radius: int, scale: float) -> None:
         """Stamp a filled circle of cost onto the grid."""
         y_lo = max(cy - radius, 0)
         y_hi = min(cy + radius + 1, self._height)
@@ -443,13 +455,11 @@ class PredictiveCostmapLayer(_CostmapLayerBase):
         ys = np.arange(y_lo, y_hi) - cy
         xs = np.arange(x_lo, x_hi) - cx
         xx, yy = np.meshgrid(xs, ys)
-        dist2 = xx ** 2 + yy ** 2
-        mask = dist2 <= radius ** 2
+        dist2 = xx**2 + yy**2
+        mask = dist2 <= radius**2
 
-        cost = (np.exp(-dist2 / (2.0 * (radius * 0.5) ** 2)) * INSCRIBED_COST * scale)
+        cost = np.exp(-dist2 / (2.0 * (radius * 0.5) ** 2)) * INSCRIBED_COST * scale
         cost_int = cost.astype(np.int8)
 
         region = self._grid[y_lo:y_hi, x_lo:x_hi]
-        self._grid[y_lo:y_hi, x_lo:x_hi] = np.where(
-            mask, np.maximum(region, cost_int), region
-        )
+        self._grid[y_lo:y_hi, x_lo:x_hi] = np.where(mask, np.maximum(region, cost_int), region)

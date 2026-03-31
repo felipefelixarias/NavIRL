@@ -55,7 +55,9 @@ def _ensure_points(
     return pts
 
 
-def _resolve_human_start_goal_lists(scenario: dict, backend) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
+def _resolve_human_start_goal_lists(
+    scenario: dict, backend
+) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
     humans = scenario["humans"]
     count = int(humans["count"])
     radius = float(humans["radius"])
@@ -141,7 +143,9 @@ def _enforce_anchor_layout(
 
             if found is None:
                 for _ in range(max_samples):
-                    trial = _project_anchor(tuple(map(float, backend.sample_free_point())), radius, backend)
+                    trial = _project_anchor(
+                        tuple(map(float, backend.sample_free_point())), radius, backend
+                    )
                     if _anchor_ok(trial, radius, placed, backend):
                         found = trial
                         break
@@ -192,16 +196,40 @@ def _sanitize_starts_goals(
 ) -> dict:
     start_anchors: list[dict] = []
     for hid in human_ids:
-        start_anchors.append({"key": f"human.{hid}.start", "position": tuple(human_starts[hid]), "radius": human_radius})
-    start_anchors.append({"key": "robot.start", "position": tuple(scenario["robot"]["start"]), "radius": robot_radius})
+        start_anchors.append(
+            {
+                "key": f"human.{hid}.start",
+                "position": tuple(human_starts[hid]),
+                "radius": human_radius,
+            }
+        )
+    start_anchors.append(
+        {
+            "key": "robot.start",
+            "position": tuple(scenario["robot"]["start"]),
+            "radius": robot_radius,
+        }
+    )
 
     goal_anchors: list[dict] = []
     for hid in human_ids:
-        goal_anchors.append({"key": f"human.{hid}.goal", "position": tuple(human_goals[hid]), "radius": human_radius})
-    goal_anchors.append({"key": "robot.goal", "position": tuple(scenario["robot"]["goal"]), "radius": robot_radius})
+        goal_anchors.append(
+            {
+                "key": f"human.{hid}.goal",
+                "position": tuple(human_goals[hid]),
+                "radius": human_radius,
+            }
+        )
+    goal_anchors.append(
+        {"key": "robot.goal", "position": tuple(scenario["robot"]["goal"]), "radius": robot_radius}
+    )
 
-    placed_starts, adj_starts, unresolved_starts = _enforce_anchor_layout(start_anchors, backend=backend)
-    placed_goals, adj_goals, unresolved_goals = _enforce_anchor_layout(goal_anchors, backend=backend)
+    placed_starts, adj_starts, unresolved_starts = _enforce_anchor_layout(
+        start_anchors, backend=backend
+    )
+    placed_goals, adj_goals, unresolved_goals = _enforce_anchor_layout(
+        goal_anchors, backend=backend
+    )
     placed = placed_starts + placed_goals
     adjustments = adj_starts + adj_goals
     unresolved = unresolved_starts + unresolved_goals
@@ -272,7 +300,9 @@ def _bump_traversability_offset_for_retry(scenario: dict) -> float:
     return float(nxt)
 
 
-def _human_goal_map(controller, fallback: dict[int, tuple[float, float]]) -> dict[int, tuple[float, float]]:
+def _human_goal_map(
+    controller, fallback: dict[int, tuple[float, float]]
+) -> dict[int, tuple[float, float]]:
     ctrl_goals = getattr(controller, "goals", None)
     if isinstance(ctrl_goals, dict):
         return {int(k): tuple(map(float, v)) for k, v in ctrl_goals.items()}
@@ -509,7 +539,9 @@ def run_scenario_dict(
         backend.step()
 
         post_states = capture_states(behaviors)
-        logger.write_state(step_idx + 1, (step_idx + 1) * dt, [post_states[aid] for aid in sorted(post_states)])
+        logger.write_state(
+            step_idx + 1, (step_idx + 1) * dt, [post_states[aid] for aid in sorted(post_states)]
+        )
 
     logger.close()
 

@@ -12,13 +12,14 @@ import csv
 import json
 import logging
 import struct
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import numpy as np
 
-from navirl.data.trajectory import Trajectory, TrajectoryCollection
+from navirl.data.trajectory import Trajectory
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,9 @@ class TrajectoryWindow:
     future_vel: np.ndarray
     timestamps_obs: np.ndarray
     timestamps_fut: np.ndarray
-    agent_id: Union[str, int]
-    neighbor_positions: List[np.ndarray] = field(default_factory=list)
-    scene_context: Optional[np.ndarray] = None
+    agent_id: str | int
+    neighbor_positions: list[np.ndarray] = field(default_factory=list)
+    scene_context: np.ndarray | None = None
 
 
 @dataclass
@@ -78,9 +79,7 @@ class SplitConfig:
     def __post_init__(self) -> None:
         total = self.train_ratio + self.val_ratio + self.test_ratio
         if abs(total - 1.0) > 1e-6:
-            raise ValueError(
-                f"Split ratios must sum to 1.0, got {total:.6f}"
-            )
+            raise ValueError(f"Split ratios must sum to 1.0, got {total:.6f}")
 
 
 @dataclass
@@ -98,12 +97,12 @@ class AugmentationConfig:
         seed: Random seed for reproducibility.
     """
 
-    rotation_range: Tuple[float, float] = (-np.pi, np.pi)
+    rotation_range: tuple[float, float] = (-np.pi, np.pi)
     flip_x: bool = True
     flip_y: bool = True
-    scale_range: Tuple[float, float] = (0.8, 1.2)
+    scale_range: tuple[float, float] = (0.8, 1.2)
     noise_std: float = 0.05
-    speed_perturbation_range: Tuple[float, float] = (0.8, 1.2)
+    speed_perturbation_range: tuple[float, float] = (0.8, 1.2)
     augmentation_factor: int = 4
     seed: int = 42
 
@@ -113,7 +112,7 @@ class AugmentationConfig:
 # ---------------------------------------------------------------------------
 
 
-def _load_csv(path: Path) -> List[Trajectory]:
+def _load_csv(path: Path) -> list[Trajectory]:
     """Load trajectories from a CSV file.
 
     Expected columns: ``frame_id, agent_id, x, y [, vx, vy]``.
@@ -128,7 +127,7 @@ def _load_csv(path: Path) -> List[Trajectory]:
     text = path.read_text()
     delimiter = "\t" if "\t" in text.split("\n")[0] else ","
 
-    rows: List[List[str]] = []
+    rows: list[list[str]] = []
     reader = csv.reader(text.strip().splitlines(), delimiter=delimiter)
     for row in reader:
         # Skip header rows that contain non-numeric first fields
@@ -143,7 +142,7 @@ def _load_csv(path: Path) -> List[Trajectory]:
         return []
 
     # Parse into structured arrays
-    agent_data: Dict[str, Dict[str, list]] = {}
+    agent_data: dict[str, dict[str, list]] = {}
     has_vel = len(rows[0]) >= 6
 
     for row in rows:
@@ -163,15 +162,11 @@ def _load_csv(path: Path) -> List[Trajectory]:
             vx, vy = float(row[4]), float(row[5])
             agent_data[agent_id]["velocities"].append([vx, vy])
 
-    trajectories: List[Trajectory] = []
+    trajectories: list[Trajectory] = []
     for aid, data in agent_data.items():
         ts = np.array(data["timestamps"], dtype=np.float64)
         pos = np.array(data["positions"], dtype=np.float64)
-        vel = (
-            np.array(data["velocities"], dtype=np.float64)
-            if data["velocities"]
-            else None
-        )
+        vel = np.array(data["velocities"], dtype=np.float64) if data["velocities"] else None
         # Sort by timestamp
         order = np.argsort(ts)
         trajectories.append(
@@ -185,7 +180,7 @@ def _load_csv(path: Path) -> List[Trajectory]:
     return trajectories
 
 
-def _load_json(path: Path) -> List[Trajectory]:
+def _load_json(path: Path) -> list[Trajectory]:
     """Load trajectories from a JSON file.
 
     Expected schema::
@@ -208,20 +203,16 @@ def _load_json(path: Path) -> List[Trajectory]:
     Returns:
         List of :class:`Trajectory` objects.
     """
-    with open(path, "r") as fp:
+    with open(path) as fp:
         data = json.load(fp)
 
     traj_list = data if isinstance(data, list) else data.get("trajectories", [])
 
-    trajectories: List[Trajectory] = []
+    trajectories: list[Trajectory] = []
     for entry in traj_list:
         ts = np.array(entry["timestamps"], dtype=np.float64)
         pos = np.array(entry["positions"], dtype=np.float64)
-        vel = (
-            np.array(entry["velocities"], dtype=np.float64)
-            if "velocities" in entry
-            else None
-        )
+        vel = np.array(entry["velocities"], dtype=np.float64) if "velocities" in entry else None
         agent_id = entry.get("agent_id", entry.get("id", len(trajectories)))
         order = np.argsort(ts)
         trajectories.append(
@@ -235,7 +226,7 @@ def _load_json(path: Path) -> List[Trajectory]:
     return trajectories
 
 
-def _load_protobuf(path: Path) -> List[Trajectory]:
+def _load_protobuf(path: Path) -> list[Trajectory]:
     """Load trajectories from a lightweight binary protobuf-like format.
 
     Binary layout per trajectory record:
@@ -255,7 +246,7 @@ def _load_protobuf(path: Path) -> List[Trajectory]:
     """
     raw = path.read_bytes()
     offset = 0
-    trajectories: List[Trajectory] = []
+    trajectories: list[Trajectory] = []
 
     while offset < len(raw):
         # Agent id
@@ -275,9 +266,9 @@ def _load_protobuf(path: Path) -> List[Trajectory]:
         offset += num_t * 8
 
         # Positions
-        pos = np.frombuffer(
-            raw, dtype="<f8", count=num_t * 2, offset=offset
-        ).reshape(num_t, 2).copy()
+        pos = (
+            np.frombuffer(raw, dtype="<f8", count=num_t * 2, offset=offset).reshape(num_t, 2).copy()
+        )
         offset += num_t * 16
 
         # Velocities flag
@@ -289,9 +280,11 @@ def _load_protobuf(path: Path) -> List[Trajectory]:
 
         vel = None
         if has_vel:
-            vel = np.frombuffer(
-                raw, dtype="<f8", count=num_t * 2, offset=offset
-            ).reshape(num_t, 2).copy()
+            vel = (
+                np.frombuffer(raw, dtype="<f8", count=num_t * 2, offset=offset)
+                .reshape(num_t, 2)
+                .copy()
+            )
             offset += num_t * 16
 
         trajectories.append(
@@ -337,12 +330,12 @@ def _compute_velocities(traj: Trajectory) -> np.ndarray:
 
 
 def create_windows(
-    trajectories: List[Trajectory],
+    trajectories: list[Trajectory],
     obs_len: int = 8,
     pred_len: int = 12,
     stride: int = 1,
-    min_length: Optional[int] = None,
-) -> List[TrajectoryWindow]:
+    min_length: int | None = None,
+) -> list[TrajectoryWindow]:
     """Create sliding-window samples from a list of trajectories.
 
     For each trajectory of length ``T``, a window of total length
@@ -363,7 +356,7 @@ def create_windows(
     if min_length is None:
         min_length = total_len
 
-    windows: List[TrajectoryWindow] = []
+    windows: list[TrajectoryWindow] = []
     for traj in trajectories:
         T = len(traj.timestamps)
         if T < min_length:
@@ -400,9 +393,9 @@ def create_windows(
 
 
 def split_windows(
-    windows: List[TrajectoryWindow],
-    config: Optional[SplitConfig] = None,
-) -> Tuple[List[TrajectoryWindow], List[TrajectoryWindow], List[TrajectoryWindow]]:
+    windows: list[TrajectoryWindow],
+    config: SplitConfig | None = None,
+) -> tuple[list[TrajectoryWindow], list[TrajectoryWindow], list[TrajectoryWindow]]:
     """Split trajectory windows into train, validation, and test sets.
 
     Parameters:
@@ -420,9 +413,9 @@ def split_windows(
 
     if config.by_scene:
         # Group windows by agent_id (proxy for scene)
-        scene_ids: List[Union[str, int]] = []
-        seen: Dict[Union[str, int], int] = {}
-        indices_by_scene: Dict[int, List[int]] = {}
+        scene_ids: list[str | int] = []
+        seen: dict[str | int, int] = {}
+        indices_by_scene: dict[int, list[int]] = {}
         for i, w in enumerate(windows):
             if w.agent_id not in seen:
                 seen[w.agent_id] = len(seen)
@@ -468,9 +461,9 @@ def split_windows(
 
 
 def split_trajectories(
-    trajectories: List[Trajectory],
-    config: Optional[SplitConfig] = None,
-) -> Tuple[List[Trajectory], List[Trajectory], List[Trajectory]]:
+    trajectories: list[Trajectory],
+    config: SplitConfig | None = None,
+) -> tuple[list[Trajectory], list[Trajectory], list[Trajectory]]:
     """Split raw trajectories into train, validation, and test sets.
 
     Parameters:
@@ -534,7 +527,7 @@ def _perturb_speed(
     positions: np.ndarray,
     timestamps: np.ndarray,
     factor: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Perturb effective speed by interpolating positions.
 
     Scaling factor > 1 increases speed, < 1 decreases speed.  This is
@@ -561,8 +554,8 @@ def _perturb_speed(
 
 def augment_window(
     window: TrajectoryWindow,
-    config: Optional[AugmentationConfig] = None,
-    rng: Optional[np.random.RandomState] = None,
+    config: AugmentationConfig | None = None,
+    rng: np.random.RandomState | None = None,
 ) -> TrajectoryWindow:
     """Apply a single random augmentation to a trajectory window.
 
@@ -638,9 +631,9 @@ def augment_window(
 
 
 def augment_dataset(
-    windows: List[TrajectoryWindow],
-    config: Optional[AugmentationConfig] = None,
-) -> List[TrajectoryWindow]:
+    windows: list[TrajectoryWindow],
+    config: AugmentationConfig | None = None,
+) -> list[TrajectoryWindow]:
     """Augment a full dataset of windows, producing multiple augmented copies.
 
     Parameters:
@@ -654,7 +647,7 @@ def augment_dataset(
         config = AugmentationConfig()
 
     rng = np.random.RandomState(config.seed)
-    augmented: List[TrajectoryWindow] = list(windows)
+    augmented: list[TrajectoryWindow] = list(windows)
 
     for _ in range(config.augmentation_factor):
         for w in windows:
@@ -675,7 +668,7 @@ def augment_dataset(
 
 
 def find_neighbors(
-    windows: List[TrajectoryWindow],
+    windows: list[TrajectoryWindow],
     radius: float = 5.0,
     max_neighbors: int = 10,
     timestamp_tolerance: float = 0.1,
@@ -694,22 +687,20 @@ def find_neighbors(
             two agents to be considered contemporaneous.
     """
     # Build lookup: timestamp -> list of (agent_id, window_idx, position)
-    ts_lookup: Dict[float, List[Tuple[Union[str, int], int, np.ndarray]]] = {}
+    ts_lookup: dict[float, list[tuple[str | int, int, np.ndarray]]] = {}
 
     for w_idx, w in enumerate(windows):
         for t_idx, t in enumerate(w.timestamps_obs):
             rounded_t = round(t / timestamp_tolerance) * timestamp_tolerance
-            ts_lookup.setdefault(rounded_t, []).append(
-                (w.agent_id, w_idx, w.observed[t_idx])
-            )
+            ts_lookup.setdefault(rounded_t, []).append((w.agent_id, w_idx, w.observed[t_idx]))
 
     for w_idx, w in enumerate(windows):
-        neighbor_pos_per_step: List[np.ndarray] = []
+        neighbor_pos_per_step: list[np.ndarray] = []
         for t_idx, t in enumerate(w.timestamps_obs):
             rounded_t = round(t / timestamp_tolerance) * timestamp_tolerance
             candidates = ts_lookup.get(rounded_t, [])
             pos_self = w.observed[t_idx]
-            neighbors: List[Tuple[float, np.ndarray]] = []
+            neighbors: list[tuple[float, np.ndarray]] = []
             for aid, cidx, cpos in candidates:
                 if cidx == w_idx:
                     continue
@@ -721,9 +712,7 @@ def find_neighbors(
             # Sort by distance and limit
             neighbors.sort(key=lambda x: x[0])
             if neighbors:
-                nbr_arr = np.array(
-                    [n[1] for n in neighbors[:max_neighbors]], dtype=np.float64
-                )
+                nbr_arr = np.array([n[1] for n in neighbors[:max_neighbors]], dtype=np.float64)
             else:
                 nbr_arr = np.zeros((0, 2), dtype=np.float64)
             neighbor_pos_per_step.append(nbr_arr)
@@ -738,11 +727,11 @@ def find_neighbors(
 
 
 def extract_scene_context(
-    windows: List[TrajectoryWindow],
-    scene_map: Optional[np.ndarray] = None,
+    windows: list[TrajectoryWindow],
+    scene_map: np.ndarray | None = None,
     patch_size: int = 64,
     resolution: float = 0.1,
-    map_origin: Tuple[float, float] = (0.0, 0.0),
+    map_origin: tuple[float, float] = (0.0, 0.0),
 ) -> None:
     """Extract local scene context patches for each trajectory window.
 
@@ -842,11 +831,11 @@ class TrajectoryDatasetPipeline:
         obs_len: int = 8,
         pred_len: int = 12,
         stride: int = 1,
-        augmentation: Optional[AugmentationConfig] = None,
-        split: Optional[SplitConfig] = None,
+        augmentation: AugmentationConfig | None = None,
+        split: SplitConfig | None = None,
         neighbor_radius: float = 5.0,
         max_neighbors: int = 10,
-        scene_map: Optional[np.ndarray] = None,
+        scene_map: np.ndarray | None = None,
         patch_size: int = 64,
         map_resolution: float = 0.1,
     ) -> None:
@@ -861,15 +850,15 @@ class TrajectoryDatasetPipeline:
         self.patch_size = patch_size
         self.map_resolution = map_resolution
 
-        self._trajectories: List[Trajectory] = []
-        self._windows: List[TrajectoryWindow] = []
-        self._train: List[TrajectoryWindow] = []
-        self._val: List[TrajectoryWindow] = []
-        self._test: List[TrajectoryWindow] = []
+        self._trajectories: list[Trajectory] = []
+        self._windows: list[TrajectoryWindow] = []
+        self._train: list[TrajectoryWindow] = []
+        self._val: list[TrajectoryWindow] = []
+        self._test: list[TrajectoryWindow] = []
 
     # ---- Loading ---------------------------------------------------------
 
-    def load(self, path: Union[str, Path]) -> "TrajectoryDatasetPipeline":
+    def load(self, path: str | Path) -> TrajectoryDatasetPipeline:
         """Load trajectories from a file.
 
         The format is inferred from the file extension:
@@ -899,7 +888,7 @@ class TrajectoryDatasetPipeline:
         logger.info("Loaded %d trajectories from %s", len(self._trajectories), path)
         return self
 
-    def load_multiple(self, paths: Sequence[Union[str, Path]]) -> "TrajectoryDatasetPipeline":
+    def load_multiple(self, paths: Sequence[str | Path]) -> TrajectoryDatasetPipeline:
         """Load and merge trajectories from multiple files.
 
         Parameters:
@@ -908,7 +897,7 @@ class TrajectoryDatasetPipeline:
         Returns:
             ``self`` for method chaining.
         """
-        all_trajs: List[Trajectory] = []
+        all_trajs: list[Trajectory] = []
         for p in paths:
             p = Path(p)
             ext = p.suffix.lower()
@@ -926,21 +915,17 @@ class TrajectoryDatasetPipeline:
 
     # ---- Processing ------------------------------------------------------
 
-    def process(self) -> "TrajectoryDatasetPipeline":
+    def process(self) -> TrajectoryDatasetPipeline:
         """Run the full processing pipeline: windowing, neighbors, context, augment, split.
 
         Returns:
             ``self`` for method chaining.
         """
         # Windowing
-        self._windows = create_windows(
-            self._trajectories, self.obs_len, self.pred_len, self.stride
-        )
+        self._windows = create_windows(self._trajectories, self.obs_len, self.pred_len, self.stride)
 
         # Neighbor finding
-        find_neighbors(
-            self._windows, self.neighbor_radius, self.max_neighbors
-        )
+        find_neighbors(self._windows, self.neighbor_radius, self.max_neighbors)
 
         # Scene context
         if self.scene_map is not None:
@@ -956,16 +941,14 @@ class TrajectoryDatasetPipeline:
             self._windows = augment_dataset(self._windows, self.augmentation)
 
         # Splitting
-        self._train, self._val, self._test = split_windows(
-            self._windows, self.split_config
-        )
+        self._train, self._val, self._test = split_windows(self._windows, self.split_config)
         return self
 
     # ---- Accessors -------------------------------------------------------
 
     def get_splits(
         self,
-    ) -> Tuple[List[TrajectoryWindow], List[TrajectoryWindow], List[TrajectoryWindow]]:
+    ) -> tuple[list[TrajectoryWindow], list[TrajectoryWindow], list[TrajectoryWindow]]:
         """Return the train, val, test splits.
 
         Returns:
@@ -974,18 +957,16 @@ class TrajectoryDatasetPipeline:
         return self._train, self._val, self._test
 
     @property
-    def trajectories(self) -> List[Trajectory]:
+    def trajectories(self) -> list[Trajectory]:
         """Raw loaded trajectories."""
         return self._trajectories
 
     @property
-    def windows(self) -> List[TrajectoryWindow]:
+    def windows(self) -> list[TrajectoryWindow]:
         """All processed trajectory windows (before splitting)."""
         return self._windows
 
-    def get_numpy_arrays(
-        self, split: str = "train"
-    ) -> Dict[str, np.ndarray]:
+    def get_numpy_arrays(self, split: str = "train") -> dict[str, np.ndarray]:
         """Return numpy arrays for a given split suitable for model training.
 
         Parameters:
@@ -1017,7 +998,7 @@ class TrajectoryDatasetPipeline:
 
     def iterate_batches(
         self, split: str = "train", batch_size: int = 64, shuffle: bool = True
-    ) -> Iterator[Dict[str, np.ndarray]]:
+    ) -> Iterator[dict[str, np.ndarray]]:
         """Iterate over mini-batches of trajectory windows.
 
         Parameters:
@@ -1042,7 +1023,7 @@ class TrajectoryDatasetPipeline:
             batch_idx = indices[start:end]
             yield {k: v[batch_idx] for k, v in arrays.items()}
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return a summary dictionary of the pipeline state.
 
         Returns:

@@ -19,8 +19,9 @@ Reference:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -92,9 +93,9 @@ class MaxEntIRL:
         self,
         config: MaxEntIRLConfig,
         feature_fn: Callable[[np.ndarray], np.ndarray],
-        forward_rl_fn: Optional[
-            Callable[[Callable[[np.ndarray], float], int], List[List[np.ndarray]]]
-        ] = None,
+        forward_rl_fn: (
+            Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]] | None
+        ) = None,
     ) -> None:
         self._config = config
         self._feature_fn = feature_fn
@@ -104,7 +105,7 @@ class MaxEntIRL:
         self._theta = np.zeros(config.feature_dim, dtype=np.float64)
 
         self._iteration: int = 0
-        self._history: List[Dict[str, float]] = []
+        self._history: list[dict[str, float]] = []
 
         logger.info(
             "MaxEntIRL initialised  |  feature_dim=%d  lr=%.4f  iterations=%d",
@@ -123,7 +124,7 @@ class MaxEntIRL:
         return self._theta.copy()
 
     @property
-    def history(self) -> List[Dict[str, float]]:
+    def history(self) -> list[dict[str, float]]:
         """Training history (list of per-iteration metrics)."""
         return list(self._history)
 
@@ -160,9 +161,7 @@ class MaxEntIRL:
         np.ndarray
             Reward vector ``(N,)``.
         """
-        features = np.array(
-            [self._feature_fn(obs) for obs in observations], dtype=np.float64
-        )
+        features = np.array([self._feature_fn(obs) for obs in observations], dtype=np.float64)
         return features @ self._theta
 
     # ------------------------------------------------------------------
@@ -171,7 +170,7 @@ class MaxEntIRL:
 
     def compute_feature_expectations(
         self,
-        trajectories: List[List[np.ndarray]],
+        trajectories: list[list[np.ndarray]],
     ) -> np.ndarray:
         """Compute discounted feature expectations from trajectories.
 
@@ -199,7 +198,7 @@ class MaxEntIRL:
 
     @staticmethod
     def compute_feature_expectations_from_features(
-        feature_trajectories: List[np.ndarray],
+        feature_trajectories: list[np.ndarray],
         discount: float = 0.99,
     ) -> np.ndarray:
         """Compute feature expectations from pre-computed feature arrays.
@@ -216,7 +215,7 @@ class MaxEntIRL:
         np.ndarray
             Mean feature expectations.
         """
-        all_fe: Optional[np.ndarray] = None
+        all_fe: np.ndarray | None = None
         n_traj = len(feature_trajectories)
 
         for feat_traj in feature_trajectories:
@@ -240,7 +239,7 @@ class MaxEntIRL:
         self,
         expert_features: np.ndarray,
         policy_features: np.ndarray,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Perform a single gradient step on the reward parameters.
 
         Parameters
@@ -277,11 +276,11 @@ class MaxEntIRL:
 
     def train(
         self,
-        expert_trajectories: List[List[np.ndarray]],
+        expert_trajectories: list[list[np.ndarray]],
         forward_rl_steps: int = 10000,
         *,
         verbose: bool = True,
-    ) -> List[Dict[str, float]]:
+    ) -> list[dict[str, float]]:
         """Run the full MaxEnt IRL training loop.
 
         Parameters
@@ -315,7 +314,7 @@ class MaxEntIRL:
         # Compute expert feature expectations once
         expert_fe = self.compute_feature_expectations(expert_trajectories)
 
-        all_metrics: List[Dict[str, float]] = []
+        all_metrics: list[dict[str, float]] = []
 
         for it in range(cfg.num_iterations):
             # Forward RL with current reward
@@ -326,7 +325,9 @@ class MaxEntIRL:
             metrics = self.update_step(expert_fe, policy_fe)
             all_metrics.append(metrics)
 
-            if verbose and (it % max(1, cfg.num_iterations // 20) == 0 or it == cfg.num_iterations - 1):
+            if verbose and (
+                it % max(1, cfg.num_iterations // 20) == 0 or it == cfg.num_iterations - 1
+            ):
                 logger.info(
                     "MaxEntIRL iter %3d/%d  grad_norm=%.6f  theta_norm=%.6f",
                     it + 1,
@@ -341,7 +342,7 @@ class MaxEntIRL:
     # Serialisation
     # ------------------------------------------------------------------
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         """Return a serialisable state dictionary."""
         return {
             "theta": self._theta.copy(),
@@ -349,7 +350,7 @@ class MaxEntIRL:
             "config": self._config.to_dict(),
         }
 
-    def load_state_dict(self, d: Dict[str, Any]) -> None:
+    def load_state_dict(self, d: dict[str, Any]) -> None:
         """Load state from a dictionary.
 
         Parameters

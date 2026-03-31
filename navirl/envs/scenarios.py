@@ -16,15 +16,15 @@ from __future__ import annotations
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
-ScenarioConfig = Dict[str, Any]
-Position = Tuple[float, float]
+ScenarioConfig = dict[str, Any]
+Position = tuple[float, float]
 
 
 # ---------------------------------------------------------------------------
@@ -65,23 +65,20 @@ class BaseScenario(ABC):
     def _positions_on_circle(
         n: int,
         radius: float,
-        center: Tuple[float, float] = (0.0, 0.0),
+        center: tuple[float, float] = (0.0, 0.0),
         offset_angle: float = 0.0,
-    ) -> List[Position]:
+    ) -> list[Position]:
         angles = [offset_angle + 2 * math.pi * i / n for i in range(n)]
         return [
-            (center[0] + radius * math.cos(a), center[1] + radius * math.sin(a))
-            for a in angles
+            (center[0] + radius * math.cos(a), center[1] + radius * math.sin(a)) for a in angles
         ]
 
     @staticmethod
     def _antipodal(
-        positions: List[Position],
-        center: Tuple[float, float] = (0.0, 0.0),
-    ) -> List[Position]:
-        return [
-            (2 * center[0] - px, 2 * center[1] - py) for (px, py) in positions
-        ]
+        positions: list[Position],
+        center: tuple[float, float] = (0.0, 0.0),
+    ) -> list[Position]:
+        return [(2 * center[0] - px, 2 * center[1] - py) for (px, py) in positions]
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +138,7 @@ class RandomGoal(BaseScenario):
     world_size: float = 6.0
     min_goal_dist: float = 3.0
 
-    def _sample_pair(self, rng: np.random.Generator) -> Tuple[Position, Position]:
+    def _sample_pair(self, rng: np.random.Generator) -> tuple[Position, Position]:
         while True:
             start = self._uniform_position(rng, -self.world_size, self.world_size)
             goal = self._uniform_position(rng, -self.world_size, self.world_size)
@@ -150,8 +147,8 @@ class RandomGoal(BaseScenario):
 
     def generate(self, rng: np.random.Generator) -> ScenarioConfig:
         robot_start, robot_goal = self._sample_pair(rng)
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
         for _ in range(self.num_humans):
             hs, hg = self._sample_pair(rng)
             human_starts.append(hs)
@@ -195,8 +192,8 @@ class CorridorPassing(BaseScenario):
         robot_start = (-half_l, 0.0)
         robot_goal = (half_l, 0.0)
 
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
 
         for i in range(self.num_humans):
             y = float(rng.uniform(-half_w, half_w))
@@ -245,8 +242,8 @@ class DoorwayNegotiation(BaseScenario):
         robot_start = (-self.room_depth, 0.0)
         robot_goal = (self.room_depth, 0.0)
 
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
 
         for _ in range(self.num_humans):
             y_offset = float(rng.uniform(-self.door_width / 2, self.door_width / 2))
@@ -291,18 +288,20 @@ class IntersectionCrossing(BaseScenario):
         robot_goal = (0.0, self.approach_distance)
 
         directions = [
-            ((0.0, -1.0), (0.0, 1.0)),   # south -> north
-            ((0.0, 1.0), (0.0, -1.0)),    # north -> south
-            ((-1.0, 0.0), (1.0, 0.0)),    # west  -> east
-            ((1.0, 0.0), (-1.0, 0.0)),    # east  -> west
+            ((0.0, -1.0), (0.0, 1.0)),  # south -> north
+            ((0.0, 1.0), (0.0, -1.0)),  # north -> south
+            ((-1.0, 0.0), (1.0, 0.0)),  # west  -> east
+            ((1.0, 0.0), (-1.0, 0.0)),  # east  -> west
         ]
 
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
 
         for (sx, sy), (gx, gy) in directions:
             for _ in range(self.num_humans_per_direction):
-                lateral = float(rng.uniform(-self.intersection_size / 2, self.intersection_size / 2))
+                lateral = float(
+                    rng.uniform(-self.intersection_size / 2, self.intersection_size / 2)
+                )
                 start = (
                     sx * self.approach_distance + gy * lateral,
                     sy * self.approach_distance + gx * lateral,
@@ -352,8 +351,8 @@ class GroupNavigation(BaseScenario):
         robot_start = self._uniform_position(rng, -self.world_size, self.world_size)
         robot_goal = self._uniform_position(rng, -self.world_size, self.world_size)
 
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
 
         for _ in range(self.num_groups):
             cx, cy = self._uniform_position(rng, -self.world_size + 1, self.world_size - 1)
@@ -399,8 +398,8 @@ class DenseRoom(BaseScenario):
         robot_start = (-self.room_size + 0.5, -self.room_size + 0.5)
         robot_goal = (self.room_size - 0.5, self.room_size - 0.5)
 
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
 
         for _ in range(self.num_humans):
             hs = self._uniform_position(rng, -self.room_size, self.room_size)
@@ -441,8 +440,8 @@ class OpenField(BaseScenario):
         robot_start = self._uniform_position(rng, -self.field_size, self.field_size)
         robot_goal = self._uniform_position(rng, -self.field_size, self.field_size)
 
-        human_starts: List[Position] = []
-        human_goals: List[Position] = []
+        human_starts: list[Position] = []
+        human_goals: list[Position] = []
 
         for _ in range(self.num_humans):
             hs = self._uniform_position(rng, -self.field_size, self.field_size)
@@ -502,14 +501,10 @@ class ScenarioDifficultyScaler(BaseScenario):
         # Make corridors / doorways narrower at higher difficulty
         if hasattr(self.base_scenario, "corridor_width"):
             base_w = self.base_scenario.corridor_width  # type: ignore[union-attr]
-            object.__setattr__(
-                self.base_scenario, "corridor_width", base_w * (1.0 - 0.5 * d)
-            )
+            object.__setattr__(self.base_scenario, "corridor_width", base_w * (1.0 - 0.5 * d))
         if hasattr(self.base_scenario, "door_width"):
             base_w = self.base_scenario.door_width  # type: ignore[union-attr]
-            object.__setattr__(
-                self.base_scenario, "door_width", base_w * (1.0 - 0.5 * d)
-            )
+            object.__setattr__(self.base_scenario, "door_width", base_w * (1.0 - 0.5 * d))
 
         config = self.base_scenario.generate(rng)
         config["difficulty"] = d
@@ -535,7 +530,7 @@ class ProceduralScenarioGenerator(BaseScenario):
         Optional sampling weights (need not sum to 1).
     """
 
-    scenario_pool: List[BaseScenario] = field(
+    scenario_pool: list[BaseScenario] = field(
         default_factory=lambda: [
             CircleCrossing(),
             RandomGoal(),
@@ -544,8 +539,8 @@ class ProceduralScenarioGenerator(BaseScenario):
             IntersectionCrossing(),
         ]
     )
-    difficulty_range: Optional[Tuple[float, float]] = None
-    weights: Optional[List[float]] = None
+    difficulty_range: tuple[float, float] | None = None
+    weights: list[float] | None = None
 
     def generate(self, rng: np.random.Generator) -> ScenarioConfig:
         # Normalise weights
@@ -561,9 +556,7 @@ class ProceduralScenarioGenerator(BaseScenario):
         if self.difficulty_range is not None:
             lo, hi = self.difficulty_range
             diff = float(rng.uniform(lo, hi))
-            scenario = ScenarioDifficultyScaler(
-                base_scenario=scenario, difficulty=diff
-            )
+            scenario = ScenarioDifficultyScaler(base_scenario=scenario, difficulty=diff)
 
         config = scenario.generate(rng)
         config["scenario_index"] = idx

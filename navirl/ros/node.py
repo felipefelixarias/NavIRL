@@ -12,8 +12,7 @@ Usage::
 from __future__ import annotations
 
 import logging
-import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -24,14 +23,13 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 try:
     import rclpy
-    from rclpy.node import Node
-    from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-
     from geometry_msgs.msg import Twist
-    from sensor_msgs.msg import LaserScan, Image
     from nav_msgs.msg import Odometry
-    from visualization_msgs.msg import MarkerArray, Marker
+    from rclpy.node import Node
+    from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+    from sensor_msgs.msg import Image, LaserScan
     from std_msgs.msg import String
+    from visualization_msgs.msg import Marker, MarkerArray
 
     _ROS2_AVAILABLE = True
 except ImportError as _exc:  # pragma: no cover
@@ -44,10 +42,12 @@ except ImportError as _exc:  # pragma: no cover
 # Optional: person tracking message (custom or from pedsim)
 try:
     from spencer_tracking_msgs.msg import TrackedPersons as PersonArray
+
     _HAS_PERSON_MSG = True
 except ImportError:
     try:
         from pedsim_msgs.msg import TrackedPersons as PersonArray
+
         _HAS_PERSON_MSG = True
     except ImportError:
         _HAS_PERSON_MSG = False
@@ -55,10 +55,10 @@ except ImportError:
 
 from . import conversions
 
-
 # ---------------------------------------------------------------------------
 # Node
 # ---------------------------------------------------------------------------
+
 
 class NavIRLNode(Node):  # type: ignore[misc]
     """Bridge between a NavIRL agent and the ROS2 topic graph.
@@ -105,8 +105,12 @@ class NavIRLNode(Node):  # type: ignore[misc]
 
         self._agent_type: str = self.get_parameter("agent_type").get_parameter_value().string_value
         self._model_path: str = self.get_parameter("model_path").get_parameter_value().string_value
-        self._action_rate: float = self.get_parameter("action_rate").get_parameter_value().double_value
-        self._obs_type: str = self.get_parameter("observation_type").get_parameter_value().string_value
+        self._action_rate: float = (
+            self.get_parameter("action_rate").get_parameter_value().double_value
+        )
+        self._obs_type: str = (
+            self.get_parameter("observation_type").get_parameter_value().string_value
+        )
 
         self.get_logger().info(
             f"NavIRLNode starting  agent_type={self._agent_type}  "
@@ -115,12 +119,12 @@ class NavIRLNode(Node):  # type: ignore[misc]
         )
 
         # -- Internal state ----------------------------------------------------
-        self._latest_scan: Optional[np.ndarray] = None
-        self._latest_odom: Optional[Dict[str, Any]] = None
-        self._latest_image: Optional[np.ndarray] = None
-        self._latest_persons: Optional[np.ndarray] = None
+        self._latest_scan: np.ndarray | None = None
+        self._latest_odom: dict[str, Any] | None = None
+        self._latest_image: np.ndarray | None = None
+        self._latest_persons: np.ndarray | None = None
         self._agent: Any = None  # loaded lazily
-        self._goal: Optional[tuple] = None
+        self._goal: tuple | None = None
         self._step_count: int = 0
 
         # -- QoS profiles ------------------------------------------------------
@@ -131,12 +135,8 @@ class NavIRLNode(Node):  # type: ignore[misc]
         )
 
         # -- Subscribers -------------------------------------------------------
-        self._sub_scan = self.create_subscription(
-            LaserScan, "/scan", self._scan_cb, sensor_qos
-        )
-        self._sub_odom = self.create_subscription(
-            Odometry, "/odom", self._odom_cb, sensor_qos
-        )
+        self._sub_scan = self.create_subscription(LaserScan, "/scan", self._scan_cb, sensor_qos)
+        self._sub_odom = self.create_subscription(Odometry, "/odom", self._odom_cb, sensor_qos)
         self._sub_image = self.create_subscription(
             Image, "/camera/image_raw", self._image_cb, sensor_qos
         )
@@ -154,9 +154,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
         # -- Publishers --------------------------------------------------------
         self._pub_cmd_vel = self.create_publisher(Twist, "/cmd_vel", 10)
         self._pub_status = self.create_publisher(String, "/navirl/status", 10)
-        self._pub_debug_markers = self.create_publisher(
-            MarkerArray, "/navirl/debug_markers", 10
-        )
+        self._pub_debug_markers = self.create_publisher(MarkerArray, "/navirl/debug_markers", 10)
 
         # -- Timer-based control loop ------------------------------------------
         period_s = 1.0 / max(self._action_rate, 0.1)
@@ -221,9 +219,9 @@ class NavIRLNode(Node):  # type: ignore[misc]
         if self._step_count % 100 == 0:
             self._publish_status(f"running step={self._step_count}")
 
-    def _build_observation(self) -> Optional[Dict[str, Any]]:
+    def _build_observation(self) -> dict[str, Any] | None:
         """Assemble a NavIRL-compatible observation dict from cached data."""
-        obs: Dict[str, Any] = {}
+        obs: dict[str, Any] = {}
 
         if self._obs_type in ("lidar", "full"):
             if self._latest_scan is None:
@@ -247,7 +245,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
 
         return obs if obs else None
 
-    def _query_agent(self, observation: Dict[str, Any]) -> np.ndarray:
+    def _query_agent(self, observation: dict[str, Any]) -> np.ndarray:
         """Get an action from the loaded agent, or return zeros."""
         if self._agent is None:
             return np.zeros(2, dtype=np.float64)
@@ -277,9 +275,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
         msg.data = status_text
         self._pub_status.publish(msg)
 
-    def _publish_debug_markers(
-        self, observation: Dict[str, Any], action: np.ndarray
-    ) -> None:
+    def _publish_debug_markers(self, observation: dict[str, Any], action: np.ndarray) -> None:
         """Publish visualization markers for debugging in RViz."""
         marker_array = MarkerArray()
 
@@ -317,12 +313,12 @@ class NavIRLNode(Node):  # type: ignore[misc]
 # Entry-point
 # ---------------------------------------------------------------------------
 
+
 def main(args: list[str] | None = None) -> None:
     """``ros2 run`` entry-point."""
     if not _ROS2_AVAILABLE:
         raise ImportError(
-            "ROS2 (rclpy) is not installed.  "
-            "Please install ROS2 and source the workspace."
+            "ROS2 (rclpy) is not installed.  " "Please install ROS2 and source the workspace."
         )
     rclpy.init(args=args)
     node = NavIRLNode()

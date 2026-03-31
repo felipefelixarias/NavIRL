@@ -9,17 +9,17 @@ orientation integration.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import GRAVITY, SIM
 from navirl.sensors.base import NoiseModel, SensorBase
 
-
 # ---------------------------------------------------------------------------
 #  Configuration
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class IMUConfig:
@@ -56,6 +56,7 @@ class IMUConfig:
 #  IMUSensor
 # ---------------------------------------------------------------------------
 
+
 class IMUSensor(SensorBase):
     """Simulated 6-axis IMU (accelerometer + gyroscope).
 
@@ -78,8 +79,8 @@ class IMUSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[IMUConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: IMUConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         self._cfg = config or IMUConfig()
         super().__init__(config=self._cfg, noise_model=noise_model)
@@ -88,7 +89,7 @@ class IMUSensor(SensorBase):
         self._accel_bias = np.zeros(3, dtype=np.float64)
         self._gyro_bias = np.zeros(3, dtype=np.float64)
         self._orientation = np.zeros(3, dtype=np.float64)  # roll, pitch, yaw
-        self._prev_vel: Optional[np.ndarray] = None
+        self._prev_vel: np.ndarray | None = None
 
     def reset(self) -> None:
         """Reset biases, orientation estimate, and velocity cache."""
@@ -99,7 +100,7 @@ class IMUSensor(SensorBase):
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "linear_acceleration": {
                 "shape": (3,),
@@ -121,15 +122,14 @@ class IMUSensor(SensorBase):
             },
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> Dict[str, np.ndarray]:
+    def _raw_observe(self, world_state: dict[str, Any]) -> dict[str, np.ndarray]:
         dt = self._cfg.dt
 
         # --- Linear acceleration ---
         if "robot_accel" in world_state:
             accel_2d = np.asarray(world_state["robot_accel"], dtype=np.float64)
         else:
-            vel_2d = np.asarray(world_state.get("robot_vel", [0.0, 0.0]),
-                                dtype=np.float64)
+            vel_2d = np.asarray(world_state.get("robot_vel", [0.0, 0.0]), dtype=np.float64)
             if self._prev_vel is not None:
                 accel_2d = (vel_2d - self._prev_vel) / dt
             else:
@@ -145,29 +145,21 @@ class IMUSensor(SensorBase):
         gyro_3d = np.array([0.0, 0.0, omega_z], dtype=np.float64)
 
         # --- Bias random walk ---
-        self._accel_bias += self._rng.normal(
-            0, self._cfg.accel_bias_std, size=3) * np.sqrt(dt)
-        self._gyro_bias += self._rng.normal(
-            0, self._cfg.gyro_bias_std, size=3) * np.sqrt(dt)
+        self._accel_bias += self._rng.normal(0, self._cfg.accel_bias_std, size=3) * np.sqrt(dt)
+        self._gyro_bias += self._rng.normal(0, self._cfg.gyro_bias_std, size=3) * np.sqrt(dt)
 
         # --- Apply bias and noise ---
         accel_noisy = (
-            accel_3d
-            + self._accel_bias
-            + self._rng.normal(0, self._cfg.accel_noise_std, size=3)
+            accel_3d + self._accel_bias + self._rng.normal(0, self._cfg.accel_noise_std, size=3)
         )
         gyro_noisy = (
-            gyro_3d
-            + self._gyro_bias
-            + self._rng.normal(0, self._cfg.gyro_noise_std, size=3)
+            gyro_3d + self._gyro_bias + self._rng.normal(0, self._cfg.gyro_noise_std, size=3)
         )
 
         # --- Integrate orientation ---
         self._orientation += gyro_noisy * dt
         # Wrap yaw to [-pi, pi]
-        self._orientation[2] = (
-            (self._orientation[2] + np.pi) % (2 * np.pi) - np.pi
-        )
+        self._orientation[2] = (self._orientation[2] + np.pi) % (2 * np.pi) - np.pi
 
         return {
             "linear_acceleration": accel_noisy,
@@ -175,6 +167,6 @@ class IMUSensor(SensorBase):
             "orientation": self._orientation.copy(),
         }
 
-    def observe(self, world_state: Dict[str, Any]) -> Dict[str, np.ndarray]:
+    def observe(self, world_state: dict[str, Any]) -> dict[str, np.ndarray]:
         """Override to skip the generic noise model (noise is applied internally)."""
         return self._raw_observe(world_state)

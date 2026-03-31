@@ -7,7 +7,7 @@ distributed optimizer that combines consensus with local gradient steps.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -71,9 +71,7 @@ class AverageConsensus(ConsensusProtocol):
         if not neighbor_values:
             return local_value
 
-        all_values = [local_value] + [
-            np.asarray(v, dtype=np.float64) for v in neighbor_values
-        ]
+        all_values = [local_value] + [np.asarray(v, dtype=np.float64) for v in neighbor_values]
         mean = np.mean(all_values, axis=0)
         return local_value + self.gain * (mean - local_value)
 
@@ -131,13 +129,13 @@ class WeightedConsensus(ConsensusProtocol):
         self.neighbor_degrees = list(neighbor_degrees)
 
         # Pre-compute Metropolis weights
-        self._weights: List[float] = []
+        self._weights: list[float] = []
         for nd in self.neighbor_degrees:
             self._weights.append(1.0 / (1.0 + max(degree, nd)))
         self._self_weight = 1.0 - sum(self._weights)
 
     @property
-    def weights(self) -> List[float]:
+    def weights(self) -> list[float]:
         """Metropolis weights for each neighbour."""
         return list(self._weights)
 
@@ -168,8 +166,7 @@ class WeightedConsensus(ConsensusProtocol):
         local_value = np.asarray(local_value, dtype=np.float64)
         if len(neighbor_values) != len(self._weights):
             raise ValueError(
-                f"Expected {len(self._weights)} neighbour values, "
-                f"got {len(neighbor_values)}."
+                f"Expected {len(self._weights)} neighbour values, " f"got {len(neighbor_values)}."
             )
 
         result = self._self_weight * local_value

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 import numpy as np
 
@@ -66,15 +66,11 @@ class TrajectoryCollection:
 
     def filter_by_agent(self, agent_id: str | int) -> TrajectoryCollection:
         """Return a new collection containing only trajectories for *agent_id*."""
-        return TrajectoryCollection(
-            [t for t in self.trajectories if t.agent_id == agent_id]
-        )
+        return TrajectoryCollection([t for t in self.trajectories if t.agent_id == agent_id])
 
     def filter_by_duration(self, min_duration: float) -> TrajectoryCollection:
         """Return trajectories whose duration is at least *min_duration* seconds."""
-        return TrajectoryCollection(
-            [t for t in self.trajectories if t.duration >= min_duration]
-        )
+        return TrajectoryCollection([t for t in self.trajectories if t.duration >= min_duration])
 
     def to_numpy(self) -> np.ndarray:
         """Stack all positions into a single ``(N, 2)`` array."""

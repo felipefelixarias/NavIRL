@@ -9,18 +9,18 @@ payloads can be placed at known offsets from the robot frame.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from navirl.robots.base import RobotController, EventSink
 from navirl.core.types import Action, AgentState
-
+from navirl.robots.base import EventSink, RobotController
 
 # -----------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class DifferentialDriveConfig:
@@ -75,6 +75,7 @@ class SensorMountPoint:
 # -----------------------------------------------------------------------
 # PID controller
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class PIDGains:
@@ -137,16 +138,13 @@ class PIDController:
             derivative = (error - self._prev_error) / dt
 
         self._prev_error = error
-        return (
-            self.gains.kp * error
-            + self.gains.ki * self._integral
-            + self.gains.kd * derivative
-        )
+        return self.gains.kp * error + self.gains.ki * self._integral + self.gains.kd * derivative
 
 
 # -----------------------------------------------------------------------
 # Unicycle kinematics helpers
 # -----------------------------------------------------------------------
+
 
 def _wrap_angle(a: float) -> float:
     """Wrap angle to [-pi, pi)."""
@@ -159,7 +157,7 @@ def compute_icc(
     theta: float,
     v: float,
     omega: float,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Compute the Instantaneous Centre of Curvature (ICC).
 
     For a unicycle moving with linear velocity *v* and angular velocity
@@ -193,7 +191,7 @@ def forward_kinematics(
     v: float,
     omega: float,
     dt: float,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Integrate unicycle kinematics for one time-step.
 
     Uses exact integration (arc) rather than Euler to reduce drift.
@@ -229,7 +227,7 @@ def inverse_kinematics(
     omega: float,
     wheel_base: float,
     wheel_radius: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Convert ``(v, omega)`` to individual wheel angular velocities.
 
     Args:
@@ -251,7 +249,7 @@ def wheel_velocities_to_body(
     omega_right: float,
     wheel_base: float,
     wheel_radius: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Convert wheel angular velocities to body ``(v, omega)``
 
     Args:
@@ -274,6 +272,7 @@ def wheel_velocities_to_body(
 # Trajectory tracking
 # -----------------------------------------------------------------------
 
+
 def track_trajectory(
     waypoints: np.ndarray,
     x0: float,
@@ -283,7 +282,7 @@ def track_trajectory(
     config: DifferentialDriveConfig,
     linear_pid: PIDGains | None = None,
     angular_pid: PIDGains | None = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Follow a sequence of 2-D waypoints using PID control.
 
     At each step the controller picks the nearest *un-passed* waypoint,
@@ -310,8 +309,8 @@ def track_trajectory(
 
     x, y, theta = x0, y0, theta0
     wp_idx = 0
-    poses: List[Tuple[float, float, float]] = [(x, y, theta)]
-    controls: List[Tuple[float, float]] = []
+    poses: list[tuple[float, float, float]] = [(x, y, theta)]
+    controls: list[tuple[float, float]] = []
     goal_tol = 0.15
     max_steps = len(waypoints) * 500
 
@@ -357,6 +356,7 @@ def track_trajectory(
 # Odometry model
 # -----------------------------------------------------------------------
 
+
 class OdometryAccumulator:
     """Accumulate odometry with optional Gaussian noise.
 
@@ -383,7 +383,7 @@ class OdometryAccumulator:
         self._noise_lin = noise_linear
         self._noise_ang = noise_angular
 
-    def update(self, v: float, omega: float, dt: float) -> Tuple[float, float, float]:
+    def update(self, v: float, omega: float, dt: float) -> tuple[float, float, float]:
         """Integrate one step and return the new ``(x, y, theta)``."""
         v_noisy = v + np.random.normal(0.0, self._noise_lin) if self._noise_lin > 0 else v
         omega_noisy = (
@@ -410,11 +410,12 @@ class OdometryAccumulator:
 # Wheel slip model
 # -----------------------------------------------------------------------
 
+
 def apply_wheel_slip(
     v_cmd: float,
     omega_cmd: float,
     config: DifferentialDriveConfig,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Apply a simple multiplicative slip model.
 
     Longitudinal slip reduces effective forward speed; lateral slip
@@ -431,9 +432,7 @@ def apply_wheel_slip(
     v_actual = v_cmd * (1.0 - config.slip_longitudinal)
     # Lateral slip adds a random angular disturbance proportional to speed.
     lateral_disturbance = (
-        config.slip_lateral * v_cmd * np.random.normal(0.0, 1.0)
-        if config.slip_lateral > 0
-        else 0.0
+        config.slip_lateral * v_cmd * np.random.normal(0.0, 1.0) if config.slip_lateral > 0 else 0.0
     )
     omega_actual = omega_cmd + lateral_disturbance
     return (v_actual, omega_actual)
@@ -443,12 +442,13 @@ def apply_wheel_slip(
 # Sensor mounting helpers
 # -----------------------------------------------------------------------
 
+
 def sensor_world_pose(
     robot_x: float,
     robot_y: float,
     robot_theta: float,
     mount: SensorMountPoint,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Transform a sensor mount into world coordinates.
 
     Args:
@@ -509,6 +509,7 @@ def sensor_fov_polygon(
 # Rate limiter (acceleration constraints)
 # -----------------------------------------------------------------------
 
+
 def rate_limit(
     v_cmd: float,
     omega_cmd: float,
@@ -516,7 +517,7 @@ def rate_limit(
     omega_prev: float,
     dt: float,
     config: DifferentialDriveConfig,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Enforce acceleration limits on velocity commands.
 
     Args:
@@ -543,6 +544,7 @@ def rate_limit(
 # DifferentialDriveRobot controller
 # -----------------------------------------------------------------------
 
+
 class DifferentialDriveRobot(RobotController):
     """Differential-drive robot with full unicycle kinematics.
 
@@ -562,7 +564,7 @@ class DifferentialDriveRobot(RobotController):
     def __init__(
         self,
         config: DifferentialDriveConfig | None = None,
-        sensor_mounts: List[SensorMountPoint] | None = None,
+        sensor_mounts: list[SensorMountPoint] | None = None,
         linear_pid: PIDGains | None = None,
         angular_pid: PIDGains | None = None,
         path: np.ndarray | None = None,
@@ -580,7 +582,7 @@ class DifferentialDriveRobot(RobotController):
         self._omega: float = 0.0
 
         self._robot_id: int = -1
-        self._goal: Tuple[float, float] = (0.0, 0.0)
+        self._goal: tuple[float, float] = (0.0, 0.0)
         self._backend: Any = None
 
         self._odometry = OdometryAccumulator(
@@ -667,9 +669,7 @@ class DifferentialDriveRobot(RobotController):
         v_cmd *= max(0.0, np.cos(heading_error))
 
         # Acceleration limiting.
-        v_cmd, omega_cmd = rate_limit(
-            v_cmd, omega_cmd, self._v, self._omega, dt, self.config
-        )
+        v_cmd, omega_cmd = rate_limit(v_cmd, omega_cmd, self._v, self._omega, dt, self.config)
 
         # Wheel slip.
         v_actual, omega_actual = apply_wheel_slip(v_cmd, omega_cmd, self.config)
@@ -712,7 +712,7 @@ class DifferentialDriveRobot(RobotController):
         return np.array([self._x, self._y, self._theta])
 
     @property
-    def velocity(self) -> Tuple[float, float]:
+    def velocity(self) -> tuple[float, float]:
         """Current ``(v, omega)`` velocity."""
         return (self._v, self._omega)
 
@@ -721,14 +721,11 @@ class DifferentialDriveRobot(RobotController):
         """Odometry-estimated ``(x, y, theta)``."""
         return self._odometry.pose
 
-    def get_sensor_poses(self) -> List[Tuple[float, float, float]]:
+    def get_sensor_poses(self) -> list[tuple[float, float, float]]:
         """Return world-frame poses of all mounted sensors."""
-        return [
-            sensor_world_pose(self._x, self._y, self._theta, m)
-            for m in self.sensor_mounts
-        ]
+        return [sensor_world_pose(self._x, self._y, self._theta, m) for m in self.sensor_mounts]
 
-    def get_wheel_speeds(self) -> Tuple[float, float]:
+    def get_wheel_speeds(self) -> tuple[float, float]:
         """Return current ``(omega_left, omega_right)`` wheel speeds."""
         return inverse_kinematics(
             self._v,

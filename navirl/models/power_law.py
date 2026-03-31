@@ -14,15 +14,14 @@ Reference:
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 
 from navirl.core.constants import BODY, EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
-
 
 __all__ = [
     "PowerLawConfig",
@@ -34,6 +33,7 @@ __all__ = [
 # ---------------------------------------------------------------------------
 #  Configuration
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PowerLawConfig:
@@ -72,6 +72,7 @@ class PowerLawConfig:
 #  Helpers
 # ---------------------------------------------------------------------------
 
+
 def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
     n = math.hypot(vx, vy)
     if n < EPSILON:
@@ -79,9 +80,7 @@ def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
     return vx / n, vy / n, n
 
 
-def _time_to_collision(
-    px: float, py: float, vx: float, vy: float, radius_sum: float
-) -> float:
+def _time_to_collision(px: float, py: float, vx: float, vy: float, radius_sum: float) -> float:
     """Compute the time-to-collision between two disks.
 
     Parameters
@@ -130,6 +129,7 @@ def _time_to_collision(
 #  Power Law Model
 # ---------------------------------------------------------------------------
 
+
 class PowerLawModel:
     """Core Power Law anticipatory collision avoidance model.
 
@@ -157,8 +157,7 @@ class PowerLawModel:
         ex, ey, dist = _normalize(dx, dy)
 
         if dist < EPSILON:
-            return (-state.vx / self.cfg.relaxation_time,
-                    -state.vy / self.cfg.relaxation_time)
+            return (-state.vx / self.cfg.relaxation_time, -state.vy / self.cfg.relaxation_time)
 
         pref_vx = state.max_speed * ex
         pref_vy = state.max_speed * ey
@@ -193,9 +192,7 @@ class PowerLawModel:
             rel_vy = state.vy - other.vy
             radius_sum = state.radius + other.radius
 
-            tau = _time_to_collision(
-                rel_px, rel_py, rel_vx, rel_vy, radius_sum
-            )
+            tau = _time_to_collision(rel_px, rel_py, rel_vx, rel_vy, radius_sum)
 
             if tau == float("inf") or tau < 0.0:
                 continue
@@ -297,6 +294,7 @@ class PowerLawModel:
 # ---------------------------------------------------------------------------
 #  HumanController wrapper
 # ---------------------------------------------------------------------------
+
 
 class PowerLawHumanController(HumanController):
     """Human behavior controller driven by the Power Law model.

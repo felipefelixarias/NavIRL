@@ -15,8 +15,9 @@ Models that learn reward functions from various supervision signals:
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -49,7 +50,7 @@ def _build_reward_mlp(
     input_dim: int,
     hidden_dims: Sequence[int],
     output_dim: int = 1,
-) -> "nn.Module":
+) -> nn.Module:
     """Build a simple MLP for reward prediction."""
     layers: list[nn.Module] = []
     prev = input_dim
@@ -80,7 +81,7 @@ class PreferenceRewardConfig(HyperParameters):
     """
 
     lr: float = 1e-3
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    hidden_dims: tuple[int, ...] = (256, 256)
     batch_size: int = 32
     epochs: int = 50
     weight_decay: float = 1e-4
@@ -163,7 +164,7 @@ class PreferenceRewardModel:
             rewards = self._reward_net(sa_t).squeeze(-1)
         return rewards.cpu().numpy()
 
-    def _segment_return(self, segment: "torch.Tensor") -> "torch.Tensor":
+    def _segment_return(self, segment: torch.Tensor) -> torch.Tensor:
         """Compute the predicted return for a trajectory segment.
 
         Parameters
@@ -185,10 +186,10 @@ class PreferenceRewardModel:
 
     def train(
         self,
-        preferences: List[Tuple[np.ndarray, np.ndarray, float]],
+        preferences: list[tuple[np.ndarray, np.ndarray, float]],
         *,
         verbose: bool = True,
-    ) -> List[float]:
+    ) -> list[float]:
         """Train from pairwise preferences.
 
         Parameters
@@ -208,7 +209,7 @@ class PreferenceRewardModel:
         """
         cfg = self._config
         n = len(preferences)
-        epoch_losses: List[float] = []
+        epoch_losses: list[float] = []
 
         for epoch in range(cfg.epochs):
             indices = np.random.permutation(n)
@@ -221,12 +222,8 @@ class PreferenceRewardModel:
 
                 for i in batch_idx:
                     seg1, seg2, label = preferences[i]
-                    seg1_t = torch.as_tensor(
-                        seg1.astype(np.float32), device=self._device
-                    )
-                    seg2_t = torch.as_tensor(
-                        seg2.astype(np.float32), device=self._device
-                    )
+                    seg1_t = torch.as_tensor(seg1.astype(np.float32), device=self._device)
+                    seg2_t = torch.as_tensor(seg2.astype(np.float32), device=self._device)
 
                     r1 = self._segment_return(seg1_t)
                     r2 = self._segment_return(seg2_t)
@@ -249,9 +246,7 @@ class PreferenceRewardModel:
             avg_loss = total_loss / max(n_batches, 1)
             epoch_losses.append(avg_loss)
 
-            if verbose and (
-                epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1
-            ):
+            if verbose and (epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1):
                 logger.info(
                     "PreferenceReward epoch %3d/%d  loss=%.6f",
                     epoch + 1,
@@ -265,14 +260,14 @@ class PreferenceRewardModel:
     # Serialisation
     # ------------------------------------------------------------------
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         """Return model state."""
         return {
             "reward_net": self._reward_net.state_dict(),
             "optimizer": self._optimizer.state_dict(),
         }
 
-    def load_state_dict(self, d: Dict[str, Any]) -> None:
+    def load_state_dict(self, d: dict[str, Any]) -> None:
         """Load model state."""
         self._reward_net.load_state_dict(d["reward_net"])
         self._optimizer.load_state_dict(d["optimizer"])
@@ -298,7 +293,7 @@ class DemonstrationRewardConfig(HyperParameters):
     """
 
     lr: float = 1e-3
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    hidden_dims: tuple[int, ...] = (256, 256)
     batch_size: int = 64
     epochs: int = 50
     weight_decay: float = 1e-4
@@ -378,11 +373,11 @@ class DemonstrationRewardModel:
         self,
         expert_obs: np.ndarray,
         expert_actions: np.ndarray,
-        negative_obs: Optional[np.ndarray] = None,
-        negative_actions: Optional[np.ndarray] = None,
+        negative_obs: np.ndarray | None = None,
+        negative_actions: np.ndarray | None = None,
         *,
         verbose: bool = True,
-    ) -> List[float]:
+    ) -> list[float]:
         """Train the reward model.
 
         Parameters
@@ -406,17 +401,11 @@ class DemonstrationRewardModel:
         cfg = self._config
 
         # Build training data
-        expert_sa = np.concatenate(
-            [expert_obs, expert_actions], axis=-1
-        ).astype(np.float32)
-        expert_targets = np.full(
-            len(expert_sa), cfg.target_reward, dtype=np.float32
-        )
+        expert_sa = np.concatenate([expert_obs, expert_actions], axis=-1).astype(np.float32)
+        expert_targets = np.full(len(expert_sa), cfg.target_reward, dtype=np.float32)
 
         if negative_obs is not None and negative_actions is not None:
-            neg_sa = np.concatenate(
-                [negative_obs, negative_actions], axis=-1
-            ).astype(np.float32)
+            neg_sa = np.concatenate([negative_obs, negative_actions], axis=-1).astype(np.float32)
             neg_targets = np.zeros(len(neg_sa), dtype=np.float32)
             all_sa = np.concatenate([expert_sa, neg_sa], axis=0)
             all_targets = np.concatenate([expert_targets, neg_targets], axis=0)
@@ -428,11 +417,9 @@ class DemonstrationRewardModel:
         target_t = torch.as_tensor(all_targets, device=self._device)
 
         dataset = torch.utils.data.TensorDataset(sa_t, target_t)
-        loader = torch.utils.data.DataLoader(
-            dataset, batch_size=cfg.batch_size, shuffle=True
-        )
+        loader = torch.utils.data.DataLoader(dataset, batch_size=cfg.batch_size, shuffle=True)
 
-        epoch_losses: List[float] = []
+        epoch_losses: list[float] = []
         self._reward_net.train()
 
         for epoch in range(cfg.epochs):
@@ -453,9 +440,7 @@ class DemonstrationRewardModel:
             avg_loss = total_loss / max(n_batches, 1)
             epoch_losses.append(avg_loss)
 
-            if verbose and (
-                epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1
-            ):
+            if verbose and (epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1):
                 logger.info(
                     "DemoReward epoch %3d/%d  loss=%.6f",
                     epoch + 1,
@@ -465,14 +450,14 @@ class DemonstrationRewardModel:
 
         return epoch_losses
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         """Return model state."""
         return {
             "reward_net": self._reward_net.state_dict(),
             "optimizer": self._optimizer.state_dict(),
         }
 
-    def load_state_dict(self, d: Dict[str, Any]) -> None:
+    def load_state_dict(self, d: dict[str, Any]) -> None:
         """Load model state."""
         self._reward_net.load_state_dict(d["reward_net"])
         self._optimizer.load_state_dict(d["optimizer"])
@@ -494,7 +479,7 @@ class EnsembleRewardConfig(HyperParameters):
     """
 
     n_members: int = 5
-    member_config: Optional[Any] = None  # Set at runtime
+    member_config: Any | None = None  # Set at runtime
 
 
 class EnsembleRewardModel:
@@ -528,7 +513,7 @@ class EnsembleRewardModel:
 
         self._config = config
         self._device = device
-        self._members: List[Any] = []
+        self._members: list[Any] = []
 
         for i in range(config.n_members):
             member = member_class(config=config.member_config, device=device)
@@ -541,7 +526,7 @@ class EnsembleRewardModel:
         )
 
     @property
-    def members(self) -> List[Any]:
+    def members(self) -> list[Any]:
         """Access individual ensemble members."""
         return self._members
 
@@ -549,7 +534,7 @@ class EnsembleRewardModel:
         self,
         observations: np.ndarray,
         actions: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Predict reward with uncertainty.
 
         Parameters
@@ -596,13 +581,11 @@ class EnsembleRewardModel:
         mean, _ = self.predict_reward(observations, actions)
         return mean
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         """Return ensemble state."""
-        return {
-            f"member_{i}": m.state_dict() for i, m in enumerate(self._members)
-        }
+        return {f"member_{i}": m.state_dict() for i, m in enumerate(self._members)}
 
-    def load_state_dict(self, d: Dict[str, Any]) -> None:
+    def load_state_dict(self, d: dict[str, Any]) -> None:
         """Load ensemble state."""
         for i, m in enumerate(self._members):
             key = f"member_{i}"

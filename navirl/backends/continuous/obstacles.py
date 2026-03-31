@@ -3,12 +3,12 @@
 Provides geometric obstacle primitives used for collision detection
 and path planning in continuous 2-D environments.
 """
+
 from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -152,9 +152,7 @@ class Obstacle(ABC):
         Obstacle
             Inflated obstacle.
         """
-        raise NotImplementedError(
-            f"{type(self).__name__} does not support inflation"
-        )
+        raise NotImplementedError(f"{type(self).__name__} does not support inflation")
 
 
 @dataclass
@@ -242,9 +240,12 @@ class CircleObstacle(Obstacle):
         # Approximate circle with polygon
         n = max(16, int(self.radius * 8))
         angles = np.linspace(0, 2 * math.pi, n, endpoint=False)
-        return self.center + self.radius * np.column_stack([
-            np.cos(angles), np.sin(angles),
-        ])
+        return self.center + self.radius * np.column_stack(
+            [
+                np.cos(angles),
+                np.sin(angles),
+            ]
+        )
 
     def inflate(self, margin: float) -> CircleObstacle:
         return CircleObstacle(
@@ -384,12 +385,14 @@ class RectangleObstacle(Obstacle):
         return self.min_corner.copy(), self.max_corner.copy()
 
     def get_vertices(self) -> np.ndarray:
-        return np.array([
-            self.min_corner,
-            [self.max_corner[0], self.min_corner[1]],
-            self.max_corner,
-            [self.min_corner[0], self.max_corner[1]],
-        ])
+        return np.array(
+            [
+                self.min_corner,
+                [self.max_corner[0], self.min_corner[1]],
+                self.max_corner,
+                [self.min_corner[0], self.max_corner[1]],
+            ]
+        )
 
     def inflate(self, margin: float) -> RectangleObstacle:
         m = np.array([margin, margin])
@@ -501,12 +504,14 @@ class LineObstacle(Obstacle):
 
     def get_vertices(self) -> np.ndarray:
         normal = self.normal_vec * self.thickness / 2
-        return np.array([
-            self.start + normal,
-            self.end + normal,
-            self.end - normal,
-            self.start - normal,
-        ])
+        return np.array(
+            [
+                self.start + normal,
+                self.end + normal,
+                self.end - normal,
+                self.start - normal,
+            ]
+        )
 
     def inflate(self, margin: float) -> LineObstacle:
         return LineObstacle(
@@ -534,9 +539,7 @@ class PolygonObstacle(Obstacle):
 
     def __post_init__(self) -> None:
         self.vertices = np.asarray(self.vertices, dtype=np.float64)
-        self._edges = np.diff(
-            np.vstack([self.vertices, self.vertices[0:1]]), axis=0
-        )
+        self._edges = np.diff(np.vstack([self.vertices, self.vertices[0:1]]), axis=0)
         self._normals = np.column_stack([-self._edges[:, 1], self._edges[:, 0]])
         norms = np.linalg.norm(self._normals, axis=1, keepdims=True)
         norms = np.maximum(norms, 1e-12)

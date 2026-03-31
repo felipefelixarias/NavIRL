@@ -34,7 +34,9 @@ def _validate_humans(h: dict, errors: list[str]) -> None:
     _require("controller" in h, "humans.controller is required", errors)
     _require("count" in h, "humans.count is required", errors)
     if "count" in h:
-        _require(isinstance(h["count"], int) and h["count"] >= 0, "humans.count must be >= 0", errors)
+        _require(
+            isinstance(h["count"], int) and h["count"] >= 0, "humans.count must be >= 0", errors
+        )
 
     ctrl = h.get("controller", {})
     _require(isinstance(ctrl, dict), "humans.controller must be an object", errors)
@@ -91,7 +93,9 @@ def _validate_scene(scene: dict, errors: list[str]) -> None:
     _require(isinstance(map_cfg, dict), "scene.map must be an object", errors)
     if isinstance(map_cfg, dict):
         source = map_cfg.get("source")
-        _require(source in {"builtin", "path"}, "scene.map.source must be 'builtin' or 'path'", errors)
+        _require(
+            source in {"builtin", "path"}, "scene.map.source must be 'builtin' or 'path'", errors
+        )
         ppm = map_cfg.get("pixels_per_meter")
         mpp = map_cfg.get("meters_per_pixel")
         downsample = map_cfg.get("downsample", 1.0)
@@ -120,7 +124,11 @@ def _validate_scene(scene: dict, errors: list[str]) -> None:
             errors,
         )
         if source == "builtin":
-            _require(isinstance(map_cfg.get("id"), str), "scene.map.id is required for source=builtin", errors)
+            _require(
+                isinstance(map_cfg.get("id"), str),
+                "scene.map.id is required for source=builtin",
+                errors,
+            )
         if source == "path":
             _require(
                 isinstance(map_cfg.get("path"), str) and len(map_cfg.get("path")) > 0,
@@ -139,7 +147,11 @@ def _validate_horizon(horizon: dict, errors: list[str]) -> None:
     if not isinstance(horizon, dict):
         return
 
-    _require(isinstance(horizon.get("steps"), int) and horizon["steps"] >= 1, "horizon.steps must be >= 1", errors)
+    _require(
+        isinstance(horizon.get("steps"), int) and horizon["steps"] >= 1,
+        "horizon.steps must be >= 1",
+        errors,
+    )
     _require(
         isinstance(horizon.get("dt"), (int, float)) and float(horizon["dt"]) > 0.0,
         "horizon.dt must be > 0",
@@ -153,7 +165,9 @@ def validate_scenario_dict(scenario: dict) -> None:
     if not isinstance(scenario, dict):
         raise ValueError("Scenario validation failed:\n- scenario must be an object")
 
-    _require(isinstance(scenario.get("id"), str) and len(scenario["id"]) > 0, "id is required", errors)
+    _require(
+        isinstance(scenario.get("id"), str) and len(scenario["id"]) > 0, "id is required", errors
+    )
     _require(isinstance(scenario.get("seed"), int), "seed is required and must be integer", errors)
 
     _validate_scene(scenario.get("scene"), errors)

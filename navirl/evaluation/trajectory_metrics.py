@@ -11,18 +11,17 @@ metric can be reported with proper uncertainty quantification.
 
 from __future__ import annotations
 
-import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from navirl.data.trajectory import Trajectory
 
-
 # ---------------------------------------------------------------------------
 # Result containers
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class MetricResult:
@@ -65,7 +64,7 @@ class MetricSummary:
         dataset_name: Optional dataset identifier.
     """
 
-    results: Dict[str, MetricResult] = field(default_factory=dict)
+    results: dict[str, MetricResult] = field(default_factory=dict)
     model_name: str = ""
     dataset_name: str = ""
 
@@ -73,7 +72,7 @@ class MetricSummary:
         """Register a :class:`MetricResult`."""
         self.results[result.name] = result
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """Return a flat ``{metric_name: value}`` dictionary."""
         return {k: v.value for k, v in self.results.items()}
 
@@ -89,13 +88,14 @@ class MetricSummary:
 # Bootstrap helper
 # ---------------------------------------------------------------------------
 
+
 def _bootstrap_ci(
     values: np.ndarray,
     statistic: str = "mean",
     confidence: float = 0.95,
     n_bootstrap: int = 1000,
     rng: np.random.Generator | None = None,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Compute bootstrap confidence interval for a statistic.
 
     Parameters:
@@ -133,6 +133,7 @@ def _bootstrap_ci(
 # Paired permutation test
 # ---------------------------------------------------------------------------
 
+
 def paired_permutation_test(
     values_a: np.ndarray,
     values_b: np.ndarray,
@@ -169,6 +170,7 @@ def paired_permutation_test(
 # Displacement error metrics
 # ---------------------------------------------------------------------------
 
+
 def average_displacement_error(
     predicted: Trajectory,
     ground_truth: Trajectory,
@@ -188,9 +190,7 @@ def average_displacement_error(
     n = min(len(predicted), len(ground_truth))
     if n == 0:
         return float("nan")
-    dists = np.linalg.norm(
-        predicted.positions[:n] - ground_truth.positions[:n], axis=1
-    )
+    dists = np.linalg.norm(predicted.positions[:n] - ground_truth.positions[:n], axis=1)
     return float(np.mean(dists))
 
 
@@ -210,9 +210,7 @@ def final_displacement_error(
     if len(predicted) == 0 or len(ground_truth) == 0:
         return float("nan")
     n = min(len(predicted), len(ground_truth))
-    return float(
-        np.linalg.norm(predicted.positions[n - 1] - ground_truth.positions[n - 1])
-    )
+    return float(np.linalg.norm(predicted.positions[n - 1] - ground_truth.positions[n - 1]))
 
 
 def ade_fde_batch(
@@ -220,7 +218,7 @@ def ade_fde_batch(
     ground_truth_list: Sequence[Trajectory],
     confidence: float = 0.95,
     n_bootstrap: int = 1000,
-) -> Tuple[MetricResult, MetricResult]:
+) -> tuple[MetricResult, MetricResult]:
     """Compute ADE and FDE over a batch with bootstrap confidence intervals.
 
     Parameters:
@@ -253,7 +251,7 @@ def displacement_error_at_horizon(
     predicted: Trajectory,
     ground_truth: Trajectory,
     horizons: Sequence[float] = (1.0, 2.0, 3.0, 4.0),
-) -> Dict[float, float]:
+) -> dict[float, float]:
     """Displacement error evaluated at specific prediction horizons (seconds).
 
     Parameters:
@@ -264,7 +262,7 @@ def displacement_error_at_horizon(
     Returns:
         Mapping from horizon (s) to displacement error (m).
     """
-    results: Dict[float, float] = {}
+    results: dict[float, float] = {}
     t0 = ground_truth.timestamps[0]
     for h in horizons:
         t_target = t0 + h
@@ -282,6 +280,7 @@ def displacement_error_at_horizon(
 # ---------------------------------------------------------------------------
 # Collision and safety metrics
 # ---------------------------------------------------------------------------
+
 
 def collision_rate(
     agent_trajectory: Trajectory,
@@ -303,9 +302,7 @@ def collision_rate(
     collisions = np.zeros(len(agent_trajectory), dtype=bool)
     for other in other_trajectories:
         n = min(len(agent_trajectory), len(other))
-        dists = np.linalg.norm(
-            agent_trajectory.positions[:n] - other.positions[:n], axis=1
-        )
+        dists = np.linalg.norm(agent_trajectory.positions[:n] - other.positions[:n], axis=1)
         collisions[:n] |= dists < collision_radius
     return float(np.mean(collisions))
 
@@ -332,9 +329,7 @@ def collision_count(
     collisions = np.zeros(len(agent_trajectory), dtype=bool)
     for other in other_trajectories:
         n = min(len(agent_trajectory), len(other))
-        dists = np.linalg.norm(
-            agent_trajectory.positions[:n] - other.positions[:n], axis=1
-        )
+        dists = np.linalg.norm(agent_trajectory.positions[:n] - other.positions[:n], axis=1)
         collisions[:n] |= dists < collision_radius
 
     # Count distinct events
@@ -398,11 +393,11 @@ def time_to_collision(
         rel_vel = agent_vel[:n] - other_vel
 
         # Solve ||rel_pos + t * rel_vel||^2 = collision_radius^2
-        a = np.sum(rel_vel ** 2, axis=1)
+        a = np.sum(rel_vel**2, axis=1)
         b = 2.0 * np.sum(rel_pos * rel_vel, axis=1)
-        c = np.sum(rel_pos ** 2, axis=1) - collision_radius ** 2
+        c = np.sum(rel_pos**2, axis=1) - collision_radius**2
 
-        discriminant = b ** 2 - 4.0 * a * c
+        discriminant = b**2 - 4.0 * a * c
         valid = (discriminant >= 0) & (a > 1e-12)
 
         t_enter = np.full(n, np.inf)
@@ -438,9 +433,7 @@ def minimum_separation_distance(
         n = min(len(agent_trajectory), len(other))
         if n == 0:
             continue
-        dists = np.linalg.norm(
-            agent_trajectory.positions[:n] - other.positions[:n], axis=1
-        )
+        dists = np.linalg.norm(agent_trajectory.positions[:n] - other.positions[:n], axis=1)
         min_dist = min(min_dist, float(np.min(dists)))
     return float(min_dist)
 
@@ -464,9 +457,7 @@ def mean_minimum_distance(
     nearest = np.full(T, np.inf)
     for other in other_trajectories:
         n = min(T, len(other))
-        dists = np.linalg.norm(
-            agent_trajectory.positions[:n] - other.positions[:n], axis=1
-        )
+        dists = np.linalg.norm(agent_trajectory.positions[:n] - other.positions[:n], axis=1)
         nearest[:n] = np.minimum(nearest[:n], dists)
     return float(np.mean(nearest[nearest < np.inf]))
 
@@ -474,6 +465,7 @@ def mean_minimum_distance(
 # ---------------------------------------------------------------------------
 # Path quality metrics
 # ---------------------------------------------------------------------------
+
 
 def path_efficiency_ratio(
     trajectory: Trajectory,
@@ -566,6 +558,7 @@ def path_curvature(
 # Comfort metrics
 # ---------------------------------------------------------------------------
 
+
 def speed_profile(trajectory: Trajectory) -> np.ndarray:
     """Compute speed at each time step via finite differences.
 
@@ -620,7 +613,7 @@ def jerk_metric(trajectory: Trajectory) -> float:
     dt[dt == 0] = 1e-6
     # Use the minimum length
     n = min(len(accel) - 1, len(dt))
-    jerk_vals = np.abs(np.diff(accel[:n + 1])) / dt[:n]
+    jerk_vals = np.abs(np.diff(accel[: n + 1])) / dt[:n]
     return float(np.mean(jerk_vals)) if len(jerk_vals) > 0 else 0.0
 
 
@@ -684,6 +677,7 @@ def energy_expenditure(trajectory: Trajectory, mass: float = 70.0) -> float:
 # Goal achievement
 # ---------------------------------------------------------------------------
 
+
 def goal_achievement_rate(
     trajectories: Sequence[Trajectory],
     goals: Sequence[np.ndarray],
@@ -700,11 +694,16 @@ def goal_achievement_rate(
         :class:`MetricResult` with rate and bootstrap CI.
     """
     assert len(trajectories) == len(goals)
-    reached = np.array([
-        float(np.linalg.norm(t.positions[-1] - np.asarray(g)) <= threshold)
-        if len(t) > 0 else 0.0
-        for t, g in zip(trajectories, goals)
-    ])
+    reached = np.array(
+        [
+            (
+                float(np.linalg.norm(t.positions[-1] - np.asarray(g)) <= threshold)
+                if len(t) > 0
+                else 0.0
+            )
+            for t, g in zip(trajectories, goals)
+        ]
+    )
     pt, lo, hi = _bootstrap_ci(reached, statistic="mean")
     return MetricResult("goal_achievement_rate", pt, "", lo, hi, 0.95, len(reached), reached)
 
@@ -736,6 +735,7 @@ def time_to_goal(
 # Social compliance score (composite)
 # ---------------------------------------------------------------------------
 
+
 def social_compliance_score(
     agent_trajectory: Trajectory,
     other_trajectories: Sequence[Trajectory],
@@ -763,9 +763,7 @@ def social_compliance_score(
         violation_steps = np.zeros(T, dtype=bool)
         for other in other_trajectories:
             n = min(T, len(other))
-            dists = np.linalg.norm(
-                agent_trajectory.positions[:n] - other.positions[:n], axis=1
-            )
+            dists = np.linalg.norm(agent_trajectory.positions[:n] - other.positions[:n], axis=1)
             violation_steps[:n] |= dists < personal_space
         ps_violations = float(np.mean(violation_steps))
 
@@ -773,17 +771,14 @@ def social_compliance_score(
     irreg = path_irregularity(agent_trajectory)
 
     # Weighted penalties
-    penalty = (
-        0.4 * ps_violations
-        + 0.4 * coll
-        + 0.2 * min(irreg / np.pi, 1.0)
-    )
+    penalty = 0.4 * ps_violations + 0.4 * coll + 0.2 * min(irreg / np.pi, 1.0)
     return float(np.clip(1.0 - penalty, 0.0, 1.0))
 
 
 # ---------------------------------------------------------------------------
 # Aggregation and full evaluation
 # ---------------------------------------------------------------------------
+
 
 class TrajectoryEvaluator:
     """High-level evaluator that computes all metrics for a set of trajectories.
@@ -816,7 +811,7 @@ class TrajectoryEvaluator:
         ground_truth: Trajectory,
         neighbours: Sequence[Trajectory] | None = None,
         goal: np.ndarray | None = None,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Evaluate a single predicted trajectory against ground truth.
 
         Parameters:
@@ -828,7 +823,7 @@ class TrajectoryEvaluator:
         Returns:
             Dictionary of metric name to value.
         """
-        results: Dict[str, float] = {}
+        results: dict[str, float] = {}
         results["ADE"] = average_displacement_error(predicted, ground_truth)
         results["FDE"] = final_displacement_error(predicted, ground_truth)
         results["path_efficiency"] = path_efficiency_ratio(predicted, goal)
@@ -838,9 +833,7 @@ class TrajectoryEvaluator:
         results["energy"] = energy_expenditure(predicted)
 
         if neighbours is not None:
-            results["collision_rate"] = collision_rate(
-                predicted, neighbours, self.collision_radius
-            )
+            results["collision_rate"] = collision_rate(predicted, neighbours, self.collision_radius)
             results["collision_count"] = float(
                 collision_count(predicted, neighbours, self.collision_radius)
             )
@@ -850,12 +843,16 @@ class TrajectoryEvaluator:
                 predicted, neighbours, self.personal_space, self.collision_radius
             )
             ttc = time_to_collision(predicted, neighbours, self.collision_radius)
-            results["mean_ttc"] = float(np.mean(ttc[ttc < np.inf])) if np.any(ttc < np.inf) else float("inf")
+            results["mean_ttc"] = (
+                float(np.mean(ttc[ttc < np.inf])) if np.any(ttc < np.inf) else float("inf")
+            )
             results["min_ttc"] = float(np.min(ttc))
 
         if goal is not None:
             results["time_to_goal"] = time_to_goal(predicted, goal, self.goal_threshold)
-            reached = float(np.linalg.norm(predicted.positions[-1] - np.asarray(goal)) <= self.goal_threshold)
+            reached = float(
+                np.linalg.norm(predicted.positions[-1] - np.asarray(goal)) <= self.goal_threshold
+            )
             results["goal_reached"] = reached
 
         return results
@@ -886,13 +883,11 @@ class TrajectoryEvaluator:
         assert n == len(ground_truth_list)
 
         # Collect per-sample metrics
-        all_metrics: Dict[str, List[float]] = {}
+        all_metrics: dict[str, list[float]] = {}
         for i in range(n):
             nbrs = neighbours_list[i] if neighbours_list is not None else None
             g = goals[i] if goals is not None else None
-            single = self.evaluate_single(
-                predicted_list[i], ground_truth_list[i], nbrs, g
-            )
+            single = self.evaluate_single(predicted_list[i], ground_truth_list[i], nbrs, g)
             for k, v in single.items():
                 all_metrics.setdefault(k, []).append(v)
 
@@ -907,7 +902,9 @@ class TrajectoryEvaluator:
                 pt, lo, hi = _bootstrap_ci(
                     finite, confidence=self.confidence, n_bootstrap=self.n_bootstrap
                 )
-            summary.add(MetricResult(metric_name, pt, "", lo, hi, self.confidence, len(finite), arr))
+            summary.add(
+                MetricResult(metric_name, pt, "", lo, hi, self.confidence, len(finite), arr)
+            )
 
         return summary
 
@@ -916,7 +913,7 @@ class TrajectoryEvaluator:
         summary_a: MetricSummary,
         summary_b: MetricSummary,
         n_permutations: int = 10000,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Run paired permutation tests between two model summaries.
 
         Parameters:
@@ -927,7 +924,7 @@ class TrajectoryEvaluator:
         Returns:
             Dictionary mapping metric name to p-value.
         """
-        p_values: Dict[str, float] = {}
+        p_values: dict[str, float] = {}
         common_metrics = set(summary_a.results.keys()) & set(summary_b.results.keys())
         for metric in common_metrics:
             raw_a = summary_a.results[metric].raw_values

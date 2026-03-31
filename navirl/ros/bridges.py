@@ -13,8 +13,7 @@ from __future__ import annotations
 
 import abc
 import logging
-import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -26,6 +25,7 @@ logger = logging.getLogger(__name__)
 try:
     import rclpy
     from rclpy.node import Node
+
     _ROS2_AVAILABLE = True
 except ImportError:
     _ROS2_AVAILABLE = False
@@ -35,14 +35,14 @@ except ImportError:
 def _ensure_ros2(cls_name: str) -> None:
     if not _ROS2_AVAILABLE:
         raise ImportError(
-            f"{cls_name} requires ROS2 (rclpy).  "
-            "Install ROS2 and source the workspace first."
+            f"{cls_name} requires ROS2 (rclpy).  " "Install ROS2 and source the workspace first."
         )
 
 
 # ---------------------------------------------------------------------------
 # Abstract base
 # ---------------------------------------------------------------------------
+
 
 class _SimBridgeBase(abc.ABC):
     """Interface shared by all simulator bridges."""
@@ -57,15 +57,15 @@ class _SimBridgeBase(abc.ABC):
         """Establish the bridge connection."""
 
     @abc.abstractmethod
-    def reset(self) -> Dict[str, Any]:
+    def reset(self) -> dict[str, Any]:
         """Reset the simulator and return the initial observation."""
 
     @abc.abstractmethod
-    def step(self, action: np.ndarray) -> Dict[str, Any]:
+    def step(self, action: np.ndarray) -> dict[str, Any]:
         """Apply *action* and return ``{obs, reward, done, info}``."""
 
     @abc.abstractmethod
-    def get_observation(self) -> Dict[str, Any]:
+    def get_observation(self) -> dict[str, Any]:
         """Return the latest observation without stepping."""
 
     @abc.abstractmethod
@@ -80,6 +80,7 @@ class _SimBridgeBase(abc.ABC):
 # ---------------------------------------------------------------------------
 # Gazebo bridge
 # ---------------------------------------------------------------------------
+
 
 class GazeboBridge(_SimBridgeBase):
     """Interface with Gazebo Classic / Ignition Gazebo through ROS2 services.
@@ -101,7 +102,7 @@ class GazeboBridge(_SimBridgeBase):
         super().__init__(node_name)
         self._robot_model = robot_model
         self._world_name = world_name
-        self._latest_obs: Dict[str, Any] = {}
+        self._latest_obs: dict[str, Any] = {}
 
     def connect(self) -> None:
         """Initialize rclpy (if needed) and create the helper node."""
@@ -122,7 +123,7 @@ class GazeboBridge(_SimBridgeBase):
             )
         self._connected = True
 
-    def reset(self) -> Dict[str, Any]:
+    def reset(self) -> dict[str, Any]:
         """Call the Gazebo reset service and return the initial observation."""
         if not self._connected:
             raise RuntimeError("Call connect() before reset().")
@@ -143,14 +144,14 @@ class GazeboBridge(_SimBridgeBase):
         self._latest_obs = {}
         return self.get_observation()
 
-    def step(self, action: np.ndarray) -> Dict[str, Any]:
+    def step(self, action: np.ndarray) -> dict[str, Any]:
         self.send_action(action)
         # Allow physics to advance (one-shot spin)
         rclpy.spin_once(self._node, timeout_sec=0.05)
         obs = self.get_observation()
         return {"obs": obs, "reward": 0.0, "done": False, "info": {}}
 
-    def get_observation(self) -> Dict[str, Any]:
+    def get_observation(self) -> dict[str, Any]:
         """Spin once to pick up the latest messages and return cached obs."""
         if self._node is not None:
             rclpy.spin_once(self._node, timeout_sec=0.02)
@@ -200,13 +201,15 @@ class GazeboBridge(_SimBridgeBase):
                 logger.info("GazeboBridge: robot spawned at (%.2f, %.2f).", x, y)
                 return True
             else:
-                logger.error("GazeboBridge: spawn failed -- %s", getattr(result, "status_message", "unknown"))
+                logger.error(
+                    "GazeboBridge: spawn failed -- %s", getattr(result, "status_message", "unknown")
+                )
                 return False
         except Exception as exc:
             logger.error("GazeboBridge spawn_robot error: %s", exc)
             return False
 
-    def get_model_state(self, model_name: Optional[str] = None) -> Dict[str, float]:
+    def get_model_state(self, model_name: str | None = None) -> dict[str, float]:
         """Query Gazebo for a model's pose."""
         model_name = model_name or self._robot_model
         try:
@@ -231,6 +234,7 @@ class GazeboBridge(_SimBridgeBase):
 # ---------------------------------------------------------------------------
 # Isaac Sim bridge (stub)
 # ---------------------------------------------------------------------------
+
 
 class IsaacBridge(_SimBridgeBase):
     """Interface stub for NVIDIA Isaac Sim.
@@ -259,18 +263,18 @@ class IsaacBridge(_SimBridgeBase):
         )
         self._connected = True
 
-    def reset(self) -> Dict[str, Any]:
+    def reset(self) -> dict[str, Any]:
         logger.info("IsaacBridge: reset requested (stub -- implement via Isaac API).")
         return self.get_observation()
 
-    def step(self, action: np.ndarray) -> Dict[str, Any]:
+    def step(self, action: np.ndarray) -> dict[str, Any]:
         self.send_action(action)
         if self._node is not None:
             rclpy.spin_once(self._node, timeout_sec=0.02)
         obs = self.get_observation()
         return {"obs": obs, "reward": 0.0, "done": False, "info": {}}
 
-    def get_observation(self) -> Dict[str, Any]:
+    def get_observation(self) -> dict[str, Any]:
         if self._node is not None:
             rclpy.spin_once(self._node, timeout_sec=0.02)
         return {}
@@ -292,6 +296,7 @@ class IsaacBridge(_SimBridgeBase):
 # Habitat bridge (stub)
 # ---------------------------------------------------------------------------
 
+
 class HabitatBridge(_SimBridgeBase):
     """Interface stub for Meta Habitat simulator.
 
@@ -305,7 +310,7 @@ class HabitatBridge(_SimBridgeBase):
         self,
         node_name: str = "navirl_habitat_bridge",
         scene_path: str = "",
-        sensor_config: Optional[Dict[str, Any]] = None,
+        sensor_config: dict[str, Any] | None = None,
     ) -> None:
         _ensure_ros2("HabitatBridge")
         super().__init__(node_name)
@@ -320,24 +325,24 @@ class HabitatBridge(_SimBridgeBase):
 
         try:
             import habitat_sim  # type: ignore[import-untyped]
+
             logger.info("HabitatBridge: habitat-sim detected.")
         except ImportError:
             logger.warning(
-                "HabitatBridge: habitat-sim not found.  "
-                "Install it to use Habitat environments."
+                "HabitatBridge: habitat-sim not found.  " "Install it to use Habitat environments."
             )
         self._connected = True
 
-    def reset(self) -> Dict[str, Any]:
+    def reset(self) -> dict[str, Any]:
         logger.info("HabitatBridge: reset requested (stub -- implement via habitat-sim).")
         return self.get_observation()
 
-    def step(self, action: np.ndarray) -> Dict[str, Any]:
+    def step(self, action: np.ndarray) -> dict[str, Any]:
         self.send_action(action)
         obs = self.get_observation()
         return {"obs": obs, "reward": 0.0, "done": False, "info": {}}
 
-    def get_observation(self) -> Dict[str, Any]:
+    def get_observation(self) -> dict[str, Any]:
         return {}
 
     def send_action(self, action: np.ndarray) -> None:

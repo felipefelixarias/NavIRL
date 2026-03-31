@@ -24,15 +24,16 @@ References:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 
-from navirl.core.constants import EPSILON, ORCA as ORCA_DEFAULTS
+from navirl.core.constants import EPSILON
+from navirl.core.constants import ORCA as ORCA_DEFAULTS
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
-
 
 __all__ = [
     "VOConfig",
@@ -47,6 +48,7 @@ __all__ = [
 # ---------------------------------------------------------------------------
 #  Configuration
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class VOConfig:
@@ -63,6 +65,7 @@ class VOConfig:
 # ---------------------------------------------------------------------------
 #  Data structures
 # ---------------------------------------------------------------------------
+
 
 class VOCone(NamedTuple):
     """A velocity obstacle cone in velocity space.
@@ -96,6 +99,7 @@ class HalfPlane(NamedTuple):
 #  Helpers
 # ---------------------------------------------------------------------------
 
+
 def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
     n = math.hypot(vx, vy)
     if n < EPSILON:
@@ -121,6 +125,7 @@ def _in_vo_cone(vx: float, vy: float, cone: VOCone) -> bool:
 #  Velocity Obstacle (basic)
 # ---------------------------------------------------------------------------
 
+
 class VelocityObstacle:
     """Basic Velocity Obstacle computation.
 
@@ -131,9 +136,7 @@ class VelocityObstacle:
     def __init__(self, config: VOConfig | None = None) -> None:
         self.cfg = config or VOConfig()
 
-    def compute_vo(
-        self, agent: AgentState, obstacle: AgentState
-    ) -> VOCone | None:
+    def compute_vo(self, agent: AgentState, obstacle: AgentState) -> VOCone | None:
         """Compute the velocity obstacle cone induced by *obstacle* on *agent*.
 
         Returns ``None`` if the obstacle is beyond the interaction range.
@@ -142,9 +145,7 @@ class VelocityObstacle:
         dy = obstacle.y - agent.y
         dist = math.hypot(dx, dy)
 
-        combined_radius = (
-            agent.radius + obstacle.radius + self.cfg.safety_margin
-        )
+        combined_radius = agent.radius + obstacle.radius + self.cfg.safety_margin
 
         if dist < EPSILON:
             # Agents at the same position — degenerate; treat as full block
@@ -167,9 +168,7 @@ class VelocityObstacle:
             # Overlapping — full velocity space is blocked
             half_angle = math.pi / 2.0
         else:
-            half_angle = math.asin(
-                min(1.0, combined_radius / dist)
-            )
+            half_angle = math.asin(min(1.0, combined_radius / dist))
 
         # Direction from agent to obstacle
         nx = dx / dist
@@ -217,10 +216,7 @@ class VelocityObstacle:
         angles = rng.uniform(0, 2.0 * math.pi, self.cfg.num_samples)
         speeds = rng.uniform(0.0, max_speed, self.cfg.num_samples)
         for i in range(self.cfg.num_samples):
-            candidates.append(
-                (speeds[i] * math.cos(angles[i]),
-                 speeds[i] * math.sin(angles[i]))
-            )
+            candidates.append((speeds[i] * math.cos(angles[i]), speeds[i] * math.sin(angles[i])))
 
         for cvx, cvy in candidates:
             # Cost = distance to preferred velocity
@@ -251,6 +247,7 @@ class VelocityObstacle:
 #  Reciprocal Velocity Obstacle
 # ---------------------------------------------------------------------------
 
+
 class ReciprocalVelocityObstacle(VelocityObstacle):
     """Reciprocal Velocity Obstacle (RVO).
 
@@ -258,9 +255,7 @@ class ReciprocalVelocityObstacle(VelocityObstacle):
     splitting collision avoidance responsibility equally.
     """
 
-    def compute_vo(
-        self, agent: AgentState, obstacle: AgentState
-    ) -> VOCone | None:
+    def compute_vo(self, agent: AgentState, obstacle: AgentState) -> VOCone | None:
         cone = super().compute_vo(agent, obstacle)
         if cone is None:
             return None
@@ -283,6 +278,7 @@ class ReciprocalVelocityObstacle(VelocityObstacle):
 #  Hybrid Reciprocal Velocity Obstacle
 # ---------------------------------------------------------------------------
 
+
 class HybridReciprocalVO(VelocityObstacle):
     """Hybrid Reciprocal Velocity Obstacle (HRVO).
 
@@ -290,9 +286,7 @@ class HybridReciprocalVO(VelocityObstacle):
     on the other side, reducing oscillations.
     """
 
-    def compute_vo(
-        self, agent: AgentState, obstacle: AgentState
-    ) -> VOCone | None:
+    def compute_vo(self, agent: AgentState, obstacle: AgentState) -> VOCone | None:
         cone = super().compute_vo(agent, obstacle)
         if cone is None:
             return None
@@ -331,6 +325,7 @@ class HybridReciprocalVO(VelocityObstacle):
 #  ORCA — Pure-Python reference implementation
 # ---------------------------------------------------------------------------
 
+
 class ORCAPurePython:
     """Pure-Python reference implementation of ORCA.
 
@@ -366,9 +361,7 @@ class ORCAPurePython:
             rel_vx = agent.vx - other.vx
             rel_vy = agent.vy - other.vy
             dist_sq = rel_px * rel_px + rel_py * rel_py
-            combined_radius = (
-                agent.radius + other.radius + self.cfg.safety_margin
-            )
+            combined_radius = agent.radius + other.radius + self.cfg.safety_margin
             combined_radius_sq = combined_radius * combined_radius
 
             if dist_sq > combined_radius_sq:
@@ -395,9 +388,7 @@ class ORCAPurePython:
                 else:
                     # Project on legs
                     dist = math.sqrt(dist_sq) if dist_sq > EPSILON else EPSILON
-                    leg = math.sqrt(
-                        max(0.0, dist_sq - combined_radius_sq)
-                    )
+                    leg = math.sqrt(max(0.0, dist_sq - combined_radius_sq))
 
                     # Determine which leg
                     if _cross2d(rel_px, rel_py, w_x, w_y) > 0.0:
@@ -439,12 +430,14 @@ class ORCAPurePython:
             # ORCA line: point = v_A + 0.5 * u, direction = perpendicular to normal
             point_x = agent.vx + 0.5 * u_x
             point_y = agent.vy + 0.5 * u_y
-            lines.append(HalfPlane(
-                point_x=point_x,
-                point_y=point_y,
-                normal_x=normal_x,
-                normal_y=normal_y,
-            ))
+            lines.append(
+                HalfPlane(
+                    point_x=point_x,
+                    point_y=point_y,
+                    normal_x=normal_x,
+                    normal_y=normal_y,
+                )
+            )
 
         return lines
 
@@ -463,10 +456,9 @@ class ORCAPurePython:
 
         for i, line_i in enumerate(orca_lines):
             # Check if current result satisfies this constraint
-            det = (
-                (result_vx - line_i.point_x) * line_i.normal_x
-                + (result_vy - line_i.point_y) * line_i.normal_y
-            )
+            det = (result_vx - line_i.point_x) * line_i.normal_x + (
+                result_vy - line_i.point_y
+            ) * line_i.normal_y
             if det >= 0.0:
                 continue  # already satisfied
 
@@ -476,10 +468,9 @@ class ORCAPurePython:
             dir_y = line_i.normal_x
 
             # Find closest point on line to preferred_vel
-            t = (
-                (preferred_vel[0] - line_i.point_x) * dir_x
-                + (preferred_vel[1] - line_i.point_y) * dir_y
-            )
+            t = (preferred_vel[0] - line_i.point_x) * dir_x + (
+                preferred_vel[1] - line_i.point_y
+            ) * dir_y
 
             # Clamp t to stay within max_speed disk
             # Solve |point + t * dir|^2 <= max_speed^2
@@ -508,10 +499,9 @@ class ORCAPurePython:
             # Re-check all previous constraints and adjust if needed
             for j in range(i):
                 line_j = orca_lines[j]
-                det_j = (
-                    (result_vx - line_j.point_x) * line_j.normal_x
-                    + (result_vy - line_j.point_y) * line_j.normal_y
-                )
+                det_j = (result_vx - line_j.point_x) * line_j.normal_x + (
+                    result_vy - line_j.point_y
+                ) * line_j.normal_y
                 if det_j < -EPSILON:
                     # Conflict between constraints i and j — find intersection
                     # of the two constraint lines
@@ -543,6 +533,7 @@ class ORCAPurePython:
 # ---------------------------------------------------------------------------
 #  HumanController wrapper
 # ---------------------------------------------------------------------------
+
 
 class VOHumanController(HumanController):
     """Human behavior controller using Velocity Obstacle algorithms.
@@ -640,12 +631,8 @@ class VOHumanController(HumanController):
             if self._orca is not None:
                 # ORCA path
                 neighbors = [s for s in all_states if s.agent_id != hid]
-                orca_lines = self._orca.compute_orca_lines(
-                    state, neighbors, dt
-                )
-                vx, vy = self._orca.solve_linear_program(
-                    orca_lines, pref_vel, state.max_speed
-                )
+                orca_lines = self._orca.compute_orca_lines(state, neighbors, dt)
+                vx, vy = self._orca.solve_linear_program(orca_lines, pref_vel, state.max_speed)
             else:
                 # VO/RVO/HRVO path
                 assert self._vo is not None

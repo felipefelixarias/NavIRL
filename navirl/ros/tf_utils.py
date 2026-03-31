@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import math
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -21,11 +21,12 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 try:
     import rclpy
+    import tf2_ros
+    from geometry_msgs.msg import TransformStamped
     from rclpy.node import Node
     from rclpy.time import Time as RosTime
-    import tf2_ros
     from tf2_ros import TransformException
-    from geometry_msgs.msg import TransformStamped
+
     _TF2_AVAILABLE = True
 except ImportError:
     _TF2_AVAILABLE = False
@@ -36,6 +37,7 @@ except ImportError:
 # Pure-numpy helpers (no ROS2 dependency)
 # ---------------------------------------------------------------------------
 
+
 def _yaw_to_rotation_matrix(yaw: float) -> np.ndarray:
     """Return a 2x2 rotation matrix for the given yaw angle."""
     c, s = math.cos(yaw), math.sin(yaw)
@@ -43,8 +45,8 @@ def _yaw_to_rotation_matrix(yaw: float) -> np.ndarray:
 
 
 def world_to_robot(
-    pos: np.ndarray | Tuple[float, float],
-    robot_pose: Dict[str, float] | Tuple[float, float, float],
+    pos: np.ndarray | tuple[float, float],
+    robot_pose: dict[str, float] | tuple[float, float, float],
 ) -> np.ndarray:
     """Transform a world-frame position into the robot's local frame.
 
@@ -74,8 +76,8 @@ def world_to_robot(
 
 
 def robot_to_world(
-    pos: np.ndarray | Tuple[float, float],
-    robot_pose: Dict[str, float] | Tuple[float, float, float],
+    pos: np.ndarray | tuple[float, float],
+    robot_pose: dict[str, float] | tuple[float, float, float],
 ) -> np.ndarray:
     """Transform a robot-local position into the world frame.
 
@@ -107,6 +109,7 @@ def robot_to_world(
 # TransformManager
 # ---------------------------------------------------------------------------
 
+
 class TransformManager:
     """Cache and look up TF2 transforms between coordinate frames.
 
@@ -135,15 +138,12 @@ class TransformManager:
         self._tf_listener: Any = None
 
         # Fallback manual cache: (parent, child) -> (x, y, yaw, timestamp)
-        self._manual_cache: Dict[Tuple[str, str], Tuple[float, float, float, float]] = {}
+        self._manual_cache: dict[tuple[str, str], tuple[float, float, float, float]] = {}
 
         if _TF2_AVAILABLE:
             self._init_tf2()
         else:
-            logger.info(
-                "TransformManager: tf2_ros not available -- "
-                "using manual cache mode."
-            )
+            logger.info("TransformManager: tf2_ros not available -- " "using manual cache mode.")
 
     def _init_tf2(self) -> None:
         if self._node is None:
@@ -154,9 +154,7 @@ class TransformManager:
         self._tf_buffer = tf2_ros.Buffer(
             cache_time=rclpy.duration.Duration(seconds=self._cache_duration)
         )
-        self._tf_listener = tf2_ros.TransformListener(
-            self._tf_buffer, self._node
-        )
+        self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self._node)
         logger.info("TransformManager: TF2 listener initialised.")
 
     # -- Public API ---------------------------------------------------------
@@ -170,16 +168,14 @@ class TransformManager:
         yaw: float,
     ) -> None:
         """Manually cache a 2-D transform (useful when TF2 is unavailable)."""
-        self._manual_cache[(parent_frame, child_frame)] = (
-            x, y, yaw, time.time()
-        )
+        self._manual_cache[(parent_frame, child_frame)] = (x, y, yaw, time.time())
 
     def lookup(
         self,
         target_frame: str,
         source_frame: str,
         timeout_sec: float = 0.5,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Look up the ``(x, y, yaw)`` of *source_frame* in *target_frame*.
 
         Raises ``TransformException`` if the transform is unavailable.
@@ -210,7 +206,9 @@ class TransformManager:
             else:
                 logger.warning(
                     "TransformManager: cached transform %s -> %s is stale (%.1fs old).",
-                    target_frame, source_frame, age,
+                    target_frame,
+                    source_frame,
+                    age,
                 )
                 return (x, y, yaw)
 
@@ -228,7 +226,7 @@ class TransformManager:
 
     def transform_point(
         self,
-        point: np.ndarray | Tuple[float, float],
+        point: np.ndarray | tuple[float, float],
         source_frame: str,
         target_frame: str,
     ) -> np.ndarray:
@@ -251,13 +249,14 @@ class TransformManager:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
     siny_cosp = 2.0 * (qw * qz + qx * qy)
     cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
     return math.atan2(siny_cosp, cosy_cosp)
 
 
-def _invert_2d(x: float, y: float, yaw: float) -> Tuple[float, float]:
+def _invert_2d(x: float, y: float, yaw: float) -> tuple[float, float]:
     """Invert a 2-D rigid transform ``(x, y, yaw)``."""
     c, s = math.cos(yaw), math.sin(yaw)
     inv_x = -(c * x + s * y)

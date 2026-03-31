@@ -9,21 +9,22 @@ communication model with range limits and message loss.
 from __future__ import annotations
 
 import enum
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from navirl.robots.base import RobotController, EventSink
 from navirl.core.types import Action, AgentState
-
+from navirl.robots.base import EventSink, RobotController
 
 # -----------------------------------------------------------------------
 # Formation definitions
 # -----------------------------------------------------------------------
 
+
 class FormationType(enum.Enum):
     """Built-in formation types."""
+
     LINE = "line"
     CIRCLE = "circle"
     V_SHAPE = "v_shape"
@@ -47,7 +48,7 @@ class FormationConfig:
     formation_type: FormationType = FormationType.LINE
     spacing: float = 1.5
     v_angle: float = np.pi / 6.0
-    custom_offsets: Optional[np.ndarray] = None
+    custom_offsets: np.ndarray | None = None
     heading_align: bool = True
 
 
@@ -125,6 +126,7 @@ def rotate_offsets(
 # Collision avoidance (velocity obstacle inspired)
 # -----------------------------------------------------------------------
 
+
 def fleet_collision_avoidance(
     positions: np.ndarray,
     velocities: np.ndarray,
@@ -195,10 +197,11 @@ def fleet_collision_avoidance(
 # Task assignment
 # -----------------------------------------------------------------------
 
+
 def greedy_task_assignment(
     robot_positions: np.ndarray,
     task_positions: np.ndarray,
-) -> List[int]:
+) -> list[int]:
     """Assign tasks to robots using greedy nearest-neighbour.
 
     Each robot is assigned the closest un-assigned task.
@@ -213,7 +216,7 @@ def greedy_task_assignment(
     """
     n_robots = robot_positions.shape[0]
     n_tasks = task_positions.shape[0]
-    assigned: List[int] = [-1] * n_robots
+    assigned: list[int] = [-1] * n_robots
     used_tasks: set[int] = set()
 
     if n_tasks == 0:
@@ -247,7 +250,7 @@ def greedy_task_assignment(
 def hungarian_task_assignment(
     robot_positions: np.ndarray,
     task_positions: np.ndarray,
-) -> List[int]:
+) -> list[int]:
     """Assign tasks using a simplified auction-based approach.
 
     Falls back to greedy when the number of robots or tasks is small.
@@ -264,10 +267,8 @@ def hungarian_task_assignment(
     if n_robots == 0 or n_tasks == 0:
         return [-1] * n_robots
 
-    cost = np.linalg.norm(
-        robot_positions[:, None, :] - task_positions[None, :, :], axis=2
-    )
-    assigned: List[int] = [-1] * n_robots
+    cost = np.linalg.norm(robot_positions[:, None, :] - task_positions[None, :, :], axis=2)
+    assigned: list[int] = [-1] * n_robots
     used: set[int] = set()
 
     # Iterative auction.
@@ -312,6 +313,7 @@ def hungarian_task_assignment(
 # Communication model
 # -----------------------------------------------------------------------
 
+
 @dataclass
 class Message:
     """A message between fleet members.
@@ -325,7 +327,7 @@ class Message:
 
     sender_id: int
     receiver_id: int
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     timestamp: float = 0.0
 
 
@@ -344,12 +346,12 @@ class CommunicationModel:
     ) -> None:
         self.max_range = max_range
         self.loss_probability = loss_probability
-        self._inbox: Dict[int, List[Message]] = {}
+        self._inbox: dict[int, list[Message]] = {}
 
     def send(
         self,
         msg: Message,
-        positions: Dict[int, np.ndarray],
+        positions: dict[int, np.ndarray],
     ) -> bool:
         """Attempt to send a message.
 
@@ -391,7 +393,7 @@ class CommunicationModel:
         self._inbox.setdefault(msg.receiver_id, []).append(msg)
         return True
 
-    def receive(self, robot_id: int) -> List[Message]:
+    def receive(self, robot_id: int) -> list[Message]:
         """Retrieve and clear all messages for *robot_id*."""
         msgs = self._inbox.pop(robot_id, [])
         return msgs
@@ -404,6 +406,7 @@ class CommunicationModel:
 # -----------------------------------------------------------------------
 # Fleet planner
 # -----------------------------------------------------------------------
+
 
 class FleetPlanner:
     """Coordinate fleet-level goals and path planning.
@@ -429,7 +432,7 @@ class FleetPlanner:
         robot_positions: np.ndarray,
         task_positions: np.ndarray,
         method: str = "greedy",
-    ) -> List[int]:
+    ) -> list[int]:
         """Assign tasks to robots.
 
         Args:
@@ -477,7 +480,11 @@ class FleetPlanner:
         Returns adjusted desired velocities.
         """
         return fleet_collision_avoidance(
-            positions, velocities, desired_velocities, radii, dt,
+            positions,
+            velocities,
+            desired_velocities,
+            radii,
+            dt,
             safety_margin=self.safety_margin,
         )
 
@@ -485,6 +492,7 @@ class FleetPlanner:
 # -----------------------------------------------------------------------
 # RobotFleet controller
 # -----------------------------------------------------------------------
+
 
 class RobotFleet:
     """Manage a fleet of robots with formation control and coordination.
@@ -502,20 +510,20 @@ class RobotFleet:
 
     def __init__(
         self,
-        controllers: Dict[int, RobotController] | None = None,
+        controllers: dict[int, RobotController] | None = None,
         formation_config: FormationConfig | None = None,
         comm_range: float = 20.0,
         comm_loss: float = 0.0,
         safety_margin: float = 0.3,
     ) -> None:
-        self._controllers: Dict[int, RobotController] = controllers or {}
+        self._controllers: dict[int, RobotController] = controllers or {}
         self._planner = FleetPlanner(formation_config, safety_margin)
         self._comm = CommunicationModel(comm_range, comm_loss)
         self._formation_config = formation_config or FormationConfig()
-        self._robot_ids: List[int] = sorted(self._controllers.keys())
-        self._goals: Dict[int, Tuple[float, float]] = {}
-        self._radii: Dict[int, float] = {}
-        self._leader_id: Optional[int] = None
+        self._robot_ids: list[int] = sorted(self._controllers.keys())
+        self._goals: dict[int, tuple[float, float]] = {}
+        self._radii: dict[int, float] = {}
+        self._leader_id: int | None = None
 
     # ----- Fleet management ---------------------------------------------
 
@@ -542,7 +550,7 @@ class RobotFleet:
         return len(self._controllers)
 
     @property
-    def robot_ids(self) -> List[int]:
+    def robot_ids(self) -> list[int]:
         """Sorted list of robot IDs."""
         return list(self._robot_ids)
 
@@ -554,8 +562,8 @@ class RobotFleet:
 
     def reset(
         self,
-        starts: Dict[int, Tuple[float, float]],
-        goals: Dict[int, Tuple[float, float]],
+        starts: dict[int, tuple[float, float]],
+        goals: dict[int, tuple[float, float]],
         backend: Any,
     ) -> None:
         """Reset all fleet members for a new episode.
@@ -579,7 +587,7 @@ class RobotFleet:
         dt: float,
         states: dict[int, AgentState],
         emit_event: EventSink,
-    ) -> Dict[int, Action]:
+    ) -> dict[int, Action]:
         """Step all fleet members with coordination.
 
         Args:
@@ -600,7 +608,7 @@ class RobotFleet:
         positions = np.zeros((n, 2))
         velocities = np.zeros((n, 2))
         radii = np.zeros(n)
-        id_to_idx: Dict[int, int] = {}
+        id_to_idx: dict[int, int] = {}
 
         for idx, rid in enumerate(self._robot_ids):
             id_to_idx[rid] = idx
@@ -612,7 +620,7 @@ class RobotFleet:
                 self._radii[rid] = st.radius
 
         # Individual controller actions.
-        raw_actions: Dict[int, Action] = {}
+        raw_actions: dict[int, Action] = {}
         for rid, ctrl in self._controllers.items():
             raw_actions[rid] = ctrl.step(step_num, time_s, dt, states, emit_event)
 
@@ -628,7 +636,9 @@ class RobotFleet:
             # Leader heading.
             if self._leader_id is not None and self._leader_id in states:
                 lst = states[self._leader_id]
-                heading = float(np.arctan2(lst.vy, lst.vx)) if (lst.vx ** 2 + lst.vy ** 2) > 1e-4 else 0.0
+                heading = (
+                    float(np.arctan2(lst.vy, lst.vx)) if (lst.vx**2 + lst.vy**2) > 1e-4 else 0.0
+                )
             else:
                 mean_vel = np.mean(velocities, axis=0)
                 heading = float(np.arctan2(mean_vel[1], mean_vel[0]))
@@ -640,12 +650,10 @@ class RobotFleet:
                 desired[idx] += formation_gain * error
 
         # Collision avoidance.
-        adjusted = self._planner.avoid_collisions(
-            positions, velocities, desired, radii, dt
-        )
+        adjusted = self._planner.avoid_collisions(positions, velocities, desired, radii, dt)
 
         # Rebuild actions.
-        final_actions: Dict[int, Action] = {}
+        final_actions: dict[int, Action] = {}
         for rid in self._robot_ids:
             idx = id_to_idx[rid]
             final_actions[rid] = Action(
@@ -662,7 +670,7 @@ class RobotFleet:
     def broadcast(
         self,
         sender_id: int,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         time_s: float,
         states: dict[int, AgentState],
     ) -> bool:
@@ -677,7 +685,7 @@ class RobotFleet:
         Returns:
             ``True`` if at least one robot received the message.
         """
-        positions: Dict[int, np.ndarray] = {}
+        positions: dict[int, np.ndarray] = {}
         for rid in self._robot_ids:
             if rid in states:
                 st = states[rid]
@@ -685,7 +693,7 @@ class RobotFleet:
         msg = Message(sender_id=sender_id, receiver_id=-1, payload=payload, timestamp=time_s)
         return self._comm.send(msg, positions)
 
-    def get_messages(self, robot_id: int) -> List[Message]:
+    def get_messages(self, robot_id: int) -> list[Message]:
         """Retrieve pending messages for a robot."""
         return self._comm.receive(robot_id)
 
@@ -696,7 +704,7 @@ class RobotFleet:
         task_positions: np.ndarray,
         states: dict[int, AgentState],
         method: str = "greedy",
-    ) -> Dict[int, int]:
+    ) -> dict[int, int]:
         """Assign tasks to fleet members.
 
         Args:

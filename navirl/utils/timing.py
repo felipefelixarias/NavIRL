@@ -3,18 +3,20 @@
 Provides context managers, decorators, and classes for measuring
 execution time, throttling function calls, and tracking performance.
 """
+
 from __future__ import annotations
 
 import functools
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Callable
-
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Timer context manager
 # ---------------------------------------------------------------------------
+
 
 class Timer:
     """Context manager and reusable timer for measuring elapsed time.
@@ -159,6 +161,7 @@ class Timer:
         Callable
             Decorator.
         """
+
         def decorator(func: Callable) -> Callable:
             timer_name = name or func.__name__
 
@@ -168,6 +171,7 @@ class Timer:
                     return func(*args, **kwargs)
 
             return wrapper
+
         return decorator
 
 
@@ -175,9 +179,11 @@ class Timer:
 # Profiling
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _ProfileEntry:
     """Statistics for a single profiled operation."""
+
     total_time: float = 0.0
     call_count: int = 0
     min_time: float = float("inf")
@@ -376,6 +382,7 @@ class profile:
 # Throttle / rate limiter
 # ---------------------------------------------------------------------------
 
+
 def throttle(min_interval: float) -> Callable:
     """Decorator that throttles function calls to a minimum interval.
 
@@ -398,6 +405,7 @@ def throttle(min_interval: float) -> Callable:
     ... def expensive_computation(x):
     ...     return x * 2
     """
+
     def decorator(func: Callable) -> Callable:
         last_call_time: list[float] = [0.0]
         last_result: list[Any] = [None]
@@ -412,6 +420,7 @@ def throttle(min_interval: float) -> Callable:
 
         wrapper.reset = lambda: last_call_time.__setitem__(0, 0.0)  # type: ignore[attr-defined]
         return wrapper
+
     return decorator
 
 
@@ -491,6 +500,7 @@ class rate_limiter:
 # Frequency tracker
 # ---------------------------------------------------------------------------
 
+
 class FrequencyTracker:
     """Track the frequency (rate) of events.
 
@@ -550,6 +560,7 @@ class FrequencyTracker:
 # ---------------------------------------------------------------------------
 # Stopwatch with checkpoints
 # ---------------------------------------------------------------------------
+
 
 class Stopwatch:
     """Stopwatch with named checkpoints for multi-phase timing.

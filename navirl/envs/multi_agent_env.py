@@ -14,8 +14,8 @@ MultiAgentNavConfig -- extended configuration dataclass
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -32,12 +32,10 @@ from navirl.core.constants import (
     EPSILON,
     PROXEMICS,
     REWARD,
-    ROBOT_MAX_SPEED,
-    ROBOT_RADIUS,
     SIM,
 )
 from navirl.core.env import SceneBackend
-from navirl.envs.base_env import NavEnvConfig, _build_backend, _DISCRETE_ACTIONS
+from navirl.envs.base_env import _DISCRETE_ACTIONS, NavEnvConfig, _build_backend
 
 # ---------------------------------------------------------------------------
 #  Configuration
@@ -95,35 +93,33 @@ class MultiAgentNavEnv:
         self.config = config if config is not None else MultiAgentNavConfig(**kwargs)
         self.render_mode = self.config.render_mode
 
-        self._backend: Optional[SceneBackend] = None
+        self._backend: SceneBackend | None = None
         self._rng: np.random.Generator = np.random.default_rng()
 
         # Agent naming
-        self.possible_agents: List[str] = [
-            f"robot_{i}" for i in range(self.config.num_robots)
-        ]
-        self.agents: List[str] = list(self.possible_agents)
+        self.possible_agents: list[str] = [f"robot_{i}" for i in range(self.config.num_robots)]
+        self.agents: list[str] = list(self.possible_agents)
 
         # Internal id mapping: agent_name -> backend agent_id
-        self._name_to_id: Dict[str, int] = {}
-        self._robot_goals: Dict[str, np.ndarray] = {}
-        self._human_ids: List[int] = []
-        self._human_goals: Dict[int, np.ndarray] = {}
+        self._name_to_id: dict[str, int] = {}
+        self._robot_goals: dict[str, np.ndarray] = {}
+        self._human_ids: list[int] = []
+        self._human_goals: dict[int, np.ndarray] = {}
         self._step_count: int = 0
-        self._prev_dists: Dict[str, float] = {}
-        self._terminated: Dict[str, bool] = {}
+        self._prev_dists: dict[str, float] = {}
+        self._terminated: dict[str, bool] = {}
 
         # Communication buffers
-        self._comm_buffer: Dict[str, np.ndarray] = {}
+        self._comm_buffer: dict[str, np.ndarray] = {}
 
         # Build per-agent spaces
         single_obs_space = self._make_single_observation_space()
         single_act_space = self._make_single_action_space()
 
-        self.observation_spaces: Dict[str, spaces.Space] = {
+        self.observation_spaces: dict[str, spaces.Space] = {
             name: single_obs_space for name in self.possible_agents
         }
-        self.action_spaces: Dict[str, spaces.Space] = {
+        self.action_spaces: dict[str, spaces.Space] = {
             name: single_act_space for name in self.possible_agents
         }
 
@@ -190,9 +186,9 @@ class MultiAgentNavEnv:
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
         self._rng = np.random.default_rng(seed)
         self._backend = _build_backend(self.config)
         self._step_count = 0
@@ -204,9 +200,7 @@ class MultiAgentNavEnv:
         # Init communication buffers to zeros
         if self.config.communication_dim > 0:
             for name in self.possible_agents:
-                self._comm_buffer[name] = np.zeros(
-                    self.config.communication_dim, dtype=np.float32
-                )
+                self._comm_buffer[name] = np.zeros(self.config.communication_dim, dtype=np.float32)
 
         # Place robots
         self._name_to_id = {}
@@ -240,13 +234,13 @@ class MultiAgentNavEnv:
 
     def step(
         self,
-        actions: Dict[str, Any],
-    ) -> Tuple[
-        Dict[str, Any],       # observations
-        Dict[str, float],     # rewards
-        Dict[str, bool],      # terminated
-        Dict[str, bool],      # truncated
-        Dict[str, Dict[str, Any]],  # infos
+        actions: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any],  # observations
+        dict[str, float],  # rewards
+        dict[str, bool],  # terminated
+        dict[str, bool],  # truncated
+        dict[str, dict[str, Any]],  # infos
     ]:
         assert self._backend is not None, "Call reset() before step()."
         cfg = self.config
@@ -279,11 +273,11 @@ class MultiAgentNavEnv:
         self._step_count += 1
 
         # --- Collect per-agent results ---
-        observations: Dict[str, Any] = {}
-        rewards: Dict[str, float] = {}
-        terminated: Dict[str, bool] = {}
-        truncated: Dict[str, bool] = {}
-        infos: Dict[str, Dict[str, Any]] = {}
+        observations: dict[str, Any] = {}
+        rewards: dict[str, float] = {}
+        terminated: dict[str, bool] = {}
+        truncated: dict[str, bool] = {}
+        infos: dict[str, dict[str, Any]] = {}
 
         is_truncated = self._step_count >= cfg.max_steps
 
@@ -323,7 +317,7 @@ class MultiAgentNavEnv:
 
         return observations, rewards, terminated, truncated, infos
 
-    def render(self) -> Optional[np.ndarray]:
+    def render(self) -> np.ndarray | None:
         if self._backend is None:
             return None
         img = self._backend.map_image()
@@ -386,7 +380,7 @@ class MultiAgentNavEnv:
         self_state = np.array([rx, ry, rvx, rvy, gx, gy, dist], dtype=np.float32)
 
         # Other robots (relative)
-        other_robots_parts: List[np.ndarray] = []
+        other_robots_parts: list[np.ndarray] = []
         for other_name in self.possible_agents:
             if other_name == name:
                 continue
@@ -397,11 +391,13 @@ class MultiAgentNavEnv:
                 np.array([ox - rx, oy - ry, ovx - rvx, ovy - rvy], dtype=np.float32)
             )
         other_robots_vec = (
-            np.concatenate(other_robots_parts) if other_robots_parts else np.array([], dtype=np.float32)
+            np.concatenate(other_robots_parts)
+            if other_robots_parts
+            else np.array([], dtype=np.float32)
         )
 
         # Humans (relative, sorted by distance, capped)
-        human_entries: List[Tuple[float, np.ndarray]] = []
+        human_entries: list[tuple[float, np.ndarray]] = []
         for hid in self._human_ids:
             hx, hy = self._backend.get_position(hid)
             hvx, hvy = self._backend.get_velocity(hid)
@@ -420,14 +416,18 @@ class MultiAgentNavEnv:
 
         # Communication messages from other robots
         if cfg.communication_dim > 0:
-            comm_parts: List[np.ndarray] = []
+            comm_parts: list[np.ndarray] = []
             for other_name in self.possible_agents:
                 if other_name == name:
                     continue
-                comm_parts.append(self._comm_buffer.get(
-                    other_name, np.zeros(cfg.communication_dim, dtype=np.float32)
-                ))
-            parts.append(np.concatenate(comm_parts) if comm_parts else np.array([], dtype=np.float32))
+                comm_parts.append(
+                    self._comm_buffer.get(
+                        other_name, np.zeros(cfg.communication_dim, dtype=np.float32)
+                    )
+                )
+            parts.append(
+                np.concatenate(comm_parts) if comm_parts else np.array([], dtype=np.float32)
+            )
 
         return np.concatenate(parts)
 
@@ -435,7 +435,7 @@ class MultiAgentNavEnv:
     #  Per-agent reward
     # -----------------------------------------------------------------
 
-    def _compute_reward(self, name: str) -> Tuple[float, bool, Dict[str, Any]]:
+    def _compute_reward(self, name: str) -> tuple[float, bool, dict[str, Any]]:
         assert self._backend is not None
         cfg = self.config
         agent_id = self._name_to_id[name]
@@ -445,7 +445,7 @@ class MultiAgentNavEnv:
         goal = self._robot_goals[name]
         dist_to_goal = float(np.linalg.norm(robot_pos - goal))
 
-        info: Dict[str, Any] = {"dist_to_goal": dist_to_goal}
+        info: dict[str, Any] = {"dist_to_goal": dist_to_goal}
         reward = 0.0
         terminated = False
 
@@ -499,7 +499,7 @@ class MultiAgentNavEnv:
     #  Action conversion
     # -----------------------------------------------------------------
 
-    def _action_to_velocity(self, action: Union[np.ndarray, int]) -> np.ndarray:
+    def _action_to_velocity(self, action: np.ndarray | int) -> np.ndarray:
         cfg = self.config
         if cfg.action_type == "discrete":
             idx = int(action)
@@ -557,7 +557,7 @@ class MultiAgentNavEnv:
         pt = self._backend.sample_free_point()
         return np.array(pt, dtype=np.float32)
 
-    def _make_info(self, name: str) -> Dict[str, Any]:
+    def _make_info(self, name: str) -> dict[str, Any]:
         assert self._backend is not None
         agent_id = self._name_to_id[name]
         rx, ry = self._backend.get_position(agent_id)
@@ -571,7 +571,7 @@ class MultiAgentNavEnv:
         }
 
     @property
-    def backend(self) -> Optional[SceneBackend]:
+    def backend(self) -> SceneBackend | None:
         return self._backend
 
 

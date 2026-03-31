@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -60,9 +60,7 @@ class BenchmarkResults:
             return "(no results)"
         metric_names = sorted(self.metrics.keys())
         col_widths = [max(12, len(n) + 2) for n in metric_names]
-        header = "Metric".ljust(20) + "".join(
-            n.ljust(w) for n, w in zip(metric_names, col_widths)
-        )
+        header = "Metric".ljust(20) + "".join(n.ljust(w) for n, w in zip(metric_names, col_widths))
         sep = "-" * len(header)
         rows: list[str] = [header, sep]
 
@@ -115,9 +113,7 @@ class BenchmarkResults:
         mean_strs = []
         for m_name in metric_names:
             vals = self.metrics.get(m_name, [])
-            mean_strs.append(
-                f"{float(np.mean(vals)):.{precision}f}" if vals else "---"
-            )
+            mean_strs.append(f"{float(np.mean(vals)):.{precision}f}" if vals else "---")
         lines.append("Mean & " + " & ".join(mean_strs) + r" \\")
         lines.append(r"\bottomrule")
         lines.append(r"\end{tabular}")
@@ -142,9 +138,7 @@ class BenchmarkResults:
         fig, ax = plt.subplots(figsize=(max(8, len(metric_names) * 1.2), 5))
         ax.bar(x - width / 2, means, width, label=self.suite_name or "A")
         if other is not None:
-            other_means = [
-                float(np.mean(other.metrics.get(m, [0.0]))) for m in metric_names
-            ]
+            other_means = [float(np.mean(other.metrics.get(m, [0.0]))) for m in metric_names]
             ax.bar(x + width / 2, other_means, width, label=other.suite_name or "B")
         ax.set_xticks(x)
         ax.set_xticklabels(metric_names, rotation=45, ha="right")
@@ -214,9 +208,7 @@ class BenchmarkSuite:
         """
         if suite_name not in _PREDEFINED_SUITES:
             available = ", ".join(sorted(_PREDEFINED_SUITES.keys()))
-            raise ValueError(
-                f"Unknown suite '{suite_name}'. Available: {available}"
-            )
+            raise ValueError(f"Unknown suite '{suite_name}'. Available: {available}")
         return cls(scenarios=list(_PREDEFINED_SUITES[suite_name]))
 
     @classmethod
@@ -244,7 +236,6 @@ class BenchmarkSuite:
         Returns:
             Aggregated :class:`BenchmarkResults`.
         """
-        from navirl.evaluation.metrics_extended import path_length as _path_length
 
         results = BenchmarkResults(suite_name="custom")
         all_metrics: dict[str, list[float]] = {

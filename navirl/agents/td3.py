@@ -36,8 +36,8 @@ import copy
 import logging
 import math
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -128,9 +128,7 @@ class LinearDecayNoise(NoiseSchedule):
         Number of steps over which the decay occurs.
     """
 
-    def __init__(
-        self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000
-    ) -> None:
+    def __init__(self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000) -> None:
         self.start = start
         self.end = end
         self.decay_steps = max(decay_steps, 1)
@@ -171,9 +169,7 @@ class CosineDecayNoise(NoiseSchedule):
         Number of steps for one cosine half-period.
     """
 
-    def __init__(
-        self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000
-    ) -> None:
+    def __init__(self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000) -> None:
         self.start = start
         self.end = end
         self.decay_steps = max(decay_steps, 1)
@@ -304,18 +300,18 @@ class TD3Config(HyperParameters):
     policy_noise: float = 0.2
     noise_clip: float = 0.5
     policy_delay: int = 2
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    hidden_dims: tuple[int, ...] = (256, 256)
     activation: str = "relu"
     batch_size: int = 256
     exploration_noise: float = 0.1
     exploration_noise_end: float = 0.05
     noise_schedule: str = "constant"
     noise_decay_steps: int = 500_000
-    max_grad_norm: Optional[float] = None
+    max_grad_norm: float | None = None
     normalize_observations: bool = False
     observation_clip: float = 10.0
     warmup_steps: int = 10_000
-    action_noise_per_dim: Optional[List[float]] = None
+    action_noise_per_dim: list[float] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -352,8 +348,8 @@ class TD3Agent(BaseAgent):
         config: TD3Config,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(config, observation_space, action_space, device, seed, metrics_callback)
@@ -363,14 +359,18 @@ class TD3Agent(BaseAgent):
 
         # Action bounds for clipping
         self._action_low = torch.tensor(
-            action_space.low, dtype=torch.float32, device=self._device,
+            action_space.low,
+            dtype=torch.float32,
+            device=self._device,
         )
         self._action_high = torch.tensor(
-            action_space.high, dtype=torch.float32, device=self._device,
+            action_space.high,
+            dtype=torch.float32,
+            device=self._device,
         )
 
         # ---- Observation normalization ----
-        self._obs_rms: Optional[RunningMeanStd] = None
+        self._obs_rms: RunningMeanStd | None = None
         if config.normalize_observations:
             self._obs_rms = RunningMeanStd(shape=observation_space.shape)
 
@@ -391,7 +391,9 @@ class TD3Agent(BaseAgent):
             )
         else:
             self._noise_scale = torch.ones(
-                action_dim, dtype=torch.float32, device=self._device,
+                action_dim,
+                dtype=torch.float32,
+                device=self._device,
             )
 
         # ---- Actor ----
@@ -450,11 +452,18 @@ class TD3Agent(BaseAgent):
         self._optimizers["critic"] = self.critic_optimizer
 
         # ---- Register modules for train/eval toggling ----
-        self._modules.extend([
-            self.actor_trunk, self.actor_head,
-            self.actor_trunk_target, self.actor_head_target,
-            self.q1, self.q2, self.q1_target, self.q2_target,
-        ])
+        self._modules.extend(
+            [
+                self.actor_trunk,
+                self.actor_head,
+                self.actor_trunk_target,
+                self.actor_head_target,
+                self.q1,
+                self.q2,
+                self.q1_target,
+                self.q2_target,
+            ]
+        )
 
         # ---- Update counter for delayed policy updates ----
         self._update_count: int = 0
@@ -500,7 +509,7 @@ class TD3Agent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given an observation.
 
         During the warmup period, returns uniformly random actions.
@@ -555,7 +564,7 @@ class TD3Agent(BaseAgent):
     # Update
     # ------------------------------------------------------------------
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Perform a single TD3 gradient step on a batch of transitions.
 
         The critic is updated every call.  The actor and target networks
@@ -592,10 +601,12 @@ class TD3Agent(BaseAgent):
 
             # Add clipped noise for target policy smoothing
             noise = (torch.randn_like(next_action) * cfg.policy_noise).clamp(
-                -cfg.noise_clip, cfg.noise_clip,
+                -cfg.noise_clip,
+                cfg.noise_clip,
             )
             next_action = (next_action + noise).clamp(
-                self._action_low, self._action_high,
+                self._action_low,
+                self._action_high,
             )
 
             # Clipped double Q
@@ -616,7 +627,7 @@ class TD3Agent(BaseAgent):
             self._clip_grad_norm(critic_params, cfg.max_grad_norm)
         self.critic_optimizer.step()
 
-        metrics: Dict[str, float] = {
+        metrics: dict[str, float] = {
             "q_loss": q_loss.item(),
             "q1_mean": float(q1_pred.mean().item()),
             "q2_mean": float(q2_pred.mean().item()),
@@ -635,9 +646,8 @@ class TD3Agent(BaseAgent):
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             if cfg.max_grad_norm is not None:
-                actor_params = (
-                    list(self.actor_trunk.parameters())
-                    + list(self.actor_head.parameters())
+                actor_params = list(self.actor_trunk.parameters()) + list(
+                    self.actor_head.parameters()
                 )
                 self._clip_grad_norm(actor_params, cfg.max_grad_norm)
             self.actor_optimizer.step()
@@ -663,9 +673,7 @@ class TD3Agent(BaseAgent):
     # Evaluation helpers
     # ------------------------------------------------------------------
 
-    def get_q_values(
-        self, observation: np.ndarray, action: np.ndarray
-    ) -> Tuple[float, float]:
+    def get_q_values(self, observation: np.ndarray, action: np.ndarray) -> tuple[float, float]:
         """Compute Q-values for a given state-action pair.
 
         Useful for debugging and analysis.
@@ -712,7 +720,7 @@ class TD3Agent(BaseAgent):
     # Save / Load
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Save agent checkpoint to disk.
 
         Persists all networks, target networks, optimizers, and
@@ -723,7 +731,7 @@ class TD3Agent(BaseAgent):
         path : str or Path
             Directory or file path for the checkpoint.
         """
-        state_dicts: Dict[str, Any] = {
+        state_dicts: dict[str, Any] = {
             "actor_trunk": self.actor_trunk.state_dict(),
             "actor_head": self.actor_head.state_dict(),
             "actor_trunk_target": self.actor_trunk_target.state_dict(),
@@ -738,7 +746,7 @@ class TD3Agent(BaseAgent):
             state_dicts["obs_rms"] = self._obs_rms.state_dict()
         self._save_checkpoint(path, state_dicts)
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Load agent checkpoint from disk.
 
         Restores all networks, target networks, and normalization

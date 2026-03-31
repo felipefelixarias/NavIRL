@@ -3,12 +3,12 @@
 Provides kinematic and dynamic models for agent motion, including
 integration methods, collision response, and force computation.
 """
+
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 
 import numpy as np
 
@@ -17,6 +17,7 @@ from navirl.backends.continuous.obstacles import ObstacleCollection
 
 class IntegrationMethod(Enum):
     """Numerical integration methods."""
+
     EULER = "euler"
     SEMI_IMPLICIT_EULER = "semi_implicit_euler"
     VELOCITY_VERLET = "velocity_verlet"
@@ -212,9 +213,7 @@ class PhysicsEngine:
         dt: float,
     ) -> dict[int, np.ndarray]:
         """Compute all forces acting on agents."""
-        forces: dict[int, np.ndarray] = {
-            aid: np.zeros(2) for aid in agents
-        }
+        forces: dict[int, np.ndarray] = {aid: np.zeros(2) for aid in agents}
 
         # Damping forces
         if self.config.damping > 0:
@@ -287,9 +286,7 @@ class PhysicsEngine:
     ) -> AgentState:
         """Forward Euler integration."""
         new_state = state.copy()
-        acceleration = force / state.mass + self._action_to_acceleration(
-            state, action, dt
-        )
+        acceleration = force / state.mass + self._action_to_acceleration(state, action, dt)
 
         # Clamp acceleration
         acc_mag = float(np.linalg.norm(acceleration))
@@ -310,9 +307,7 @@ class PhysicsEngine:
     ) -> AgentState:
         """Semi-implicit Euler (symplectic Euler) integration."""
         new_state = state.copy()
-        acceleration = force / state.mass + self._action_to_acceleration(
-            state, action, dt
-        )
+        acceleration = force / state.mass + self._action_to_acceleration(state, action, dt)
 
         acc_mag = float(np.linalg.norm(acceleration))
         if acc_mag > state.max_acceleration:
@@ -333,20 +328,14 @@ class PhysicsEngine:
     ) -> AgentState:
         """Velocity Verlet integration."""
         new_state = state.copy()
-        acceleration = force / state.mass + self._action_to_acceleration(
-            state, action, dt
-        )
+        acceleration = force / state.mass + self._action_to_acceleration(state, action, dt)
 
         acc_mag = float(np.linalg.norm(acceleration))
         if acc_mag > state.max_acceleration:
             acceleration *= state.max_acceleration / acc_mag
 
         # Verlet: x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
-        new_state.position = (
-            state.position
-            + state.velocity * dt
-            + 0.5 * acceleration * dt * dt
-        )
+        new_state.position = state.position + state.velocity * dt + 0.5 * acceleration * dt * dt
         # v(t+dt) = v(t) + 0.5*(a(t) + a(t+dt))*dt
         # Approximate a(t+dt) ≈ a(t) for simplicity
         new_state.velocity = state.velocity + acceleration * dt
@@ -362,9 +351,7 @@ class PhysicsEngine:
     ) -> AgentState:
         """Fourth-order Runge-Kutta integration."""
         new_state = state.copy()
-        acceleration = force / state.mass + self._action_to_acceleration(
-            state, action, dt
-        )
+        acceleration = force / state.mass + self._action_to_acceleration(state, action, dt)
 
         acc_mag = float(np.linalg.norm(acceleration))
         if acc_mag > state.max_acceleration:

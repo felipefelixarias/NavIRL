@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import time
-from abc import ABC, abstractmethod
+from abc import ABC
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any
 
 # Exports: Callback, CallbackList, EvalCallback, CheckpointCallback, LoggingCallback,
 #          EarlyStoppingCallback, CurriculumCallback, WandbCallback, TensorBoardCallback,
@@ -44,13 +44,13 @@ class Callback(ABC):
     state (e.g. step count, episode reward, model reference, etc.).
     """
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         """Called once at the very beginning of training."""
 
-    def on_training_end(self, locals_: Dict[str, Any]) -> None:
+    def on_training_end(self, locals_: dict[str, Any]) -> None:
         """Called once at the very end of training."""
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         """Called after every environment step.
 
         Returns
@@ -60,19 +60,19 @@ class Callback(ABC):
         """
         return True
 
-    def on_episode_end(self, locals_: Dict[str, Any]) -> None:
+    def on_episode_end(self, locals_: dict[str, Any]) -> None:
         """Called at the end of each episode."""
 
-    def on_rollout_start(self, locals_: Dict[str, Any]) -> None:
+    def on_rollout_start(self, locals_: dict[str, Any]) -> None:
         """Called before a rollout collection begins."""
 
-    def on_rollout_end(self, locals_: Dict[str, Any]) -> None:
+    def on_rollout_end(self, locals_: dict[str, Any]) -> None:
         """Called after a rollout collection ends."""
 
-    def on_update_start(self, locals_: Dict[str, Any]) -> None:
+    def on_update_start(self, locals_: dict[str, Any]) -> None:
         """Called before a parameter update."""
 
-    def on_update_end(self, locals_: Dict[str, Any]) -> None:
+    def on_update_end(self, locals_: dict[str, Any]) -> None:
         """Called after a parameter update."""
 
 
@@ -86,44 +86,44 @@ class CallbackList(Callback):
     """
 
     def __init__(self, callbacks: Sequence[Callback]) -> None:
-        self.callbacks: List[Callback] = list(callbacks)
+        self.callbacks: list[Callback] = list(callbacks)
 
     # ------------------------------------------------------------------
     # Hook delegation
     # ------------------------------------------------------------------
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_training_start(locals_)
 
-    def on_training_end(self, locals_: Dict[str, Any]) -> None:
+    def on_training_end(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_training_end(locals_)
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         continue_training = True
         for cb in self.callbacks:
             if not cb.on_step(locals_):
                 continue_training = False
         return continue_training
 
-    def on_episode_end(self, locals_: Dict[str, Any]) -> None:
+    def on_episode_end(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_episode_end(locals_)
 
-    def on_rollout_start(self, locals_: Dict[str, Any]) -> None:
+    def on_rollout_start(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_rollout_start(locals_)
 
-    def on_rollout_end(self, locals_: Dict[str, Any]) -> None:
+    def on_rollout_end(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_rollout_end(locals_)
 
-    def on_update_start(self, locals_: Dict[str, Any]) -> None:
+    def on_update_start(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_update_start(locals_)
 
-    def on_update_end(self, locals_: Dict[str, Any]) -> None:
+    def on_update_end(self, locals_: dict[str, Any]) -> None:
         for cb in self.callbacks:
             cb.on_update_end(locals_)
 
@@ -152,7 +152,7 @@ class EvalCallback(Callback):
         eval_env: Any,
         eval_freq: int = 10_000,
         n_eval_episodes: int = 5,
-        best_model_save_path: Optional[str] = None,
+        best_model_save_path: str | None = None,
         deterministic: bool = True,
         verbose: int = 1,
     ) -> None:
@@ -166,11 +166,11 @@ class EvalCallback(Callback):
         self.best_mean_reward: float = float("-inf")
         self.last_mean_reward: float = float("-inf")
         self.n_calls: int = 0
-        self.eval_results: List[Dict[str, Any]] = []
+        self.eval_results: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.eval_freq != 0:
             return True
@@ -178,8 +178,8 @@ class EvalCallback(Callback):
         model = locals_.get("self")
         env = self.eval_env() if callable(self.eval_env) else self.eval_env
 
-        episode_rewards: List[float] = []
-        episode_lengths: List[int] = []
+        episode_rewards: list[float] = []
+        episode_lengths: list[int] = []
 
         for _ in range(self.n_eval_episodes):
             obs = env.reset()
@@ -266,10 +266,10 @@ class CheckpointCallback(Callback):
         self.verbose = verbose
         self.n_calls: int = 0
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         self.save_path.mkdir(parents=True, exist_ok=True)
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.save_freq != 0:
             return True
@@ -299,7 +299,7 @@ class LoggingCallback(Callback):
     def __init__(
         self,
         log_freq: int = 1_000,
-        log_file: Optional[str] = None,
+        log_file: str | None = None,
         verbose: int = 1,
     ) -> None:
         self.log_freq = log_freq
@@ -307,26 +307,26 @@ class LoggingCallback(Callback):
         self.verbose = verbose
         self.n_calls: int = 0
         self._file_handle = None
-        self._episode_rewards: List[float] = []
+        self._episode_rewards: list[float] = []
         self._start_time: float = 0.0
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         self._start_time = time.time()
         if self.log_file is not None:
             Path(self.log_file).parent.mkdir(parents=True, exist_ok=True)
             self._file_handle = open(self.log_file, "a")
 
-    def on_training_end(self, locals_: Dict[str, Any]) -> None:
+    def on_training_end(self, locals_: dict[str, Any]) -> None:
         if self._file_handle is not None:
             self._file_handle.close()
             self._file_handle = None
 
-    def on_episode_end(self, locals_: Dict[str, Any]) -> None:
+    def on_episode_end(self, locals_: dict[str, Any]) -> None:
         reward = locals_.get("episode_reward", locals_.get("reward"))
         if reward is not None:
             self._episode_rewards.append(float(reward))
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.log_freq != 0:
             return True
@@ -334,7 +334,7 @@ class LoggingCallback(Callback):
         elapsed = time.time() - self._start_time
         fps = self.n_calls / elapsed if elapsed > 0 else 0.0
 
-        metrics: Dict[str, Any] = {
+        metrics: dict[str, Any] = {
             "step": self.n_calls,
             "elapsed_sec": round(elapsed, 2),
             "fps": round(fps, 1),
@@ -342,9 +342,7 @@ class LoggingCallback(Callback):
 
         if self._episode_rewards:
             recent = self._episode_rewards[-100:]
-            metrics["mean_episode_reward"] = round(
-                sum(recent) / len(recent), 4
-            )
+            metrics["mean_episode_reward"] = round(sum(recent) / len(recent), 4)
             metrics["episodes"] = len(self._episode_rewards)
 
         # Gather any extra metrics the training loop may expose.
@@ -395,7 +393,7 @@ class EarlyStoppingCallback(Callback):
         self._no_improvement_count: int = 0
         self._last_eval_step: int = 0
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         # Only act when the eval callback has produced a new result.
         if not self.eval_callback.eval_results:
             return True
@@ -442,17 +440,17 @@ class CurriculumCallback(Callback):
     def __init__(
         self,
         metric_key: str = "mean_episode_reward",
-        thresholds: Optional[List[tuple]] = None,
-        update_fn: Optional[Any] = None,
+        thresholds: list[tuple] | None = None,
+        update_fn: Any | None = None,
         verbose: int = 1,
     ) -> None:
         self.metric_key = metric_key
-        self.thresholds: List[tuple] = sorted(thresholds or [], key=lambda t: t[0])
+        self.thresholds: list[tuple] = sorted(thresholds or [], key=lambda t: t[0])
         self.update_fn = update_fn
         self.verbose = verbose
         self._current_level: int = 0
 
-    def on_episode_end(self, locals_: Dict[str, Any]) -> None:
+    def on_episode_end(self, locals_: dict[str, Any]) -> None:
         metric_value = locals_.get(self.metric_key)
         if metric_value is None:
             return
@@ -497,8 +495,8 @@ class WandbCallback(Callback):
     def __init__(
         self,
         project: str = "navirl",
-        entity: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        entity: str | None = None,
+        config: dict[str, Any] | None = None,
         log_freq: int = 1_000,
     ) -> None:
         self.project = project
@@ -509,7 +507,7 @@ class WandbCallback(Callback):
         self._wandb: Any = None
         self._run: Any = None
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         import wandb  # lazy import
 
         self._wandb = wandb
@@ -520,16 +518,16 @@ class WandbCallback(Callback):
             reinit=True,
         )
 
-    def on_training_end(self, locals_: Dict[str, Any]) -> None:
+    def on_training_end(self, locals_: dict[str, Any]) -> None:
         if self._run is not None:
             self._run.finish()
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.log_freq != 0:
             return True
 
-        metrics: Dict[str, Any] = {"step": self.n_calls}
+        metrics: dict[str, Any] = {"step": self.n_calls}
         for key in (
             "loss",
             "policy_loss",
@@ -570,16 +568,16 @@ class TensorBoardCallback(Callback):
         self.n_calls: int = 0
         self._writer: Any = None
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         from torch.utils.tensorboard import SummaryWriter  # lazy import
 
         self._writer = SummaryWriter(log_dir=self.log_dir)
 
-    def on_training_end(self, locals_: Dict[str, Any]) -> None:
+    def on_training_end(self, locals_: dict[str, Any]) -> None:
         if self._writer is not None:
             self._writer.close()
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.log_freq != 0:
             return True
@@ -615,23 +613,23 @@ class ProgressBarCallback(Callback):
     def __init__(self, total_steps: int) -> None:
         self.total_steps = total_steps
         self._pbar: Any = None
-        self._episode_rewards: List[float] = []
+        self._episode_rewards: list[float] = []
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         from tqdm import tqdm  # lazy import
 
         self._pbar = tqdm(total=self.total_steps, desc="Training", unit="step")
 
-    def on_training_end(self, locals_: Dict[str, Any]) -> None:
+    def on_training_end(self, locals_: dict[str, Any]) -> None:
         if self._pbar is not None:
             self._pbar.close()
 
-    def on_episode_end(self, locals_: Dict[str, Any]) -> None:
+    def on_episode_end(self, locals_: dict[str, Any]) -> None:
         reward = locals_.get("episode_reward", locals_.get("reward"))
         if reward is not None:
             self._episode_rewards.append(float(reward))
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         if self._pbar is not None:
             self._pbar.update(1)
             if self._episode_rewards:
@@ -677,10 +675,10 @@ class VideoRecordCallback(Callback):
         self.verbose = verbose
         self.n_calls: int = 0
 
-    def on_training_start(self, locals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any]) -> None:
         self.video_dir.mkdir(parents=True, exist_ok=True)
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.record_freq != 0:
             return True
@@ -689,7 +687,7 @@ class VideoRecordCallback(Callback):
         env = self.eval_env() if callable(self.eval_env) else self.eval_env
 
         for ep_idx in range(self.n_episodes):
-            frames: List[Any] = []
+            frames: list[Any] = []
             obs = env.reset()
             if isinstance(obs, tuple):
                 obs = obs[0]
@@ -715,7 +713,7 @@ class VideoRecordCallback(Callback):
 
         return True
 
-    def _save_video(self, frames: List[Any], episode_idx: int) -> None:
+    def _save_video(self, frames: list[Any], episode_idx: int) -> None:
         """Write *frames* to a video file using imageio if available."""
         try:
             import imageio  # type: ignore
@@ -744,16 +742,16 @@ class GradientMonitorCallback(Callback):
     def __init__(
         self,
         log_freq: int = 100,
-        max_grad_norm: Optional[float] = None,
+        max_grad_norm: float | None = None,
         verbose: int = 1,
     ) -> None:
         self.log_freq = log_freq
         self.max_grad_norm = max_grad_norm
         self.verbose = verbose
         self._update_count: int = 0
-        self.grad_history: List[Dict[str, float]] = []
+        self.grad_history: list[dict[str, float]] = []
 
-    def on_update_end(self, locals_: Dict[str, Any]) -> None:
+    def on_update_end(self, locals_: dict[str, Any]) -> None:
         self._update_count += 1
         if self._update_count % self.log_freq != 0:
             return
@@ -772,19 +770,17 @@ class GradientMonitorCallback(Callback):
         if parameters is None:
             return
 
-        import torch  # needed for gradient inspection
-
         total_norm = 0.0
         max_norm = 0.0
         param_count = 0
         for p in parameters:
             if p.grad is not None:
                 pnorm = p.grad.data.norm(2).item()
-                total_norm += pnorm ** 2
+                total_norm += pnorm**2
                 max_norm = max(max_norm, pnorm)
                 param_count += 1
 
-        total_norm = total_norm ** 0.5
+        total_norm = total_norm**0.5
 
         entry = {
             "update": self._update_count,
@@ -821,7 +817,7 @@ class SchedulerCallback(Callback):
 
     def __init__(
         self,
-        schedulers: Union[Any, List[Any]],
+        schedulers: Any | list[Any],
         step_on: str = "update",
     ) -> None:
         if not isinstance(schedulers, (list, tuple)):
@@ -830,17 +826,17 @@ class SchedulerCallback(Callback):
         self.step_on = step_on
         self.n_calls: int = 0
 
-    def _step_all(self, locals_: Dict[str, Any]) -> None:
+    def _step_all(self, locals_: dict[str, Any]) -> None:
         self.n_calls += 1
         for sched in self.schedulers:
             if hasattr(sched, "step"):
                 sched.step()
 
-    def on_update_end(self, locals_: Dict[str, Any]) -> None:
+    def on_update_end(self, locals_: dict[str, Any]) -> None:
         if self.step_on == "update":
             self._step_all(locals_)
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         if self.step_on == "step":
             self._step_all(locals_)
         return True
@@ -869,8 +865,8 @@ class HyperparameterSearchCallback(Callback):
     def __init__(
         self,
         metric_key: str = "mean_reward",
-        report_fn: Optional[Any] = None,
-        eval_callback: Optional[EvalCallback] = None,
+        report_fn: Any | None = None,
+        eval_callback: EvalCallback | None = None,
         report_freq: int = 10_000,
     ) -> None:
         self.metric_key = metric_key
@@ -879,13 +875,13 @@ class HyperparameterSearchCallback(Callback):
         self.report_freq = report_freq
         self.n_calls: int = 0
 
-    def on_step(self, locals_: Dict[str, Any]) -> bool:
+    def on_step(self, locals_: dict[str, Any]) -> bool:
         self.n_calls += 1
         if self.n_calls % self.report_freq != 0:
             return True
 
         # Try to get the metric from the eval callback first.
-        metric_value: Optional[float] = None
+        metric_value: float | None = None
         if self.eval_callback is not None and self.eval_callback.eval_results:
             latest = self.eval_callback.eval_results[-1]
             metric_value = latest.get(self.metric_key, latest.get("mean_reward"))

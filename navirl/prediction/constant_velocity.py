@@ -43,11 +43,7 @@ class ConstantVelocityPredictor(TrajectoryPredictor):
         trajectories = np.zeros((self.num_samples, self.horizon, 2))
         for s in range(self.num_samples):
             for t in range(self.horizon):
-                noise = (
-                    np.random.randn(2) * self.noise_std * (t + 1)
-                    if self.noise_std > 0
-                    else 0.0
-                )
+                noise = np.random.randn(2) * self.noise_std * (t + 1) if self.noise_std > 0 else 0.0
                 trajectories[s, t] = last_pos + velocity * (t + 1) + noise
 
         probabilities = np.ones(self.num_samples) / self.num_samples
@@ -212,9 +208,7 @@ class KalmanPredictor(TrajectoryPredictor):
         mean_traj = np.zeros((self.horizon, 6))
         cov_traj = np.zeros((self.horizon, 6, 6))
 
-        pred_state = _KalmanState(
-            mean=state.mean.copy(), covariance=state.covariance.copy()
-        )
+        pred_state = _KalmanState(mean=state.mean.copy(), covariance=state.covariance.copy())
         for t in range(self.horizon):
             pred_state = self._kalman_predict_step(pred_state)
             mean_traj[t] = pred_state.mean

@@ -5,7 +5,6 @@ from collections.abc import Callable
 
 from navirl.core.types import Action, AgentState
 
-
 EventSink = Callable[[str, int | None, dict], None]
 
 

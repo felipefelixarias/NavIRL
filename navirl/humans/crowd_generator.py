@@ -12,8 +12,7 @@ from __future__ import annotations
 
 import enum
 import math
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -23,10 +22,10 @@ from navirl.humans.pedestrian_state import (
     PersonalityTag,
 )
 
-
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
+
 
 class SpawnStrategy(enum.Enum):
     """How pedestrians are introduced over time."""
@@ -59,6 +58,7 @@ class ScenarioType(enum.Enum):
 # ---------------------------------------------------------------------------
 # Demographic distribution
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class DemographicDistribution:
@@ -162,6 +162,7 @@ class DemographicDistribution:
 # Spawn region
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SpawnRegion:
     """Rectangular region from which pedestrians can be spawned.
@@ -219,15 +220,13 @@ class SpawnRegion:
         -------
         bool
         """
-        return (
-            self.x_min <= pos[0] <= self.x_max
-            and self.y_min <= pos[1] <= self.y_max
-        )
+        return self.x_min <= pos[0] <= self.x_max and self.y_min <= pos[1] <= self.y_max
 
 
 # ---------------------------------------------------------------------------
 # Goal assigner
 # ---------------------------------------------------------------------------
+
 
 class GoalAssigner:
     """Assigns goals to spawned pedestrians.
@@ -368,6 +367,7 @@ class GoalAssigner:
 # Spawn schedule
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SpawnEvent:
     """A single scheduled spawn event.
@@ -390,6 +390,7 @@ class SpawnEvent:
 # ---------------------------------------------------------------------------
 # CrowdGenerator
 # ---------------------------------------------------------------------------
+
 
 class CrowdGenerator:
     """Generates pedestrian crowds with configurable parameters.
@@ -432,9 +433,7 @@ class CrowdGenerator:
         rng_seed: int | None = None,
     ) -> None:
         self.spawn_regions = spawn_regions or [SpawnRegion()]
-        self.goal_assigner = goal_assigner or GoalAssigner(
-            goal_regions=self.spawn_regions
-        )
+        self.goal_assigner = goal_assigner or GoalAssigner(goal_regions=self.spawn_regions)
         self.demographics = demographics or DemographicDistribution()
         self.spawn_strategy = spawn_strategy
         self.density = density
@@ -472,9 +471,7 @@ class CrowdGenerator:
         """
         region = self.spawn_regions[region_idx % len(self.spawn_regions)]
         pos = position if position is not None else region.sample(self.rng)
-        goal = self.goal_assigner.assign(
-            pos, region_idx, self.rng, self.arena_bounds
-        )
+        goal = self.goal_assigner.assign(pos, region_idx, self.rng, self.arena_bounds)
         speed = self.demographics.sample_speed(self.rng)
         radius = self.demographics.sample_radius(self.rng)
         personality = self.demographics.sample_personality(self.rng)
@@ -670,9 +667,7 @@ class CrowdGenerator:
         left = SpawnRegion(-half_l, -half_l + 2.0, -half_w, half_w)
         right = SpawnRegion(half_l - 2.0, half_l, -half_w, half_w)
         arena = SpawnRegion(-half_l, half_l, -half_w, half_w)
-        assigner = GoalAssigner(
-            goal_regions=[left, right], flow_pattern=FlowPattern.BIDIRECTIONAL
-        )
+        assigner = GoalAssigner(goal_regions=[left, right], flow_pattern=FlowPattern.BIDIRECTIONAL)
         return cls(
             spawn_regions=[left, right],
             goal_assigner=assigner,
@@ -713,9 +708,7 @@ class CrowdGenerator:
         half = room_size / 2.0
         room = SpawnRegion(-half, half, -half, half)
         exit_region = SpawnRegion(half, half + 2.0, -exit_width / 2.0, exit_width / 2.0)
-        assigner = GoalAssigner(
-            goal_regions=[exit_region], flow_pattern=FlowPattern.UNIDIRECTIONAL
-        )
+        assigner = GoalAssigner(goal_regions=[exit_region], flow_pattern=FlowPattern.UNIDIRECTIONAL)
         demographics = DemographicDistribution(
             speed_mean=1.6, speed_std=0.3, speed_min=0.8, speed_max=2.5
         )
@@ -772,12 +765,12 @@ class CrowdGenerator:
             SpawnRegion(-r, r, r - 2.0, r),
         ]
         goal_region = SpawnRegion(
-            stage_pos[0] - 3.0, stage_pos[0] + 3.0,
-            stage_pos[1] - 3.0, stage_pos[1] + 3.0,
+            stage_pos[0] - 3.0,
+            stage_pos[0] + 3.0,
+            stage_pos[1] - 3.0,
+            stage_pos[1] + 3.0,
         )
-        assigner = GoalAssigner(
-            goal_regions=[goal_region], flow_pattern=FlowPattern.RADIAL_IN
-        )
+        assigner = GoalAssigner(goal_regions=[goal_region], flow_pattern=FlowPattern.RADIAL_IN)
         arena = SpawnRegion(-r, r, -r, r)
         return cls(
             spawn_regions=regions,
@@ -815,9 +808,7 @@ class CrowdGenerator:
             Configured generator.
         """
         arena = SpawnRegion(*bounds)
-        assigner = GoalAssigner(
-            goal_regions=[arena], flow_pattern=FlowPattern.RANDOM
-        )
+        assigner = GoalAssigner(goal_regions=[arena], flow_pattern=FlowPattern.RANDOM)
         return cls(
             spawn_regions=[arena],
             goal_assigner=assigner,
@@ -832,6 +823,7 @@ class CrowdGenerator:
 # ---------------------------------------------------------------------------
 # Utility: density estimation
 # ---------------------------------------------------------------------------
+
 
 def estimate_density(
     positions: np.ndarray,

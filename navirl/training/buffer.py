@@ -5,9 +5,9 @@ during reinforcement learning training, including uniform, prioritized,
 n-step, hindsight, sequence, rollout, multi-agent, and demonstration buffers.
 """
 
-import numpy as np
 from collections import deque
-from typing import Dict, List, Optional, Tuple, Union
+
+import numpy as np
 
 # Exports: ReplayBuffer, PrioritizedReplayBuffer, NStepBuffer, HindsightReplayBuffer,
 #          SequenceBuffer, RolloutBuffer, MultiAgentBuffer, DemonstrationBuffer
@@ -39,8 +39,8 @@ class ReplayBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
     ) -> None:
         self.capacity = capacity
         self.obs_shape = obs_shape
@@ -81,7 +81,7 @@ class ReplayBuffer:
         self._pos = (self._pos + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of transitions uniformly.
 
         Args:
@@ -129,7 +129,7 @@ class _SumTree:
             tree_index = (tree_index - 1) // 2
             self.tree[tree_index] += change
 
-    def get_leaf(self, value: float) -> Tuple[int, float, int]:
+    def get_leaf(self, value: float) -> tuple[int, float, int]:
         """Retrieve a leaf node by traversing the tree with a cumulative value.
 
         Args:
@@ -164,7 +164,7 @@ class _SumTree:
     @property
     def max_priority(self) -> float:
         """Return the maximum priority among all leaves."""
-        leaves = self.tree[self.capacity - 1:]
+        leaves = self.tree[self.capacity - 1 :]
         return np.max(leaves) if np.any(leaves > 0) else 1.0
 
 
@@ -189,8 +189,8 @@ class PrioritizedReplayBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         alpha: float = 0.6,
         beta: float = 0.4,
     ) -> None:
@@ -233,7 +233,7 @@ class PrioritizedReplayBuffer:
             done: Whether the episode terminated.
         """
         tree_index = self._pos + self._tree.capacity - 1
-        priority = self._max_priority ** self.alpha
+        priority = self._max_priority**self.alpha
 
         self.observations[self._pos] = obs
         self.actions[self._pos] = action
@@ -245,9 +245,7 @@ class PrioritizedReplayBuffer:
         self._pos = (self._pos + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
-    def sample(
-        self, batch_size: int
-    ) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray]:
+    def sample(self, batch_size: int) -> tuple[dict[str, np.ndarray], np.ndarray, np.ndarray]:
         """Sample a batch of transitions with probability proportional to priority.
 
         The priority range is divided into equal segments, and one transition
@@ -289,9 +287,7 @@ class PrioritizedReplayBuffer:
         }
         return batch, weights.astype(np.float32), tree_indices
 
-    def update_priorities(
-        self, tree_indices: np.ndarray, td_errors: np.ndarray
-    ) -> None:
+    def update_priorities(self, tree_indices: np.ndarray, td_errors: np.ndarray) -> None:
         """Update priorities for sampled transitions based on TD-errors.
 
         Args:
@@ -328,8 +324,8 @@ class NStepBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         n_step: int = 3,
         gamma: float = 0.99,
     ) -> None:
@@ -342,7 +338,7 @@ class NStepBuffer:
         self._buffer = ReplayBuffer(capacity, obs_shape, action_shape)
         self._n_step_buffer: deque = deque(maxlen=n_step)
 
-    def _compute_n_step_return(self) -> Tuple[float, np.ndarray, bool]:
+    def _compute_n_step_return(self) -> tuple[float, np.ndarray, bool]:
         """Compute the n-step discounted return from the pending buffer.
 
         Returns:
@@ -350,7 +346,7 @@ class NStepBuffer:
         """
         reward = 0.0
         for i, (_, _, r, next_obs, done) in enumerate(self._n_step_buffer):
-            reward += (self.gamma ** i) * r
+            reward += (self.gamma**i) * r
             if done:
                 return reward, next_obs, True
         return reward, next_obs, done
@@ -387,12 +383,10 @@ class NStepBuffer:
             while len(self._n_step_buffer) > 0:
                 n_reward, n_next_obs, n_done = self._compute_n_step_return()
                 first_obs, first_action, _, _, _ = self._n_step_buffer[0]
-                self._buffer.add(
-                    first_obs, first_action, n_reward, n_next_obs, n_done
-                )
+                self._buffer.add(first_obs, first_action, n_reward, n_next_obs, n_done)
                 self._n_step_buffer.popleft()
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of n-step transitions.
 
         Args:
@@ -430,9 +424,9 @@ class HindsightReplayBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
-        goal_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
+        goal_shape: tuple[int, ...],
         strategy: str = "future",
         k: int = 4,
     ) -> None:
@@ -443,9 +437,7 @@ class HindsightReplayBuffer:
         self.strategy = strategy
         self.k = k
 
-        assert strategy in ("future", "final", "episode"), (
-            f"Unknown strategy: {strategy}"
-        )
+        assert strategy in ("future", "final", "episode"), f"Unknown strategy: {strategy}"
 
         self.observations = np.zeros((capacity, *obs_shape), dtype=np.float32)
         self.actions = np.zeros((capacity, *action_shape), dtype=np.float32)
@@ -458,9 +450,9 @@ class HindsightReplayBuffer:
         self._pos = 0
         self._size = 0
 
-        self._current_episode: List[Dict[str, np.ndarray]] = []
-        self._episode_starts: List[int] = []
-        self._episode_lengths: List[int] = []
+        self._current_episode: list[dict[str, np.ndarray]] = []
+        self._episode_starts: list[int] = []
+        self._episode_lengths: list[int] = []
 
     def add(
         self,
@@ -547,9 +539,7 @@ class HindsightReplayBuffer:
                     continue
 
                 new_goal = episode[future_idx]["achieved_goal"]
-                new_reward = self._compute_reward(
-                    t["achieved_goal"], new_goal
-                )
+                new_reward = self._compute_reward(t["achieved_goal"], new_goal)
                 self._store_transition(
                     t["obs"],
                     t["action"],
@@ -578,7 +568,7 @@ class HindsightReplayBuffer:
         distance = np.linalg.norm(achieved_goal - desired_goal)
         return 0.0 if distance < threshold else -1.0
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of goal-conditioned transitions.
 
         Args:
@@ -620,8 +610,8 @@ class SequenceBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         seq_len: int = 20,
     ) -> None:
         self.capacity = capacity
@@ -637,8 +627,8 @@ class SequenceBuffer:
 
         self._pos = 0
         self._size = 0
-        self._episode_starts: List[int] = []
-        self._episode_lengths: List[int] = []
+        self._episode_starts: list[int] = []
+        self._episode_lengths: list[int] = []
         self._current_episode_start: int = 0
         self._current_episode_len: int = 0
 
@@ -678,7 +668,7 @@ class SequenceBuffer:
                 self._episode_lengths.append(self._current_episode_len)
             self._current_episode_len = 0
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a batch of fixed-length sequences.
 
         Each sequence is a contiguous run of transitions from a single episode.
@@ -690,16 +680,10 @@ class SequenceBuffer:
             Dictionary with keys 'obs', 'actions', 'rewards', 'next_obs', 'dones',
             each with shape (batch_size, seq_len, ...).
         """
-        batch_obs = np.zeros(
-            (batch_size, self.seq_len, *self.obs_shape), dtype=np.float32
-        )
-        batch_actions = np.zeros(
-            (batch_size, self.seq_len, *self.action_shape), dtype=np.float32
-        )
+        batch_obs = np.zeros((batch_size, self.seq_len, *self.obs_shape), dtype=np.float32)
+        batch_actions = np.zeros((batch_size, self.seq_len, *self.action_shape), dtype=np.float32)
         batch_rewards = np.zeros((batch_size, self.seq_len), dtype=np.float32)
-        batch_next_obs = np.zeros(
-            (batch_size, self.seq_len, *self.obs_shape), dtype=np.float32
-        )
+        batch_next_obs = np.zeros((batch_size, self.seq_len, *self.obs_shape), dtype=np.float32)
         batch_dones = np.zeros((batch_size, self.seq_len), dtype=np.float32)
 
         for i in range(batch_size):
@@ -747,8 +731,8 @@ class RolloutBuffer:
     def __init__(
         self,
         buffer_size: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         n_envs: int = 1,
     ) -> None:
         self.buffer_size = buffer_size
@@ -756,12 +740,8 @@ class RolloutBuffer:
         self.action_shape = action_shape
         self.n_envs = n_envs
 
-        self.observations = np.zeros(
-            (buffer_size, n_envs, *obs_shape), dtype=np.float32
-        )
-        self.actions = np.zeros(
-            (buffer_size, n_envs, *action_shape), dtype=np.float32
-        )
+        self.observations = np.zeros((buffer_size, n_envs, *obs_shape), dtype=np.float32)
+        self.actions = np.zeros((buffer_size, n_envs, *action_shape), dtype=np.float32)
         self.rewards = np.zeros((buffer_size, n_envs), dtype=np.float32)
         self.values = np.zeros((buffer_size, n_envs), dtype=np.float32)
         self.log_probs = np.zeros((buffer_size, n_envs), dtype=np.float32)
@@ -793,9 +773,7 @@ class RolloutBuffer:
             done: Done flags, shape (n_envs,).
         """
         if self._pos >= self.buffer_size:
-            raise BufferError(
-                "Rollout buffer is full. Call reset() before adding more data."
-            )
+            raise BufferError("Rollout buffer is full. Call reset() before adding more data.")
 
         self.observations[self._pos] = obs
         self.actions[self._pos] = action
@@ -836,17 +814,13 @@ class RolloutBuffer:
                 next_values = self.values[step + 1]
 
             next_non_terminal = 1.0 - self.dones[step]
-            delta = (
-                self.rewards[step]
-                + gamma * next_values * next_non_terminal
-                - self.values[step]
-            )
+            delta = self.rewards[step] + gamma * next_values * next_non_terminal - self.values[step]
             last_gae = delta + gamma * gae_lambda * next_non_terminal * last_gae
             self.advantages[step] = last_gae
 
         self.returns = self.advantages + self.values
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch from the flattened rollout data.
 
         Args:
@@ -902,15 +876,12 @@ class MultiAgentBuffer:
         self,
         num_agents: int,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
     ) -> None:
         self.num_agents = num_agents
         self.capacity = capacity
-        self.buffers = [
-            ReplayBuffer(capacity, obs_shape, action_shape)
-            for _ in range(num_agents)
-        ]
+        self.buffers = [ReplayBuffer(capacity, obs_shape, action_shape) for _ in range(num_agents)]
 
     def add(
         self,
@@ -954,8 +925,8 @@ class MultiAgentBuffer:
             self.buffers[i].add(obs[i], actions[i], float(rewards[i]), next_obs[i], bool(dones[i]))
 
     def sample(
-        self, batch_size: int, agent_id: Optional[int] = None
-    ) -> Union[Dict[str, np.ndarray], List[Dict[str, np.ndarray]]]:
+        self, batch_size: int, agent_id: int | None = None
+    ) -> dict[str, np.ndarray] | list[dict[str, np.ndarray]]:
         """Sample a batch of transitions.
 
         Args:
@@ -992,8 +963,8 @@ class DemonstrationBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
     ) -> None:
         self.capacity = capacity
         self.obs_shape = obs_shape
@@ -1071,9 +1042,9 @@ class DemonstrationBuffer:
     def sample(
         self,
         batch_size: int,
-        online_buffer: Optional[ReplayBuffer] = None,
+        online_buffer: ReplayBuffer | None = None,
         demo_ratio: float = 0.25,
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """Sample a batch, optionally mixing with online experience data.
 
         When an online buffer is provided, the batch is composed of
@@ -1098,21 +1069,13 @@ class DemonstrationBuffer:
             online_batch = online_buffer.sample(n_online)
 
             return {
-                "obs": np.concatenate(
-                    [self.observations[demo_indices], online_batch["obs"]]
-                ),
-                "actions": np.concatenate(
-                    [self.actions[demo_indices], online_batch["actions"]]
-                ),
-                "rewards": np.concatenate(
-                    [self.rewards[demo_indices], online_batch["rewards"]]
-                ),
+                "obs": np.concatenate([self.observations[demo_indices], online_batch["obs"]]),
+                "actions": np.concatenate([self.actions[demo_indices], online_batch["actions"]]),
+                "rewards": np.concatenate([self.rewards[demo_indices], online_batch["rewards"]]),
                 "next_obs": np.concatenate(
                     [self.next_observations[demo_indices], online_batch["next_obs"]]
                 ),
-                "dones": np.concatenate(
-                    [self.dones[demo_indices], online_batch["dones"]]
-                ),
+                "dones": np.concatenate([self.dones[demo_indices], online_batch["dones"]]),
             }
 
         indices = np.random.randint(0, self._size, size=batch_size)

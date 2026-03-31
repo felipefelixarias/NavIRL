@@ -8,18 +8,18 @@ with cubic spline interpolation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from navirl.robots.base import RobotController, EventSink
 from navirl.core.types import Action, AgentState
-
+from navirl.robots.base import EventSink, RobotController
 
 # -----------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class HolonomicConfig:
@@ -53,6 +53,7 @@ class HolonomicConfig:
 # Inertia filter
 # -----------------------------------------------------------------------
 
+
 class InertiaFilter:
     """Simple first-order low-pass (exponential smoothing) filter.
 
@@ -73,7 +74,7 @@ class InertiaFilter:
         self._vx = vx
         self._vy = vy
 
-    def filter(self, vx_cmd: float, vy_cmd: float, dt: float) -> Tuple[float, float]:
+    def filter(self, vx_cmd: float, vy_cmd: float, dt: float) -> tuple[float, float]:
         """Apply the inertia filter and return smoothed velocities.
 
         Args:
@@ -94,7 +95,7 @@ class InertiaFilter:
         return (self._vx, self._vy)
 
     @property
-    def velocity(self) -> Tuple[float, float]:
+    def velocity(self) -> tuple[float, float]:
         """Current filtered velocity."""
         return (self._vx, self._vy)
 
@@ -103,6 +104,7 @@ class InertiaFilter:
 # Acceleration limiter
 # -----------------------------------------------------------------------
 
+
 def clamp_acceleration(
     vx_cmd: float,
     vy_cmd: float,
@@ -110,7 +112,7 @@ def clamp_acceleration(
     vy_prev: float,
     dt: float,
     config: HolonomicConfig,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Clamp the acceleration so that the change in velocity does not
     exceed the configured maximum.
 
@@ -149,6 +151,7 @@ def clamp_acceleration(
 # Smooth motion profiles
 # -----------------------------------------------------------------------
 
+
 def trapezoidal_profile(
     distance: float,
     max_speed: float,
@@ -175,7 +178,7 @@ def trapezoidal_profile(
 
     # Time to accelerate to max_speed.
     t_acc = max_speed / max_acceleration
-    d_acc = 0.5 * max_acceleration * t_acc ** 2.0
+    d_acc = 0.5 * max_acceleration * t_acc**2.0
 
     if 2.0 * d_acc >= distance:
         # Triangle profile (never reaches max_speed).
@@ -245,9 +248,7 @@ def cubic_spline_waypoints(
             a_diag[i] = 2.0 * (h[i - 1] + h[i])
             b_diag[i] = h[i - 1]
             c_diag[i] = h[i]
-            d_vec[i] = 3.0 * (
-                (y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1]
-            )
+            d_vec[i] = 3.0 * ((y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1])
 
         # Natural boundary: second derivative = 0.
         a_diag[0] = 1.0
@@ -282,7 +283,7 @@ def cubic_spline_waypoints(
             a_c = y[seg]
             b_c = (y[seg + 1] - y[seg]) / hi - hi * (2.0 * c_coeffs[seg] + c_coeffs[seg + 1]) / 3.0
             d_c = (c_coeffs[seg + 1] - c_coeffs[seg]) / (3.0 * hi)
-            result[qi, dim] = a_c + b_c * dt_seg + c_coeffs[seg] * dt_seg ** 2 + d_c * dt_seg ** 3
+            result[qi, dim] = a_c + b_c * dt_seg + c_coeffs[seg] * dt_seg**2 + d_c * dt_seg**3
 
     return result
 
@@ -290,6 +291,7 @@ def cubic_spline_waypoints(
 # -----------------------------------------------------------------------
 # Waypoint follower
 # -----------------------------------------------------------------------
+
 
 class WaypointFollower:
     """Follow a sequence of 2-D waypoints with configurable speed.
@@ -329,7 +331,7 @@ class WaypointFollower:
         y: float,
         dt: float,
         lookahead: float = 0.3,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Compute desired velocity to track the spline path.
 
         Uses a pure-pursuit-style lookahead on the dense path.
@@ -377,12 +379,13 @@ class WaypointFollower:
 # Trajectory generation
 # -----------------------------------------------------------------------
 
+
 def generate_smooth_trajectory(
     start: np.ndarray,
     goal: np.ndarray,
     config: HolonomicConfig,
     dt: float = 0.05,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate a smooth straight-line trajectory between two points.
 
     The trajectory follows a trapezoidal velocity profile along the
@@ -428,7 +431,7 @@ def generate_waypoint_trajectory(
     config: HolonomicConfig,
     dt: float = 0.05,
     num_interp: int = 300,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate a smooth trajectory through multiple waypoints.
 
     First interpolates with cubic splines, then re-parameterises by arc
@@ -481,6 +484,7 @@ def generate_waypoint_trajectory(
 # HolonomicRobot controller
 # -----------------------------------------------------------------------
 
+
 class HolonomicRobot(RobotController):
     """Omnidirectional robot controller.
 
@@ -509,14 +513,12 @@ class HolonomicRobot(RobotController):
         self._theta: float = 0.0
         self._omega: float = 0.0
         self._robot_id: int = -1
-        self._goal: Tuple[float, float] = (0.0, 0.0)
+        self._goal: tuple[float, float] = (0.0, 0.0)
         self._backend: Any = None
         self._desired_speed = desired_speed
-        self._follower: Optional[WaypointFollower] = None
+        self._follower: WaypointFollower | None = None
         if waypoints is not None:
-            self._follower = WaypointFollower(
-                waypoints, desired_speed=desired_speed
-            )
+            self._follower = WaypointFollower(waypoints, desired_speed=desired_speed)
         self._goal_tol: float = 0.20
 
     # ----- RobotController interface ------------------------------------
@@ -560,9 +562,7 @@ class HolonomicRobot(RobotController):
 
         # Determine desired velocity.
         if self._follower is not None and not self._follower.finished:
-            vx_des, vy_des = self._follower.compute_velocity(
-                self._x, self._y, dt
-            )
+            vx_des, vy_des = self._follower.compute_velocity(self._x, self._y, dt)
         else:
             dx = self._goal[0] - self._x
             dy = self._goal[1] - self._y
@@ -574,9 +574,7 @@ class HolonomicRobot(RobotController):
             vy_des = dy / dist * speed
 
         # Acceleration limit.
-        vx_cmd, vy_cmd = clamp_acceleration(
-            vx_des, vy_des, self._vx, self._vy, dt, self.config
-        )
+        vx_cmd, vy_cmd = clamp_acceleration(vx_des, vy_des, self._vx, self._vy, dt, self.config)
         # Inertia.
         vx_out, vy_out = self._inertia.filter(vx_cmd, vy_cmd, dt)
 

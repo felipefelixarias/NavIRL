@@ -31,8 +31,8 @@ ScenarioDifficultyScaler, ProceduralScenarioGenerator
 
 try:
     from navirl.envs.base_env import NavEnv, NavEnvConfig
-    from navirl.envs.crowd_env import CrowdNavEnv, CrowdNavConfig
-    from navirl.envs.multi_agent_env import MultiAgentNavEnv, MultiAgentNavConfig
+    from navirl.envs.crowd_env import CrowdNavConfig, CrowdNavEnv
+    from navirl.envs.multi_agent_env import MultiAgentNavConfig, MultiAgentNavEnv
     from navirl.envs.scenarios import (
         CircleCrossing,
         CorridorPassing,

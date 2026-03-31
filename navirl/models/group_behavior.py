@@ -8,7 +8,6 @@ that layers group dynamics on top of individual goal-seeking behavior.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -238,13 +237,17 @@ class GroupHumanController(HumanController):
         cfg = cfg or {}
         self.goal_tolerance: float = float(cfg.get("goal_tolerance", 0.5))
         self.relaxation_time: float = float(cfg.get("relaxation_time", COMFORT.relaxation_time))
-        self.distance_threshold: float = float(cfg.get("distance_threshold", COMFORT.group_max_separation))
+        self.distance_threshold: float = float(
+            cfg.get("distance_threshold", COMFORT.group_max_separation)
+        )
         self.velocity_threshold: float = float(cfg.get("velocity_threshold", 0.5))
 
         self._group_model = GroupBehaviorModel(
             cohesion_strength=float(cfg.get("cohesion_strength", 0.8)),
             repulsion_strength=float(cfg.get("repulsion_strength", 1.5)),
-            preferred_distance=float(cfg.get("preferred_distance", COMFORT.group_cohesion_distance)),
+            preferred_distance=float(
+                cfg.get("preferred_distance", COMFORT.group_cohesion_distance)
+            ),
             min_distance=float(cfg.get("min_distance", COMFORT.min_comfortable_distance)),
         )
 
@@ -285,7 +288,8 @@ class GroupHumanController(HumanController):
             velocities[hid] = (s.vx, s.vy)
 
         groups = GroupDetector.detect_groups(
-            positions, velocities,
+            positions,
+            velocities,
             distance_threshold=self.distance_threshold,
             velocity_threshold=self.velocity_threshold,
         )
@@ -310,10 +314,14 @@ class GroupHumanController(HumanController):
                 prev = self.goals[hid]
                 self.goals[hid] = self.starts[hid]
                 self.starts[hid] = prev
-                emit_event("goal_swap", hid, {
-                    "new_goal": list(self.goals[hid]),
-                    "new_start": list(self.starts[hid]),
-                })
+                emit_event(
+                    "goal_swap",
+                    hid,
+                    {
+                        "new_goal": list(self.goals[hid]),
+                        "new_start": list(self.starts[hid]),
+                    },
+                )
                 gx, gy = self.goals[hid]
                 dx = gx - s.x
                 dy = gy - s.y

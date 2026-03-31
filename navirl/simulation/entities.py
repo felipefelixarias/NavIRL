@@ -10,28 +10,19 @@ from __future__ import annotations
 
 import abc
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable, Iterator, Sequence
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
 )
 
 import numpy as np
 
 from navirl.simulation.world import AABB
 
-
 # ---------------------------------------------------------------------------
 # Entity base
 # ---------------------------------------------------------------------------
+
 
 class Entity(abc.ABC):
     """Abstract base for every simulation entity.
@@ -50,11 +41,11 @@ class Entity(abc.ABC):
         self,
         entity_id: int = -1,
         position: Sequence[float] = (0.0, 0.0),
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         self.entity_id: int = entity_id
         self.position: np.ndarray = np.asarray(position, dtype=np.float64)[:2].copy()
-        self.tags: Set[str] = tags or set()
+        self.tags: set[str] = tags or set()
         self.active: bool = True
         self._uuid: str = uuid.uuid4().hex[:12]
 
@@ -79,7 +70,7 @@ class Entity(abc.ABC):
     def has_tag(self, tag: str) -> bool:
         return tag in self.tags
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict."""
         return {
             "type": self.kind(),
@@ -97,6 +88,7 @@ class Entity(abc.ABC):
 # Static obstacles
 # ---------------------------------------------------------------------------
 
+
 class StaticObstacle(Entity):
     """Immovable circular obstacle.
 
@@ -111,7 +103,7 @@ class StaticObstacle(Entity):
         entity_id: int = -1,
         position: Sequence[float] = (0.0, 0.0),
         radius: float = 0.5,
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         super().__init__(entity_id, position, tags)
         self.radius: float = radius
@@ -131,7 +123,7 @@ class StaticObstacle(Entity):
         """Check if *point* lies inside the obstacle."""
         return self.distance_to_point(point) <= self.radius
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
         d["radius"] = self.radius
         return d
@@ -140,6 +132,7 @@ class StaticObstacle(Entity):
 # ---------------------------------------------------------------------------
 # Dynamic obstacles
 # ---------------------------------------------------------------------------
+
 
 class DynamicObstacle(Entity):
     """Movable circular obstacle with velocity.
@@ -161,7 +154,7 @@ class DynamicObstacle(Entity):
         velocity: Sequence[float] = (0.0, 0.0),
         radius: float = 0.3,
         mass: float = 1.0,
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         super().__init__(entity_id, position, tags)
         self.velocity: np.ndarray = np.asarray(velocity, dtype=np.float64)[:2].copy()
@@ -188,19 +181,22 @@ class DynamicObstacle(Entity):
         """Simple Euler integration step."""
         self.position += self.velocity * dt
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
-        d.update({
-            "velocity": self.velocity.tolist(),
-            "radius": self.radius,
-            "mass": self.mass,
-        })
+        d.update(
+            {
+                "velocity": self.velocity.tolist(),
+                "radius": self.radius,
+                "mass": self.mass,
+            }
+        )
         return d
 
 
 # ---------------------------------------------------------------------------
 # Wall
 # ---------------------------------------------------------------------------
+
 
 class Wall(Entity):
     """A line-segment wall defined by two endpoints.
@@ -221,7 +217,7 @@ class Wall(Entity):
         start: Sequence[float] = (0.0, 0.0),
         end: Sequence[float] = (1.0, 0.0),
         thickness: float = 0.1,
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         mid = (np.asarray(start)[:2] + np.asarray(end)[:2]) / 2.0
         super().__init__(entity_id, mid.tolist(), tags)
@@ -274,19 +270,22 @@ class Wall(Entity):
             max(self.start[1], self.end[1]) + ht,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
-        d.update({
-            "start": self.start.tolist(),
-            "end": self.end.tolist(),
-            "thickness": self.thickness,
-        })
+        d.update(
+            {
+                "start": self.start.tolist(),
+                "end": self.end.tolist(),
+                "thickness": self.thickness,
+            }
+        )
         return d
 
 
 # ---------------------------------------------------------------------------
 # Door
 # ---------------------------------------------------------------------------
+
 
 class Door(Wall):
     """A wall segment that can be opened or closed.
@@ -309,14 +308,14 @@ class Door(Wall):
         thickness: float = 0.1,
         open_state: bool = False,
         auto_close_time: float = 0.0,
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         super().__init__(entity_id, start, end, thickness, tags)
         self.is_open: bool = open_state
         self.auto_close_time: float = auto_close_time
         self._open_timestamp: float = 0.0
-        self._on_open: List[Callable[[Door], None]] = []
-        self._on_close: List[Callable[[Door], None]] = []
+        self._on_open: list[Callable[[Door], None]] = []
+        self._on_close: list[Callable[[Door], None]] = []
 
     def kind(self) -> str:
         return "door"
@@ -363,7 +362,7 @@ class Door(Wall):
         """Register callback for close events."""
         self._on_close.append(callback)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
         d.update({"is_open": self.is_open, "auto_close_time": self.auto_close_time})
         return d
@@ -372,6 +371,7 @@ class Door(Wall):
 # ---------------------------------------------------------------------------
 # Region
 # ---------------------------------------------------------------------------
+
 
 class Region(Entity):
     """Rectangular region used as spawn area, goal area, etc.
@@ -388,12 +388,12 @@ class Region(Entity):
         self,
         entity_id: int = -1,
         position: Sequence[float] = (0.0, 0.0),
-        size: Tuple[float, float] = (2.0, 2.0),
+        size: tuple[float, float] = (2.0, 2.0),
         label: str = "region",
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         super().__init__(entity_id, position, tags)
-        self.size: Tuple[float, float] = size
+        self.size: tuple[float, float] = size
         self.label: str = label
 
     def kind(self) -> str:
@@ -430,9 +430,7 @@ class Region(Entity):
         y = rng.uniform(self.position[1] - hh, self.position[1] + hh)
         return np.array([x, y])
 
-    def sample_points(
-        self, n: int, rng: np.random.Generator | None = None
-    ) -> np.ndarray:
+    def sample_points(self, n: int, rng: np.random.Generator | None = None) -> np.ndarray:
         """Sample *n* uniformly random points.  Returns (n, 2) array."""
         rng = rng or np.random.default_rng()
         hw, hh = self.size[0] / 2.0, self.size[1] / 2.0
@@ -440,7 +438,7 @@ class Region(Entity):
         ys = rng.uniform(self.position[1] - hh, self.position[1] + hh, size=n)
         return np.column_stack([xs, ys])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
         d.update({"size": list(self.size), "label": self.label})
         return d
@@ -449,6 +447,7 @@ class Region(Entity):
 # ---------------------------------------------------------------------------
 # Waypoint
 # ---------------------------------------------------------------------------
+
 
 class Waypoint(Entity):
     """A discrete navigation point.
@@ -467,12 +466,12 @@ class Waypoint(Entity):
         position: Sequence[float] = (0.0, 0.0),
         radius: float = 0.5,
         label: str = "",
-        tags: Set[str] | None = None,
+        tags: set[str] | None = None,
     ) -> None:
         super().__init__(entity_id, position, tags)
         self.radius: float = radius
         self.label: str = label
-        self.connections: List[int] = []  # ids of connected waypoints
+        self.connections: list[int] = []  # ids of connected waypoints
 
     def kind(self) -> str:
         return "waypoint"
@@ -494,19 +493,22 @@ class Waypoint(Entity):
         if other_id not in self.connections:
             self.connections.append(other_id)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
-        d.update({
-            "radius": self.radius,
-            "label": self.label,
-            "connections": self.connections,
-        })
+        d.update(
+            {
+                "radius": self.radius,
+                "label": self.label,
+                "connections": self.connections,
+            }
+        )
         return d
 
 
 # ---------------------------------------------------------------------------
 # NavigationGraph
 # ---------------------------------------------------------------------------
+
 
 class NavigationGraph:
     """Graph structure over :class:`Waypoint` entities.
@@ -516,8 +518,8 @@ class NavigationGraph:
     """
 
     def __init__(self) -> None:
-        self._nodes: Dict[int, Waypoint] = {}
-        self._edges: Dict[int, List[Tuple[int, float]]] = {}  # node_id -> [(nbr, cost)]
+        self._nodes: dict[int, Waypoint] = {}
+        self._edges: dict[int, list[tuple[int, float]]] = {}  # node_id -> [(nbr, cost)]
 
     # ------------------------------------------------------------------
 
@@ -526,9 +528,7 @@ class NavigationGraph:
         self._nodes[waypoint.entity_id] = waypoint
         self._edges.setdefault(waypoint.entity_id, [])
 
-    def add_edge(
-        self, from_id: int, to_id: int, cost: float | None = None
-    ) -> None:
+    def add_edge(self, from_id: int, to_id: int, cost: float | None = None) -> None:
         """Add a directed edge.  Cost defaults to Euclidean distance."""
         if cost is None:
             a = self._nodes[from_id]
@@ -536,9 +536,7 @@ class NavigationGraph:
             cost = a.distance_to(b)
         self._edges.setdefault(from_id, []).append((to_id, cost))
 
-    def add_edge_bidirectional(
-        self, a_id: int, b_id: int, cost: float | None = None
-    ) -> None:
+    def add_edge_bidirectional(self, a_id: int, b_id: int, cost: float | None = None) -> None:
         """Add an undirected edge (two directed edges)."""
         if cost is None:
             a = self._nodes[a_id]
@@ -552,18 +550,16 @@ class NavigationGraph:
         self._nodes.pop(node_id, None)
         self._edges.pop(node_id, None)
         for nid in list(self._edges):
-            self._edges[nid] = [
-                (t, c) for t, c in self._edges[nid] if t != node_id
-            ]
+            self._edges[nid] = [(t, c) for t, c in self._edges[nid] if t != node_id]
 
     # ------------------------------------------------------------------
 
-    def neighbours(self, node_id: int) -> List[Tuple[int, float]]:
+    def neighbours(self, node_id: int) -> list[tuple[int, float]]:
         """Return list of ``(neighbour_id, cost)``."""
         return list(self._edges.get(node_id, []))
 
     @property
-    def node_ids(self) -> List[int]:
+    def node_ids(self) -> list[int]:
         return list(self._nodes)
 
     def get_node(self, node_id: int) -> Waypoint:
@@ -581,9 +577,7 @@ class NavigationGraph:
     # Dijkstra
     # ------------------------------------------------------------------
 
-    def shortest_path(
-        self, start_id: int, goal_id: int
-    ) -> Tuple[List[int], float]:
+    def shortest_path(self, start_id: int, goal_id: int) -> tuple[list[int], float]:
         """Dijkstra shortest path.
 
         Returns ``(path, cost)`` where *path* is a list of node ids
@@ -592,10 +586,10 @@ class NavigationGraph:
         """
         import heapq
 
-        dist: Dict[int, float] = {start_id: 0.0}
-        prev: Dict[int, int] = {}
-        visited: Set[int] = set()
-        heap: List[Tuple[float, int]] = [(0.0, start_id)]
+        dist: dict[int, float] = {start_id: 0.0}
+        prev: dict[int, int] = {}
+        visited: set[int] = set()
+        heap: list[tuple[float, int]] = [(0.0, start_id)]
 
         while heap:
             d, u = heapq.heappop(heap)
@@ -614,7 +608,7 @@ class NavigationGraph:
         if goal_id not in dist:
             return [], float("inf")
 
-        path: List[int] = []
+        path: list[int] = []
         cur = goal_id
         while cur != start_id:
             path.append(cur)
@@ -640,7 +634,7 @@ class NavigationGraph:
             return np.empty((0, 2))
         return np.array([n.position for n in self._nodes.values()])
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "nodes": {nid: wp.to_dict() for nid, wp in self._nodes.items()},
             "edges": {str(k): v for k, v in self._edges.items()},
@@ -653,6 +647,7 @@ class NavigationGraph:
 # ---------------------------------------------------------------------------
 # EntityManager
 # ---------------------------------------------------------------------------
+
 
 class EntityManager:
     """Registry and spatial index for :class:`Entity` instances.
@@ -673,12 +668,12 @@ class EntityManager:
         bounds: AABB = AABB(0, 0, 50, 50),
         cell_size: float = 2.0,
     ) -> None:
-        self._entities: Dict[int, Entity] = {}
+        self._entities: dict[int, Entity] = {}
         self._next_id: int = 0
         self._bounds = bounds
         self._cell_size = cell_size
         # Grid: (row, col) -> set of entity ids
-        self._grid: Dict[Tuple[int, int], Set[int]] = {}
+        self._grid: dict[tuple[int, int], set[int]] = {}
         self._cols = max(1, int(np.ceil(bounds.width / cell_size)))
         self._rows = max(1, int(np.ceil(bounds.height / cell_size)))
 
@@ -695,7 +690,7 @@ class EntityManager:
     # Grid helpers
     # ------------------------------------------------------------------
 
-    def _cell_of(self, x: float, y: float) -> Tuple[int, int]:
+    def _cell_of(self, x: float, y: float) -> tuple[int, int]:
         c = int((x - self._bounds.x_min) / self._cell_size)
         r = int((y - self._bounds.y_min) / self._cell_size)
         c = max(0, min(c, self._cols - 1))
@@ -756,36 +751,34 @@ class EntityManager:
     # Queries
     # ------------------------------------------------------------------
 
-    def by_kind(self, kind: str) -> List[Entity]:
+    def by_kind(self, kind: str) -> list[Entity]:
         """Return all entities of a given kind."""
         return [e for e in self._entities.values() if e.kind() == kind]
 
-    def by_tag(self, tag: str) -> List[Entity]:
+    def by_tag(self, tag: str) -> list[Entity]:
         """Return all entities that carry *tag*."""
         return [e for e in self._entities.values() if tag in e.tags]
 
-    def by_type(self, cls: Type[Entity]) -> List[Entity]:
+    def by_type(self, cls: type[Entity]) -> list[Entity]:
         """Return all entities that are instances of *cls*."""
         return [e for e in self._entities.values() if isinstance(e, cls)]
 
-    def active(self) -> List[Entity]:
+    def active(self) -> list[Entity]:
         """Return all active entities."""
         return [e for e in self._entities.values() if e.active]
 
-    def ids(self) -> List[int]:
+    def ids(self) -> list[int]:
         return list(self._entities)
 
     # ------------------------------------------------------------------
     # Spatial queries
     # ------------------------------------------------------------------
 
-    def query_radius(
-        self, x: float, y: float, radius: float
-    ) -> List[Entity]:
+    def query_radius(self, x: float, y: float, radius: float) -> list[Entity]:
         """Return entities within *radius* of point (x, y)."""
         r0, c0 = self._cell_of(x - radius, y - radius)
         r1, c1 = self._cell_of(x + radius, y + radius)
-        candidates: Set[int] = set()
+        candidates: set[int] = set()
         for r in range(r0, r1 + 1):
             for c in range(c0, c1 + 1):
                 candidates.update(self._grid.get((r, c), set()))
@@ -797,42 +790,36 @@ class EntityManager:
             and float(np.linalg.norm(self._entities[eid].position - centre)) <= radius
         ]
 
-    def query_aabb(self, aabb: AABB) -> List[Entity]:
+    def query_aabb(self, aabb: AABB) -> list[Entity]:
         """Return entities overlapping *aabb*."""
         r0, c0 = self._cell_of(aabb.x_min, aabb.y_min)
         r1, c1 = self._cell_of(aabb.x_max, aabb.y_max)
-        candidates: Set[int] = set()
+        candidates: set[int] = set()
         for r in range(r0, r1 + 1):
             for c in range(c0, c1 + 1):
                 candidates.update(self._grid.get((r, c), set()))
         return [
             self._entities[eid]
             for eid in candidates
-            if eid in self._entities
-            and self._entities[eid].bounding_box().overlaps(aabb)
+            if eid in self._entities and self._entities[eid].bounding_box().overlaps(aabb)
         ]
 
     def nearest(
         self, x: float, y: float, k: int = 1, max_radius: float = 10.0
-    ) -> List[Tuple[Entity, float]]:
+    ) -> list[tuple[Entity, float]]:
         """Return up to *k* nearest entities within *max_radius*.
 
         Returns list of ``(entity, distance)`` sorted by distance.
         """
         ents = self.query_radius(x, y, max_radius)
         centre = np.array([x, y])
-        dists = [
-            (e, float(np.linalg.norm(e.position - centre))) for e in ents
-        ]
+        dists = [(e, float(np.linalg.norm(e.position - centre))) for e in ents]
         dists.sort(key=lambda t: t[1])
         return dists[:k]
 
-    def entities_in_region(self, region: Region) -> List[Entity]:
+    def entities_in_region(self, region: Region) -> list[Entity]:
         """Return entities whose position lies inside *region*."""
-        return [
-            e for e in self._entities.values()
-            if region.contains_point(e.position)
-        ]
+        return [e for e in self._entities.values() if region.contains_point(e.position)]
 
     # ------------------------------------------------------------------
     # Bulk operations
@@ -858,13 +845,13 @@ class EntityManager:
         self._grid.clear()
         self._next_id = 0
 
-    def to_list(self) -> List[Dict[str, Any]]:
+    def to_list(self) -> list[dict[str, Any]]:
         """Serialize all entities to a list of dicts."""
         return [e.to_dict() for e in self._entities.values()]
 
-    def summary(self) -> Dict[str, int]:
+    def summary(self) -> dict[str, int]:
         """Return counts per entity kind."""
-        counts: Dict[str, int] = {}
+        counts: dict[str, int] = {}
         for e in self._entities.values():
             k = e.kind()
             counts[k] = counts.get(k, 0) + 1

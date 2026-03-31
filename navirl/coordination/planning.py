@@ -7,15 +7,15 @@ velocity-obstacle-based coordination.
 from __future__ import annotations
 
 import heapq
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Result data structure
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PlanningResult:
@@ -27,7 +27,7 @@ class PlanningResult:
         conflicts_resolved: Number of inter-agent conflicts resolved.
     """
 
-    paths: Dict[str, List[np.ndarray]]
+    paths: dict[str, list[np.ndarray]]
     cost: float
     conflicts_resolved: int = 0
 
@@ -35,6 +35,7 @@ class PlanningResult:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _path_length(path: Sequence[np.ndarray]) -> float:
     """Compute total Euclidean length of a waypoint path."""
@@ -44,7 +45,7 @@ def _path_length(path: Sequence[np.ndarray]) -> float:
     return length
 
 
-def _reconstruct(came_from: Dict[Tuple, Tuple], current: Tuple) -> List[Tuple]:
+def _reconstruct(came_from: dict[tuple, tuple], current: tuple) -> list[tuple]:
     """Trace back from *current* through *came_from* to reconstruct the path."""
     path = [current]
     while current in came_from:
@@ -58,13 +59,14 @@ def _reconstruct(came_from: Dict[Tuple, Tuple], current: Tuple) -> List[Tuple]:
 # A* on a grid (used by CBS and Priority planners)
 # ---------------------------------------------------------------------------
 
+
 def _astar_grid(
-    start: Tuple[int, int],
-    goal: Tuple[int, int],
+    start: tuple[int, int],
+    goal: tuple[int, int],
     grid: np.ndarray,
-    constraints: Optional[Set[Tuple[int, int, int]]] = None,
+    constraints: set[tuple[int, int, int]] | None = None,
     max_timesteps: int = 200,
-) -> Optional[List[Tuple[int, int]]]:
+) -> list[tuple[int, int]] | None:
     """Run A* on a 2-D occupancy *grid* respecting time-indexed constraints.
 
     Parameters:
@@ -85,10 +87,10 @@ def _astar_grid(
     def heuristic(r: int, c: int) -> float:
         return abs(r - goal[0]) + abs(c - goal[1])  # Manhattan
 
-    open_set: List[Tuple[float, int, int, int]] = []  # (f, t, r, c)
+    open_set: list[tuple[float, int, int, int]] = []  # (f, t, r, c)
     heapq.heappush(open_set, (heuristic(*start), 0, start[0], start[1]))
-    came_from: Dict[Tuple[int, int, int], Tuple[int, int, int]] = {}
-    g_score: Dict[Tuple[int, int, int], float] = {(start[0], start[1], 0): 0}
+    came_from: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    g_score: dict[tuple[int, int, int], float] = {(start[0], start[1], 0): 0}
 
     neighbours = [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]  # wait + 4-connected
 
@@ -97,7 +99,7 @@ def _astar_grid(
 
         if (r, c) == goal:
             # Reconstruct
-            path_nodes: List[Tuple[int, int]] = []
+            path_nodes: list[tuple[int, int]] = []
             node = (r, c, t)
             while node in came_from:
                 path_nodes.append((node[0], node[1]))
@@ -129,6 +131,7 @@ def _astar_grid(
 # Priority-based planner
 # ---------------------------------------------------------------------------
 
+
 class PriorityPlanner:
     """Fixed priority-based multi-agent path planner.
 
@@ -145,9 +148,9 @@ class PriorityPlanner:
 
     def plan(
         self,
-        starts: Dict[str, Tuple[int, int]],
-        goals: Dict[str, Tuple[int, int]],
-        priorities: Optional[Dict[str, int]] = None,
+        starts: dict[str, tuple[int, int]],
+        goals: dict[str, tuple[int, int]],
+        priorities: dict[str, int] | None = None,
     ) -> PlanningResult:
         """Plan paths for all agents respecting priority ordering.
 
@@ -165,8 +168,8 @@ class PriorityPlanner:
         else:
             ordered = sorted(starts.keys(), key=lambda a: -priorities.get(a, 0))
 
-        paths: Dict[str, List[np.ndarray]] = {}
-        constraints: Set[Tuple[int, int, int]] = set()
+        paths: dict[str, list[np.ndarray]] = {}
+        constraints: set[tuple[int, int, int]] = set()
         total_cost = 0.0
 
         for agent_id in ordered:
@@ -187,13 +190,14 @@ class PriorityPlanner:
 # Conflict-Based Search (CBS)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _Conflict:
     """Represents a conflict between two agents at a specific timestep."""
 
     agent_a: str
     agent_b: str
-    location: Tuple[int, int]
+    location: tuple[int, int]
     timestep: int
 
 
@@ -201,8 +205,8 @@ class _Conflict:
 class _CBSNode:
     """A node in the CBS high-level constraint tree."""
 
-    constraints: Dict[str, Set[Tuple[int, int, int]]]
-    paths: Dict[str, List[Tuple[int, int]]]
+    constraints: dict[str, set[tuple[int, int, int]]]
+    paths: dict[str, list[tuple[int, int]]]
     cost: float
 
     def __lt__(self, other: _CBSNode) -> bool:
@@ -228,8 +232,8 @@ class CBSPlanner:
 
     def plan(
         self,
-        starts: Dict[str, Tuple[int, int]],
-        goals: Dict[str, Tuple[int, int]],
+        starts: dict[str, tuple[int, int]],
+        goals: dict[str, tuple[int, int]],
     ) -> PlanningResult:
         """Find conflict-free paths for all agents using CBS.
 
@@ -243,10 +247,8 @@ class CBSPlanner:
         agent_ids = list(starts.keys())
 
         # Root node: plan each agent independently
-        root_constraints: Dict[str, Set[Tuple[int, int, int]]] = {
-            a: set() for a in agent_ids
-        }
-        root_paths: Dict[str, List[Tuple[int, int]]] = {}
+        root_constraints: dict[str, set[tuple[int, int, int]]] = {a: set() for a in agent_ids}
+        root_paths: dict[str, list[tuple[int, int]]] = {}
         for a in agent_ids:
             path = _astar_grid(starts[a], goals[a], self.grid)
             root_paths[a] = path if path is not None else [starts[a]]
@@ -254,7 +256,7 @@ class CBSPlanner:
         root_cost = sum(len(p) - 1 for p in root_paths.values())
         root = _CBSNode(constraints=root_constraints, paths=root_paths, cost=root_cost)
 
-        open_list: List[_CBSNode] = [root]
+        open_list: list[_CBSNode] = [root]
         conflicts_resolved = 0
 
         for _ in range(self.max_iterations):
@@ -277,9 +279,7 @@ class CBSPlanner:
 
             # Branch on conflict: constrain each agent in turn
             for agent in (conflict.agent_a, conflict.agent_b):
-                new_constraints = {
-                    a: set(c) for a, c in node.constraints.items()
-                }
+                new_constraints = {a: set(c) for a, c in node.constraints.items()}
                 new_constraints[agent].add(
                     (conflict.location[0], conflict.location[1], conflict.timestep)
                 )
@@ -294,17 +294,14 @@ class CBSPlanner:
                     continue  # infeasible branch
                 new_paths[agent] = new_path
                 new_cost = sum(len(p) - 1 for p in new_paths.values())
-                child = _CBSNode(
-                    constraints=new_constraints, paths=new_paths, cost=new_cost
-                )
+                child = _CBSNode(constraints=new_constraints, paths=new_paths, cost=new_cost)
                 heapq.heappush(open_list, child)
                 conflicts_resolved += 1
 
         # Return best node found so far
         best = root if not open_list else open_list[0]
         result_paths = {
-            a: [np.array(p, dtype=np.float64) for p in path]
-            for a, path in best.paths.items()
+            a: [np.array(p, dtype=np.float64) for p in path] for a, path in best.paths.items()
         }
         return PlanningResult(
             paths=result_paths,
@@ -314,13 +311,13 @@ class CBSPlanner:
 
     @staticmethod
     def _find_first_conflict(
-        paths: Dict[str, List[Tuple[int, int]]],
-        agent_ids: List[str],
-    ) -> Optional[_Conflict]:
+        paths: dict[str, list[tuple[int, int]]],
+        agent_ids: list[str],
+    ) -> _Conflict | None:
         """Detect the first vertex conflict between any pair of agents."""
         max_t = max(len(p) for p in paths.values())
         for t in range(max_t):
-            occupied: Dict[Tuple[int, int], str] = {}
+            occupied: dict[tuple[int, int], str] = {}
             for a in agent_ids:
                 pos = paths[a][min(t, len(paths[a]) - 1)]
                 if pos in occupied:
@@ -337,6 +334,7 @@ class CBSPlanner:
 # ---------------------------------------------------------------------------
 # Velocity Obstacle planner (ORCA-style)
 # ---------------------------------------------------------------------------
+
 
 class VelocityObstaclePlanner:
     """Reciprocal velocity obstacle coordination (ORCA-style).
@@ -384,7 +382,7 @@ class VelocityObstaclePlanner:
         new_velocities = np.copy(preferred_velocities)
 
         for i in range(n):
-            orca_planes: List[Tuple[np.ndarray, np.ndarray]] = []  # (point, normal)
+            orca_planes: list[tuple[np.ndarray, np.ndarray]] = []  # (point, normal)
 
             for j in range(n):
                 if i == j:
@@ -410,9 +408,7 @@ class VelocityObstaclePlanner:
                         continue
                     normal = w / w_len
                     # ORCA half-plane: each agent takes half the responsibility
-                    point = current_velocities[i] + 0.5 * (
-                        np.dot(w, normal) * normal
-                    )
+                    point = current_velocities[i] + 0.5 * (np.dot(w, normal) * normal)
                 else:
                     # Already overlapping — push apart
                     normal = direction if dist > 1e-6 else np.array([1.0, 0.0])
@@ -468,7 +464,7 @@ class VelocityObstaclePlanner:
         new_vel = self.compute_velocities(positions, current_velocities, preferred)
         new_positions = positions + new_vel * dt
 
-        paths: Dict[str, List[np.ndarray]] = {}
+        paths: dict[str, list[np.ndarray]] = {}
         for i in range(len(positions)):
             agent_id = str(i)
             paths[agent_id] = [positions[i].copy(), new_positions[i].copy()]

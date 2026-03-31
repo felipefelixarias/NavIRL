@@ -12,7 +12,9 @@ from navirl.backends.grid2d.constants import FREE_SPACE
 from navirl.backends.grid2d.maps import load_map_info
 
 
-def _world_from_rc(row: int, col: int, *, width_px: int, height_px: int, ppm: float) -> tuple[float, float]:
+def _world_from_rc(
+    row: int, col: int, *, width_px: int, height_px: int, ppm: float
+) -> tuple[float, float]:
     x = (float(col) - float(width_px) * 0.5) / ppm
     y = (float(row) - float(height_px) * 0.5) / ppm
     return float(x), float(y)
@@ -61,7 +63,9 @@ def _pick_spread_points(
     sampled = pool
     if len(sampled) > 4000:
         sampled = rng.sample(sampled, 4000)
-    sampled = sorted(sampled, key=lambda p: (float(p["clearance_m"]), -abs(float(p["y"]))), reverse=True)
+    sampled = sorted(
+        sampled, key=lambda p: (float(p["clearance_m"]), -abs(float(p["y"]))), reverse=True
+    )
 
     selected: list[dict] = []
     for p in sampled:
@@ -81,7 +85,9 @@ def _pick_spread_points(
     return selected[:count]
 
 
-def _edge_split(candidates: list[dict], *, axis: str, map_w: float, map_h: float) -> tuple[list[dict], list[dict]]:
+def _edge_split(
+    candidates: list[dict], *, axis: str, map_w: float, map_h: float
+) -> tuple[list[dict], list[dict]]:
     if axis == "x":
         edge = 0.28 * map_w
         lo = [p for p in candidates if float(p["x"]) <= -edge]
@@ -140,7 +146,11 @@ def suggest_layout(
 
     human_radius = float(scenario.get("humans", {}).get("radius", 0.18))
     robot_radius = float(scenario.get("robot", {}).get("radius", 0.2))
-    count = int(humans_count) if humans_count is not None else int(scenario.get("humans", {}).get("count", 0))
+    count = (
+        int(humans_count)
+        if humans_count is not None
+        else int(scenario.get("humans", {}).get("count", 0))
+    )
     count = max(0, count)
 
     min_clearance = max(robot_radius, human_radius) + 0.05
@@ -162,8 +172,12 @@ def suggest_layout(
 
     side_a, side_b = _edge_split(candidates, axis=major_axis, map_w=map_w, map_h=map_h)
     if not side_a or not side_b:
-        side_a = sorted(candidates, key=lambda p: float(p[major_axis]))[: max(1, len(candidates) // 3)]
-        side_b = sorted(candidates, key=lambda p: float(p[major_axis]), reverse=True)[: max(1, len(candidates) // 3)]
+        side_a = sorted(candidates, key=lambda p: float(p[major_axis]))[
+            : max(1, len(candidates) // 3)
+        ]
+        side_b = sorted(candidates, key=lambda p: float(p[major_axis]), reverse=True)[
+            : max(1, len(candidates) // 3)
+        ]
 
     robot_start, robot_goal = _pick_robot_pair(side_a, side_b, axis=major_axis, rng=rng)
     if resolved_objective in {"comfort_showcase", "comfort"}:

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
-from navirl.data.trajectory import Trajectory, compute_velocities
+from navirl.data.trajectory import Trajectory
 
 
 def time_to_goal(trajectory: Trajectory, goal: np.ndarray, threshold: float = 0.5) -> float:
@@ -79,7 +80,7 @@ def jerk_metric(trajectory: Trajectory) -> float:
     vel = np.diff(trajectory.positions, axis=0) / dt
     acc = np.diff(vel, axis=0) / dt
     jerk = np.diff(acc, axis=0) / dt
-    return float(np.mean(np.sum(jerk ** 2, axis=1)))
+    return float(np.mean(np.sum(jerk**2, axis=1)))
 
 
 def social_force_integral(
@@ -348,8 +349,6 @@ def comfort_score(
     heading_score = 1.0 / (1.0 + hcr)
 
     score = (
-        jerk_weight * jerk_score
-        + space_weight * space_score
-        + heading_weight * heading_score
+        jerk_weight * jerk_score + space_weight * space_score + heading_weight * heading_score
     ) / total_weight
     return float(np.clip(score, 0.0, 1.0))

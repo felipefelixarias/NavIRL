@@ -57,9 +57,7 @@ def _get_activation(name: str) -> nn.Module:
     """Return an activation module by name (case-insensitive)."""
     key = name.lower().strip()
     if key not in _ACTIVATIONS:
-        raise ValueError(
-            f"Unknown activation '{name}'. Choose from {list(_ACTIVATIONS.keys())}"
-        )
+        raise ValueError(f"Unknown activation '{name}'. Choose from {list(_ACTIVATIONS.keys())}")
     return _ACTIVATIONS[key]()
 
 
@@ -653,7 +651,11 @@ class SpatialAttentionModule(nn.Module):
         # Spatial attention (conv on concatenated avg/max pooled channels)
         assert kernel_size % 2 == 1, "kernel_size must be odd"
         self.spatial_conv = nn.Conv2d(
-            2, 1, kernel_size=kernel_size, padding=kernel_size // 2, bias=False,
+            2,
+            1,
+            kernel_size=kernel_size,
+            padding=kernel_size // 2,
+            bias=False,
         )
 
     # ------------------------------------------------------------------
@@ -798,9 +800,9 @@ class MultiScaleFeatureExtractor(nn.Module):
         activation: str = "relu",
     ) -> None:
         super().__init__()
-        assert len(branch_channels) == len(scales), (
-            "branch_channels and scales must have the same length"
-        )
+        assert len(branch_channels) == len(
+            scales
+        ), "branch_channels and scales must have the same length"
         self.input_channels = input_channels
         self.input_height = input_height
         self.input_width = input_width

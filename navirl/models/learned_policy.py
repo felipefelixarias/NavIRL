@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from navirl.core.constants import COMFORT, EPSILON
+from navirl.core.constants import EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
 
@@ -122,21 +122,16 @@ class PolicyHumanController(HumanController):
             import torch  # type: ignore[import-untyped]
         except ImportError as exc:
             raise ImportError(
-                "PolicyHumanController requires PyTorch.  "
-                "Install it with: pip install torch"
+                "PolicyHumanController requires PyTorch.  " "Install it with: pip install torch"
             ) from exc
 
         self._device = torch.device(self.device_str)
 
         paths: list[Path] = []
         if self.model_path.is_dir():
-            paths = sorted(self.model_path.glob("*.pt")) + sorted(
-                self.model_path.glob("*.pth")
-            )
+            paths = sorted(self.model_path.glob("*.pt")) + sorted(self.model_path.glob("*.pth"))
             if not paths:
-                raise FileNotFoundError(
-                    f"No .pt/.pth files found in {self.model_path}"
-                )
+                raise FileNotFoundError(f"No .pt/.pth files found in {self.model_path}")
         else:
             paths = [self.model_path]
 
@@ -187,16 +182,17 @@ class PolicyHumanController(HumanController):
                 prev = self.goals[hid]
                 self.goals[hid] = self.starts[hid]
                 self.starts[hid] = prev
-                emit_event("goal_swap", hid, {
-                    "new_goal": list(self.goals[hid]),
-                    "new_start": list(self.starts[hid]),
-                })
+                emit_event(
+                    "goal_swap",
+                    hid,
+                    {
+                        "new_goal": list(self.goals[hid]),
+                        "new_start": list(self.starts[hid]),
+                    },
+                )
 
             # Build observation.
-            neighbours = [
-                s for aid, s in states.items()
-                if aid != hid
-            ]
+            neighbours = [s for aid, s in states.items() if aid != hid]
             obs = _build_observation(agent, neighbours, self.max_neighbours)
             obs_tensor = torch.tensor(obs, dtype=torch.float32, device=self._device).unsqueeze(0)
 

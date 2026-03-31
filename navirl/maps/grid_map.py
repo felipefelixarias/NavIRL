@@ -8,11 +8,8 @@ submap extraction, and world-to-grid coordinate transforms.
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -26,6 +23,7 @@ UNKNOWN: int = -1
 # ---------------------------------------------------------------------------
 # GridMap
 # ---------------------------------------------------------------------------
+
 
 class GridMap:
     """2-D occupancy grid map.
@@ -54,22 +52,20 @@ class GridMap:
         width: int = 100,
         height: int = 100,
         resolution: float = 0.1,
-        origin: Tuple[float, float] = (0.0, 0.0),
+        origin: tuple[float, float] = (0.0, 0.0),
         default_value: int = FREE,
     ) -> None:
         self.width = width
         self.height = height
         self.resolution = resolution
         self.origin = np.array(origin, dtype=np.float64)
-        self.data: np.ndarray = np.full(
-            (height, width), default_value, dtype=np.int8
-        )
+        self.data: np.ndarray = np.full((height, width), default_value, dtype=np.int8)
 
     # ------------------------------------------------------------------
     # Coordinate transforms
     # ------------------------------------------------------------------
 
-    def world_to_grid(self, x: float, y: float) -> Tuple[int, int]:
+    def world_to_grid(self, x: float, y: float) -> tuple[int, int]:
         """Convert world coords to grid (row, col).
 
         Returns clipped indices that are always valid.
@@ -80,13 +76,13 @@ class GridMap:
         row = max(0, min(row, self.height - 1))
         return row, col
 
-    def grid_to_world(self, row: int, col: int) -> Tuple[float, float]:
+    def grid_to_world(self, row: int, col: int) -> tuple[float, float]:
         """Convert grid (row, col) to world coords (centre of cell)."""
         x = self.origin[0] + (col + 0.5) * self.resolution
         y = self.origin[1] + (row + 0.5) * self.resolution
         return x, y
 
-    def world_to_grid_float(self, x: float, y: float) -> Tuple[float, float]:
+    def world_to_grid_float(self, x: float, y: float) -> tuple[float, float]:
         """Convert world coords to continuous grid coordinates."""
         col = (x - self.origin[0]) / self.resolution
         row = (y - self.origin[1]) / self.resolution
@@ -132,14 +128,12 @@ class GridMap:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def bresenham(
-        r0: int, c0: int, r1: int, c1: int
-    ) -> List[Tuple[int, int]]:
+    def bresenham(r0: int, c0: int, r1: int, c1: int) -> list[tuple[int, int]]:
         """Bresenham's line algorithm between two grid cells.
 
         Returns list of ``(row, col)`` along the line.
         """
-        cells: List[Tuple[int, int]] = []
+        cells: list[tuple[int, int]] = []
         dr = abs(r1 - r0)
         dc = abs(c1 - c0)
         sr = 1 if r0 < r1 else -1
@@ -159,9 +153,7 @@ class GridMap:
                 r += sr
         return cells
 
-    def line_cells(
-        self, x0: float, y0: float, x1: float, y1: float
-    ) -> List[Tuple[int, int]]:
+    def line_cells(self, x0: float, y0: float, x1: float, y1: float) -> list[tuple[int, int]]:
         """Return grid cells along a world-coordinate line segment."""
         r0, c0 = self.world_to_grid(x0, y0)
         r1, c1 = self.world_to_grid(x1, y1)
@@ -177,7 +169,7 @@ class GridMap:
         y: float,
         angle: float,
         max_range: float = 50.0,
-    ) -> Tuple[float, Tuple[int, int]]:
+    ) -> tuple[float, tuple[int, int]]:
         """Cast a ray from (x, y) at *angle* (radians).
 
         Returns ``(distance, (hit_row, hit_col))`` of the first occupied
@@ -206,7 +198,7 @@ class GridMap:
         end_angle: float,
         n_rays: int = 36,
         max_range: float = 50.0,
-    ) -> List[Tuple[float, float, float]]:
+    ) -> list[tuple[float, float, float]]:
         """Cast multiple rays in a fan.
 
         Returns list of ``(angle, distance, hit_x, hit_y)`` tuples.
@@ -214,7 +206,7 @@ class GridMap:
         ``(angle, distance, endpoint_x)``.  Full form below.
         """
         angles = np.linspace(start_angle, end_angle, n_rays)
-        results: List[Tuple[float, float, float]] = []
+        results: list[tuple[float, float, float]] = []
         for a in angles:
             dist, _ = self.ray_cast(x, y, a, max_range)
             hit_x = x + dist * np.cos(a)
@@ -226,9 +218,7 @@ class GridMap:
     # Flood fill
     # ------------------------------------------------------------------
 
-    def flood_fill(
-        self, row: int, col: int, new_value: int
-    ) -> int:
+    def flood_fill(self, row: int, col: int, new_value: int) -> int:
         """Flood-fill from (row, col) replacing connected cells of the
         same value with *new_value*.
 
@@ -239,7 +229,7 @@ class GridMap:
         old_value = int(self.data[row, col])
         if old_value == new_value:
             return 0
-        queue: deque[Tuple[int, int]] = deque()
+        queue: deque[tuple[int, int]] = deque()
         queue.append((row, col))
         filled = 0
         while queue:
@@ -256,9 +246,7 @@ class GridMap:
             queue.append((r, c + 1))
         return filled
 
-    def connected_component(
-        self, row: int, col: int, value: int | None = None
-    ) -> np.ndarray:
+    def connected_component(self, row: int, col: int, value: int | None = None) -> np.ndarray:
         """Return a boolean mask of the connected component at (row, col).
 
         Parameters
@@ -271,7 +259,7 @@ class GridMap:
             return mask
         if value is None:
             value = int(self.data[row, col])
-        queue: deque[Tuple[int, int]] = deque()
+        queue: deque[tuple[int, int]] = deque()
         queue.append((row, col))
         while queue:
             r, c = queue.popleft()
@@ -300,7 +288,7 @@ class GridMap:
         cell.
         """
         dist = np.full((self.height, self.width), np.inf, dtype=np.float64)
-        queue: deque[Tuple[int, int]] = deque()
+        queue: deque[tuple[int, int]] = deque()
         for r in range(self.height):
             for c in range(self.width):
                 if self.data[r, c] == OCCUPIED:
@@ -349,7 +337,7 @@ class GridMap:
             c_max = min(self.width, c + cells + 1)
             for rr in range(r_min, r_max):
                 for cc in range(c_min, c_max):
-                    if (rr - r) ** 2 + (cc - c) ** 2 <= cells ** 2:
+                    if (rr - r) ** 2 + (cc - c) ** 2 <= cells**2:
                         new_map.data[rr, cc] = OCCUPIED
         return new_map
 
@@ -412,9 +400,7 @@ class GridMap:
         gm.data = self.data[r0:r1, c0:c1].copy()
         return gm
 
-    def submap_world(
-        self, x_min: float, y_min: float, x_max: float, y_max: float
-    ) -> GridMap:
+    def submap_world(self, x_min: float, y_min: float, x_max: float, y_max: float) -> GridMap:
         """Extract submap by world-coordinate bounds."""
         r0, c0 = self.world_to_grid(x_min, y_min)
         r1, c1 = self.world_to_grid(x_max, y_max)
@@ -426,7 +412,10 @@ class GridMap:
 
     def draw_line(
         self,
-        x0: float, y0: float, x1: float, y1: float,
+        x0: float,
+        y0: float,
+        x1: float,
+        y1: float,
         value: int = OCCUPIED,
     ) -> None:
         """Draw a line on the grid in world coordinates."""
@@ -435,7 +424,10 @@ class GridMap:
 
     def draw_rect(
         self,
-        x: float, y: float, w: float, h: float,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
         value: int = OCCUPIED,
         filled: bool = True,
     ) -> None:
@@ -451,7 +443,9 @@ class GridMap:
 
     def draw_circle(
         self,
-        cx: float, cy: float, radius: float,
+        cx: float,
+        cy: float,
+        radius: float,
         value: int = OCCUPIED,
         filled: bool = True,
     ) -> None:
@@ -503,7 +497,9 @@ class GridMap:
     def copy(self) -> GridMap:
         """Return a deep copy."""
         gm = GridMap(
-            self.width, self.height, self.resolution,
+            self.width,
+            self.height,
+            self.resolution,
             tuple(self.origin),  # type: ignore[arg-type]
         )
         gm.data = self.data.copy()
@@ -532,7 +528,7 @@ class GridMap:
         cls,
         arr: np.ndarray,
         resolution: float = 0.1,
-        origin: Tuple[float, float] = (0.0, 0.0),
+        origin: tuple[float, float] = (0.0, 0.0),
         threshold: float = 0.5,
     ) -> GridMap:
         """Create a GridMap from a 2-D numpy array.
