@@ -129,19 +129,20 @@ class TestPrioritizedReplayBuffer:
                 next_obs=np.zeros(4),
                 done=False,
             )
-        batch = prioritized_buffer.sample(8)
+        # Unpack the tuple returned by sample method: (batch_dict, weights, tree_indices)
+        batch, weights, tree_indices = prioritized_buffer.sample(8)
         assert "obs" in batch
-        assert "weights" in batch
-        assert "indices" in batch
-        assert batch["weights"].shape == (8,)
+        assert weights.shape == (8,)
+        assert tree_indices.shape == (8,)
 
     def test_update_priorities(self, prioritized_buffer):
         for i in range(10):
             prioritized_buffer.add(np.zeros(4), np.zeros(2), 0.0, np.zeros(4), False)
-        batch = prioritized_buffer.sample(5)
-        indices = batch["indices"]
+        # Unpack the tuple returned by sample method: (batch_dict, weights, tree_indices)
+        batch, weights, tree_indices = prioritized_buffer.sample(5)
         new_priorities = np.ones(5) * 10.0
-        prioritized_buffer.update_priorities(indices, new_priorities)
+        # Use tree_indices (not batch indices) for priority updates
+        prioritized_buffer.update_priorities(tree_indices, new_priorities)
         # Should not crash; priorities are updated internally
 
     def test_capacity_limit(self, prioritized_buffer):
@@ -333,8 +334,11 @@ class TestExponentialSchedule:
 class TestCyclicSchedule:
     def test_triangular_period(self):
         s = CyclicSchedule(base_value=0.0, max_value=1.0, cycle_steps=100, mode="triangular")
-        assert s.value(0) == pytest.approx(0.0)
-        assert s.value(50) == pytest.approx(0.0, abs=1e-6)  # back to base at midpoint change
+        assert s.value(0) == pytest.approx(0.0)     # at start: base value
+        assert s.value(25) == pytest.approx(0.5)    # at quarter cycle: halfway to max
+        assert s.value(50) == pytest.approx(1.0)    # at half cycle: max value (peak of triangle)
+        assert s.value(75) == pytest.approx(0.5)    # at 3/4 cycle: halfway back to base
+        assert s.value(100) == pytest.approx(0.0)   # at full cycle: back to base
 
     def test_cosine_mode(self):
         s = CyclicSchedule(base_value=0.0, max_value=1.0, cycle_steps=100, mode="cosine")
