@@ -35,6 +35,7 @@ from navirl.agents.networks.mlp import (
 )
 
 from navirl.agents.networks.cnn import (
+    CNNExtractor,
     NatureDQN,
     ImpalaCNN,
     OccupancyGridEncoder,
@@ -103,6 +104,7 @@ __all__ = [
     "init_weights_kaiming",
     "init_weights_uniform",
     # CNN
+    "CNNExtractor",
     "NatureDQN",
     "ImpalaCNN",
     "OccupancyGridEncoder",

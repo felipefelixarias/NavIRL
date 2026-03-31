@@ -14,6 +14,18 @@ try:
     _GYM_AVAILABLE = True
 except ImportError:
     _GYM_AVAILABLE = False
+    # Create dummy classes for when gymnasium is not available
+    class gym:
+        class Env:
+            def __init__(self):
+                pass
+    class spaces:
+        @staticmethod
+        def Box(*args, **kwargs):
+            return None
+        @staticmethod
+        def Discrete(*args, **kwargs):
+            return None
 
 pytestmark = pytest.mark.skipif(not _GYM_AVAILABLE, reason="gymnasium not installed")
 

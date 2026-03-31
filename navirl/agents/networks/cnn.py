@@ -701,6 +701,61 @@ class SpatialAttentionModule(nn.Module):
 
 
 # =====================================================================
+# CNNExtractor (Generic interface for tests)
+# =====================================================================
+
+
+class CNNExtractor(nn.Module):
+    """Generic CNN extractor for testing and simple use cases.
+
+    A wrapper around NatureDQN that provides a simpler interface for
+    basic CNN feature extraction.
+
+    Parameters
+    ----------
+    input_channels : int
+        Number of input channels.
+    output_dim : int
+        Dimensionality of the output feature vector.
+    input_height : int, optional
+        Height of input images. Default 84 (Atari standard).
+    input_width : int, optional
+        Width of input images. Default 84 (Atari standard).
+    activation : str, optional
+        Activation function name. Default 'relu'.
+    """
+
+    def __init__(
+        self,
+        input_channels: int,
+        output_dim: int,
+        input_height: int = 84,
+        input_width: int = 84,
+        activation: str = "relu",
+    ) -> None:
+        super().__init__()
+        self.extractor = NatureDQN(
+            input_channels=input_channels,
+            input_height=input_height,
+            input_width=input_width,
+            output_dim=output_dim,
+            activation=activation,
+        )
+
+    @property
+    def feature_dim(self) -> int:
+        """Dimensionality of the final output vector."""
+        return self.extractor.feature_dim
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward pass."""
+        return self.extractor(x)
+
+    def extra_repr(self) -> str:
+        return self.extractor.extra_repr()
+
+
+# =====================================================================
 # MultiScaleFeatureExtractor
 # =====================================================================
 
