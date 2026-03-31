@@ -9,7 +9,6 @@ from navirl.backends.grid2d.maps import load_map_info
 from navirl.scenarios.load import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
 
-
 LIB = Path("navirl/scenarios/library")
 
 
@@ -55,7 +54,11 @@ def test_path_map_requires_explicit_scale():
         },
         "horizon": {"steps": 10, "dt": 0.1},
         "humans": {"controller": {"type": "orca"}, "count": 0},
-        "robot": {"controller": {"type": "baseline_astar"}, "start": [0.0, 0.0], "goal": [0.1, 0.1]},
+        "robot": {
+            "controller": {"type": "baseline_astar"},
+            "start": [0.0, 0.0],
+            "goal": [0.1, 0.1],
+        },
     }
 
     with pytest.raises(ValueError):

@@ -1,20 +1,19 @@
-"""Tests for navirl/safety/ module: constraints, shield, risk assessment, monitoring, constrained optimization."""
+"""Tests for NavIRL safety constraints, shielding, risk, and monitoring."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
+from navirl.safety.constrained_optimization import LagrangianMultiplier
 from navirl.safety.constraints import (
     AccelerationConstraint,
     CollisionConstraint,
     SpeedConstraint,
 )
-from navirl.safety.shield import SafetyShield
-from navirl.safety.risk_assessment import RiskEstimator
 from navirl.safety.monitoring import SafetyAlert, SafetyMonitor, Severity
-from navirl.safety.constrained_optimization import LagrangianMultiplier
-
+from navirl.safety.risk_assessment import RiskEstimator
+from navirl.safety.shield import SafetyShield
 
 # ---------------------------------------------------------------------------
 # Fixtures

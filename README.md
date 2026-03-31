@@ -61,6 +61,16 @@ Run a scenario:
 python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
 ```
 
+Work with imitation datasets:
+
+```python
+from navirl.imitation.dataset import DemonstrationDataset
+
+dataset = DemonstrationDataset.load("demo.npz")
+train_ds, val_ds = dataset.split(train_ratio=0.8, seed=42)
+train_ds.save("train_split.npz")
+```
+
 Run the verification gate:
 
 ```bash

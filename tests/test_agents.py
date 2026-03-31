@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple, Union
-import pathlib
-
 import numpy as np
 import pytest
 
 from navirl.agents.base import (
     BaseAgent,
-    CheckpointMeta,
     HyperParameters,
     MetricsLogger,
     RunningMeanStd,
@@ -18,7 +14,6 @@ from navirl.agents.base import (
 
 try:
     import torch
-    import torch.nn as nn
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
@@ -366,7 +361,10 @@ class TestPolicyHeads:
 
     def test_categorical_head(self):
         from navirl.agents.networks.policy_heads import CategoricalPolicyHead
-        head = CategoricalPolicyHead(input_dim=32, num_actions=5)  # Changed n_actions to num_actions
+        head = CategoricalPolicyHead(
+            input_dim=32,
+            num_actions=5,
+        )
         x = torch.randn(1, 32)
         # Use the sample method of the head
         action, log_prob, entropy = head.sample(x)

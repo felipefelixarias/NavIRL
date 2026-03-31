@@ -20,7 +20,6 @@ import numpy as np
 
 try:
     import torch
-    from torch.utils.data import Dataset as TorchDataset
 
     _TORCH_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -245,6 +244,46 @@ class DemonstrationDataset:
             dones=np.concatenate(all_done, axis=0),
         )
 
+    def save(self, path: str | pathlib.Path) -> None:
+        """Save demonstrations to a ``.npz`` file.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to save the ``.npz`` file to.
+        """
+        path = pathlib.Path(path)
+        save_data = {
+            "obs": self.observations,
+            "actions": self.actions,
+        }
+        # Only include optional arrays if they have data
+        if len(self.rewards) > 0:
+            save_data["rewards"] = self.rewards
+        if len(self.next_observations) > 0:
+            save_data["next_obs"] = self.next_observations
+        if len(self.dones) > 0:
+            save_data["dones"] = self.dones
+
+        np.savez_compressed(str(path), **save_data)
+
+    @classmethod
+    def load(cls, path: str | pathlib.Path) -> DemonstrationDataset:
+        """Load demonstrations from a file.
+
+        This is a convenience wrapper around load_from_npz.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to the file.
+
+        Returns
+        -------
+        DemonstrationDataset
+        """
+        return cls.load_from_npz(path)
+
     # ------------------------------------------------------------------
     # Preprocessing
     # ------------------------------------------------------------------
@@ -372,17 +411,28 @@ class DemonstrationDataset:
         self,
         val_ratio: float = 0.1,
         test_ratio: float = 0.0,
+        train_ratio: float | None = None,
         shuffle: bool = True,
         seed: int | None = None,
-    ) -> tuple[DemonstrationDataset, DemonstrationDataset, DemonstrationDataset | None]:
+    ) -> (
+        tuple[DemonstrationDataset, DemonstrationDataset]
+        | tuple[
+            DemonstrationDataset,
+            DemonstrationDataset,
+            DemonstrationDataset,
+        ]
+    ):
         """Split the dataset into train, validation, and optional test sets.
 
         Parameters
         ----------
         val_ratio : float
-            Fraction of data reserved for validation.
+            Fraction of data reserved for validation (ignored if train_ratio is provided).
         test_ratio : float
             Fraction of data reserved for testing.
+        train_ratio : float, optional
+            Fraction of data reserved for training. If provided, val_ratio will be computed
+            as (1 - train_ratio - test_ratio).
         shuffle : bool
             Whether to shuffle before splitting.
         seed : int, optional
@@ -391,9 +441,14 @@ class DemonstrationDataset:
         Returns
         -------
         tuple
-            ``(train_ds, val_ds, test_ds)`` where ``test_ds`` is *None*
-            when ``test_ratio == 0``.
+            ``(train_ds, val_ds)`` when ``test_ratio == 0``, or
+            ``(train_ds, val_ds, test_ds)`` when ``test_ratio > 0``.
         """
+        # Handle train_ratio parameter
+        if train_ratio is not None:
+            if train_ratio + test_ratio > 1.0:
+                raise ValueError("train_ratio + test_ratio cannot exceed 1.0")
+            val_ratio = 1.0 - train_ratio - test_ratio
         n = len(self)
         indices = np.arange(n)
         if shuffle:
@@ -410,11 +465,19 @@ class DemonstrationDataset:
 
         def _subset(idx: np.ndarray) -> DemonstrationDataset:
             return DemonstrationDataset(
-                observations=self.observations[idx],
-                actions=self.actions[idx],
-                rewards=self.rewards[idx],
-                next_observations=self.next_observations[idx],
-                dones=self.dones[idx],
+                observations=(
+                    self.observations[idx]
+                    if len(self.observations) > 0
+                    else self.observations
+                ),
+                actions=self.actions[idx] if len(self.actions) > 0 else self.actions,
+                rewards=self.rewards[idx] if len(self.rewards) > 0 else self.rewards,
+                next_observations=(
+                    self.next_observations[idx]
+                    if len(self.next_observations) > 0
+                    else self.next_observations
+                ),
+                dones=self.dones[idx] if len(self.dones) > 0 else self.dones,
             )
 
         train_ds = _subset(train_idx)
@@ -427,7 +490,10 @@ class DemonstrationDataset:
             len(val_ds),
             len(test_ds) if test_ds is not None else "N/A",
         )
-        return train_ds, val_ds, test_ds
+        if test_ds is not None:
+            return train_ds, val_ds, test_ds
+        else:
+            return train_ds, val_ds
 
     # ------------------------------------------------------------------
     # PyTorch Dataset interface
@@ -492,13 +558,18 @@ class DemonstrationDataset:
         return len(self.observations)
 
     def __getitem__(self, idx: int) -> dict[str, np.ndarray]:
-        return {
-            "obs": self.observations[idx],
-            "actions": self.actions[idx],
-            "rewards": self.rewards[idx],
-            "next_obs": self.next_observations[idx],
-            "dones": self.dones[idx],
-        }
+        result = {}
+        if len(self.observations) > 0:
+            result["obs"] = self.observations[idx]
+        if len(self.actions) > 0:
+            result["actions"] = self.actions[idx]
+        if len(self.rewards) > 0:
+            result["rewards"] = self.rewards[idx]
+        if len(self.next_observations) > 0:
+            result["next_obs"] = self.next_observations[idx]
+        if len(self.dones) > 0:
+            result["dones"] = self.dones[idx]
+        return result
 
     def __repr__(self) -> str:
         obs_shape = self.observations.shape[1:] if len(self.observations) > 0 else "?"

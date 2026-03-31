@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
-from collections import deque
-
 import numpy as np
 import pytest
 
@@ -196,16 +193,30 @@ class TestNormalizeObservation:
 class TestRewardShaping:
     def test_reward_shaping(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
+
+        def shape_reward(
+            obs, action, reward, terminated, truncated, info
+        ) -> float:
+            del obs, action, terminated, truncated, info
+            return reward * 1.0
+
         # Correct signature: (obs, action, reward, terminated, truncated, info) -> float
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: reward * 1.0)
+        wrapped = RewardShaping(mock_env, shaping_fn=shape_reward)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
         assert reward == pytest.approx(2.0)  # base reward (1.0) + shaped reward (1.0 * 1.0)
 
     def test_reward_shaping_penalty(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
+
+        def shape_penalty(
+            obs, action, reward, terminated, truncated, info
+        ) -> float:
+            del obs, action, reward, terminated, truncated, info
+            return -0.5
+
         # Correct signature: (obs, action, reward, terminated, truncated, info) -> float
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: -0.5)
+        wrapped = RewardShaping(mock_env, shaping_fn=shape_penalty)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
         assert reward == pytest.approx(0.5)  # base reward (1.0) + shaped reward (-0.5)
@@ -331,9 +342,16 @@ class TestWrapperComposition:
 
     def test_clip_and_reward_shape(self, mock_env):
         from navirl.envs.wrappers import ClipAction, RewardShaping
+
+        def reward_bonus(
+            obs, action, reward, terminated, truncated, info
+        ) -> float:
+            del obs, action, reward, terminated, truncated, info
+            return 1.0
+
         wrapped = ClipAction(mock_env)
         # Correct signature: (obs, action, reward, terminated, truncated, info) -> float
-        wrapped = RewardShaping(wrapped, shaping_fn=lambda obs, action, reward, terminated, truncated, info: 1.0)
+        wrapped = RewardShaping(wrapped, shaping_fn=reward_bonus)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(np.array([0.5, 0.5]))
         assert reward == pytest.approx(2.0)  # base reward (1.0) + shaped reward (1.0)

@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
 
-import numpy as np
 import pytest
 
-from navirl.config.validation import ConfigValidator, SchemaBuilder
+from navirl.config.presets import (
+    PRESETS,
+    Preset,
+    get_preset,
+    list_presets,
+    merge_presets,
+)
+from navirl.config.registry import ComponentRegistry
 from navirl.config.serialization import (
     cli_args_to_config,
     config_to_cli_args,
@@ -19,15 +22,7 @@ from navirl.config.serialization import (
     merge_configs,
     save_config,
 )
-from navirl.config.registry import ComponentRegistry
-from navirl.config.presets import (
-    PRESETS,
-    Preset,
-    get_preset,
-    list_presets,
-    merge_presets,
-)
-
+from navirl.config.validation import ConfigValidator, SchemaBuilder
 
 # ---------------------------------------------------------------------------
 # ConfigValidator

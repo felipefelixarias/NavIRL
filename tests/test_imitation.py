@@ -7,12 +7,17 @@ import pytest
 
 try:
     import torch
-    import torch.nn as nn
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(not _TORCH_AVAILABLE, reason="PyTorch not installed")
+
+
+def _feature_prefix(obs: np.ndarray, size: int) -> np.ndarray:
+    if len(obs) >= size:
+        return obs[:size]
+    return np.pad(obs, (0, size - len(obs)))
 
 
 # ---------------------------------------------------------------------------
@@ -82,32 +87,25 @@ class TestMaxEntIRL:
     def test_reward_initialization(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
         cfg = MaxEntIRLConfig(feature_dim=16)
-        # Add required feature_fn parameter
-        feature_fn = lambda obs: obs[:16] if len(obs) >= 16 else np.pad(obs, (0, 16 - len(obs)))
-        irl = MaxEntIRL(cfg, feature_fn)
+        irl = MaxEntIRL(cfg, lambda obs: _feature_prefix(obs, 16))
         assert irl.theta.shape == (16,)
 
     def test_compute_reward(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
         cfg = MaxEntIRLConfig(feature_dim=8)
-        # Add required feature_fn parameter
-        feature_fn = lambda obs: obs[:8] if len(obs) >= 8 else np.pad(obs, (0, 8 - len(obs)))
-        irl = MaxEntIRL(cfg, feature_fn)
+        irl = MaxEntIRL(cfg, lambda obs: _feature_prefix(obs, 8))
         observation = np.random.randn(8).astype(np.float64)
-        reward = irl.reward(observation)  # Changed from compute_reward to reward
+        reward = irl.reward(observation)
         assert isinstance(reward, float)
 
     def test_update_step(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
         cfg = MaxEntIRLConfig(feature_dim=8, lr=0.1)
-        # Add required feature_fn parameter
-        feature_fn = lambda obs: obs[:8] if len(obs) >= 8 else np.pad(obs, (0, 8 - len(obs)))
-        irl = MaxEntIRL(cfg, feature_fn)
+        irl = MaxEntIRL(cfg, lambda obs: _feature_prefix(obs, 8))
         expert_features = np.ones(8)
         policy_features = np.zeros(8)
         theta_before = irl.theta.copy()
-        irl.update_step(expert_features, policy_features)  # Changed from update to update_step
-        # Theta should change
+        irl.update_step(expert_features, policy_features)
         assert not np.allclose(irl.theta, theta_before)
 
 
@@ -135,7 +133,7 @@ class TestGAIL:
 
     def test_discriminator_gradient(self):
         from navirl.imitation.gail import Discriminator
-        disc = Discriminator(obs_dim=8, action_dim=2, hidden_dims=(16,))  # Changed state_dim to obs_dim
+        disc = Discriminator(obs_dim=8, action_dim=2, hidden_dims=(16,))
         state = torch.randn(2, 8)
         action = torch.randn(2, 2)
         output = disc(state, action)
@@ -172,25 +170,28 @@ class TestAIRL:
 
     def test_reward_network_forward(self):
         from navirl.imitation.airl import RewardNetwork
-        net = RewardNetwork(obs_dim=8, action_dim=2, hidden_dims=(32,), gamma=0.99)  # Changed state_dim to obs_dim
+        net = RewardNetwork(obs_dim=8, action_dim=2, hidden_dims=(32,), gamma=0.99)
         state = torch.randn(4, 8)
         action = torch.randn(4, 2)
         next_state = torch.randn(4, 8)
-        dones = torch.zeros(4, 1)  # Add required dones parameter
-        f_values = net(state, action, next_state, dones)  # forward returns single tensor (reward + shaping)
+        dones = torch.zeros(4, 1)
+        f_values = net(state, action, next_state, dones)
         assert f_values.shape == (4, 1)
 
     def test_reward_network_state_only(self):
         from navirl.imitation.airl import RewardNetwork
         net = RewardNetwork(
-            obs_dim=8, action_dim=2, hidden_dims=(16,),  # Changed state_dim to obs_dim
-            gamma=0.99, state_only=True,
+            obs_dim=8,
+            action_dim=2,
+            hidden_dims=(16,),
+            gamma=0.99,
+            state_only=True,
         )
         state = torch.randn(2, 8)
         action = torch.randn(2, 2)
         next_state = torch.randn(2, 8)
-        dones = torch.zeros(2, 1)  # Add required dones parameter
-        f_values = net(state, action, next_state, dones)  # forward returns single tensor (reward + shaping)
+        dones = torch.zeros(2, 1)
+        f_values = net(state, action, next_state, dones)
         assert f_values.shape == (2, 1)
 
     def test_airl_agent_creation(self, obs_space, action_space):
@@ -235,6 +236,7 @@ class TestDemonstrationDataset:
         ds = DemonstrationDataset(
             observations=expert_data["observations"],
             actions=expert_data["actions"],
+            rewards=expert_data["rewards"],
         )
         path = tmp_path / "demo.npz"
         ds.save(str(path))
@@ -242,6 +244,7 @@ class TestDemonstrationDataset:
 
         ds2 = DemonstrationDataset.load(str(path))
         assert len(ds2) == len(ds)
+        np.testing.assert_allclose(ds2.rewards, expert_data["rewards"])
 
     def test_normalize(self, expert_data):
         from navirl.imitation.dataset import DemonstrationDataset
@@ -303,7 +306,7 @@ class TestDatasetEdgeCases:
 class TestDiscriminatorTraining:
     def test_single_update(self, expert_data):
         from navirl.imitation.gail import Discriminator
-        disc = Discriminator(obs_dim=8, action_dim=2, hidden_dims=(32,))  # Changed state_dim to obs_dim
+        disc = Discriminator(obs_dim=8, action_dim=2, hidden_dims=(32,))
         optimizer = torch.optim.Adam(disc.parameters(), lr=1e-3)
 
         expert_s = torch.from_numpy(expert_data["observations"][:16])
@@ -328,7 +331,7 @@ class TestDiscriminatorTraining:
     def test_discriminator_different_sizes(self):
         from navirl.imitation.gail import Discriminator
         for hdims in [(16,), (32, 32), (64, 32, 16)]:
-            disc = Discriminator(obs_dim=4, action_dim=2, hidden_dims=hdims)  # Changed state_dim to obs_dim
+            disc = Discriminator(obs_dim=4, action_dim=2, hidden_dims=hdims)
             out = disc(torch.randn(1, 4), torch.randn(1, 2))
             assert out.shape == (1, 1)
 
@@ -343,19 +346,16 @@ class TestRewardLearningIntegration:
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
 
         cfg = MaxEntIRLConfig(feature_dim=4, lr=0.5)
-        # Add required feature_fn parameter
-        feature_fn = lambda obs: obs[:4] if len(obs) >= 4 else np.pad(obs, (0, 4 - len(obs)))
-        irl = MaxEntIRL(cfg, feature_fn)
+        irl = MaxEntIRL(cfg, lambda obs: _feature_prefix(obs, 4))
 
         expert_features = np.array([1.0, 1.0, 1.0, 1.0])
         policy_features = np.array([0.0, 0.0, 0.0, 0.0])
 
         for _ in range(50):
-            irl.update_step(expert_features, policy_features)  # Changed update to update_step
+            irl.update_step(expert_features, policy_features)
 
-        # Since reward() expects observations (not features), we use observations that will produce the desired features
-        expert_obs = np.array([1.0, 1.0, 1.0, 1.0])  # This will produce expert_features through feature_fn
-        policy_obs = np.array([0.0, 0.0, 0.0, 0.0])  # This will produce policy_features through feature_fn
+        expert_obs = np.array([1.0, 1.0, 1.0, 1.0])
+        policy_obs = np.array([0.0, 0.0, 0.0, 0.0])
         r_expert = irl.reward(expert_obs)
         r_policy = irl.reward(policy_obs)
         assert r_expert > r_policy
