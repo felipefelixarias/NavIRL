@@ -29,11 +29,12 @@ BoundaryPenalty
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
-from navirl.rewards.base import RewardFunction, State, Action
+from navirl.rewards.base import Action, RewardFunction, State
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -117,7 +118,7 @@ class GoalReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute the goal reward.
 
@@ -258,7 +259,7 @@ class PathFollowingReward(RewardFunction):
         proj = a + t * ab
         return float(np.linalg.norm(p - proj))
 
-    def _closest_segment(self, pos: np.ndarray) -> Tuple[int, float]:
+    def _closest_segment(self, pos: np.ndarray) -> tuple[int, float]:
         """Find the closest path segment and distance.
 
         Parameters
@@ -287,7 +288,7 @@ class PathFollowingReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute path-following reward.
 
@@ -365,7 +366,7 @@ class TimePenaltyReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Return a constant negative reward each step.
 
@@ -549,7 +550,7 @@ class CollisionPenalty(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute collision penalty.
 
@@ -570,7 +571,7 @@ class CollisionPenalty(RewardFunction):
         total += self._check_obstacle_collisions(pos, next_state)
         return total
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return collision count from the last call."""
         return {"n_collisions": self._last_n_collisions}
 
@@ -623,7 +624,7 @@ class ProgressReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute progress reward.
 
@@ -723,7 +724,7 @@ class VelocityReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute velocity reward/penalty.
 
@@ -824,7 +825,7 @@ class SmoothnessReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute smoothness penalty.
 
@@ -914,7 +915,7 @@ class BoundaryPenalty(RewardFunction):
         x_max: float | None = None,
         y_min: float | None = None,
         y_max: float | None = None,
-        center: Tuple[float, float] | None = None,
+        center: tuple[float, float] | None = None,
         radius: float | None = None,
         margin: float = 0.5,
         penalty_scale: float = 1.0,
@@ -964,7 +965,7 @@ class BoundaryPenalty(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute boundary penalty.
 

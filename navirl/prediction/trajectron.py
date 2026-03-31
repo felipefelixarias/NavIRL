@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -91,7 +91,7 @@ class _CVAEDecoder(nn.Module):
 
     def forward(
         self, z: torch.Tensor, context: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Decode latent + context into GMM parameters at each step.
 
         Returns:
@@ -169,7 +169,7 @@ class Trajectron(nn.Module):
     def _encode_context(
         self,
         node_history: torch.Tensor,
-        edge_features: Optional[torch.Tensor] = None,
+        edge_features: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Encode node history and edge interactions into a context vector.
 
@@ -196,9 +196,9 @@ class Trajectron(nn.Module):
     def forward(
         self,
         node_history: torch.Tensor,
-        future: Optional[torch.Tensor] = None,
-        edge_features: Optional[torch.Tensor] = None,
-    ) -> Dict[str, torch.Tensor]:
+        future: torch.Tensor | None = None,
+        edge_features: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
         """Forward pass.
 
         During training, *future* should be provided so that the
@@ -239,7 +239,7 @@ class Trajectron(nn.Module):
 
         means, log_sigmas, log_weights = self.decoder(z, context)
 
-        result: Dict[str, torch.Tensor] = {
+        result: dict[str, torch.Tensor] = {
             "means": means,
             "log_sigmas": log_sigmas,
             "log_weights": log_weights,
@@ -300,7 +300,7 @@ class TrajectronPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         self.model.eval()
         context = context or {}
@@ -314,7 +314,7 @@ class TrajectronPredictor(TrajectoryPredictor):
                 context["edge_features"], dtype=torch.float32, device=self.device
             ).unsqueeze(0)
 
-        all_trajs: List[np.ndarray] = []
+        all_trajs: list[np.ndarray] = []
         for _ in range(self.num_samples):
             out = self.model(obs, future=None, edge_features=edge_features)
             means = out["means"]  # (1, T, K, 2)

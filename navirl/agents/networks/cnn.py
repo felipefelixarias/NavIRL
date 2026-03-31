@@ -25,14 +25,12 @@ MultiScaleFeatureExtractor
 
 from __future__ import annotations
 
-import math
-from typing import List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
 
 # ---------------------------------------------------------------------------
 # Activation helper (mirrors mlp.py)
@@ -76,7 +74,7 @@ def _conv2d_output_size(
     kernel_size: int,
     stride: int = 1,
     padding: int = 0,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Return (H_out, W_out) after a single Conv2d layer."""
     h_out = (height - kernel_size + 2 * padding) // stride + 1
     w_out = (width - kernel_size + 2 * padding) // stride + 1
@@ -126,7 +124,7 @@ class NatureDQN(nn.Module):
         input_channels: int,
         input_height: int,
         input_width: int,
-        output_dim: Optional[int] = 512,
+        output_dim: int | None = 512,
         activation: str = "relu",
     ) -> None:
         super().__init__()
@@ -267,7 +265,7 @@ class ImpalaCNN(nn.Module):
         input_height: int,
         input_width: int,
         channel_sequence: Sequence[int] = (16, 32, 32),
-        output_dim: Optional[int] = 256,
+        output_dim: int | None = 256,
         activation: str = "relu",
     ) -> None:
         super().__init__()
@@ -276,7 +274,7 @@ class ImpalaCNN(nn.Module):
         self.input_width = input_width
         self.output_dim = output_dim
 
-        stages: List[nn.Module] = []
+        stages: list[nn.Module] = []
         in_ch = input_channels
         for out_ch in channel_sequence:
             stages.append(_ImpalaConvSequence(in_ch, out_ch, activation=activation))
@@ -796,7 +794,7 @@ class MultiScaleFeatureExtractor(nn.Module):
         input_width: int,
         branch_channels: Sequence[int] = (32, 64, 64),
         scales: Sequence[float] = (1.0, 0.5, 0.25),
-        output_dim: Optional[int] = 256,
+        output_dim: int | None = 256,
         activation: str = "relu",
     ) -> None:
         super().__init__()
@@ -859,7 +857,7 @@ class MultiScaleFeatureExtractor(nn.Module):
         -------
         Tensor of shape ``(B, feature_dim)``
         """
-        branch_outputs: List[Tensor] = []
+        branch_outputs: list[Tensor] = []
         for branch, scale in zip(self.branches, self.scales):
             if scale != 1.0:
                 scaled = F.interpolate(

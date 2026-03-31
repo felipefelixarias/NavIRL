@@ -29,8 +29,7 @@ RecurrentExtractor
 
 from __future__ import annotations
 
-import math
-from typing import Dict, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
@@ -175,7 +174,7 @@ class StateExtractor(nn.Module):
         self.state_dim = state_dim
         self._feature_dim = output_dim
 
-        self.normalizer: Optional[RunningNormalizer] = (
+        self.normalizer: RunningNormalizer | None = (
             RunningNormalizer(state_dim) if normalize else None
         )
         self.mlp = MLP(
@@ -396,7 +395,7 @@ class SocialExtractor(nn.Module):
     def forward(
         self,
         agents: Tensor,
-        mask: Optional[Tensor] = None,
+        mask: Tensor | None = None,
     ) -> Tensor:
         """Forward pass.
 
@@ -454,8 +453,8 @@ class CombinedExtractor(nn.Module):
 
     def __init__(
         self,
-        extractors: Dict[str, nn.Module],
-        output_dim: Optional[int] = None,
+        extractors: dict[str, nn.Module],
+        output_dim: int | None = None,
     ) -> None:
         super().__init__()
         self.extractors = nn.ModuleDict(extractors)
@@ -481,7 +480,7 @@ class CombinedExtractor(nn.Module):
         return self._feature_dim
 
     # ------------------------------------------------------------------
-    def forward(self, observations: Dict[str, Tensor]) -> Tensor:
+    def forward(self, observations: dict[str, Tensor]) -> Tensor:
         """Forward pass.
 
         Parameters
@@ -527,7 +526,7 @@ class HierarchicalExtractor(nn.Module):
         self,
         local_extractor: nn.Module,
         global_extractor: nn.Module,
-        output_dim: Optional[int] = None,
+        output_dim: int | None = None,
     ) -> None:
         super().__init__()
         self.local_extractor = local_extractor
@@ -625,9 +624,7 @@ class RecurrentExtractor(nn.Module):
         return self._feature_dim
 
     # ------------------------------------------------------------------
-    def initial_state(self, batch_size: int, device: torch.device | None = None) -> Union[
-        Tuple[Tensor, Tensor], Tensor,
-    ]:
+    def initial_state(self, batch_size: int, device: torch.device | None = None) -> tuple[Tensor, Tensor] | Tensor:
         """Return a zero-initialised hidden state.
 
         Parameters
@@ -652,8 +649,8 @@ class RecurrentExtractor(nn.Module):
     def forward(
         self,
         x: Tensor,
-        hidden: Optional[Union[Tuple[Tensor, Tensor], Tensor]] = None,
-    ) -> Tuple[Tensor, Union[Tuple[Tensor, Tensor], Tensor]]:
+        hidden: tuple[Tensor, Tensor] | Tensor | None = None,
+    ) -> tuple[Tensor, tuple[Tensor, Tensor] | Tensor]:
         """Forward pass.
 
         Parameters

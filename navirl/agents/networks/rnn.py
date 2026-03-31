@@ -595,6 +595,86 @@ class SequenceEncoder(nn.Module):
 
 
 # =====================================================================
+# RNNEncoder (Generic interface for tests)
+# =====================================================================
+
+
+class RNNEncoder(nn.Module):
+    """Generic RNN encoder for testing and simple use cases.
+
+    A simple wrapper that processes sequences through an RNN and projects
+    to a specified output dimension.
+
+    Parameters
+    ----------
+    input_dim : int
+        Dimensionality of each element in the input sequence.
+    hidden_dim : int
+        Number of hidden units in the RNN.
+    num_layers : int
+        Number of stacked RNN layers.
+    output_dim : int
+        Dimensionality of the output vector.
+    rnn_type : str, optional
+        Type of RNN to use ('lstm' or 'gru'). Default 'lstm'.
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        num_layers: int = 1,
+        output_dim: int = 64,
+        rnn_type: str = "lstm",
+    ) -> None:
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        self.output_dim = output_dim
+
+        # Use SequenceEncoder as the core
+        self.sequence_encoder = SequenceEncoder(
+            input_dim=input_dim,
+            hidden_size=hidden_dim,
+            rnn_type=rnn_type,
+            num_layers=num_layers,
+            pooling="last",  # Take last hidden state
+        )
+
+        # Add projection layer to output_dim
+        self.projection = nn.Linear(self.sequence_encoder.feature_dim, output_dim)
+
+    @property
+    def feature_dim(self) -> int:
+        """Dimensionality of the output vector."""
+        return self.output_dim
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward pass.
+
+        Parameters
+        ----------
+        x : Tensor
+            Input sequences of shape (batch, seq_len, input_dim)
+
+        Returns
+        -------
+        Tensor
+            Output of shape (batch, output_dim)
+        """
+        encoded = self.sequence_encoder(x)
+        output = self.projection(encoded)
+        return output
+
+    def extra_repr(self) -> str:
+        return (
+            f"input_dim={self.input_dim}, hidden_dim={self.hidden_dim}, "
+            f"num_layers={self.num_layers}, output_dim={self.output_dim}"
+        )
+
+
+# =====================================================================
 # HiddenStateManager
 # =====================================================================
 

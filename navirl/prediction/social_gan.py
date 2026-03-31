@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -42,7 +42,7 @@ class _PoolingModule(nn.Module):
             ``(N, bottleneck_dim)``
         """
         N = hidden.size(0)
-        pooled_list: List[torch.Tensor] = []
+        pooled_list: list[torch.Tensor] = []
         for i in range(N):
             rel_pos = positions - positions[i].unsqueeze(0)  # (N, 2)
             cat = torch.cat([hidden, rel_pos], dim=1)  # (N, hidden+2)
@@ -58,7 +58,7 @@ class _Encoder(nn.Module):
         self.lstm = nn.LSTMCell(embedding_dim, hidden_dim)
         self.hidden_dim = hidden_dim
 
-    def forward(self, obs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Encode observed trajectory.
 
         Args:
@@ -112,7 +112,7 @@ class _Decoder(nn.Module):
         Returns:
             ``(pred_horizon, N, 2)``
         """
-        preds: List[torch.Tensor] = []
+        preds: list[torch.Tensor] = []
         current_pos = last_pos
         for _ in range(pred_horizon):
             emb = torch.relu(self.embedding(current_pos))
@@ -179,7 +179,7 @@ class SocialGAN(nn.Module):
         self,
         obs: torch.Tensor,
         pred_horizon: int = 12,
-        noise: Optional[torch.Tensor] = None,
+        noise: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Generate predicted trajectories.
 
@@ -202,7 +202,7 @@ class SocialGAN(nn.Module):
 
     @staticmethod
     def variety_loss(
-        predictions: List[torch.Tensor],
+        predictions: list[torch.Tensor],
         target: torch.Tensor,
     ) -> torch.Tensor:
         """Variety (best-of-many) loss.
@@ -246,7 +246,7 @@ class SocialGANPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         self.model.eval()
         context = context or {}
@@ -260,7 +260,7 @@ class SocialGANPredictor(TrajectoryPredictor):
             )
             obs = torch.cat([obs, neighbors], dim=1)
 
-        all_trajs: List[np.ndarray] = []
+        all_trajs: list[np.ndarray] = []
         for _ in range(self.num_samples):
             pred = self.model.generate(obs, pred_horizon=self.horizon)
             all_trajs.append(pred[:, 0, :].cpu().numpy())  # primary agent

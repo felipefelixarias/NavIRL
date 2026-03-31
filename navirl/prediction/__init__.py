@@ -20,8 +20,8 @@ __all__ = [
 
 # Neural network predictors are available only when torch is installed.
 try:
-    from navirl.prediction.social_lstm import SocialLSTM, SocialLSTMPredictor  # noqa: F401
     from navirl.prediction.social_gan import SocialGAN, SocialGANPredictor  # noqa: F401
+    from navirl.prediction.social_lstm import SocialLSTM, SocialLSTMPredictor  # noqa: F401
     from navirl.prediction.trajectron import Trajectron, TrajectronPredictor  # noqa: F401
 
     __all__ += [

@@ -12,7 +12,6 @@ from navirl.humans.replay import ReplayHumanController
 from navirl.humans.scripted import ScriptedHumanController
 from navirl.robots.baselines import BaselineAStarRobotController
 
-
 _REGISTERED = False
 
 

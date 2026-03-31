@@ -9,7 +9,6 @@ from navirl.overseer.provider import (
     run_structured_vlm,
 )
 
-
 RERANK_SCHEMA = {
     "type": "object",
     "required": ["ranking"],
