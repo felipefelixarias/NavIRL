@@ -346,11 +346,12 @@ class TestRNN:
 class TestAttention:
     def test_forward(self):
         from navirl.agents.networks.attention import SocialAttention
-        net = SocialAttention(embed_dim=16, num_heads=2)
-        # (batch, num_agents, embed_dim)
-        x = torch.randn(2, 6, 16)
-        out = net(x)
-        assert out.shape[0] == 2
+        net = SocialAttention(input_dim=16, hidden_dim=32, output_dim=64)
+        # robot_state: (batch, input_dim), human_states: (batch, num_agents, input_dim)
+        robot_state = torch.randn(2, 16)
+        human_states = torch.randn(2, 6, 16)
+        out = net(robot_state, human_states)
+        assert out.shape == (2, 64)  # (batch_size, output_dim)
 
 
 class TestPolicyHeads:
@@ -358,17 +359,20 @@ class TestPolicyHeads:
         from navirl.agents.networks.policy_heads import GaussianPolicyHead
         head = GaussianPolicyHead(input_dim=32, action_dim=2)
         x = torch.randn(1, 32)
-        dist = head(x)
-        sample = dist.sample()
-        assert sample.shape == (1, 2)
+        # Use the sample method of the head, not a distribution object
+        action, log_prob = head.sample(x)
+        assert action.shape == (1, 2)
+        assert log_prob.shape == (1,)
 
     def test_categorical_head(self):
         from navirl.agents.networks.policy_heads import CategoricalPolicyHead
-        head = CategoricalPolicyHead(input_dim=32, n_actions=5)
+        head = CategoricalPolicyHead(input_dim=32, num_actions=5)  # Changed n_actions to num_actions
         x = torch.randn(1, 32)
-        dist = head(x)
-        sample = dist.sample()
-        assert sample.shape == (1,)
+        # Use the sample method of the head
+        action, log_prob, entropy = head.sample(x)
+        assert action.shape == (1,)
+        assert log_prob.shape == (1,)
+        assert entropy.shape == (1,)
 
     def test_value_head(self):
         from navirl.agents.networks.policy_heads import ValueHead

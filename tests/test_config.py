@@ -206,11 +206,21 @@ class TestSerialization:
 
     def test_explicit_format(self, tmp_path):
         config = {"a": 1}
-        path = tmp_path / "cfg_no_ext"
-        save_config(config, path, format="json")
-        loaded = load_config(Path(str(path)))
-        # May need the correct extension for load_config
-        # If it fails, that's expected behavior
+        # Test that explicit format allows saving without proper extension
+        path_no_ext = tmp_path / "cfg_no_ext"
+        save_config(config, path_no_ext, format="json")
+        assert path_no_ext.exists()
+
+        # Test that explicit format overrides extension
+        path_wrong_ext = tmp_path / "config.txt"
+        save_config(config, path_wrong_ext, format="json")
+        assert path_wrong_ext.exists()
+
+        # Load with proper extension works
+        path_proper = tmp_path / "config.json"
+        save_config(config, path_proper, format="json")
+        loaded = load_config(path_proper)
+        assert loaded == config
 
 
 # ---------------------------------------------------------------------------

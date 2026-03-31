@@ -196,17 +196,19 @@ class TestNormalizeObservation:
 class TestRewardShaping:
     def test_reward_shaping(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda r, obs, act, info: r * 2.0)
+        # Correct signature: (obs, action, reward, terminated, truncated, info) -> float
+        wrapped = RewardShaping(mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: reward * 1.0)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
-        assert reward == pytest.approx(2.0)
+        assert reward == pytest.approx(2.0)  # base reward (1.0) + shaped reward (1.0 * 1.0)
 
     def test_reward_shaping_penalty(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda r, obs, act, info: r - 0.5)
+        # Correct signature: (obs, action, reward, terminated, truncated, info) -> float
+        wrapped = RewardShaping(mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: -0.5)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
-        assert reward == pytest.approx(0.5)
+        assert reward == pytest.approx(0.5)  # base reward (1.0) + shaped reward (-0.5)
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +218,7 @@ class TestRewardShaping:
 class TestActionRepeat:
     def test_action_repeat(self, mock_env):
         from navirl.envs.wrappers import ActionRepeat
-        wrapped = ActionRepeat(mock_env, repeat=4)
+        wrapped = ActionRepeat(mock_env, num_repeat=4)  # Changed repeat to num_repeat
         wrapped.reset()
         action = mock_env.action_space.sample()
         obs, reward, terminated, truncated, info = wrapped.step(action)
@@ -227,7 +229,7 @@ class TestActionRepeat:
         env = MockNavEnv(obs_dim=4)
         env._max_steps = 2
         from navirl.envs.wrappers import ActionRepeat
-        wrapped = ActionRepeat(env, repeat=10)
+        wrapped = ActionRepeat(env, num_repeat=10)  # Changed repeat to num_repeat
         wrapped.reset()
         _, reward, terminated, truncated, _ = wrapped.step(env.action_space.sample())
         # Should terminate after 2 steps, not 10
@@ -262,7 +264,11 @@ class TestRecordEpisode:
         wrapped.reset()
         for _ in range(5):
             wrapped.step(mock_env.action_space.sample())
-        assert len(wrapped.episode_rewards) >= 0  # at least tracks something
+        # Check that episodes are being recorded (changed episode_rewards to episodes)
+        assert len(wrapped.episodes) >= 0  # at least tracks something
+        # After taking steps but before next reset, current episode should have data
+        if wrapped._current_episode:
+            assert len(wrapped._current_episode.get("observations", [])) > 0
 
 
 # ---------------------------------------------------------------------------
@@ -273,14 +279,11 @@ class TestCurriculumWrapper:
     def test_curriculum_wrapper(self, mock_env):
         from navirl.envs.wrappers import CurriculumWrapper
 
-        class MockCurriculum:
-            def __init__(self):
-                self.difficulty = 0.0
-            def get_env_config(self):
-                return {"difficulty": self.difficulty}
+        # CurriculumWrapper expects a scheduler function: (total_steps: int) -> float
+        def scheduler(total_steps: int) -> float:
+            return min(1.0, total_steps / 100.0)  # Gradually increase difficulty
 
-        curriculum = MockCurriculum()
-        wrapped = CurriculumWrapper(mock_env, curriculum_manager=curriculum)
+        wrapped = CurriculumWrapper(mock_env, scheduler=scheduler)  # Changed to scheduler parameter
         obs, _ = wrapped.reset()
         assert obs.shape == (8,)
 
@@ -329,10 +332,11 @@ class TestWrapperComposition:
     def test_clip_and_reward_shape(self, mock_env):
         from navirl.envs.wrappers import ClipAction, RewardShaping
         wrapped = ClipAction(mock_env)
-        wrapped = RewardShaping(wrapped, shaping_fn=lambda r, o, a, i: r + 1.0)
+        # Correct signature: (obs, action, reward, terminated, truncated, info) -> float
+        wrapped = RewardShaping(wrapped, shaping_fn=lambda obs, action, reward, terminated, truncated, info: 1.0)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(np.array([0.5, 0.5]))
-        assert reward == pytest.approx(2.0)
+        assert reward == pytest.approx(2.0)  # base reward (1.0) + shaped reward (1.0)
 
 
 # ---------------------------------------------------------------------------
