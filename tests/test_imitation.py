@@ -82,25 +82,31 @@ class TestMaxEntIRL:
     def test_reward_initialization(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
         cfg = MaxEntIRLConfig(feature_dim=16)
-        irl = MaxEntIRL(cfg)
+        # Add required feature_fn parameter
+        feature_fn = lambda obs: obs[:16] if len(obs) >= 16 else np.pad(obs, (0, 16 - len(obs)))
+        irl = MaxEntIRL(cfg, feature_fn)
         assert irl.theta.shape == (16,)
 
     def test_compute_reward(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
         cfg = MaxEntIRLConfig(feature_dim=8)
-        irl = MaxEntIRL(cfg)
-        features = np.random.randn(8).astype(np.float64)
-        reward = irl.compute_reward(features)
+        # Add required feature_fn parameter
+        feature_fn = lambda obs: obs[:8] if len(obs) >= 8 else np.pad(obs, (0, 8 - len(obs)))
+        irl = MaxEntIRL(cfg, feature_fn)
+        observation = np.random.randn(8).astype(np.float64)
+        reward = irl.reward(observation)  # Changed from compute_reward to reward
         assert isinstance(reward, float)
 
     def test_update_step(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
         cfg = MaxEntIRLConfig(feature_dim=8, lr=0.1)
-        irl = MaxEntIRL(cfg)
+        # Add required feature_fn parameter
+        feature_fn = lambda obs: obs[:8] if len(obs) >= 8 else np.pad(obs, (0, 8 - len(obs)))
+        irl = MaxEntIRL(cfg, feature_fn)
         expert_features = np.ones(8)
         policy_features = np.zeros(8)
         theta_before = irl.theta.copy()
-        irl.update(expert_features, policy_features)
+        irl.update_step(expert_features, policy_features)  # Changed from update to update_step
         # Theta should change
         assert not np.allclose(irl.theta, theta_before)
 
@@ -118,18 +124,18 @@ class TestGAIL:
     def test_discriminator_forward(self):
         from navirl.imitation.gail import Discriminator
         disc = Discriminator(
-            state_dim=8, action_dim=2, hidden_dims=(32, 32)
+            obs_dim=8, action_dim=2, hidden_dims=(32, 32)  # Changed state_dim to obs_dim
         )
         state = torch.randn(4, 8)
         action = torch.randn(4, 2)
         output = disc(state, action)
         assert output.shape == (4, 1)
-        # Output should be in (0, 1) due to sigmoid
-        assert torch.all(output >= 0) and torch.all(output <= 1)
+        # Output is logits, not probabilities (no sigmoid applied in forward)
+        assert output.dtype == torch.float32
 
     def test_discriminator_gradient(self):
         from navirl.imitation.gail import Discriminator
-        disc = Discriminator(state_dim=8, action_dim=2, hidden_dims=(16,))
+        disc = Discriminator(obs_dim=8, action_dim=2, hidden_dims=(16,))  # Changed state_dim to obs_dim
         state = torch.randn(2, 8)
         action = torch.randn(2, 2)
         output = disc(state, action)
@@ -166,25 +172,26 @@ class TestAIRL:
 
     def test_reward_network_forward(self):
         from navirl.imitation.airl import RewardNetwork
-        net = RewardNetwork(state_dim=8, action_dim=2, hidden_dims=(32,), gamma=0.99)
+        net = RewardNetwork(obs_dim=8, action_dim=2, hidden_dims=(32,), gamma=0.99)  # Changed state_dim to obs_dim
         state = torch.randn(4, 8)
         action = torch.randn(4, 2)
         next_state = torch.randn(4, 8)
-        reward, shaping = net(state, action, next_state)
-        assert reward.shape == (4, 1)
-        assert shaping.shape == (4, 1)
+        dones = torch.zeros(4, 1)  # Add required dones parameter
+        f_values = net(state, action, next_state, dones)  # forward returns single tensor (reward + shaping)
+        assert f_values.shape == (4, 1)
 
     def test_reward_network_state_only(self):
         from navirl.imitation.airl import RewardNetwork
         net = RewardNetwork(
-            state_dim=8, action_dim=2, hidden_dims=(16,),
+            obs_dim=8, action_dim=2, hidden_dims=(16,),  # Changed state_dim to obs_dim
             gamma=0.99, state_only=True,
         )
         state = torch.randn(2, 8)
         action = torch.randn(2, 2)
         next_state = torch.randn(2, 8)
-        reward, shaping = net(state, action, next_state)
-        assert reward.shape == (2, 1)
+        dones = torch.zeros(2, 1)  # Add required dones parameter
+        f_values = net(state, action, next_state, dones)  # forward returns single tensor (reward + shaping)
+        assert f_values.shape == (2, 1)
 
     def test_airl_agent_creation(self, obs_space, action_space):
         from navirl.imitation.airl import AIRLAgent, AIRLConfig
