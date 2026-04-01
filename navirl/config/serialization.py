@@ -73,6 +73,8 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
     """
     path = pathlib.Path(path)
     fmt = _resolve_format(path, None)
+    if fmt == "" and path.exists():
+        fmt = _infer_format_from_contents(path)
 
     if fmt == "json":
         with open(path) as fh:
@@ -209,6 +211,17 @@ def _resolve_format(path: pathlib.Path, explicit: str | None) -> str:
         ".toml": "toml",
     }
     return mapping.get(ext, ext.lstrip("."))
+
+
+def _infer_format_from_contents(path: pathlib.Path) -> str:
+    text = path.read_text(encoding="utf-8").lstrip()
+    if not text:
+        raise ValueError(f"Cannot infer format from empty file: '{path}'")
+    if text[0] in "{[":
+        return "json"
+    if "=" in text and ":" not in text.splitlines()[0]:
+        return "toml"
+    return "yaml"
 
 
 def _import_yaml() -> Any:

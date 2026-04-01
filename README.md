@@ -64,6 +64,7 @@ python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
 Run the verification gate:
 
 ```bash
+python -m pytest -q
 python -m navirl verify --suite quick
 python -m navirl verify --suite full
 ```

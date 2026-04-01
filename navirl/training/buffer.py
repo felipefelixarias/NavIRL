@@ -245,9 +245,7 @@ class PrioritizedReplayBuffer:
         self._pos = (self._pos + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
-    def sample(
-        self, batch_size: int
-    ) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray]:
+    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
         """Sample a batch of transitions with probability proportional to priority.
 
         The priority range is divided into equal segments, and one transition
@@ -257,9 +255,8 @@ class PrioritizedReplayBuffer:
             batch_size: Number of transitions to sample.
 
         Returns:
-            Tuple of (batch_dict, importance_weights, tree_indices) where
-            batch_dict contains the transition data, importance_weights are
-            for bias correction, and tree_indices are needed for priority updates.
+            Dictionary containing sampled transitions plus ``weights`` and
+            ``indices`` entries for prioritized-replay updates.
         """
         indices = np.zeros(batch_size, dtype=np.int64)
         tree_indices = np.zeros(batch_size, dtype=np.int64)
@@ -286,8 +283,10 @@ class PrioritizedReplayBuffer:
             "rewards": self.rewards[indices],
             "next_obs": self.next_observations[indices],
             "dones": self.dones[indices],
+            "weights": weights.astype(np.float32),
+            "indices": tree_indices,
         }
-        return batch, weights.astype(np.float32), tree_indices
+        return batch
 
     def update_priorities(
         self, tree_indices: np.ndarray, td_errors: np.ndarray

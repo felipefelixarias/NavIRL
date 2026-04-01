@@ -16,6 +16,7 @@ from __future__ import annotations
 import copy
 import time
 from collections import deque
+from types import SimpleNamespace
 from typing import Any, Callable, Dict, List, Optional, Sequence, SupportsFloat, Tuple
 
 import numpy as np
@@ -33,6 +34,14 @@ except ImportError:  # pragma: no cover
         _GYM_AVAILABLE = True
     except ImportError:
         _GYM_AVAILABLE = False
+        gym = SimpleNamespace(  # type: ignore[assignment]
+            Env=object,
+            ObservationWrapper=object,
+            ActionWrapper=object,
+            RewardWrapper=object,
+            Wrapper=object,
+        )
+        spaces = None  # type: ignore[assignment]
 
 
 def _require_gym() -> None:
@@ -41,6 +50,35 @@ def _require_gym() -> None:
             "Neither gymnasium nor gym is installed. "
             "Install gymnasium with: pip install gymnasium"
         )
+
+
+def _call_shaping_fn(
+    shaping_fn: Callable[..., float],
+    obs: Any,
+    action: Any,
+    reward: SupportsFloat,
+    terminated: bool,
+    truncated: bool,
+    info: Dict[str, Any],
+) -> float:
+    """Support both the current and legacy reward-shaping callback forms."""
+
+    call_patterns = [
+        (obs, action, reward, terminated, truncated, info),
+        (reward, obs, action, info),
+        (reward, obs, action, terminated, truncated, info),
+    ]
+    last_error: TypeError | None = None
+    for args in call_patterns:
+        try:
+            return float(shaping_fn(*args))
+        except TypeError as exc:
+            last_error = exc
+    raise TypeError(
+        "RewardShaping.shaping_fn must accept either "
+        "(obs, action, reward, terminated, truncated, info) or "
+        "(reward, obs, action, info)."
+    ) from last_error
 
 
 # ============================================================================
@@ -314,7 +352,15 @@ class RewardShaping(gym.RewardWrapper):
 
         # Custom shaping function
         if self._shaping_fn is not None:
-            shaped += self._shaping_fn(obs, action, reward, terminated, truncated, info)
+            shaped += _call_shaping_fn(
+                self._shaping_fn,
+                obs,
+                action,
+                reward,
+                terminated,
+                truncated,
+                info,
+            )
 
         return obs, shaped, terminated, truncated, info
 
@@ -388,10 +434,10 @@ class ActionRepeat(gym.Wrapper):
         Number of times to repeat each action.
     """
 
-    def __init__(self, env: gym.Env, num_repeat: int = 4):
+    def __init__(self, env: gym.Env, num_repeat: int = 4, *, repeat: int | None = None):
         _require_gym()
         super().__init__(env)
-        self.num_repeat = num_repeat
+        self.num_repeat = int(repeat) if repeat is not None else int(num_repeat)
 
     def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
         total_reward = 0.0
@@ -450,6 +496,13 @@ class RecordEpisode(gym.Wrapper):
         self.max_episodes = max_episodes
         self.episodes: deque = deque(maxlen=max_episodes)
         self._current_episode: Dict[str, List[Any]] = {}
+
+    @property
+    def episode_rewards(self) -> List[float]:
+        rewards = [float(sum(ep.get("rewards", []))) for ep in self.episodes]
+        if self._current_episode.get("rewards"):
+            rewards.append(float(sum(self._current_episode["rewards"])))
+        return rewards
 
     def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
         if self._current_episode.get("observations"):
@@ -541,16 +594,32 @@ class CurriculumWrapper(gym.Wrapper):
         ``env.unwrapped.difficulty`` before each reset.
     """
 
-    def __init__(self, env: gym.Env, scheduler: Callable[[int], float]):
+    def __init__(
+        self,
+        env: gym.Env,
+        scheduler: Optional[Callable[[int], float]] = None,
+        *,
+        curriculum_manager: Any | None = None,
+    ):
         _require_gym()
         super().__init__(env)
+        if scheduler is None and curriculum_manager is None:
+            raise ValueError("Provide either scheduler or curriculum_manager.")
         self.scheduler = scheduler
+        self.curriculum_manager = curriculum_manager
         self._total_steps: int = 0
 
     def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
-        difficulty = self.scheduler(self._total_steps)
-        if hasattr(self.env.unwrapped, "difficulty"):
-            self.env.unwrapped.difficulty = difficulty  # type: ignore[attr-defined]
+        if self.scheduler is not None:
+            difficulty = self.scheduler(self._total_steps)
+            if hasattr(self.env.unwrapped, "difficulty"):
+                self.env.unwrapped.difficulty = difficulty  # type: ignore[attr-defined]
+        elif self.curriculum_manager is not None:
+            cfg = self.curriculum_manager.get_env_config()
+            if isinstance(cfg, dict):
+                for key, value in cfg.items():
+                    if hasattr(self.env.unwrapped, key):
+                        setattr(self.env.unwrapped, key, value)
         return self.env.reset(**kwargs)
 
     def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:

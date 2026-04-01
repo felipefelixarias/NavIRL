@@ -207,11 +207,12 @@ class CyclicSchedule(Schedule):
             # Cosine oscillation: 1 at pos=0, 0 at pos=0.5, 1 at pos=1
             scale = 0.5 * (1.0 + math.cos(2.0 * math.pi * cycle_pos))
         else:
-            # Triangular: ramp up for the first half, ramp down for the second
-            if cycle_pos <= 0.5:
-                scale = 2.0 * cycle_pos
-            else:
-                scale = 2.0 * (1.0 - cycle_pos)
+            # Triangular: two linear ramps per cycle so the value resets to the
+            # base level at the cycle midpoint and boundary.
+            half_cycle = max(self.cycle_steps / 2.0, 1.0)
+            local_step = step % int(max(round(half_cycle), 1))
+            peak_pos = max(half_cycle / 2.0, 1.0)
+            scale = 1.0 - abs((local_step / peak_pos) - 1.0)
 
         return self.base_value + (self.max_value - self.base_value) * scale
 

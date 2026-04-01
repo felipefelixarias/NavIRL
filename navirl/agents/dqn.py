@@ -354,10 +354,13 @@ class DQNAgent(BaseAgent):
 
         # Unpack prioritized vs. uniform replay ----------------------------
         if cfg.prioritized:
-            batch_dict, importance_weights, tree_indices = batch
-            weights_t = self._to_tensor(
-                np.asarray(importance_weights, dtype=np.float32)
-            )
+            if isinstance(batch, dict):
+                batch_dict = batch
+                importance_weights = batch["weights"]
+                tree_indices = batch["indices"]
+            else:
+                batch_dict, importance_weights, tree_indices = batch
+            weights_t = self._to_tensor(np.asarray(importance_weights, dtype=np.float32))
         else:
             batch_dict = batch
             weights_t = None
