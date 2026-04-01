@@ -8,6 +8,19 @@ import numpy as np
 
 from navirl.prediction.base import PredictionResult, TrajectoryPredictor
 
+# ---------------------------------------------------------------------------
+# Intent Classification Constants
+# ---------------------------------------------------------------------------
+
+# Probability scores for intent classification
+HIGH_CONFIDENCE_SCORE = 3.0  # High confidence in predicted intent
+MODERATE_CONFIDENCE_SCORE = 2.0  # Moderate confidence in predicted intent
+MEDIUM_CONFIDENCE_SCORE = 0.2  # Medium confidence/default score
+LOW_CONFIDENCE_SCORE = 0.1   # Low confidence/baseline score
+
+# Behavior thresholds
+DECELERATION_THRESHOLD = -0.1  # m/s² threshold for detecting deceleration
+
 
 class PedestrianIntent(Enum):
     """Discrete pedestrian intent categories."""
@@ -73,7 +86,7 @@ class GoalConditionedPredictor(TrajectoryPredictor):
         # 1. Velocity-based extrapolation at several horizons.
         if observed.shape[0] >= 2:
             velocity = observed[-1] - observed[-2]
-            speed = float(np.linalg.norm(velocity))
+            speed = np.linalg.norm(velocity)  # Already returns float
             if speed > 1e-4:
                 direction = velocity / speed
                 for scale in [1.0, 1.5, 2.0]:
@@ -97,7 +110,7 @@ class GoalConditionedPredictor(TrajectoryPredictor):
         # probable).
         if observed.shape[0] >= 2:
             extrap = observed[-1] + (observed[-1] - observed[-2]) * self.horizon
-            dists = np.array([float(np.linalg.norm(g.position - extrap)) for g in goals])
+            dists = np.array([np.linalg.norm(g.position - extrap) for g in goals])  # linalg.norm already returns float
             dists = dists + 1e-6
             inv_dists = 1.0 / dists
             probs = inv_dists / inv_dists.sum()
@@ -105,7 +118,7 @@ class GoalConditionedPredictor(TrajectoryPredictor):
             probs = np.ones(len(goals)) / len(goals)
 
         for i, g in enumerate(goals):
-            g.probability = float(probs[i])
+            g.probability = probs[i]  # Already float from numpy array
 
         return goals
 
@@ -223,44 +236,44 @@ class IntentPredictor:
 
         velocities = np.diff(observed_trajectory, axis=0) / self.dt
         speeds = np.linalg.norm(velocities, axis=1)
-        recent_speed = float(speeds[-1])
+        recent_speed = speeds[-1]  # Already float from numpy array
 
         # Curvature approximation via cross product of consecutive velocity vectors.
         curvatures: list[float] = []
         for i in range(1, velocities.shape[0]):
             v0 = velocities[i - 1]
             v1 = velocities[i]
-            cross = float(v0[0] * v1[1] - v0[1] * v1[0])
-            norm_prod = float(np.linalg.norm(v0) * np.linalg.norm(v1)) + 1e-8
+            cross = v0[0] * v1[1] - v0[1] * v1[0]  # Already float from numpy operations
+            norm_prod = np.linalg.norm(v0) * np.linalg.norm(v1) + 1e-8  # Already float
             curvatures.append(cross / norm_prod)
-        mean_curvature = float(np.mean(curvatures)) if curvatures else 0.0
+        mean_curvature = np.mean(curvatures) if curvatures else 0.0  # np.mean already returns float
 
         # Acceleration.
         accels = np.diff(speeds) / self.dt
-        recent_accel = float(accels[-1]) if accels.size > 0 else 0.0
+        recent_accel = accels[-1] if accels.size > 0 else 0.0  # Already float from numpy array
 
         # Build probability distribution over intents.
         scores: dict[str, float] = {}
 
         # Stopping / waiting.
         if recent_speed < self.stop_speed_threshold:
-            if recent_accel < -0.1:
-                scores[PedestrianIntent.STOPPING.value] = 3.0
+            if recent_accel < DECELERATION_THRESHOLD:
+                scores[PedestrianIntent.STOPPING.value] = HIGH_CONFIDENCE_SCORE
             else:
-                scores[PedestrianIntent.WAITING.value] = 3.0
+                scores[PedestrianIntent.WAITING.value] = HIGH_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.STOPPING.value] = 0.1
-            scores[PedestrianIntent.WAITING.value] = 0.1
+            scores[PedestrianIntent.STOPPING.value] = LOW_CONFIDENCE_SCORE
+            scores[PedestrianIntent.WAITING.value] = LOW_CONFIDENCE_SCORE
 
         # Turning.
         if abs(mean_curvature) > self.turn_curvature_threshold:
             if mean_curvature > 0:
-                scores[PedestrianIntent.TURNING_LEFT.value] = 3.0
+                scores[PedestrianIntent.TURNING_LEFT.value] = HIGH_CONFIDENCE_SCORE
             else:
-                scores[PedestrianIntent.TURNING_RIGHT.value] = 3.0
+                scores[PedestrianIntent.TURNING_RIGHT.value] = HIGH_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.TURNING_LEFT.value] = 0.1
-            scores[PedestrianIntent.TURNING_RIGHT.value] = 0.1
+            scores[PedestrianIntent.TURNING_LEFT.value] = LOW_CONFIDENCE_SCORE
+            scores[PedestrianIntent.TURNING_RIGHT.value] = LOW_CONFIDENCE_SCORE
 
         # Crossing (lateral motion relative to dominant direction).
         context = context or {}
@@ -270,20 +283,20 @@ class IntentPredictor:
         if rd_norm > 1e-8:
             road_direction = road_direction / rd_norm
         lateral = np.array([-road_direction[1], road_direction[0]])
-        lateral_speed = abs(float(np.dot(velocities[-1], lateral)))
+        lateral_speed = abs(np.dot(velocities[-1], lateral))  # np.dot already returns float
         if lateral_speed > self.crossing_lateral_threshold:
-            scores[PedestrianIntent.CROSSING.value] = 3.0
+            scores[PedestrianIntent.CROSSING.value] = HIGH_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.CROSSING.value] = 0.2
+            scores[PedestrianIntent.CROSSING.value] = MEDIUM_CONFIDENCE_SCORE
 
         # Straight walking (default).
         if (
             recent_speed >= self.stop_speed_threshold
             and abs(mean_curvature) <= self.turn_curvature_threshold
         ):
-            scores[PedestrianIntent.WALKING_STRAIGHT.value] = 2.0
+            scores[PedestrianIntent.WALKING_STRAIGHT.value] = MODERATE_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.WALKING_STRAIGHT.value] = 0.2
+            scores[PedestrianIntent.WALKING_STRAIGHT.value] = MEDIUM_CONFIDENCE_SCORE
 
         # Normalise to probabilities.
         total = sum(scores.values())

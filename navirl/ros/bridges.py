@@ -20,6 +20,17 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# ROS2 Timeout Constants
+# ---------------------------------------------------------------------------
+
+# Timeout values for ROS2 service calls and spinning (in seconds)
+SERVICE_WAIT_TIMEOUT = 5.0  # Default timeout for waiting for services
+SERVICE_CALL_TIMEOUT = 10.0  # Timeout for service calls
+SHORT_SERVICE_TIMEOUT = 3.0  # Short timeout for quick operations
+SPIN_TIMEOUT_FAST = 0.02  # Fast spinning timeout for responsive loops
+SPIN_TIMEOUT_NORMAL = 0.05  # Normal spinning timeout
+
+# ---------------------------------------------------------------------------
 # Guarded ROS2 imports
 # ---------------------------------------------------------------------------
 try:
@@ -132,9 +143,9 @@ class GazeboBridge(_SimBridgeBase):
             from std_srvs.srv import Empty as EmptySrv
 
             client = self._node.create_client(EmptySrv, "/reset_simulation")
-            if client.wait_for_service(timeout_sec=5.0):
+            if client.wait_for_service(timeout_sec=SERVICE_WAIT_TIMEOUT):
                 future = client.call_async(EmptySrv.Request())
-                rclpy.spin_until_future_complete(self._node, future, timeout_sec=5.0)
+                rclpy.spin_until_future_complete(self._node, future, timeout_sec=SERVICE_WAIT_TIMEOUT)
                 logger.info("GazeboBridge: simulation reset.")
             else:
                 logger.warning("GazeboBridge: /reset_simulation service not available.")
@@ -147,14 +158,14 @@ class GazeboBridge(_SimBridgeBase):
     def step(self, action: np.ndarray) -> dict[str, Any]:
         self.send_action(action)
         # Allow physics to advance (one-shot spin)
-        rclpy.spin_once(self._node, timeout_sec=0.05)
+        rclpy.spin_once(self._node, timeout_sec=SPIN_TIMEOUT_NORMAL)
         obs = self.get_observation()
         return {"obs": obs, "reward": 0.0, "done": False, "info": {}}
 
     def get_observation(self) -> dict[str, Any]:
         """Spin once to pick up the latest messages and return cached obs."""
         if self._node is not None:
-            rclpy.spin_once(self._node, timeout_sec=0.02)
+            rclpy.spin_once(self._node, timeout_sec=SPIN_TIMEOUT_FAST)
         return dict(self._latest_obs)
 
     def send_action(self, action: np.ndarray) -> None:
@@ -183,7 +194,7 @@ class GazeboBridge(_SimBridgeBase):
             from gazebo_msgs.srv import SpawnEntity
 
             client = self._node.create_client(SpawnEntity, "/spawn_entity")
-            if not client.wait_for_service(timeout_sec=5.0):
+            if not client.wait_for_service(timeout_sec=SERVICE_WAIT_TIMEOUT):
                 logger.error("GazeboBridge: /spawn_entity service not available.")
                 return False
 
@@ -195,7 +206,7 @@ class GazeboBridge(_SimBridgeBase):
             request.initial_pose.position.y = y
 
             future = client.call_async(request)
-            rclpy.spin_until_future_complete(self._node, future, timeout_sec=10.0)
+            rclpy.spin_until_future_complete(self._node, future, timeout_sec=SERVICE_CALL_TIMEOUT)
             result = future.result()
             if result and result.success:
                 logger.info("GazeboBridge: robot spawned at (%.2f, %.2f).", x, y)
@@ -216,12 +227,12 @@ class GazeboBridge(_SimBridgeBase):
             from gazebo_msgs.srv import GetEntityState
 
             client = self._node.create_client(GetEntityState, "/get_entity_state")
-            if not client.wait_for_service(timeout_sec=3.0):
+            if not client.wait_for_service(timeout_sec=SHORT_SERVICE_TIMEOUT):
                 return {}
             req = GetEntityState.Request()
             req.name = model_name
             future = client.call_async(req)
-            rclpy.spin_until_future_complete(self._node, future, timeout_sec=3.0)
+            rclpy.spin_until_future_complete(self._node, future, timeout_sec=SHORT_SERVICE_TIMEOUT)
             result = future.result()
             if result and result.success:
                 p = result.state.pose.position
@@ -270,13 +281,13 @@ class IsaacBridge(_SimBridgeBase):
     def step(self, action: np.ndarray) -> dict[str, Any]:
         self.send_action(action)
         if self._node is not None:
-            rclpy.spin_once(self._node, timeout_sec=0.02)
+            rclpy.spin_once(self._node, timeout_sec=SPIN_TIMEOUT_FAST)
         obs = self.get_observation()
         return {"obs": obs, "reward": 0.0, "done": False, "info": {}}
 
     def get_observation(self) -> dict[str, Any]:
         if self._node is not None:
-            rclpy.spin_once(self._node, timeout_sec=0.02)
+            rclpy.spin_once(self._node, timeout_sec=SPIN_TIMEOUT_FAST)
         return {}
 
     def send_action(self, action: np.ndarray) -> None:

@@ -32,7 +32,7 @@ class _PoolingModule(nn.Module):
         hidden: torch.Tensor,
         positions: torch.Tensor,
     ) -> torch.Tensor:
-        """Pool neighbouring agents.
+        """Pool neighbouring agents using vectorized operations.
 
         Args:
             hidden: ``(N, hidden_dim)``
@@ -42,13 +42,28 @@ class _PoolingModule(nn.Module):
             ``(N, bottleneck_dim)``
         """
         N = hidden.size(0)
-        pooled_list: list[torch.Tensor] = []
-        for i in range(N):
-            rel_pos = positions - positions[i].unsqueeze(0)  # (N, 2)
-            cat = torch.cat([hidden, rel_pos], dim=1)  # (N, hidden+2)
-            out = self.mlp(cat)  # (N, bottleneck)
-            pooled_list.append(out.max(dim=0)[0])  # (bottleneck,)
-        return torch.stack(pooled_list, dim=0)  # (N, bottleneck)
+
+        # Vectorized version - O(N) instead of O(N²)
+        # Expand positions for pairwise relative position computation
+        pos_expanded = positions.unsqueeze(0)  # (1, N, 2)
+        pos_broadcasted = positions.unsqueeze(1)  # (N, 1, 2)
+        rel_pos = pos_expanded - pos_broadcasted  # (N, N, 2)
+
+        # Expand hidden states to match
+        hidden_expanded = hidden.unsqueeze(0).expand(N, -1, -1)  # (N, N, hidden_dim)
+
+        # Concatenate hidden states with relative positions
+        cat = torch.cat([hidden_expanded, rel_pos], dim=2)  # (N, N, hidden_dim+2)
+
+        # Reshape for MLP processing: (N*N, hidden_dim+2)
+        cat_flat = cat.view(-1, cat.size(-1))
+        out_flat = self.mlp(cat_flat)  # (N*N, bottleneck_dim)
+
+        # Reshape back and pool: (N, N, bottleneck_dim) -> (N, bottleneck_dim)
+        out = out_flat.view(N, N, -1)
+        pooled = torch.max(out, dim=1)[0]  # (N, bottleneck_dim)
+
+        return pooled
 
 
 class _Encoder(nn.Module):

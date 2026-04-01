@@ -144,10 +144,10 @@ class Grid2DBackend(SceneBackend):
 
         orca_id = self.orca.sim.addAgent(
             tuple(pos),
-            self.orca.get_neighbor_dist(),
-            self.orca.get_max_neighbors(),
-            self.orca.get_time_horizon(),
-            self.orca.get_time_horizon_obst(),
+            self.orca.neighbor_dist,
+            self.orca.max_neighbors,
+            self.orca.time_horizon,
+            self.orca.time_horizon_obst,
             radius,
             max_speed,
             (0.0, 0.0),

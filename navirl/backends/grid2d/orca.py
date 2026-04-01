@@ -32,25 +32,32 @@ class IndoorORCASim:
         self._no_steps = True
         self.trajectories: list[list[list[float]]] = []
 
-    def get_time_step(self) -> float:
+    @property
+    def time_step(self) -> float:
         return self.config.time_step
 
-    def get_neighbor_dist(self) -> float:
+    @property
+    def neighbor_dist(self) -> float:
         return self.config.neighbor_dist
 
-    def get_max_neighbors(self) -> int:
+    @property
+    def max_neighbors(self) -> int:
         return self.config.max_neighbors
 
-    def get_time_horizon(self) -> float:
+    @property
+    def time_horizon(self) -> float:
         return self.config.time_horizon
 
-    def get_time_horizon_obst(self) -> float:
+    @property
+    def time_horizon_obst(self) -> float:
         return self.config.time_horizon_obst
 
-    def get_radius(self) -> float:
+    @property
+    def radius(self) -> float:
         return self.config.radius
 
-    def get_max_speed(self) -> float:
+    @property
+    def max_speed(self) -> float:
         return self.config.max_speed
 
     def add_agent(self, position: list[float], velocity: list[float] | None = None) -> int:
@@ -72,13 +79,12 @@ class IndoorORCASim:
     def set_agent_position(self, agent_no: int, position: list[float]) -> None:
         self.sim.setAgentPosition(agent_no, tuple(position))
 
-    def get_num_agents(self) -> int:
+    @property
+    def num_agents(self) -> int:
         return self.sim.getNumAgents()
 
-    def get_num_obstacles(self) -> int:
-        return self.sim.getNumObstacles()
-
-    def get_num_obstacle_vertices(self) -> int:
+    @property
+    def num_obstacle_vertices(self) -> int:
         return self.sim.getNumObstacleVertices()
 
     def get_agent_position(self, agent_no: int) -> list[float]:
@@ -92,12 +98,12 @@ class IndoorORCASim:
 
     def do_step(self) -> None:
         if self._no_steps:
-            for i in range(self.get_num_agents()):
+            for i in range(self.num_agents):  # Use property instead of method
                 self.trajectories.append([])
                 self.trajectories[i].append(list(self.get_agent_position(i)))
             self._no_steps = False
         else:
-            for i in range(self.get_num_agents()):
+            for i in range(self.num_agents):  # Use property instead of method
                 self.trajectories[i].append(list(self.get_agent_position(i)))
 
         self.sim.doStep()

@@ -7,8 +7,11 @@ auto-generate schemas from dataclasses.
 from __future__ import annotations
 
 import dataclasses
+import logging
 from dataclasses import fields as dc_fields
 from typing import Any, get_type_hints
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Schema types
@@ -50,8 +53,14 @@ class ConfigValidator:
     def validate(
         config: dict[str, Any],
         schema: dict[str, dict[str, Any]],
+        strict: bool = False,
     ) -> tuple[bool, list[str]]:
         """Validate *config* against *schema*.
+
+        Args:
+            config: Configuration dictionary to validate
+            schema: Schema specification dictionary
+            strict: If True, unknown keys cause validation errors
 
         Returns
         -------
@@ -67,7 +76,11 @@ class ConfigValidator:
 
         for key, value in config.items():
             if key not in schema:
-                # Unknown keys are allowed but noted.
+                if strict:
+                    errors.append(f"Unknown key not allowed in strict mode: '{key}'")
+                else:
+                    # Log warning for unknown keys to prevent silent misconfigurations
+                    logger.warning(f"Unknown configuration key '{key}' (possible typo?)")
                 continue
 
             spec = schema[key]

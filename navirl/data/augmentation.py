@@ -24,7 +24,7 @@ def rotate_trajectory(traj: Trajectory, angle: float) -> Trajectory:
     new_pos = traj.positions @ rot.T
     new_vel = traj.velocities @ rot.T if traj.velocities is not None else None
     return Trajectory(
-        timestamps=traj.timestamps.copy(),
+        timestamps=traj.timestamps,  # No copy needed - read-only
         positions=new_pos,
         velocities=new_vel,
         agent_id=traj.agent_id,
@@ -41,20 +41,18 @@ def mirror_trajectory(traj: Trajectory, axis: str = "x") -> Trajectory:
     Returns:
         A new mirrored trajectory.
     """
-    new_pos = traj.positions.copy()
-    new_vel = traj.velocities.copy() if traj.velocities is not None else None
+    # Create scaled copies directly instead of copy then modify
     if axis == "x":
-        new_pos[:, 1] *= -1
-        if new_vel is not None:
-            new_vel[:, 1] *= -1
+        new_pos = traj.positions * np.array([1, -1])
+        new_vel = traj.velocities * np.array([1, -1]) if traj.velocities is not None else None
     elif axis == "y":
-        new_pos[:, 0] *= -1
-        if new_vel is not None:
-            new_vel[:, 0] *= -1
+        new_pos = traj.positions * np.array([-1, 1])
+        new_vel = traj.velocities * np.array([-1, 1]) if traj.velocities is not None else None
     else:
         raise ValueError(f"axis must be 'x' or 'y', got '{axis}'")
+
     return Trajectory(
-        timestamps=traj.timestamps.copy(),
+        timestamps=traj.timestamps,  # No copy needed - read-only
         positions=new_pos,
         velocities=new_vel,
         agent_id=traj.agent_id,
@@ -74,7 +72,7 @@ def scale_trajectory(traj: Trajectory, factor: float) -> Trajectory:
     new_pos = traj.positions * factor
     new_vel = traj.velocities * factor if traj.velocities is not None else None
     return Trajectory(
-        timestamps=traj.timestamps.copy(),
+        timestamps=traj.timestamps,  # No copy needed - read-only
         positions=new_pos,
         velocities=new_vel,
         agent_id=traj.agent_id,
@@ -95,9 +93,9 @@ def add_noise(traj: Trajectory, std: float, seed: int | None = None) -> Trajecto
     rng = np.random.default_rng(seed)
     noise = rng.normal(0.0, std, size=traj.positions.shape)
     return Trajectory(
-        timestamps=traj.timestamps.copy(),
+        timestamps=traj.timestamps,  # No copy needed - read-only
         positions=traj.positions + noise,
-        velocities=traj.velocities,
+        velocities=traj.velocities,  # No copy needed - read-only
         agent_id=traj.agent_id,
     )
 
@@ -123,7 +121,7 @@ def time_warp(traj: Trajectory, factor: float) -> Trajectory:
         new_vel = traj.velocities / factor
     return Trajectory(
         timestamps=new_ts,
-        positions=traj.positions.copy(),
+        positions=traj.positions,  # No copy needed - read-only
         velocities=new_vel,
         agent_id=traj.agent_id,
     )
@@ -140,11 +138,11 @@ def crop_trajectory(traj: Trajectory, start: int, end: int) -> Trajectory:
     Returns:
         A new cropped trajectory.
     """
-    vel = traj.velocities[start:end] if traj.velocities is not None else None
+    # Array slicing already creates copies, no need for explicit .copy()
     return Trajectory(
-        timestamps=traj.timestamps[start:end].copy(),
-        positions=traj.positions[start:end].copy(),
-        velocities=vel.copy() if vel is not None else None,
+        timestamps=traj.timestamps[start:end],
+        positions=traj.positions[start:end],
+        velocities=traj.velocities[start:end] if traj.velocities is not None else None,
         agent_id=traj.agent_id,
     )
 
