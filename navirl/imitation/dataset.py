@@ -37,6 +37,14 @@ logger = logging.getLogger(__name__)
 __all__ = ["DemonstrationDataset"]
 
 
+def _default_transition_array(reference: np.ndarray, *, kind: str) -> np.ndarray:
+    if reference.ndim == 0:
+        return np.empty((0,), dtype=np.float32)
+    if kind == "scalar":
+        return np.zeros((reference.shape[0],), dtype=np.float32)
+    return np.zeros_like(reference, dtype=np.float32)
+
+
 # ---------------------------------------------------------------------------
 # Statistics helper
 # ---------------------------------------------------------------------------
@@ -93,13 +101,31 @@ class DemonstrationDataset:
         next_observations: np.ndarray | None = None,
         dones: np.ndarray | None = None,
     ) -> None:
-        self.observations = observations if observations is not None else np.empty((0,))
-        self.actions = actions if actions is not None else np.empty((0,))
-        self.rewards = rewards if rewards is not None else np.empty((0,))
-        self.next_observations = (
-            next_observations if next_observations is not None else np.empty((0,))
+        self.observations = (
+            np.asarray(observations, dtype=np.float32)
+            if observations is not None
+            else np.empty((0,), dtype=np.float32)
         )
-        self.dones = dones if dones is not None else np.empty((0,))
+        self.actions = (
+            np.asarray(actions, dtype=np.float32)
+            if actions is not None
+            else np.empty((0,), dtype=np.float32)
+        )
+        self.rewards = (
+            np.asarray(rewards, dtype=np.float32)
+            if rewards is not None
+            else _default_transition_array(self.observations, kind="scalar")
+        )
+        self.next_observations = (
+            np.asarray(next_observations, dtype=np.float32)
+            if next_observations is not None
+            else _default_transition_array(self.observations, kind="observation")
+        )
+        self.dones = (
+            np.asarray(dones, dtype=np.float32)
+            if dones is not None
+            else _default_transition_array(self.observations, kind="scalar")
+        )
 
         self._stats: FeatureStatistics | None = None
 
@@ -133,6 +159,17 @@ class DemonstrationDataset:
             next_observations=data.get("next_obs", np.zeros_like(data["obs"])).astype(np.float32),
             dones=data.get("dones", np.zeros(len(data["obs"]))).astype(np.float32),
         )
+
+    @classmethod
+    def load(cls, path: str | pathlib.Path) -> DemonstrationDataset:
+        """Load demonstrations from a supported file format."""
+        path = pathlib.Path(path)
+        suffix = path.suffix.lower()
+        if suffix == ".npz":
+            return cls.load_from_npz(path)
+        if suffix in {".h5", ".hdf5"}:
+            return cls.load_from_hdf5(path)
+        raise ValueError(f"Unsupported demonstration dataset format: {path.suffix}")
 
     @classmethod
     def load_from_hdf5(cls, path: str | pathlib.Path) -> DemonstrationDataset:
@@ -369,15 +406,22 @@ class DemonstrationDataset:
 
     def split(
         self,
+        train_ratio: float | None = None,
         val_ratio: float = 0.1,
         test_ratio: float = 0.0,
         shuffle: bool = True,
         seed: int | None = None,
-    ) -> tuple[DemonstrationDataset, DemonstrationDataset, DemonstrationDataset | None]:
+    ) -> (
+        tuple[DemonstrationDataset, DemonstrationDataset]
+        | tuple[DemonstrationDataset, DemonstrationDataset, DemonstrationDataset | None]
+    ):
         """Split the dataset into train, validation, and optional test sets.
 
         Parameters
         ----------
+        train_ratio : float, optional
+            Fraction of data reserved for training. When provided, ``val_ratio``
+            is inferred as ``1 - train_ratio - test_ratio``.
         val_ratio : float
             Fraction of data reserved for validation.
         test_ratio : float
@@ -393,6 +437,12 @@ class DemonstrationDataset:
             ``(train_ds, val_ds, test_ds)`` where ``test_ds`` is *None*
             when ``test_ratio == 0``.
         """
+        if train_ratio is not None:
+            remaining = 1.0 - train_ratio - test_ratio
+            if remaining < 0.0:
+                raise ValueError("train_ratio + test_ratio must be <= 1.0")
+            val_ratio = remaining
+
         n = len(self)
         indices = np.arange(n)
         if shuffle:
@@ -426,7 +476,21 @@ class DemonstrationDataset:
             len(val_ds),
             len(test_ds) if test_ds is not None else "N/A",
         )
+        if train_ratio is not None and test_ratio == 0.0:
+            return train_ds, val_ds
         return train_ds, val_ds, test_ds
+
+    def save(self, path: str | pathlib.Path) -> None:
+        """Persist the dataset to a NumPy archive."""
+        path = pathlib.Path(path)
+        np.savez(
+            path,
+            obs=self.observations,
+            actions=self.actions,
+            rewards=self.rewards,
+            next_obs=self.next_observations,
+            dones=self.dones,
+        )
 
     # ------------------------------------------------------------------
     # PyTorch Dataset interface
