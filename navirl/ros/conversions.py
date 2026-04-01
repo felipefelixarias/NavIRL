@@ -18,9 +18,9 @@ import numpy as np
 # Guarded ROS2 imports (only needed when real ROS msgs are passed)
 # ---------------------------------------------------------------------------
 try:
-    from geometry_msgs.msg import Twist
-    from nav_msgs.msg import Odometry
-    from sensor_msgs.msg import Image, LaserScan
+    __import__("geometry_msgs.msg")
+    __import__("nav_msgs.msg")
+    __import__("sensor_msgs.msg")
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False

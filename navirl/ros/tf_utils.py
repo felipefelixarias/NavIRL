@@ -23,7 +23,6 @@ try:
     import rclpy
     import tf2_ros
     from geometry_msgs.msg import TransformStamped
-    from rclpy.node import Node
     from rclpy.time import Time as RosTime
     from tf2_ros import TransformException
     _TF2_AVAILABLE = True

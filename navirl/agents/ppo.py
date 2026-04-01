@@ -43,7 +43,6 @@ import numpy as np
 
 try:
     import torch
-    import torch.nn as nn
     import torch.nn.functional as F
 
     _TORCH_AVAILABLE = True

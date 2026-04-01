@@ -318,7 +318,7 @@ class HabitatBridge(_SimBridgeBase):
         self._node = rclpy.create_node(self._node_name)
 
         try:
-            import habitat_sim  # type: ignore[import-untyped]
+            __import__("habitat_sim")
             logger.info("HabitatBridge: habitat-sim detected.")
         except ImportError:
             logger.warning(

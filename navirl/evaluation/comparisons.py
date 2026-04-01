@@ -20,10 +20,10 @@ def _try_import_scipy():
         from scipy import stats
 
         return stats
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
             "scipy is required for statistical tests. Install with: pip install scipy"
-        )
+        ) from err
 
 
 class AgentComparison:

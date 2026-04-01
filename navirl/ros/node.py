@@ -16,6 +16,8 @@ from typing import Any
 
 import numpy as np
 
+from . import conversions
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -50,8 +52,6 @@ except ImportError:
     except ImportError:
         _HAS_PERSON_MSG = False
         PersonArray = None  # type: ignore[assignment,misc]
-
-from . import conversions
 
 # ---------------------------------------------------------------------------
 # Node

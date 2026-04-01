@@ -19,8 +19,7 @@ logger = logging.getLogger(__name__)
 # Guarded ROS2 imports
 # ---------------------------------------------------------------------------
 try:
-    from nav_msgs.msg import MapMetaData, OccupancyGrid
-    from std_msgs.msg import Header
+    from nav_msgs.msg import OccupancyGrid
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False

@@ -523,8 +523,10 @@ class ContinuousBackend:
         obs = self.reset()
         total_rewards = {aid: 0.0 for aid in self._robot_ids}
         steps = max_steps or self._config.max_steps
+        executed_steps = 0
 
-        for step in range(steps):
+        for _step in range(steps):
+            executed_steps = _step + 1
             actions = {}
             if policy is not None:
                 for rid in self._robot_ids:
@@ -546,5 +548,5 @@ class ContinuousBackend:
             "trajectories": self.get_all_trajectories(),
             "total_rewards": total_rewards,
             "statistics": self.get_episode_statistics(),
-            "num_steps": step + 1,
+            "num_steps": executed_steps,
         }

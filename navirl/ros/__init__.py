@@ -8,22 +8,6 @@ remains usable even when ROS2 is not installed.
 from __future__ import annotations
 
 import importlib
-import warnings
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .bridges import GazeboBridge, HabitatBridge, IsaacBridge
-    from .conversions import (
-        action_to_twist,
-        image_to_numpy,
-        laser_scan_to_lidar_obs,
-        odometry_to_state,
-        person_array_to_social_obs,
-        pose_to_goal,
-    )
-    from .costmap import CostmapManager, PredictiveCostmapLayer, SocialCostmapLayer
-    from .node import NavIRLNode
-    from .tf_utils import TransformManager, robot_to_world, world_to_robot
 
 _ROS2_AVAILABLE: bool | None = None
 

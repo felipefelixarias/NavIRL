@@ -68,9 +68,10 @@ class Node(ABC):
         """Execute one tick and return the resulting status."""
         ...
 
+    @abstractmethod
     def reset_state(self) -> None:
         """Reset any internal running state (called between episodes)."""
-        pass
+        ...
 
 
 # ---------------------------------------------------------------------------

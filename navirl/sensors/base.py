@@ -53,7 +53,7 @@ class SensorBase(ABC):
 
         Override in subclasses that maintain state across steps.
         """
-        pass
+        return None
 
     def seed(self, seed: int) -> None:
         """Seed the sensor's random number generator."""

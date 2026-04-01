@@ -20,7 +20,6 @@ from typing import Any
 import numpy as np
 
 try:
-    import gymnasium as gym
     from gymnasium import spaces
 except ImportError as _exc:
     raise ImportError(

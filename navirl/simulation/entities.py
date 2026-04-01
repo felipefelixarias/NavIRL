@@ -660,17 +660,17 @@ class EntityManager:
 
     def __init__(
         self,
-        bounds: AABB = AABB(0, 0, 50, 50),
+        bounds: AABB | None = None,
         cell_size: float = 2.0,
     ) -> None:
         self._entities: dict[int, Entity] = {}
         self._next_id: int = 0
-        self._bounds = bounds
+        self._bounds = bounds if bounds is not None else AABB(0, 0, 50, 50)
         self._cell_size = cell_size
         # Grid: (row, col) -> set of entity ids
         self._grid: dict[tuple[int, int], set[int]] = {}
-        self._cols = max(1, int(np.ceil(bounds.width / cell_size)))
-        self._rows = max(1, int(np.ceil(bounds.height / cell_size)))
+        self._cols = max(1, int(np.ceil(self._bounds.width / cell_size)))
+        self._rows = max(1, int(np.ceil(self._bounds.height / cell_size)))
 
     # ------------------------------------------------------------------
     # ID management

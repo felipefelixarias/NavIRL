@@ -159,7 +159,7 @@ class StandardMetrics(MetricsCollector):
                     robot_goal_reached_step = int(row["step"])
 
         oscillation_scores = []
-        for aid, headings in heading_series.items():
+        for _aid, headings in heading_series.items():
             if len(headings) < 3:
                 continue
             diffs = [_angle_wrap(headings[i + 1] - headings[i]) for i in range(len(headings) - 1)]
@@ -171,7 +171,7 @@ class StandardMetrics(MetricsCollector):
             oscillation_scores.append(flips / (len(signs) - 1))
 
         jerk_values = []
-        for aid, vv in vel_series.items():
+        for _aid, vv in vel_series.items():
             if len(vv) < 3:
                 continue
             arr = np.asarray(vv, dtype=float)

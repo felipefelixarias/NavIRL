@@ -19,8 +19,7 @@ from typing import Any, Literal
 import numpy as np
 
 try:
-    import gymnasium as gym
-    from gymnasium import spaces
+    __import__("gymnasium")
 except ImportError as _exc:
     raise ImportError(
         "NavIRL Gymnasium environments require the 'gymnasium' package.  "

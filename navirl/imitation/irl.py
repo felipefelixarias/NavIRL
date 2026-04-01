@@ -27,13 +27,6 @@ import numpy as np
 
 from navirl.agents.base import HyperParameters
 
-try:
-    import torch
-
-    _TORCH_AVAILABLE = True
-except ImportError:  # pragma: no cover
-    _TORCH_AVAILABLE = False
-
 logger = logging.getLogger(__name__)
 
 __all__ = ["MaxEntIRLConfig", "MaxEntIRL"]

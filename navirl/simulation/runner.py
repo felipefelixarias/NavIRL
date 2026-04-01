@@ -515,7 +515,7 @@ class SimulationRunner:
                 futures.append(fut)
 
             results: list[EpisodeResult] = []
-            for i, fut in enumerate(concurrent.futures.as_completed(futures)):
+            for _i, fut in enumerate(concurrent.futures.as_completed(futures)):
                 rd = fut.result()
                 er = EpisodeResult(
                     episode_id=rd["episode_id"],

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import time
-from abc import ABC
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -35,7 +34,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-class Callback(ABC):
+class Callback:
     """Base class for training callbacks.
 
     Subclasses can override any of the hook methods to inject custom behaviour

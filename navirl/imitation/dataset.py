@@ -20,7 +20,6 @@ import numpy as np
 
 try:
     import torch
-    from torch.utils.data import Dataset as TorchDataset
 
     _TORCH_AVAILABLE = True
 except ImportError:  # pragma: no cover

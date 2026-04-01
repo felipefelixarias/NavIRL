@@ -123,6 +123,7 @@ class RewardFunction(abc.ABC):
 
         The default implementation is a no-op.
         """
+        return None
 
     def get_info(self) -> dict[str, Any]:
         """Return diagnostic information about the last :meth:`compute` call.
