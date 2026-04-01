@@ -4,7 +4,7 @@ import argparse
 import json
 import math
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from navirl.core.registry import get_backend, get_human_controller, get_robot_controller
@@ -18,7 +18,7 @@ from navirl.viz.render import render_trace
 
 
 def _run_id(scenario_id: str) -> str:
-    stamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     return f"{scenario_id}_{stamp}_{uuid.uuid4().hex[:8]}"
 
 

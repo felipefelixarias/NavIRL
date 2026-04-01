@@ -9,10 +9,6 @@ import numpy as np
 from navirl.backends.grid2d.constants import FREE_SPACE, OBSTACLE_SPACE
 
 
-def _blank(shape: tuple[int, int], free: int = FREE_SPACE) -> np.ndarray:
-    return np.zeros(shape, dtype=np.uint8) + free
-
-
 def hallway_map() -> np.ndarray:
     m = np.zeros((220, 360), dtype=np.uint8)
     m[60:160, 20:340] = FREE_SPACE

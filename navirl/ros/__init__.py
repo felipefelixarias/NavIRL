@@ -24,15 +24,6 @@ def ros2_available() -> bool:
     return _ROS2_AVAILABLE
 
 
-def _require_ros2(name: str) -> None:
-    if not ros2_available():
-        raise ImportError(
-            f"Cannot use navirl.ros.{name} because ROS2 (rclpy) is not installed. "
-            "Please install ROS2 Humble or later and source the setup script before "
-            "importing this module.  See https://docs.ros.org/en/humble/Installation.html"
-        )
-
-
 # Lazy attribute access so ``from navirl.ros import NavIRLNode`` works
 # without eagerly importing rclpy at package-init time.
 _LAZY_SUBMODULES = {
