@@ -114,13 +114,19 @@ class RewardNetwork(nn.Module):
 
     def __init__(
         self,
-        obs_dim: int,
-        action_dim: int,
+        obs_dim: int | None = None,
+        action_dim: int = 0,
         hidden_dims: Sequence[int] = (256, 256),
         gamma: float = 0.99,
         state_only: bool = False,
+        *,
+        state_dim: int | None = None,
     ) -> None:
         super().__init__()
+        if obs_dim is None:
+            obs_dim = state_dim
+        if obs_dim is None:
+            raise TypeError("RewardNetwork requires 'obs_dim' or legacy alias 'state_dim'.")
         self.gamma = gamma
         self.state_only = state_only
 
@@ -185,9 +191,9 @@ class RewardNetwork(nn.Module):
         obs: torch.Tensor,
         actions: torch.Tensor,
         next_obs: torch.Tensor,
-        dones: torch.Tensor,
-    ) -> torch.Tensor:
-        """Compute f(s, a, s') = g(s, a) + gamma * h(s') - h(s).
+        dones: torch.Tensor | None = None,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        """Compute AIRL reward and shaping terms.
 
         Parameters
         ----------
@@ -197,17 +203,21 @@ class RewardNetwork(nn.Module):
             Actions ``(B, action_dim)``.
         next_obs : torch.Tensor
             Next observations ``(B, obs_dim)``.
-        dones : torch.Tensor
+        dones : torch.Tensor, optional
             Episode termination flags ``(B, 1)`` or ``(B,)``.
 
         Returns
         -------
-        torch.Tensor
-            f-values ``(B, 1)``.
+        torch.Tensor | tuple[torch.Tensor, torch.Tensor]
+            If ``dones`` is provided, returns combined f-values ``(B, 1)``.
+            Otherwise returns ``(reward, shaping)`` for backward compatibility.
         """
         reward = self.g(obs, actions)
         h_s = self.h(obs)
         h_sp = self.h(next_obs)
+        if dones is None:
+            shaping = self.gamma * h_sp - h_s
+            return reward, shaping
         dones = dones.reshape(-1, 1).float()
         shaping = self.gamma * h_sp * (1.0 - dones) - h_s
         return reward + shaping

@@ -85,12 +85,12 @@ class MaxEntIRL:
     def __init__(
         self,
         config: MaxEntIRLConfig,
-        feature_fn: Callable[[np.ndarray], np.ndarray],
+        feature_fn: Callable[[np.ndarray], np.ndarray] | None = None,
         forward_rl_fn: Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]]
         | None = None,
     ) -> None:
         self._config = config
-        self._feature_fn = feature_fn
+        self._feature_fn = feature_fn or (lambda observation: np.asarray(observation, dtype=np.float64))
         self._forward_rl_fn = forward_rl_fn
 
         # Linear reward parameters
@@ -139,6 +139,10 @@ class MaxEntIRL:
         """
         phi = self._feature_fn(observation)
         return float(self._theta @ phi)
+
+    def compute_reward(self, features_or_observation: np.ndarray) -> float:
+        """Backward-compatible alias for reward computation."""
+        return self.reward(features_or_observation)
 
     def reward_batch(self, observations: np.ndarray) -> np.ndarray:
         """Compute the learned reward for a batch of observations.
@@ -261,6 +265,14 @@ class MaxEntIRL:
         }
         self._history.append(metrics)
         return metrics
+
+    def update(
+        self,
+        expert_features: np.ndarray,
+        policy_features: np.ndarray,
+    ) -> dict[str, float]:
+        """Backward-compatible alias for a single IRL update step."""
+        return self.update_step(expert_features, policy_features)
 
     # ------------------------------------------------------------------
     # Full training loop

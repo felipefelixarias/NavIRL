@@ -7,7 +7,7 @@ import random
 import sys
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
 
@@ -79,7 +79,7 @@ class TrialScenarioResult:
 
 
 def _emit_progress(message: str) -> None:
-    ts = datetime.utcnow().strftime("%H:%M:%S")
+    ts = datetime.now(UTC).strftime("%H:%M:%S")
     print(f"[navirl tune {ts}] {message}", file=sys.stderr, flush=True)
 
 
@@ -343,7 +343,7 @@ def run_tuning(
         keep_latest=3,
     )
 
-    run_tag = f"tune_{suite}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    run_tag = f"tune_{suite}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
     run_dir = out_root / run_tag
     run_dir.mkdir(parents=True, exist_ok=True)
 

@@ -14,6 +14,7 @@ GoalConditioned
 from __future__ import annotations
 
 import copy
+import inspect
 import time
 from collections import deque
 from collections.abc import Callable
@@ -289,6 +290,38 @@ class RewardShaping(gym.RewardWrapper):
         self._collision_penalty = collision_penalty
         self._prev_dist: float | None = None
 
+    def _apply_shaping_fn(
+        self,
+        obs: Any,
+        action: Any,
+        reward: float,
+        terminated: bool,
+        truncated: bool,
+        info: dict[str, Any],
+    ) -> tuple[float, bool]:
+        assert self._shaping_fn is not None
+        try:
+            signature = inspect.signature(self._shaping_fn)
+        except (TypeError, ValueError):
+            signature = None
+
+        if signature is not None:
+            params = [
+                p
+                for p in signature.parameters.values()
+                if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            ]
+            has_varargs = any(
+                p.kind == inspect.Parameter.VAR_POSITIONAL for p in signature.parameters.values()
+            )
+            if not has_varargs and len(params) <= 4:
+                return float(self._shaping_fn(reward, obs, action, info)), False
+
+        try:
+            return float(self._shaping_fn(obs, action, reward, terminated, truncated, info)), True
+        except TypeError:
+            return float(self._shaping_fn(reward, obs, action, info)), False
+
     def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
         self._prev_dist = info.get("distance_to_goal")
@@ -315,7 +348,10 @@ class RewardShaping(gym.RewardWrapper):
 
         # Custom shaping function
         if self._shaping_fn is not None:
-            shaped += self._shaping_fn(obs, action, reward, terminated, truncated, info)
+            custom_reward, additive = self._apply_shaping_fn(
+                obs, action, float(reward), terminated, truncated, info
+            )
+            shaped = shaped + custom_reward if additive else custom_reward
 
         return obs, shaped, terminated, truncated, info
 
@@ -451,11 +487,20 @@ class RecordEpisode(gym.Wrapper):
         super().__init__(env)
         self.max_episodes = max_episodes
         self.episodes: deque = deque(maxlen=max_episodes)
+        self.episode_rewards: deque[float] = deque(maxlen=max_episodes)
         self._current_episode: dict[str, list[Any]] = {}
 
+    def _finalize_current_episode(self) -> None:
+        if not self._current_episode.get("observations"):
+            return
+        episode = copy.deepcopy(self._current_episode)
+        self.episodes.append(episode)
+        rewards = episode.get("rewards", [])
+        self.episode_rewards.append(float(np.sum(rewards)) if rewards else 0.0)
+
     def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
-        if self._current_episode.get("observations"):
-            self.episodes.append(copy.deepcopy(self._current_episode))
+        if self._current_episode.get("observations") and self._current_episode.get("actions"):
+            self._finalize_current_episode()
         self._current_episode = {
             "observations": [],
             "actions": [],
@@ -473,7 +518,7 @@ class RecordEpisode(gym.Wrapper):
         self._current_episode["observations"].append(obs)
         self._current_episode["infos"].append(info)
         if terminated or truncated:
-            self.episodes.append(copy.deepcopy(self._current_episode))
+            self._finalize_current_episode()
             self._current_episode = {
                 "observations": [],
                 "actions": [],
@@ -543,16 +588,31 @@ class CurriculumWrapper(gym.Wrapper):
         ``env.unwrapped.difficulty`` before each reset.
     """
 
-    def __init__(self, env: gym.Env, scheduler: Callable[[int], float]):
+    def __init__(
+        self,
+        env: gym.Env,
+        scheduler: Callable[[int], float] | None = None,
+        curriculum_manager: Any | None = None,
+    ):
         _require_gym()
         super().__init__(env)
         self.scheduler = scheduler
+        self.curriculum_manager = curriculum_manager
         self._total_steps: int = 0
 
     def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
-        difficulty = self.scheduler(self._total_steps)
-        if hasattr(self.env.unwrapped, "difficulty"):
-            self.env.unwrapped.difficulty = difficulty  # type: ignore[attr-defined]
+        if self.scheduler is not None:
+            difficulty = self.scheduler(self._total_steps)
+            if hasattr(self.env.unwrapped, "difficulty"):
+                self.env.unwrapped.difficulty = difficulty  # type: ignore[attr-defined]
+        elif self.curriculum_manager is not None and hasattr(
+            self.curriculum_manager, "get_env_config"
+        ):
+            config = self.curriculum_manager.get_env_config()
+            if isinstance(config, dict):
+                for key, value in config.items():
+                    if hasattr(self.env.unwrapped, key):
+                        setattr(self.env.unwrapped, key, value)
         return self.env.reset(**kwargs)
 
     def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
