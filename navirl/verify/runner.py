@@ -36,7 +36,6 @@ CANONICAL_SCENARIOS = [
 class VerifyResult:
     scenario_id: str
     bundle_dir: str
-    test_pass: bool
     invariants_pass: bool
     judge_status: str
     judge_confidence: float
@@ -74,18 +73,18 @@ def _write_report(
     lines = [
         f"# 🔍 NavIRL Verification Report: {suite.title()} Suite",
         "",
-        f"## 📊 Summary",
+        "## 📊 Summary",
         "",
         f"- **Overall Status:** {'✅ PASS' if failed_scenarios == 0 and pytest_ok else '❌ FAIL'}",
         f"- **Success Rate:** {success_rate:.1f}% ({passed_scenarios}/{total_scenarios} scenarios)",
         f"- **Test Suite:** {'✅ Pass' if pytest_ok else '❌ Fail'}",
         "",
-        f"## ⚙️ Configuration",
+        "## ⚙️ Configuration",
         "",
         f"- **Judge confidence threshold:** {thresholds['judge_confidence_min']}",
-        f"- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
-        f"- **Max speed:** scenario-specific (`evaluation.max_speed`)",
-        f"- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
+        "- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
+        "- **Max speed:** scenario-specific (`evaluation.max_speed`)",
+        "- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
         "",
         "## 📋 Scenario Results",
         "",
@@ -96,11 +95,19 @@ def _write_report(
     for row in rows:
         # Format status with visual indicators
         invariants_status = "✅ Pass" if row.invariants_pass else "❌ Fail"
-        judge_status_icon = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}.get(row.judge_status, "❓")
+        judge_status_icon = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}.get(
+            row.judge_status, "❓"
+        )
         judge_status_text = f"{judge_status_icon} {row.judge_status.replace('_', ' ').title()}"
-        video_status = ("✅ Pass" if row.video_check_pass else "❌ Fail") if row.video_check_pass is not None else "➖"
+        video_status = (
+            ("✅ Pass" if row.video_check_pass else "❌ Fail")
+            if row.video_check_pass is not None
+            else "➖"
+        )
         overall_status = "✅ Pass" if row.overall_pass else "❌ Fail"
-        notes_display = (row.notes[:60] + "..." if len(row.notes) > 60 else row.notes) if row.notes else "➖"
+        notes_display = (
+            (row.notes[:60] + "..." if len(row.notes) > 60 else row.notes) if row.notes else "➖"
+        )
 
         lines.append(
             f"| {row.scenario_id} | {invariants_status} | {judge_status_text} | {row.judge_confidence:.2f} | {video_status} | {overall_status} | {notes_display} | `{Path(row.bundle_dir).name}` |"
@@ -214,7 +221,6 @@ def run_verify(
                 VerifyResult(
                     scenario_id=scenario_id,
                     bundle_dir=str(verify_root / run_id / "bundle"),
-                    test_pass=pytest_ok,
                     invariants_pass=False,
                     judge_status="fail",
                     judge_confidence=0.0,
@@ -281,7 +287,6 @@ def run_verify(
             VerifyResult(
                 scenario_id=scenario_id,
                 bundle_dir=str(bundle_dir),
-                test_pass=pytest_ok,
                 invariants_pass=bool(invariants.get("overall_pass", False)),
                 judge_status=str(judge_payload.get("status", "fail")),
                 judge_confidence=float(judge_payload.get("confidence", 0.0)),

@@ -177,7 +177,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
                 model_path=self._model_path if self._model_path else None,
             )
             self.get_logger().info(f"Agent loaded: {self._agent_type}")
-        except Exception as exc:
+        except (ImportError, ModuleNotFoundError, KeyError, ValueError, OSError) as exc:
             self.get_logger().error(
                 f"Failed to load agent '{self._agent_type}': {exc}.  "
                 "The node will publish zero-velocity until an agent is available."
@@ -251,7 +251,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
         try:
             action = self._agent.act(observation)
             return np.asarray(action, dtype=np.float64)
-        except Exception as exc:
+        except (AttributeError, TypeError, ValueError, RuntimeError) as exc:
             self.get_logger().error(f"Agent.act() failed: {exc}", throttle_duration_sec=5.0)
             return np.zeros(2, dtype=np.float64)
 
