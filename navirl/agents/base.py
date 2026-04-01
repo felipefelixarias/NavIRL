@@ -617,7 +617,9 @@ class BaseAgent(abc.ABC):
     # Utilities
     # ------------------------------------------------------------------
 
-    def _to_tensor(self, x: np.ndarray | torch.Tensor, dtype: torch.dtype | None = None) -> torch.Tensor:
+    def _to_tensor(
+        self, x: np.ndarray | torch.Tensor, dtype: torch.dtype | None = None
+    ) -> torch.Tensor:
         """Convert a numpy array (or keep a tensor) and move to agent device."""
         if isinstance(x, np.ndarray):
             t = torch.from_numpy(x)

@@ -344,10 +344,11 @@ class TestRNN:
 class TestAttention:
     def test_forward(self):
         from navirl.agents.networks.attention import SocialAttention
-        net = SocialAttention(embed_dim=16, num_heads=2)
-        # (batch, num_agents, embed_dim)
-        x = torch.randn(2, 6, 16)
-        out = net(x)
+        net = SocialAttention(input_dim=16, hidden_dim=32, output_dim=16)
+        # SocialAttention expects (robot_state, human_states) - simplified test
+        robot_state = torch.randn(2, 16)  # (batch, input_dim)
+        human_states = torch.randn(2, 6, 16)  # (batch, num_humans, input_dim)
+        out = net(robot_state, human_states)
         assert out.shape[0] == 2
 
 
