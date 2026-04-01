@@ -21,6 +21,7 @@ from navirl.humans.pedestrian_state import PedestrianState
 # Enumerations
 # ---------------------------------------------------------------------------
 
+
 class FormationType(enum.Enum):
     """Spatial formation pattern for a group."""
 
@@ -43,6 +44,7 @@ class GroupRole(enum.Enum):
 # ---------------------------------------------------------------------------
 # F-formation (conversational groups)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class FFormation:
@@ -148,9 +150,7 @@ class FFormation:
         """
         ideal_angles = self.compute_facing_angles(centre, member_positions)
         for heading, ideal in zip(member_headings, ideal_angles, strict=False):
-            delta = math.atan2(
-                math.sin(heading - ideal), math.cos(heading - ideal)
-            )
+            delta = math.atan2(math.sin(heading - ideal), math.cos(heading - ideal))
             if abs(delta) > self.facing_tolerance:
                 return False
         return True
@@ -159,6 +159,7 @@ class FFormation:
 # ---------------------------------------------------------------------------
 # SocialGroup
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SocialGroup:
@@ -251,9 +252,7 @@ class SocialGroup:
             return np.zeros(2, dtype=np.float64)
         return np.mean([s.velocity for s in states], axis=0)
 
-    def _get_member_states(
-        self, all_states: dict[int, PedestrianState]
-    ) -> list[PedestrianState]:
+    def _get_member_states(self, all_states: dict[int, PedestrianState]) -> list[PedestrianState]:
         """Extract member states from the global state dictionary.
 
         Parameters
@@ -292,7 +291,9 @@ class SocialGroup:
 
         centroid = self._centroid(members)
         mean_vel = self._mean_velocity(members)
-        heading = float(math.atan2(mean_vel[1], mean_vel[0])) if np.linalg.norm(mean_vel) > 1e-8 else 0.0
+        heading = (
+            float(math.atan2(mean_vel[1], mean_vel[0])) if np.linalg.norm(mean_vel) > 1e-8 else 0.0
+        )
         n = len(members)
 
         if self.formation == FormationType.F_FORMATION:
@@ -398,9 +399,7 @@ class SocialGroup:
                 targets[mid] = centroid + behind + lateral
         return targets
 
-    def _cluster_positions(
-        self, centroid: np.ndarray, n: int
-    ) -> dict[int, np.ndarray]:
+    def _cluster_positions(self, centroid: np.ndarray, n: int) -> dict[int, np.ndarray]:
         """Compute cluster formation positions (evenly spaced on a circle).
 
         Parameters
@@ -836,7 +835,9 @@ class SocialGroup:
                 continue
             goal_dir = goal_dir / norm
             # Vote for option most aligned with personal goal direction.
-            dots = [float(np.dot(goal_dir, opt / max(np.linalg.norm(opt), 1e-9))) for opt in options]
+            dots = [
+                float(np.dot(goal_dir, opt / max(np.linalg.norm(opt), 1e-9))) for opt in options
+            ]
             best = int(np.argmax(dots))
             votes[best] += 1
 
@@ -847,7 +848,9 @@ class SocialGroup:
             norm = float(np.linalg.norm(goal_dir))
             if norm > 1e-9:
                 goal_dir = goal_dir / norm
-                dots = [float(np.dot(goal_dir, opt / max(np.linalg.norm(opt), 1e-9))) for opt in options]
+                dots = [
+                    float(np.dot(goal_dir, opt / max(np.linalg.norm(opt), 1e-9))) for opt in options
+                ]
                 best = int(np.argmax(dots))
                 votes[best] += 1  # Extra vote for leader.
 
@@ -908,6 +911,7 @@ class SocialGroup:
 # ---------------------------------------------------------------------------
 # Group manager
 # ---------------------------------------------------------------------------
+
 
 class GroupManager:
     """Manages creation, splitting, merging and querying of social groups.
@@ -1041,12 +1045,14 @@ class GroupManager:
             if new_g is not None:
                 self._next_id += 1
                 self._groups[new_g.group_id] = new_g
-                events.append({
-                    "type": "split",
-                    "parent_group": gid,
-                    "new_group": new_g.group_id,
-                    "new_members": list(new_g.member_ids),
-                })
+                events.append(
+                    {
+                        "type": "split",
+                        "parent_group": gid,
+                        "new_group": new_g.group_id,
+                        "new_members": list(new_g.member_ids),
+                    }
+                )
 
         # -- merging ----------------------------------------------------------
         gids = list(self._groups.keys())
@@ -1062,11 +1068,13 @@ class GroupManager:
                 if SocialGroup.can_merge(ga, gb, all_states, self.merge_distance):
                     ga.merge(gb)
                     merged.add(gids[j])
-                    events.append({
-                        "type": "merge",
-                        "absorbing_group": gids[i],
-                        "absorbed_group": gids[j],
-                    })
+                    events.append(
+                        {
+                            "type": "merge",
+                            "absorbing_group": gids[i],
+                            "absorbed_group": gids[j],
+                        }
+                    )
         for gid in merged:
             del self._groups[gid]
 

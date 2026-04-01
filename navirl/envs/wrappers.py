@@ -39,14 +39,14 @@ except ImportError:  # pragma: no cover
 def _require_gym() -> None:
     if not _GYM_AVAILABLE:
         raise ImportError(
-            "Neither gymnasium nor gym is installed. "
-            "Install gymnasium with: pip install gymnasium"
+            "Neither gymnasium nor gym is installed. Install gymnasium with: pip install gymnasium"
         )
 
 
 # ============================================================================
 # Observation wrappers
 # ============================================================================
+
 
 class FrameStack(gym.ObservationWrapper):
     """Stack the last *num_stack* observations along a new leading axis.
@@ -67,9 +67,7 @@ class FrameStack(gym.ObservationWrapper):
 
         low = np.repeat(env.observation_space.low[np.newaxis, ...], num_stack, axis=0)
         high = np.repeat(env.observation_space.high[np.newaxis, ...], num_stack, axis=0)
-        self.observation_space = spaces.Box(
-            low=low, high=high, dtype=env.observation_space.dtype
-        )
+        self.observation_space = spaces.Box(low=low, high=high, dtype=env.observation_space.dtype)
 
     def observation(self, observation: np.ndarray) -> np.ndarray:
         self._frames.append(observation)
@@ -243,6 +241,7 @@ class GoalConditioned(gym.ObservationWrapper):
 # Action wrappers
 # ============================================================================
 
+
 class ClipAction(gym.ActionWrapper):
     """Clip continuous actions to the environment's valid range."""
 
@@ -257,6 +256,7 @@ class ClipAction(gym.ActionWrapper):
 # ============================================================================
 # Reward wrappers
 # ============================================================================
+
 
 class RewardShaping(gym.RewardWrapper):
     """Add shaped reward terms on top of the base reward.
@@ -374,6 +374,7 @@ class NormalizeReward(gym.RewardWrapper):
 # ============================================================================
 # General wrappers (subclass gym.Wrapper)
 # ============================================================================
+
 
 class ActionRepeat(gym.Wrapper):
     """Repeat the selected action for *num_repeat* environment steps.

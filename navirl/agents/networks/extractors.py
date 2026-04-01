@@ -415,7 +415,10 @@ class SocialExtractor(nn.Module):
 
         # Self-attention
         attn_out, _ = self.attention(
-            h, h, h, key_padding_mask=mask,
+            h,
+            h,
+            h,
+            key_padding_mask=mask,
         )  # (B, N, embed_dim)
         h = self.layer_norm(h + attn_out)
 
@@ -606,9 +609,7 @@ class RecurrentExtractor(nn.Module):
 
         rnn_cls = {"lstm": nn.LSTM, "gru": nn.GRU}
         if self.rnn_type not in rnn_cls:
-            raise ValueError(
-                f"Unknown rnn_type '{rnn_type}'. Choose from {list(rnn_cls.keys())}"
-            )
+            raise ValueError(f"Unknown rnn_type '{rnn_type}'. Choose from {list(rnn_cls.keys())}")
 
         self.rnn = rnn_cls[self.rnn_type](
             input_size=base_extractor.feature_dim,
@@ -624,7 +625,9 @@ class RecurrentExtractor(nn.Module):
         return self._feature_dim
 
     # ------------------------------------------------------------------
-    def initial_state(self, batch_size: int, device: torch.device | None = None) -> tuple[Tensor, Tensor] | Tensor:
+    def initial_state(
+        self, batch_size: int, device: torch.device | None = None
+    ) -> tuple[Tensor, Tensor] | Tensor:
         """Return a zero-initialised hidden state.
 
         Parameters

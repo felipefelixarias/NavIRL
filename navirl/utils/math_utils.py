@@ -4,6 +4,7 @@ Provides common mathematical operations used throughout the framework
 including interpolation, smoothing, statistical functions, and
 numerical helpers.
 """
+
 from __future__ import annotations
 
 import math
@@ -13,6 +14,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 # Basic scalar operations
 # ---------------------------------------------------------------------------
+
 
 def clamp(value: float, min_val: float, max_val: float) -> float:
     """Clamp a value to the range [min_val, max_val].
@@ -150,6 +152,7 @@ def smoother_step(edge0: float, edge1: float, x: float) -> float:
 # Activation / probability functions
 # ---------------------------------------------------------------------------
 
+
 def sigmoid(x: float | np.ndarray) -> float | np.ndarray:
     """Numerically stable sigmoid function.
 
@@ -255,6 +258,7 @@ def gumbel_softmax(
 # ---------------------------------------------------------------------------
 # Statistical / running statistics
 # ---------------------------------------------------------------------------
+
 
 def running_mean(values: np.ndarray, window: int) -> np.ndarray:
     """Compute running mean with a given window size.
@@ -380,8 +384,8 @@ def weighted_moving_average(
     result = np.empty_like(values)
     for i in range(len(values)):
         lo = max(0, i - w + 1)
-        chunk = values[lo: i + 1]
-        used_weights = weights[-(i - lo + 1):]
+        chunk = values[lo : i + 1]
+        used_weights = weights[-(i - lo + 1) :]
         result[i] = np.sum(chunk * used_weights) / np.sum(used_weights)
 
     return result
@@ -390,6 +394,7 @@ def weighted_moving_average(
 # ---------------------------------------------------------------------------
 # Kernel functions
 # ---------------------------------------------------------------------------
+
 
 def gaussian_kernel(size: int, sigma: float = 1.0) -> np.ndarray:
     """Create a 1-D Gaussian kernel.
@@ -445,13 +450,14 @@ def epanechnikov_kernel(size: int) -> np.ndarray:
         Normalized Epanechnikov kernel, shape (size,).
     """
     x = np.linspace(-1, 1, size)
-    kernel = np.maximum(0.0, 1.0 - x ** 2)
+    kernel = np.maximum(0.0, 1.0 - x**2)
     return kernel / np.sum(kernel)
 
 
 # ---------------------------------------------------------------------------
 # Interpolation
 # ---------------------------------------------------------------------------
+
 
 def cubic_bezier(
     p0: np.ndarray,
@@ -530,7 +536,7 @@ def catmull_rom_spline(
 
         def _knot_interval(pa: np.ndarray, pb: np.ndarray) -> float:
             d = np.linalg.norm(pb - pa)
-            return d ** alpha if d > 1e-12 else 1e-6
+            return d**alpha if d > 1e-12 else 1e-6
 
         t0 = 0.0
         t1 = t0 + _knot_interval(p0, p1)
@@ -541,14 +547,38 @@ def catmull_rom_spline(
         ts = np.linspace(t1, t2, n_pts, endpoint=(i == segments - 1))
 
         for t in ts:
-            a1 = (t1 - t) / (t1 - t0) * p0 + (t - t0) / (t1 - t0) * p1 if abs(t1 - t0) > 1e-12 else p0
-            a2 = (t2 - t) / (t2 - t1) * p1 + (t - t1) / (t2 - t1) * p2 if abs(t2 - t1) > 1e-12 else p1
-            a3 = (t3 - t) / (t3 - t2) * p2 + (t - t2) / (t3 - t2) * p3 if abs(t3 - t2) > 1e-12 else p2
+            a1 = (
+                (t1 - t) / (t1 - t0) * p0 + (t - t0) / (t1 - t0) * p1
+                if abs(t1 - t0) > 1e-12
+                else p0
+            )
+            a2 = (
+                (t2 - t) / (t2 - t1) * p1 + (t - t1) / (t2 - t1) * p2
+                if abs(t2 - t1) > 1e-12
+                else p1
+            )
+            a3 = (
+                (t3 - t) / (t3 - t2) * p2 + (t - t2) / (t3 - t2) * p3
+                if abs(t3 - t2) > 1e-12
+                else p2
+            )
 
-            b1 = (t2 - t) / (t2 - t0) * a1 + (t - t0) / (t2 - t0) * a2 if abs(t2 - t0) > 1e-12 else a1
-            b2 = (t3 - t) / (t3 - t1) * a2 + (t - t1) / (t3 - t1) * a3 if abs(t3 - t1) > 1e-12 else a2
+            b1 = (
+                (t2 - t) / (t2 - t0) * a1 + (t - t0) / (t2 - t0) * a2
+                if abs(t2 - t0) > 1e-12
+                else a1
+            )
+            b2 = (
+                (t3 - t) / (t3 - t1) * a2 + (t - t1) / (t3 - t1) * a3
+                if abs(t3 - t1) > 1e-12
+                else a2
+            )
 
-            c = (t2 - t) / (t2 - t1) * b1 + (t - t1) / (t2 - t1) * b2 if abs(t2 - t1) > 1e-12 else b1
+            c = (
+                (t2 - t) / (t2 - t1) * b1 + (t - t1) / (t2 - t1) * b2
+                if abs(t2 - t1) > 1e-12
+                else b1
+            )
             result.append(c)
 
     return np.array(result)
@@ -557,6 +587,7 @@ def catmull_rom_spline(
 # ---------------------------------------------------------------------------
 # Numerical differentiation
 # ---------------------------------------------------------------------------
+
 
 def finite_difference(
     values: np.ndarray,
@@ -617,6 +648,7 @@ def finite_difference(
 # ---------------------------------------------------------------------------
 # Signal processing
 # ---------------------------------------------------------------------------
+
 
 def convolve_1d(signal: np.ndarray, kernel: np.ndarray) -> np.ndarray:
     """1-D convolution with zero padding.
@@ -745,6 +777,7 @@ def savitzky_golay(
 # ---------------------------------------------------------------------------
 # Distance metrics
 # ---------------------------------------------------------------------------
+
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     """Compute cosine similarity between two vectors.
@@ -891,6 +924,7 @@ def frechet_distance(
 # ---------------------------------------------------------------------------
 # Probability / entropy
 # ---------------------------------------------------------------------------
+
 
 def entropy(probs: np.ndarray) -> float:
     """Compute Shannon entropy of a probability distribution.

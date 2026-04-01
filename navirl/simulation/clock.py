@@ -18,6 +18,7 @@ from typing import Any
 # Scheduled event
 # ---------------------------------------------------------------------------
 
+
 @dataclass(order=True)
 class ScheduledEvent:
     """An event to fire at a specific simulation time.
@@ -39,6 +40,7 @@ class ScheduledEvent:
 # ---------------------------------------------------------------------------
 # Frame statistics
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class ClockStats:
@@ -72,6 +74,7 @@ class ClockStats:
 # ---------------------------------------------------------------------------
 # SimulationClock
 # ---------------------------------------------------------------------------
+
 
 class SimulationClock:
     """Central clock governing simulation timing.

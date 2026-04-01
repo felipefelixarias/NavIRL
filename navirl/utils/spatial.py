@@ -4,6 +4,7 @@ Provides spatial indexing structures optimized for 2-D pedestrian
 simulation, including grid-based spatial hashing and a simple
 k-d tree implementation.
 """
+
 from __future__ import annotations
 
 import math
@@ -16,6 +17,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 # Spatial hash grid
 # ---------------------------------------------------------------------------
+
 
 class SpatialHashGrid:
     """Grid-based spatial hashing for fast neighbor queries in 2-D.
@@ -90,9 +92,7 @@ class SpatialHashGrid:
             return
         pos = self._positions.pop(entity_id)
         key = self._cell_key(pos)
-        self._cells[key] = [
-            (eid, p) for eid, p in self._cells[key] if eid != entity_id
-        ]
+        self._cells[key] = [(eid, p) for eid, p in self._cells[key] if eid != entity_id]
         if not self._cells[key]:
             del self._cells[key]
 
@@ -365,9 +365,11 @@ class SpatialHashGrid:
 # KD-Tree (simple 2-D implementation)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _KDNode:
     """Internal node for KDTree2D."""
+
     point: np.ndarray
     entity_id: int
     left: _KDNode | None = None
@@ -431,7 +433,7 @@ class KDTree2D:
         )
 
         left_indices = sorted_indices[:median]
-        right_indices = sorted_indices[median + 1:]
+        right_indices = sorted_indices[median + 1 :]
 
         if len(left_indices) > 0:
             node.left = self._build(
@@ -553,9 +555,7 @@ class KDTree2D:
 
         _search(self._root)
 
-        results = [
-            (eid, -neg_d) for neg_d, eid in sorted(heap, key=lambda x: -x[0])
-        ]
+        results = [(eid, -neg_d) for neg_d, eid in sorted(heap, key=lambda x: -x[0])]
         return results
 
     def query_radius(
@@ -654,6 +654,7 @@ class KDTree2D:
 # ---------------------------------------------------------------------------
 # Convenience functions
 # ---------------------------------------------------------------------------
+
 
 def find_neighbors_in_radius(
     positions: np.ndarray,

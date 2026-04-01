@@ -20,6 +20,7 @@ from navirl.sensors.base import SensorBase
 #  SensorFusion
 # ---------------------------------------------------------------------------
 
+
 class SensorFusion:
     """Combines observations from multiple named sensors.
 
@@ -88,10 +89,7 @@ class SensorFusion:
 
     def get_observation_space(self) -> dict[str, Any]:
         """Return the combined observation space as a nested dict."""
-        return {
-            name: sensor.get_observation_space()
-            for name, sensor in self.sensors.items()
-        }
+        return {name: sensor.get_observation_space() for name, sensor in self.sensors.items()}
 
     def _should_fire(self, name: str) -> bool:
         """Determine whether sensor *name* should produce an observation on
@@ -108,6 +106,7 @@ class SensorFusion:
 # ---------------------------------------------------------------------------
 #  Extended Kalman Filter state estimator
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class EKFConfig:
@@ -156,9 +155,7 @@ class KalmanStateEstimator:
         if cfg.process_noise is not None:
             self.Q = np.asarray(cfg.process_noise, dtype=np.float64)
         else:
-            self.Q = np.diag([0.01, 0.01, 0.005, 0.05, 0.05, 0.02]).astype(
-                np.float64
-            )
+            self.Q = np.diag([0.01, 0.01, 0.005, 0.05, 0.05, 0.02]).astype(np.float64)
 
     def reset(self, state: np.ndarray | None = None) -> None:
         """Reset the filter state and covariance."""

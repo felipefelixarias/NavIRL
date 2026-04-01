@@ -62,9 +62,7 @@ def _get_activation(name: str) -> nn.Module:
     """Return an activation module by name (case-insensitive)."""
     key = name.lower().strip()
     if key not in _ACTIVATIONS:
-        raise ValueError(
-            f"Unknown activation '{name}'. Choose from {list(_ACTIVATIONS.keys())}"
-        )
+        raise ValueError(f"Unknown activation '{name}'. Choose from {list(_ACTIVATIONS.keys())}")
     return _ACTIVATIONS[key]()
 
 

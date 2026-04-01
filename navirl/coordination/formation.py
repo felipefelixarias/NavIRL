@@ -99,8 +99,7 @@ class FormationController:
             return np.asarray(self.custom_offsets[:num_agents], dtype=np.float64)
         else:
             raise ValueError(
-                f"Unknown formation type '{formation_type}'. "
-                f"Choose from {self.formation_types}."
+                f"Unknown formation type '{formation_type}'. Choose from {self.formation_types}."
             )
 
     def _line_offsets(self, n: int) -> np.ndarray:
@@ -180,9 +179,7 @@ class ConsensusFormation:
         if adjacency is not None:
             self.adjacency = np.asarray(adjacency, dtype=np.float64)
         else:
-            self.adjacency = np.ones((self.num_agents, self.num_agents)) - np.eye(
-                self.num_agents
-            )
+            self.adjacency = np.ones((self.num_agents, self.num_agents)) - np.eye(self.num_agents)
 
         self._laplacian = np.diag(self.adjacency.sum(axis=1)) - self.adjacency
 
@@ -243,9 +240,7 @@ class LeaderFollower:
     ) -> None:
         self.leader_index = leader_index
         self.follower_offsets = (
-            np.asarray(follower_offsets, dtype=np.float64)
-            if follower_offsets is not None
-            else None
+            np.asarray(follower_offsets, dtype=np.float64) if follower_offsets is not None else None
         )
         self.gain = gain
 

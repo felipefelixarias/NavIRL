@@ -15,6 +15,7 @@ import numpy as np
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Task:
     """A task to be allocated to an agent.
@@ -56,6 +57,7 @@ class AllocationResult:
 # Cost helpers
 # ---------------------------------------------------------------------------
 
+
 def _euclidean_cost(agent_pos: np.ndarray, task: Task) -> float:
     """Default cost: Euclidean distance between agent and task location."""
     return float(np.linalg.norm(np.asarray(agent_pos) - task.location))
@@ -64,6 +66,7 @@ def _euclidean_cost(agent_pos: np.ndarray, task: Task) -> float:
 # ---------------------------------------------------------------------------
 # Allocators
 # ---------------------------------------------------------------------------
+
 
 class AuctionAllocator:
     """Market-based task allocation using sequential or bundle auctions.

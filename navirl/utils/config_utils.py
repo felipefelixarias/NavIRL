@@ -4,6 +4,7 @@ Provides helpers for managing configuration objects, including
 YAML/JSON loading, merging, validation, and command-line argument
 parsing integration.
 """
+
 from __future__ import annotations
 
 import copy
@@ -19,6 +20,7 @@ T = TypeVar("T")
 # ---------------------------------------------------------------------------
 # Configuration merging
 # ---------------------------------------------------------------------------
+
 
 def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Deep merge two dictionaries, with override taking precedence.
@@ -37,11 +39,7 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
     """
     result = copy.deepcopy(base)
     for key, value in override.items():
-        if (
-            key in result
-            and isinstance(result[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = deep_merge(result[key], value)
         else:
             result[key] = copy.deepcopy(value)
@@ -113,6 +111,7 @@ def unflatten_dict(
 # JSON config loading / saving
 # ---------------------------------------------------------------------------
 
+
 def load_json_config(path: str | Path) -> dict[str, Any]:
     """Load a JSON configuration file.
 
@@ -149,6 +148,7 @@ def save_json_config(config: dict[str, Any], path: str | Path) -> None:
 # ---------------------------------------------------------------------------
 # YAML-like config (simple format, no pyyaml dependency)
 # ---------------------------------------------------------------------------
+
 
 def load_simple_config(path: str | Path) -> dict[str, Any]:
     """Load a simple key=value config file.
@@ -231,6 +231,7 @@ def _parse_value(value: str) -> Any:
 # Dataclass helpers
 # ---------------------------------------------------------------------------
 
+
 def dataclass_to_dict(obj: Any) -> dict[str, Any]:
     """Convert a dataclass to a dictionary, handling nested dataclasses.
 
@@ -304,6 +305,7 @@ def dict_to_dataclass(cls: type[T], data: dict[str, Any]) -> T:
 # Environment variable interpolation
 # ---------------------------------------------------------------------------
 
+
 def interpolate_env_vars(config: dict[str, Any]) -> dict[str, Any]:
     """Replace ${VAR} patterns with environment variable values.
 
@@ -325,10 +327,7 @@ def interpolate_env_vars(config: dict[str, Any]) -> dict[str, Any]:
         elif isinstance(value, str):
             result[key] = _resolve_env_vars(value)
         elif isinstance(value, list):
-            result[key] = [
-                _resolve_env_vars(v) if isinstance(v, str) else v
-                for v in value
-            ]
+            result[key] = [_resolve_env_vars(v) if isinstance(v, str) else v for v in value]
         else:
             result[key] = value
 
@@ -353,9 +352,11 @@ def _resolve_env_vars(s: str) -> str:
 # Config validation
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ValidationError:
     """A configuration validation error."""
+
     path: str
     message: str
     severity: str = "error"  # "error" or "warning"
@@ -404,19 +405,23 @@ class ConfigValidator:
         # Check required fields
         for key, spec in self.schema.items():
             if spec.get("required", False) and key not in config:
-                errors.append(ValidationError(
-                    path=key,
-                    message=f"Required field '{key}' is missing",
-                ))
+                errors.append(
+                    ValidationError(
+                        path=key,
+                        message=f"Required field '{key}' is missing",
+                    )
+                )
 
         # Check each config value
         for key, value in config.items():
             if key not in self.schema:
-                errors.append(ValidationError(
-                    path=key,
-                    message=f"Unknown configuration key '{key}'",
-                    severity="warning",
-                ))
+                errors.append(
+                    ValidationError(
+                        path=key,
+                        message=f"Unknown configuration key '{key}'",
+                        severity="warning",
+                    )
+                )
                 continue
 
             spec = self.schema[key]
@@ -436,52 +441,64 @@ class ConfigValidator:
         # Type check
         expected_type = spec.get("type")
         if expected_type is not None and not isinstance(value, expected_type):
-            errors.append(ValidationError(
-                path=path,
-                message=(
-                    f"Expected type {expected_type.__name__} for '{path}', "
-                    f"got {type(value).__name__}"
-                ),
-            ))
+            errors.append(
+                ValidationError(
+                    path=path,
+                    message=(
+                        f"Expected type {expected_type.__name__} for '{path}', "
+                        f"got {type(value).__name__}"
+                    ),
+                )
+            )
             return errors  # Skip further checks if type is wrong
 
         # Range checks
         min_val = spec.get("min")
         if min_val is not None and value < min_val:
-            errors.append(ValidationError(
-                path=path,
-                message=f"Value {value} for '{path}' is below minimum {min_val}",
-            ))
+            errors.append(
+                ValidationError(
+                    path=path,
+                    message=f"Value {value} for '{path}' is below minimum {min_val}",
+                )
+            )
 
         max_val = spec.get("max")
         if max_val is not None and value > max_val:
-            errors.append(ValidationError(
-                path=path,
-                message=f"Value {value} for '{path}' exceeds maximum {max_val}",
-            ))
+            errors.append(
+                ValidationError(
+                    path=path,
+                    message=f"Value {value} for '{path}' exceeds maximum {max_val}",
+                )
+            )
 
         # Choice check
         choices = spec.get("choices")
         if choices is not None and value not in choices:
-            errors.append(ValidationError(
-                path=path,
-                message=f"Value '{value}' for '{path}' not in {choices}",
-            ))
+            errors.append(
+                ValidationError(
+                    path=path,
+                    message=f"Value '{value}' for '{path}' not in {choices}",
+                )
+            )
 
         # Length check (for strings and lists)
         min_len = spec.get("min_length")
         if min_len is not None and hasattr(value, "__len__") and len(value) < min_len:
-            errors.append(ValidationError(
-                path=path,
-                message=f"Length {len(value)} for '{path}' is below minimum {min_len}",
-            ))
+            errors.append(
+                ValidationError(
+                    path=path,
+                    message=f"Length {len(value)} for '{path}' is below minimum {min_len}",
+                )
+            )
 
         max_len = spec.get("max_length")
         if max_len is not None and hasattr(value, "__len__") and len(value) > max_len:
-            errors.append(ValidationError(
-                path=path,
-                message=f"Length {len(value)} for '{path}' exceeds maximum {max_len}",
-            ))
+            errors.append(
+                ValidationError(
+                    path=path,
+                    message=f"Length {len(value)} for '{path}' exceeds maximum {max_len}",
+                )
+            )
 
         return errors
 
@@ -525,6 +542,7 @@ class ConfigValidator:
 # ---------------------------------------------------------------------------
 # Argument parser integration
 # ---------------------------------------------------------------------------
+
 
 def config_to_argparse_args(config: dict[str, Any]) -> list[str]:
     """Convert a config dict to command-line argument format.
@@ -598,6 +616,7 @@ def argparse_args_to_config(args: list[str]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Config diffing
 # ---------------------------------------------------------------------------
+
 
 def config_diff(
     config_a: dict[str, Any],

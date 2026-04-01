@@ -1,4 +1,5 @@
 """Utility functions and helpers for NavIRL."""
+
 from __future__ import annotations
 
 from navirl.utils.geometry import (

@@ -55,7 +55,14 @@ def _scenario_file_path(name: str) -> Path:
     return Path(__file__).resolve().parents[1] / "scenarios" / "library" / name
 
 
-def _write_report(report_path: Path, suite: str, pytest_ok: bool, pytest_out: str, rows: list[VerifyResult], thresholds: dict) -> None:
+def _write_report(
+    report_path: Path,
+    suite: str,
+    pytest_ok: bool,
+    pytest_out: str,
+    rows: list[VerifyResult],
+    thresholds: dict,
+) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
     lines = [
@@ -228,15 +235,22 @@ def run_verify(
             with (bundle_dir / "video_check.json").open("w", encoding="utf-8") as f:
                 json.dump(video_check, f, indent=2, sort_keys=True)
 
-        overall = bool(invariants.get("overall_pass", False)) and bool(judge_payload.get("overall_pass", False))
+        overall = bool(invariants.get("overall_pass", False)) and bool(
+            judge_payload.get("overall_pass", False)
+        )
         if suite == "full":
             overall = overall and bool(video_check_pass)
 
         failed_checks = [c for c in invariants.get("checks", []) if not c.get("pass", False)]
-        feasibility = next((c for c in invariants.get("checks", []) if c.get("name") == "scenario_feasibility"), None)
+        feasibility = next(
+            (c for c in invariants.get("checks", []) if c.get("name") == "scenario_feasibility"),
+            None,
+        )
         note_parts: list[str] = []
         if failed_checks:
-            note_parts.append("failed=" + ",".join(c.get("name", "unknown") for c in failed_checks[:3]))
+            note_parts.append(
+                "failed=" + ",".join(c.get("name", "unknown") for c in failed_checks[:3])
+            )
         if isinstance(feasibility, dict):
             sugs = feasibility.get("suggestions", [])
             if sugs:

@@ -17,6 +17,7 @@ from navirl.safety.constraints import ConstraintSet, SafetyConstraint
 # Minimal agent protocol (avoids hard dependency on a concrete agent class)
 # ---------------------------------------------------------------------------
 
+
 class AgentLike(Protocol):
     """Structural protocol – any object with an ``act`` method."""
 
@@ -26,6 +27,7 @@ class AgentLike(Protocol):
 # ---------------------------------------------------------------------------
 # SafetyShield
 # ---------------------------------------------------------------------------
+
 
 class SafetyShield:
     """Wraps an agent and overrides unsafe actions.
@@ -108,6 +110,7 @@ class SafetyShield:
 # Control Barrier Function shield
 # ---------------------------------------------------------------------------
 
+
 class CBFShield:
     """Control Barrier Function-based safety shield.
 
@@ -153,9 +156,7 @@ class CBFShield:
         """Return ``True`` if the state is inside the safe set."""
         return self.cbf_value(state) >= 0.0
 
-    def filter_action(
-        self, state: np.ndarray, proposed_action: np.ndarray
-    ) -> np.ndarray:
+    def filter_action(self, state: np.ndarray, proposed_action: np.ndarray) -> np.ndarray:
         """Filter *proposed_action* via a simplified QP to satisfy the CBF.
 
         The QP minimises ``||u - u_proposed||^2`` subject to the CBF
@@ -175,27 +176,26 @@ class CBFShield:
             return proposed_action.copy()
 
         # Analytic single-constraint QP projection.
-        Lgh = grad_h[:self.action_dim]
+        Lgh = grad_h[: self.action_dim]
         Lgh_norm_sq = float(Lgh @ Lgh)
         if Lgh_norm_sq < 1e-12:
             return np.zeros_like(proposed_action)
 
         Lfh = float(grad_h @ (self.dynamics_fn(state, np.zeros_like(proposed_action)) - state))
-        violation = Lfh + float(Lgh @ proposed_action[:self.action_dim]) + self.alpha * h
+        violation = Lfh + float(Lgh @ proposed_action[: self.action_dim]) + self.alpha * h
         if violation >= 0.0:
             return proposed_action.copy()
 
         lam = -violation / Lgh_norm_sq
         safe_action = proposed_action.copy()
-        safe_action[:self.action_dim] = (
-            proposed_action[:self.action_dim] + lam * Lgh
-        )
+        safe_action[: self.action_dim] = proposed_action[: self.action_dim] + lam * Lgh
         return safe_action
 
 
 # ---------------------------------------------------------------------------
 # Reachability shield (simplified HJ-reachability)
 # ---------------------------------------------------------------------------
+
 
 class ReachabilityShield:
     """Hamilton-Jacobi reachability-based safety shield (simplified).
@@ -252,9 +252,7 @@ class ReachabilityShield:
         next_state = self.dynamics_fn(state, action)
         return self.is_state_safe(next_state)
 
-    def filter_action(
-        self, state: np.ndarray, proposed_action: np.ndarray
-    ) -> np.ndarray:
+    def filter_action(self, state: np.ndarray, proposed_action: np.ndarray) -> np.ndarray:
         """Return the proposed action if safe, else the fallback."""
         if self.is_action_safe(state, proposed_action):
             return proposed_action.copy()

@@ -78,11 +78,7 @@ def _heuristic_judge(
 ) -> dict:
     inv = summary.get("invariants", {})
     checks = inv.get("checks", [])
-    checks_by_name = {
-        str(c.get("name", "")): c
-        for c in checks
-        if isinstance(c, dict)
-    }
+    checks_by_name = {str(c.get("name", "")): c for c in checks if isinstance(c, dict)}
     failed_checks = [c for c in checks if not c.get("pass", False)]
     expected_high_interaction = bool(summary.get("expected_high_interaction", False))
 

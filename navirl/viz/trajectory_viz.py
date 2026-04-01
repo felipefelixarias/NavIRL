@@ -4,6 +4,7 @@ Provides functions for plotting single and multi-agent trajectories,
 velocity/acceleration/heading/curvature profiles, heatmaps, 3D views,
 uncertainty envelopes, social distance timeseries, and trajectory animations.
 """
+
 from __future__ import annotations
 
 import math
@@ -14,6 +15,7 @@ import numpy as np
 
 try:
     import matplotlib
+
     matplotlib.use("Agg")
 except Exception:
     pass
@@ -29,6 +31,7 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 – registers 3-D projecti
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _ensure_array(data: Any) -> np.ndarray:
     """Convert list / tuple / scalar to numpy array."""
@@ -149,9 +152,25 @@ def plot_trajectory(
         ax.plot(xa, ya, color=color, linewidth=linewidth, alpha=alpha, label=label)
 
     if marker_start and len(xa) > 0:
-        ax.plot(xa[0], ya[0], "o", color="green", markersize=marker_size, zorder=5, label="Start" if label is None else None)
+        ax.plot(
+            xa[0],
+            ya[0],
+            "o",
+            color="green",
+            markersize=marker_size,
+            zorder=5,
+            label="Start" if label is None else None,
+        )
     if marker_end and len(xa) > 0:
-        ax.plot(xa[-1], ya[-1], "s", color="red", markersize=marker_size, zorder=5, label="End" if label is None else None)
+        ax.plot(
+            xa[-1],
+            ya[-1],
+            "s",
+            color="red",
+            markersize=marker_size,
+            zorder=5,
+            label="End" if label is None else None,
+        )
 
     if arrow_interval > 0 and len(xa) > 1:
         for i in range(0, len(xa) - 1, arrow_interval):
@@ -269,11 +288,16 @@ def plot_trajectory_heatmap(
     if sigma > 0:
         try:
             from scipy.ndimage import gaussian_filter
+
             hist = gaussian_filter(hist, sigma=sigma)
         except ImportError:
             pass  # gracefully skip smoothing
 
-    norm = mcolors.LogNorm(vmin=max(hist[hist > 0].min(), 1e-1), vmax=hist.max()) if log_scale and hist.max() > 0 else None
+    norm = (
+        mcolors.LogNorm(vmin=max(hist[hist > 0].min(), 1e-1), vmax=hist.max())
+        if log_scale and hist.max() > 0
+        else None
+    )
 
     im = ax.imshow(
         hist.T,
@@ -463,7 +487,7 @@ def plot_curvature(
     xdd = _finite_diff(xd, dt)
     ydd = _finite_diff(yd, dt)
 
-    denom = (xd ** 2 + yd ** 2) ** 1.5
+    denom = (xd**2 + yd**2) ** 1.5
     safe_denom = np.where(denom > 1e-12, denom, 1.0)
     kappa = np.abs(xd * ydd - yd * xdd) / safe_denom
     kappa[denom < 1e-12] = 0.0
@@ -531,7 +555,11 @@ def animate_trajectory(
     fig, ax = plt.subplots(figsize=figsize)
 
     if background_img is not None:
-        ext = background_extent if background_extent is not None else [xa.min() - 1, xa.max() + 1, ya.min() - 1, ya.max() + 1]
+        ext = (
+            background_extent
+            if background_extent is not None
+            else [xa.min() - 1, xa.max() + 1, ya.min() - 1, ya.max() + 1]
+        )
         ax.imshow(background_img, extent=ext, origin="lower", alpha=0.5, aspect="auto")
 
     x_margin = max(1.0, (xa.max() - xa.min()) * 0.1)
@@ -544,11 +572,13 @@ def animate_trajectory(
     ax.set_ylabel("y (m)")
     ax.grid(True, alpha=0.3)
 
-    trail_line, = ax.plot([], [], color=color, linewidth=1.2, alpha=0.5)
-    agent_dot, = ax.plot([], [], "o", color=color, markersize=8, zorder=5)
-    time_text = ax.text(0.02, 0.95, "", transform=ax.transAxes, fontsize=10, verticalalignment="top")
-    start_marker, = ax.plot([xa[0]], [ya[0]], "o", color="green", markersize=7, zorder=4)
-    end_marker, = ax.plot([xa[-1]], [ya[-1]], "s", color="red", markersize=7, zorder=4, alpha=0.3)
+    (trail_line,) = ax.plot([], [], color=color, linewidth=1.2, alpha=0.5)
+    (agent_dot,) = ax.plot([], [], "o", color=color, markersize=8, zorder=5)
+    time_text = ax.text(
+        0.02, 0.95, "", transform=ax.transAxes, fontsize=10, verticalalignment="top"
+    )
+    (start_marker,) = ax.plot([xa[0]], [ya[0]], "o", color="green", markersize=7, zorder=4)
+    (end_marker,) = ax.plot([xa[-1]], [ya[-1]], "s", color="red", markersize=7, zorder=4, alpha=0.3)
 
     def _init():
         trail_line.set_data([], [])
@@ -558,14 +588,19 @@ def animate_trajectory(
 
     def _update(frame: int):
         lo = max(0, frame - trail_length)
-        trail_line.set_data(xa[lo:frame + 1], ya[lo:frame + 1])
+        trail_line.set_data(xa[lo : frame + 1], ya[lo : frame + 1])
         agent_dot.set_data([xa[frame]], [ya[frame]])
         time_text.set_text(f"t = {frame * dt:.2f} s")
         return trail_line, agent_dot, time_text
 
     anim = animation.FuncAnimation(
-        fig, _update, init_func=_init, frames=n, interval=interval,
-        blit=True, repeat=repeat,
+        fig,
+        _update,
+        init_func=_init,
+        frames=n,
+        interval=interval,
+        blit=True,
+        repeat=repeat,
     )
     return fig, anim
 
@@ -611,8 +646,11 @@ def plot_trajectory_3d(
         norm = plt.Normalize(speed.min(), speed.max())
         for i in range(len(xa) - 1):
             ax.plot(
-                xa[i:i + 2], ya[i:i + 2], ta[i:i + 2],
-                color=cmap(norm(speed[i])), linewidth=linewidth,
+                xa[i : i + 2],
+                ya[i : i + 2],
+                ta[i : i + 2],
+                color=cmap(norm(speed[i])),
+                linewidth=linewidth,
             )
         sm = cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
@@ -685,10 +723,12 @@ def plot_trajectory_uncertainty(
 
     indices = np.linspace(0, len(xa) - 1, n_ellipses, dtype=int)
     for idx in indices:
-        cov = np.array([
-            [sx[idx] ** 2, rho[idx] * sx[idx] * sy[idx]],
-            [rho[idx] * sx[idx] * sy[idx], sy[idx] ** 2],
-        ])
+        cov = np.array(
+            [
+                [sx[idx] ** 2, rho[idx] * sx[idx] * sy[idx]],
+                [rho[idx] * sx[idx] * sy[idx], sy[idx] ** 2],
+            ]
+        )
         eigvals, eigvecs = np.linalg.eigh(cov)
         eigvals = np.maximum(eigvals, 0)
         order = eigvals.argsort()[::-1]
@@ -699,9 +739,15 @@ def plot_trajectory_uncertainty(
         h = 2.0 * scale * math.sqrt(eigvals[1])
 
         ell = Ellipse(
-            xy=(xa[idx], ya[idx]), width=w, height=h, angle=angle,
-            facecolor=ellipse_color, edgecolor=color, alpha=ellipse_alpha,
-            linewidth=0.8, zorder=2,
+            xy=(xa[idx], ya[idx]),
+            width=w,
+            height=h,
+            angle=angle,
+            facecolor=ellipse_color,
+            edgecolor=color,
+            alpha=ellipse_alpha,
+            linewidth=0.8,
+            zorder=2,
         )
         ax.add_patch(ell)
 
@@ -756,7 +802,7 @@ def plot_social_distances_over_time(
     pairs: list[tuple[int, int]] = []
     pair_distances: list[np.ndarray] = []
     for i_idx, id_a in enumerate(sorted_ids):
-        for id_b in sorted_ids[i_idx + 1:]:
+        for id_b in sorted_ids[i_idx + 1 :]:
             dists = np.full(n_steps, np.nan)
             for step_idx, pos_dict in enumerate(positions):
                 if id_a in pos_dict and id_b in pos_dict:
@@ -785,7 +831,13 @@ def plot_social_distances_over_time(
         ax.plot(t, min_dist, color="black", linewidth=2.0, label="Min distance", zorder=5)
 
     if min_distance_line is not None:
-        ax.axhline(min_distance_line, color="red", linewidth=1.2, linestyle="--", label=f"Threshold ({min_distance_line} m)")
+        ax.axhline(
+            min_distance_line,
+            color="red",
+            linewidth=1.2,
+            linestyle="--",
+            label=f"Threshold ({min_distance_line} m)",
+        )
 
     ax.set_title(title)
     ax.set_xlabel("Time (s)")

@@ -14,6 +14,7 @@ import numpy as np
 # Learnable Lagrange multiplier
 # ---------------------------------------------------------------------------
 
+
 class LagrangianMultiplier:
     """Learnable Lagrange multiplier for constraint satisfaction.
 
@@ -63,9 +64,7 @@ class LagrangianMultiplier:
         self._value += self.learning_rate * violation
         self._value = float(np.clip(self._value, 0.0, self.max_value))
 
-    def penalized_objective(
-        self, reward: float, constraint_value: float
-    ) -> float:
+    def penalized_objective(self, reward: float, constraint_value: float) -> float:
         """Return ``reward - lambda * constraint_value``."""
         return reward - self._value * constraint_value
 
@@ -73,6 +72,7 @@ class LagrangianMultiplier:
 # ---------------------------------------------------------------------------
 # Constrained Policy Optimisation (CPO) update
 # ---------------------------------------------------------------------------
+
 
 class CPOUpdate:
     """Single Constrained Policy Optimisation step.
@@ -172,14 +172,13 @@ class CPOUpdate:
         np.ndarray
             Updated parameters.
         """
+
         # Damped Fisher MVP.
         def damped_mvp(v: np.ndarray) -> np.ndarray:
             return fisher_mvp_fn(v) + self.damping * v
 
         # Natural gradient direction (CG solve).
-        step_dir = self._conjugate_gradient(
-            damped_mvp, reward_grad, self.cg_iters
-        )
+        step_dir = self._conjugate_gradient(damped_mvp, reward_grad, self.cg_iters)
 
         # Step size from trust region.
         sHs = float(step_dir @ damped_mvp(step_dir))
@@ -192,14 +191,12 @@ class CPOUpdate:
         cost_proj = float(cost_grad @ step_dir)
         if current_cost > self.cost_limit and cost_proj > 0:
             # Reduce step along cost gradient direction.
-            self._conjugate_gradient(
-                damped_mvp, cost_grad, self.cg_iters
-            )
+            self._conjugate_gradient(damped_mvp, cost_grad, self.cg_iters)
             max_step *= max(0.0, 1.0 - (current_cost - self.cost_limit) / max(abs(cost_proj), 1e-8))
 
         # Backtracking line search.
         for j in range(self.line_search_steps):
-            scale = 0.5 ** j
+            scale = 0.5**j
             new_params = params + scale * max_step * step_dir
             # Accept the first feasible step (caller should verify KL + cost
             # externally for a full implementation).
@@ -211,6 +208,7 @@ class CPOUpdate:
 # ---------------------------------------------------------------------------
 # PID Lagrangian
 # ---------------------------------------------------------------------------
+
 
 class PIDLagrangian:
     """PID controller for the Lagrange multiplier.
@@ -270,9 +268,7 @@ class PIDLagrangian:
         raw = self.kp * error + self.ki * self._integral + self.kd * derivative
         self._value = float(np.clip(self._value + raw, 0.0, self.max_value))
 
-    def penalized_objective(
-        self, reward: float, constraint_value: float
-    ) -> float:
+    def penalized_objective(self, reward: float, constraint_value: float) -> float:
         """Return ``reward - lambda * constraint_value``."""
         return reward - self._value * constraint_value
 

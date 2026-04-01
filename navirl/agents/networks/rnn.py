@@ -99,12 +99,8 @@ class LSTMCore(nn.Module):
         """
         if device is None:
             device = next(self.parameters()).device
-        h_0 = torch.zeros(
-            self.num_layers, batch_size, self.hidden_size, device=device
-        )
-        c_0 = torch.zeros(
-            self.num_layers, batch_size, self.hidden_size, device=device
-        )
+        h_0 = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+        c_0 = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
         return (h_0, c_0)
 
     # ------------------------------------------------------------------
@@ -221,9 +217,7 @@ class GRUCore(nn.Module):
         """
         if device is None:
             device = next(self.parameters()).device
-        return torch.zeros(
-            self.num_layers, batch_size, self.hidden_size, device=device
-        )
+        return torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
 
     # ------------------------------------------------------------------
     def forward(
@@ -342,9 +336,7 @@ class RecurrentPolicy(nn.Module):
                 num_layers=num_layers,
             )
         else:
-            raise ValueError(
-                f"Unknown rnn_type '{rnn_type}'. Choose 'lstm' or 'gru'."
-            )
+            raise ValueError(f"Unknown rnn_type '{rnn_type}'. Choose 'lstm' or 'gru'.")
 
         # --- Policy head MLP ---
         head_layers: list[nn.Module] = []
@@ -412,9 +404,9 @@ class RecurrentPolicy(nn.Module):
         is_sequence = x.dim() == 3
         if is_sequence:
             batch, seq_len, _ = x.shape
-            features = self.feature_extractor(
-                x.reshape(batch * seq_len, -1)
-            ).reshape(batch, seq_len, -1)
+            features = self.feature_extractor(x.reshape(batch * seq_len, -1)).reshape(
+                batch, seq_len, -1
+            )
         else:
             features = self.feature_extractor(x)
 
@@ -428,9 +420,9 @@ class RecurrentPolicy(nn.Module):
 
         if is_sequence:
             batch, seq_len, _ = rnn_out.shape
-            output = self.policy_head(
-                rnn_out.reshape(batch * seq_len, -1)
-            ).reshape(batch, seq_len, -1)
+            output = self.policy_head(rnn_out.reshape(batch * seq_len, -1)).reshape(
+                batch, seq_len, -1
+            )
         else:
             output = self.policy_head(rnn_out)
 
@@ -542,9 +534,7 @@ class SequenceEncoder(nn.Module):
                 sequence, lengths_cpu, batch_first=True, enforce_sorted=False
             )
             rnn_out_packed, hidden = self.rnn(packed)
-            rnn_out, _ = pad_packed_sequence(
-                rnn_out_packed, batch_first=True
-            )
+            rnn_out, _ = pad_packed_sequence(rnn_out_packed, batch_first=True)
         else:
             rnn_out, hidden = self.rnn(sequence)
 
@@ -567,20 +557,15 @@ class SequenceEncoder(nn.Module):
             if lengths is not None:
                 # Mask padded positions before averaging
                 max_len = rnn_out.size(1)
-                mask = (
-                    torch.arange(max_len, device=rnn_out.device)
-                    .unsqueeze(0)
-                    .expand(batch_size, -1)
-                    < lengths.unsqueeze(1)
-                )  # (batch, max_len)
+                mask = torch.arange(max_len, device=rnn_out.device).unsqueeze(0).expand(
+                    batch_size, -1
+                ) < lengths.unsqueeze(1)  # (batch, max_len)
                 mask = mask.unsqueeze(-1).float()  # (batch, max_len, 1)
                 encoded = (rnn_out * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
             else:
                 encoded = rnn_out.mean(dim=1)
         else:
-            raise ValueError(
-                f"Unknown pooling '{self.pooling}'. Choose 'last' or 'mean'."
-            )
+            raise ValueError(f"Unknown pooling '{self.pooling}'. Choose 'last' or 'mean'.")
 
         return encoded
 
@@ -711,9 +696,7 @@ class HiddenStateManager(nn.Module):
             self._h.copy_(hidden_state[0].detach())
             self._c.copy_(hidden_state[1].detach())
         else:
-            assert isinstance(hidden_state, Tensor), (
-                "GRU hidden state must be a single Tensor."
-            )
+            assert isinstance(hidden_state, Tensor), "GRU hidden state must be a single Tensor."
             self._h.copy_(hidden_state.detach())
 
     # ------------------------------------------------------------------
@@ -765,8 +748,7 @@ class AttentionOverMemory(nn.Module):
         # Use memory_dim as the internal dimension; must be divisible by num_heads
         if memory_dim % num_heads != 0:
             raise ValueError(
-                f"memory_dim ({memory_dim}) must be divisible by "
-                f"num_heads ({num_heads})."
+                f"memory_dim ({memory_dim}) must be divisible by num_heads ({num_heads})."
             )
         self.head_dim = memory_dim // num_heads
 
@@ -776,7 +758,7 @@ class AttentionOverMemory(nn.Module):
         self.output_proj = nn.Linear(memory_dim, memory_dim)
 
         self.dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
-        self.scale = self.head_dim ** -0.5
+        self.scale = self.head_dim**-0.5
 
         self._feature_dim = memory_dim
 
@@ -852,6 +834,5 @@ class AttentionOverMemory(nn.Module):
     # ------------------------------------------------------------------
     def extra_repr(self) -> str:
         return (
-            f"query_dim={self.query_dim}, memory_dim={self.memory_dim}, "
-            f"num_heads={self.num_heads}"
+            f"query_dim={self.query_dim}, memory_dim={self.memory_dim}, num_heads={self.num_heads}"
         )

@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 try:
     import rclpy
     from rclpy.node import Node
+
     _ROS2_AVAILABLE = True
 except ImportError:
     _ROS2_AVAILABLE = False
@@ -34,14 +35,14 @@ except ImportError:
 def _ensure_ros2(cls_name: str) -> None:
     if not _ROS2_AVAILABLE:
         raise ImportError(
-            f"{cls_name} requires ROS2 (rclpy).  "
-            "Install ROS2 and source the workspace first."
+            f"{cls_name} requires ROS2 (rclpy).  Install ROS2 and source the workspace first."
         )
 
 
 # ---------------------------------------------------------------------------
 # Abstract base
 # ---------------------------------------------------------------------------
+
 
 class _SimBridgeBase(abc.ABC):
     """Interface shared by all simulator bridges."""
@@ -79,6 +80,7 @@ class _SimBridgeBase(abc.ABC):
 # ---------------------------------------------------------------------------
 # Gazebo bridge
 # ---------------------------------------------------------------------------
+
 
 class GazeboBridge(_SimBridgeBase):
     """Interface with Gazebo Classic / Ignition Gazebo through ROS2 services.
@@ -199,7 +201,9 @@ class GazeboBridge(_SimBridgeBase):
                 logger.info("GazeboBridge: robot spawned at (%.2f, %.2f).", x, y)
                 return True
             else:
-                logger.error("GazeboBridge: spawn failed -- %s", getattr(result, "status_message", "unknown"))
+                logger.error(
+                    "GazeboBridge: spawn failed -- %s", getattr(result, "status_message", "unknown")
+                )
                 return False
         except Exception as exc:
             logger.error("GazeboBridge spawn_robot error: %s", exc)
@@ -230,6 +234,7 @@ class GazeboBridge(_SimBridgeBase):
 # ---------------------------------------------------------------------------
 # Isaac Sim bridge (stub)
 # ---------------------------------------------------------------------------
+
 
 class IsaacBridge(_SimBridgeBase):
     """Interface stub for NVIDIA Isaac Sim.
@@ -291,6 +296,7 @@ class IsaacBridge(_SimBridgeBase):
 # Habitat bridge (stub)
 # ---------------------------------------------------------------------------
 
+
 class HabitatBridge(_SimBridgeBase):
     """Interface stub for Meta Habitat simulator.
 
@@ -322,8 +328,7 @@ class HabitatBridge(_SimBridgeBase):
             logger.info("HabitatBridge: habitat-sim detected.")
         except ImportError:
             logger.warning(
-                "HabitatBridge: habitat-sim not found.  "
-                "Install it to use Habitat environments."
+                "HabitatBridge: habitat-sim not found.  Install it to use Habitat environments."
             )
         self._connected = True
 

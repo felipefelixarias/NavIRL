@@ -20,6 +20,7 @@ from navirl.planning.global_planners import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def simple_grid():
     """10x10 free grid (all zeros = free)."""
@@ -42,6 +43,7 @@ def planner_config():
 # ---------------------------------------------------------------------------
 # Path dataclass
 # ---------------------------------------------------------------------------
+
 
 class TestPath:
     def test_path_length_straight(self):
@@ -120,6 +122,7 @@ class TestPath:
 # Grid helpers
 # ---------------------------------------------------------------------------
 
+
 class TestGridHelpers:
     def test_grid_neighbors_corner(self):
         nbrs = _grid_neighbors((0, 0), (10, 10))
@@ -165,6 +168,7 @@ class TestGridHelpers:
 # ---------------------------------------------------------------------------
 # A* planner
 # ---------------------------------------------------------------------------
+
 
 class TestAStarPlanner:
     def test_plan_free_grid(self, simple_grid, planner_config):
@@ -240,6 +244,7 @@ class TestAStarPlanner:
 # Dijkstra planner
 # ---------------------------------------------------------------------------
 
+
 class TestDijkstraPlanner:
     def test_plan_free_grid(self, simple_grid, planner_config):
         planner = DijkstraPlanner(config=planner_config)
@@ -275,6 +280,7 @@ class TestDijkstraPlanner:
 # Theta* planner
 # ---------------------------------------------------------------------------
 
+
 class TestThetaStarPlanner:
     def test_plan_free_grid(self, simple_grid, planner_config):
         planner = ThetaStarPlanner(config=planner_config)
@@ -301,6 +307,7 @@ class TestThetaStarPlanner:
 # PlannerConfig
 # ---------------------------------------------------------------------------
 
+
 class TestPlannerConfig:
     def test_defaults(self):
         cfg = PlannerConfig()
@@ -316,6 +323,7 @@ class TestPlannerConfig:
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestPlanningEdgeCases:
     def test_start_on_obstacle(self, obstacle_grid, planner_config):

@@ -16,6 +16,7 @@ import numpy as np
 # Result data structure
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class PlanningResult:
     """Result of a coordinated planning computation.
@@ -34,6 +35,7 @@ class PlanningResult:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _path_length(path: Sequence[np.ndarray]) -> float:
     """Compute total Euclidean length of a waypoint path."""
@@ -56,6 +58,7 @@ def _reconstruct(came_from: dict[tuple, tuple], current: tuple) -> list[tuple]:
 # ---------------------------------------------------------------------------
 # A* on a grid (used by CBS and Priority planners)
 # ---------------------------------------------------------------------------
+
 
 def _astar_grid(
     start: tuple[int, int],
@@ -128,6 +131,7 @@ def _astar_grid(
 # Priority-based planner
 # ---------------------------------------------------------------------------
 
+
 class PriorityPlanner:
     """Fixed priority-based multi-agent path planner.
 
@@ -186,6 +190,7 @@ class PriorityPlanner:
 # Conflict-Based Search (CBS)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _Conflict:
     """Represents a conflict between two agents at a specific timestep."""
@@ -242,9 +247,7 @@ class CBSPlanner:
         agent_ids = list(starts.keys())
 
         # Root node: plan each agent independently
-        root_constraints: dict[str, set[tuple[int, int, int]]] = {
-            a: set() for a in agent_ids
-        }
+        root_constraints: dict[str, set[tuple[int, int, int]]] = {a: set() for a in agent_ids}
         root_paths: dict[str, list[tuple[int, int]]] = {}
         for a in agent_ids:
             path = _astar_grid(starts[a], goals[a], self.grid)
@@ -276,9 +279,7 @@ class CBSPlanner:
 
             # Branch on conflict: constrain each agent in turn
             for agent in (conflict.agent_a, conflict.agent_b):
-                new_constraints = {
-                    a: set(c) for a, c in node.constraints.items()
-                }
+                new_constraints = {a: set(c) for a, c in node.constraints.items()}
                 new_constraints[agent].add(
                     (conflict.location[0], conflict.location[1], conflict.timestep)
                 )
@@ -293,17 +294,14 @@ class CBSPlanner:
                     continue  # infeasible branch
                 new_paths[agent] = new_path
                 new_cost = sum(len(p) - 1 for p in new_paths.values())
-                child = _CBSNode(
-                    constraints=new_constraints, paths=new_paths, cost=new_cost
-                )
+                child = _CBSNode(constraints=new_constraints, paths=new_paths, cost=new_cost)
                 heapq.heappush(open_list, child)
                 conflicts_resolved += 1
 
         # Return best node found so far
         best = root if not open_list else open_list[0]
         result_paths = {
-            a: [np.array(p, dtype=np.float64) for p in path]
-            for a, path in best.paths.items()
+            a: [np.array(p, dtype=np.float64) for p in path] for a, path in best.paths.items()
         }
         return PlanningResult(
             paths=result_paths,
@@ -336,6 +334,7 @@ class CBSPlanner:
 # ---------------------------------------------------------------------------
 # Velocity Obstacle planner (ORCA-style)
 # ---------------------------------------------------------------------------
+
 
 class VelocityObstaclePlanner:
     """Reciprocal velocity obstacle coordination (ORCA-style).
@@ -409,9 +408,7 @@ class VelocityObstaclePlanner:
                         continue
                     normal = w / w_len
                     # ORCA half-plane: each agent takes half the responsibility
-                    point = current_velocities[i] + 0.5 * (
-                        np.dot(w, normal) * normal
-                    )
+                    point = current_velocities[i] + 0.5 * (np.dot(w, normal) * normal)
                 else:
                     # Already overlapping — push apart
                     normal = direction if dist > 1e-6 else np.array([1.0, 0.0])

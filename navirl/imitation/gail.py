@@ -138,9 +138,7 @@ class Discriminator(nn.Module):
         sa = torch.cat([obs, actions], dim=-1)
         return self.net(sa)
 
-    def predict_reward(
-        self, obs: torch.Tensor, actions: torch.Tensor
-    ) -> torch.Tensor:
+    def predict_reward(self, obs: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Compute GAIL reward: -log(1 - D(s, a)).
 
         Parameters
@@ -199,9 +197,7 @@ class _PolicyValueNet(nn.Module):
 
         self.action_type = action_type
 
-    def forward(
-        self, obs: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Return policy distribution parameters and value estimate."""
         feat = self.features(obs)
         value = self.value_head(feat)
@@ -360,15 +356,11 @@ class GAILAgent(BaseAgent):
         expert_obs = self._to_tensor(expert_batch["obs"], dtype=torch.float32).reshape(
             -1, self._obs_dim
         )
-        expert_act = self._to_tensor(
-            expert_batch["actions"], dtype=torch.float32
-        )
+        expert_act = self._to_tensor(expert_batch["actions"], dtype=torch.float32)
         policy_obs = self._to_tensor(policy_batch["obs"], dtype=torch.float32).reshape(
             -1, self._obs_dim
         )
-        policy_act = self._to_tensor(
-            policy_batch["actions"], dtype=torch.float32
-        )
+        policy_act = self._to_tensor(policy_batch["actions"], dtype=torch.float32)
 
         total_loss = 0.0
         total_gp = 0.0
@@ -391,9 +383,7 @@ class GAILAgent(BaseAgent):
             # Optional WGAN-GP gradient penalty
             gp_val = 0.0
             if cfg.gradient_penalty_coef > 0.0:
-                gp_val = self._gradient_penalty(
-                    expert_obs, expert_act, policy_obs, policy_act
-                )
+                gp_val = self._gradient_penalty(expert_obs, expert_act, policy_obs, policy_act)
                 loss = loss + cfg.gradient_penalty_coef * gp_val
 
             self._disc_optimizer.zero_grad()
@@ -408,10 +398,7 @@ class GAILAgent(BaseAgent):
         with torch.no_grad():
             expert_pred = torch.sigmoid(self._discriminator(expert_obs, expert_act))
             policy_pred = torch.sigmoid(self._discriminator(policy_obs, policy_act))
-            acc = 0.5 * (
-                (expert_pred > 0.5).float().mean()
-                + (policy_pred <= 0.5).float().mean()
-            )
+            acc = 0.5 * ((expert_pred > 0.5).float().mean() + (policy_pred <= 0.5).float().mean())
 
         metrics = {
             "gail/disc_loss": total_loss / max(n_updates, 1),
@@ -489,33 +476,19 @@ class GAILAgent(BaseAgent):
         if isinstance(rollout_buffer, dict):
             obs_t = self._to_tensor(rollout_buffer["obs"], dtype=torch.float32)
             act_t = self._to_tensor(rollout_buffer["actions"], dtype=torch.float32)
-            old_log_probs = self._to_tensor(
-                rollout_buffer["log_probs"], dtype=torch.float32
-            )
-            advantages = self._to_tensor(
-                rollout_buffer["advantages"], dtype=torch.float32
-            )
-            returns = self._to_tensor(
-                rollout_buffer["returns"], dtype=torch.float32
-            )
+            old_log_probs = self._to_tensor(rollout_buffer["log_probs"], dtype=torch.float32)
+            advantages = self._to_tensor(rollout_buffer["advantages"], dtype=torch.float32)
+            returns = self._to_tensor(rollout_buffer["returns"], dtype=torch.float32)
         else:
             # Assume RolloutBuffer-like object
             n = rollout_buffer.buffer_size * rollout_buffer.n_envs
-            obs_t = self._to_tensor(
-                rollout_buffer.observations.reshape(n, -1), dtype=torch.float32
-            )
-            act_t = self._to_tensor(
-                rollout_buffer.actions.reshape(n, -1), dtype=torch.float32
-            )
+            obs_t = self._to_tensor(rollout_buffer.observations.reshape(n, -1), dtype=torch.float32)
+            act_t = self._to_tensor(rollout_buffer.actions.reshape(n, -1), dtype=torch.float32)
             old_log_probs = self._to_tensor(
                 rollout_buffer.log_probs.reshape(n), dtype=torch.float32
             )
-            advantages = self._to_tensor(
-                rollout_buffer.advantages.reshape(n), dtype=torch.float32
-            )
-            returns = self._to_tensor(
-                rollout_buffer.returns.reshape(n), dtype=torch.float32
-            )
+            advantages = self._to_tensor(rollout_buffer.advantages.reshape(n), dtype=torch.float32)
+            returns = self._to_tensor(rollout_buffer.returns.reshape(n), dtype=torch.float32)
 
         obs_t = obs_t.reshape(-1, self._obs_dim)
 
@@ -535,32 +508,22 @@ class GAILAgent(BaseAgent):
             for batch in loader:
                 b_obs, b_act, b_old_lp, b_adv, b_ret = batch
 
-                log_probs, values, entropy = self._policy_value.evaluate_actions(
-                    b_obs, b_act
-                )
+                log_probs, values, entropy = self._policy_value.evaluate_actions(b_obs, b_act)
 
                 # PPO clipped objective
                 ratio = (log_probs - b_old_lp).exp()
                 surr1 = ratio * b_adv
-                surr2 = torch.clamp(
-                    ratio, 1.0 - cfg.clip_eps, 1.0 + cfg.clip_eps
-                ) * b_adv
+                surr2 = torch.clamp(ratio, 1.0 - cfg.clip_eps, 1.0 + cfg.clip_eps) * b_adv
                 policy_loss = -torch.min(surr1, surr2).mean()
                 value_loss = F.mse_loss(values, b_ret)
                 entropy_loss = -entropy.mean()
 
-                loss = (
-                    policy_loss
-                    + cfg.value_coef * value_loss
-                    + cfg.entropy_coef * entropy_loss
-                )
+                loss = policy_loss + cfg.value_coef * value_loss + cfg.entropy_coef * entropy_loss
 
                 self._policy_optimizer.zero_grad()
                 loss.backward()
                 if cfg.max_grad_norm > 0:
-                    nn.utils.clip_grad_norm_(
-                        self._policy_value.parameters(), cfg.max_grad_norm
-                    )
+                    nn.utils.clip_grad_norm_(self._policy_value.parameters(), cfg.max_grad_norm)
                 self._policy_optimizer.step()
 
                 total_policy_loss += policy_loss.item()

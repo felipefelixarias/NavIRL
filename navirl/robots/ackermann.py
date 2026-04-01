@@ -20,6 +20,7 @@ from navirl.robots.base import EventSink, RobotController
 # Configuration
 # -----------------------------------------------------------------------
 
+
 @dataclass
 class AckermannConfig:
     """Parameters for a car-like (Ackermann-steered) robot.
@@ -55,6 +56,7 @@ class AckermannConfig:
 # -----------------------------------------------------------------------
 # Bicycle model kinematics
 # -----------------------------------------------------------------------
+
 
 def _wrap_angle(a: float) -> float:
     """Wrap angle to [-pi, pi)."""
@@ -124,6 +126,7 @@ def bicycle_turning_radius(delta: float, wheelbase: float) -> float:
 # Rate limiting
 # -----------------------------------------------------------------------
 
+
 def rate_limit_ackermann(
     v_cmd: float,
     delta_cmd: float,
@@ -161,8 +164,10 @@ def rate_limit_ackermann(
 # Reeds-Shepp curves (simplified 6-segment primitives)
 # -----------------------------------------------------------------------
 
+
 class RSSegmentType(enum.Enum):
     """Segment type in a Reeds-Shepp path."""
+
     LEFT = "L"
     RIGHT = "R"
     STRAIGHT = "S"
@@ -176,13 +181,17 @@ class RSSegment:
         kind: Segment type (LEFT / RIGHT / STRAIGHT).
         length: Signed length (negative = reverse).
     """
+
     kind: RSSegmentType
     length: float
 
 
 def _rs_forward(
-    x: float, y: float, theta: float,
-    seg: RSSegment, radius: float,
+    x: float,
+    y: float,
+    theta: float,
+    seg: RSSegment,
+    radius: float,
 ) -> tuple[float, float, float]:
     """Propagate state through one RS segment."""
     if seg.kind == RSSegmentType.STRAIGHT:
@@ -201,8 +210,12 @@ def _rs_forward(
 
 
 def reeds_shepp_path(
-    x0: float, y0: float, theta0: float,
-    x1: float, y1: float, theta1: float,
+    x0: float,
+    y0: float,
+    theta0: float,
+    x1: float,
+    y1: float,
+    theta1: float,
     radius: float,
     num_samples: int = 100,
 ) -> tuple[np.ndarray, list[RSSegment]]:
@@ -235,7 +248,8 @@ def reeds_shepp_path(
     candidates: list[list[RSSegment]] = []
 
     def _try_csc(
-        turn1: RSSegmentType, turn2: RSSegmentType,
+        turn1: RSSegmentType,
+        turn2: RSSegmentType,
     ) -> list[RSSegment] | None:
         """Attempt a CSC (curve-straight-curve) path."""
         s1 = 1.0 if turn1 == RSSegmentType.LEFT else -1.0
@@ -266,7 +280,7 @@ def reeds_shepp_path(
             cos_a = 2.0 * radius / d
             if abs(cos_a) > 1.0:
                 return None
-            straight_len = np.sqrt(max(d ** 2 - (2.0 * radius) ** 2, 0.0))
+            straight_len = np.sqrt(max(d**2 - (2.0 * radius) ** 2, 0.0))
             ang1 = float(np.arctan2(ddy, ddx))
             arc1 = _wrap_angle(ang1 - np.pi / 2.0 * s1)
             arc2 = _wrap_angle(ltheta - arc1)
@@ -330,6 +344,7 @@ def reeds_shepp_path(
 # Parallel parking
 # -----------------------------------------------------------------------
 
+
 def parallel_parking_trajectory(
     x_start: float,
     y_start: float,
@@ -389,6 +404,7 @@ def parallel_parking_trajectory(
 # -----------------------------------------------------------------------
 # Lane-following controller
 # -----------------------------------------------------------------------
+
 
 class LaneFollower:
     """Simple Stanley-style lane-following controller.
@@ -470,6 +486,7 @@ class LaneFollower:
 # Pure-pursuit controller
 # -----------------------------------------------------------------------
 
+
 class PurePursuitController:
     """Pure-pursuit path-tracking controller for Ackermann vehicles.
 
@@ -529,7 +546,7 @@ class PurePursuitController:
         local_y = -np.sin(theta) * dx + np.cos(theta) * dy
 
         # Curvature.
-        l_sq = local_x ** 2 + local_y ** 2
+        l_sq = local_x**2 + local_y**2
         if l_sq < 1e-8:
             return 0.0
         curvature = 2.0 * local_y / l_sq
@@ -540,6 +557,7 @@ class PurePursuitController:
 # -----------------------------------------------------------------------
 # Vehicle footprint helpers
 # -----------------------------------------------------------------------
+
 
 def vehicle_footprint(
     x: float,
@@ -566,12 +584,14 @@ def vehicle_footprint(
     rear = -config.rear_overhang
 
     # Corners in body frame (x-forward, y-left).
-    corners_body = np.array([
-        [front, hw],
-        [front, -hw],
-        [rear, -hw],
-        [rear, hw],
-    ])
+    corners_body = np.array(
+        [
+            [front, hw],
+            [front, -hw],
+            [rear, -hw],
+            [rear, hw],
+        ]
+    )
     cos_t = np.cos(theta)
     sin_t = np.sin(theta)
     rot = np.array([[cos_t, -sin_t], [sin_t, cos_t]])
@@ -619,6 +639,7 @@ def footprint_collision_check(
 # -----------------------------------------------------------------------
 # AckermannRobot controller
 # -----------------------------------------------------------------------
+
 
 class AckermannRobot(RobotController):
     """Car-like robot controller with bicycle-model kinematics.
@@ -698,10 +719,12 @@ class AckermannRobot(RobotController):
 
         # Build a path to follow if no lane is set.
         if self._lane is None:
-            self._lane = np.stack([
-                np.array([self._x, self._y]),
-                np.array(self._goal),
-            ])
+            self._lane = np.stack(
+                [
+                    np.array([self._x, self._y]),
+                    np.array(self._goal),
+                ]
+            )
 
         # Desired speed with deceleration near goal.
         speed_cmd = min(self._desired_speed, goal_dist)
@@ -711,13 +734,15 @@ class AckermannRobot(RobotController):
             # Stanley uses front-axle position.
             fx = self._x + self.config.wheelbase * np.cos(self._theta)
             fy = self._y + self.config.wheelbase * np.sin(self._theta)
-            delta_cmd = self._stanley.compute_steering(
-                fx, fy, self._theta, self._v, self._lane
-            )
+            delta_cmd = self._stanley.compute_steering(fx, fy, self._theta, self._v, self._lane)
         elif self._pursuit is not None:
             delta_cmd = self._pursuit.compute_steering(
-                self._x, self._y, self._theta, self._v,
-                self._lane, self.config.wheelbase,
+                self._x,
+                self._y,
+                self._theta,
+                self._v,
+                self._lane,
+                self.config.wheelbase,
             )
         else:
             delta_cmd = 0.0
@@ -729,8 +754,13 @@ class AckermannRobot(RobotController):
 
         # Integrate.
         self._x, self._y, self._theta = bicycle_forward(
-            self._x, self._y, self._theta, v_out, delta_out,
-            self.config.wheelbase, dt,
+            self._x,
+            self._y,
+            self._theta,
+            v_out,
+            delta_out,
+            self.config.wheelbase,
+            dt,
         )
         self._v = v_out
         self._delta = delta_out
@@ -764,7 +794,9 @@ class AckermannRobot(RobotController):
 
     def compute_reeds_shepp(
         self,
-        x1: float, y1: float, theta1: float,
+        x1: float,
+        y1: float,
+        theta1: float,
         num_samples: int = 100,
     ) -> np.ndarray:
         """Plan a Reeds-Shepp path from current pose to target.
@@ -777,8 +809,12 @@ class AckermannRobot(RobotController):
             Path array, shape ``(num_samples, 3)``.
         """
         path, _ = reeds_shepp_path(
-            self._x, self._y, self._theta,
-            x1, y1, theta1,
+            self._x,
+            self._y,
+            self._theta,
+            x1,
+            y1,
+            theta1,
             self.config.min_turning_radius,
             num_samples,
         )
@@ -786,7 +822,9 @@ class AckermannRobot(RobotController):
 
     def plan_parallel_park(
         self,
-        x_spot: float, y_spot: float, theta_spot: float,
+        x_spot: float,
+        y_spot: float,
+        theta_spot: float,
         dt: float = 0.05,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Plan a parallel-parking manoeuvre to the given spot.
@@ -795,9 +833,14 @@ class AckermannRobot(RobotController):
             ``(poses, controls)`` arrays.
         """
         return parallel_parking_trajectory(
-            self._x, self._y, self._theta,
-            x_spot, y_spot, theta_spot,
-            self.config, dt,
+            self._x,
+            self._y,
+            self._theta,
+            x_spot,
+            y_spot,
+            theta_spot,
+            self.config,
+            dt,
         )
 
     def get_footprint(self) -> np.ndarray:

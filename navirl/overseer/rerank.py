@@ -127,8 +127,12 @@ def run_aegis_rerank(
                             "invariants_pass": bool(s.get("invariants_pass", False)),
                             "judge_pass": bool(s.get("judge_pass", False)),
                             "metrics": {
-                                "deadlock_count": float(s.get("metrics", {}).get("deadlock_count", 0.0)),
-                                "intrusion_rate": float(s.get("metrics", {}).get("intrusion_rate", 0.0)),
+                                "deadlock_count": float(
+                                    s.get("metrics", {}).get("deadlock_count", 0.0)
+                                ),
+                                "intrusion_rate": float(
+                                    s.get("metrics", {}).get("intrusion_rate", 0.0)
+                                ),
                                 "collisions_agent_obstacle": float(
                                     s.get("metrics", {}).get("collisions_agent_obstacle", 0.0)
                                 ),
@@ -139,7 +143,9 @@ def run_aegis_rerank(
                                     s.get("metrics", {}).get("oscillation_score", 0.0)
                                 ),
                                 "jerk_proxy": float(s.get("metrics", {}).get("jerk_proxy", 0.0)),
-                                "success_rate": float(s.get("metrics", {}).get("success_rate", 0.0)),
+                                "success_rate": float(
+                                    s.get("metrics", {}).get("success_rate", 0.0)
+                                ),
                             },
                         }
                         for s in t.get("scenarios", [])

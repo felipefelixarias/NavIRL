@@ -103,7 +103,9 @@ class StandardMetrics(MetricsCollector):
 
                 pos = (float(a["x"]), float(a["y"]))
                 if aid in last_pos:
-                    path_len[aid] += float(math.hypot(pos[0] - last_pos[aid][0], pos[1] - last_pos[aid][1]))
+                    path_len[aid] += float(
+                        math.hypot(pos[0] - last_pos[aid][0], pos[1] - last_pos[aid][1])
+                    )
                 last_pos[aid] = pos
 
                 vx, vy = float(a["vx"]), float(a["vy"])
@@ -122,7 +124,12 @@ class StandardMetrics(MetricsCollector):
                     low_speed_streak[aid] = 0
 
                 row_rc, col_rc = _world_to_rc(pos[0], pos[1], map_img.shape, ppm)
-                if row_rc < 0 or col_rc < 0 or row_rc >= map_img.shape[0] or col_rc >= map_img.shape[1]:
+                if (
+                    row_rc < 0
+                    or col_rc < 0
+                    or row_rc >= map_img.shape[0]
+                    or col_rc >= map_img.shape[1]
+                ):
                     collisions_agent_obstacle += 1
                 elif map_img[row_rc, col_rc] == OBSTACLE_SPACE:
                     collisions_agent_obstacle += 1
@@ -183,7 +190,9 @@ class StandardMetrics(MetricsCollector):
 
         success = float(robot_goal_reached_step is not None)
         horizon_steps = max(1, len(rows))
-        deadlocked_ids = {aid for aid, streak in low_speed_streak.items() if streak >= deadlock_steps}
+        deadlocked_ids = {
+            aid for aid, streak in low_speed_streak.items() if streak >= deadlock_steps
+        }
 
         def _safe_stats(vals: list[float]) -> tuple[float, float, float]:
             if not vals:

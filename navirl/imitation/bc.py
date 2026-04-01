@@ -250,12 +250,8 @@ class BCAgent(BaseAgent):
 
         # -- Build tensors from buffer ------------------------------------
         n = len(demo_buffer)
-        obs_t = torch.as_tensor(
-            demo_buffer.observations[:n], dtype=torch.float32
-        )
-        act_t = torch.as_tensor(
-            demo_buffer.actions[:n], dtype=torch.float32
-        )
+        obs_t = torch.as_tensor(demo_buffer.observations[:n], dtype=torch.float32)
+        act_t = torch.as_tensor(demo_buffer.actions[:n], dtype=torch.float32)
 
         # Flatten observations if needed
         obs_t = obs_t.reshape(n, -1)
@@ -338,9 +334,7 @@ class BCAgent(BaseAgent):
                 if avg_val_loss < best_val_loss:
                     best_val_loss = avg_val_loss
                     epochs_without_improvement = 0
-                    best_state = {
-                        k: v.clone() for k, v in self._policy.state_dict().items()
-                    }
+                    best_state = {k: v.clone() for k, v in self._policy.state_dict().items()}
                 else:
                     epochs_without_improvement += 1
 
@@ -401,9 +395,7 @@ class BCAgent(BaseAgent):
             Empty dictionary (no auxiliary information for BC).
         """
         self._policy.eval()
-        obs_t = self._to_tensor(
-            observation.reshape(1, -1).astype(np.float32), dtype=torch.float32
-        )
+        obs_t = self._to_tensor(observation.reshape(1, -1).astype(np.float32), dtype=torch.float32)
         with torch.no_grad():
             pred = self._policy(obs_t)
 

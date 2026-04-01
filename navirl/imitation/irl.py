@@ -86,7 +86,8 @@ class MaxEntIRL:
         self,
         config: MaxEntIRLConfig,
         feature_fn: Callable[[np.ndarray], np.ndarray],
-        forward_rl_fn: Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]] | None = None,
+        forward_rl_fn: Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]]
+        | None = None,
     ) -> None:
         self._config = config
         self._feature_fn = feature_fn
@@ -152,9 +153,7 @@ class MaxEntIRL:
         np.ndarray
             Reward vector ``(N,)``.
         """
-        features = np.array(
-            [self._feature_fn(obs) for obs in observations], dtype=np.float64
-        )
+        features = np.array([self._feature_fn(obs) for obs in observations], dtype=np.float64)
         return features @ self._theta
 
     # ------------------------------------------------------------------
@@ -318,7 +317,9 @@ class MaxEntIRL:
             metrics = self.update_step(expert_fe, policy_fe)
             all_metrics.append(metrics)
 
-            if verbose and (it % max(1, cfg.num_iterations // 20) == 0 or it == cfg.num_iterations - 1):
+            if verbose and (
+                it % max(1, cfg.num_iterations // 20) == 0 or it == cfg.num_iterations - 1
+            ):
                 logger.info(
                     "MaxEntIRL iter %3d/%d  grad_norm=%.6f  theta_norm=%.6f",
                     it + 1,

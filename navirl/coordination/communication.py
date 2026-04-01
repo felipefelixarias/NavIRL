@@ -25,6 +25,7 @@ except ImportError:  # pragma: no cover
 # Message protocol
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MessageProtocol:
     """Defines the standard message format exchanged between agents.
@@ -47,6 +48,7 @@ class MessageProtocol:
 # ---------------------------------------------------------------------------
 # Classical channels
 # ---------------------------------------------------------------------------
+
 
 class BroadcastChannel:
     """Communication channel where all agents receive all messages.
@@ -285,7 +287,7 @@ if _TORCH_AVAILABLE:
             k = keys.permute(1, 0, 2)
             v = values.permute(1, 0, 2)
 
-            scores = torch.bmm(q, k.transpose(1, 2)) / (self.key_dim ** 0.5)
+            scores = torch.bmm(q, k.transpose(1, 2)) / (self.key_dim**0.5)
 
             # Mask self-attention (agents do not attend to themselves)
             mask = torch.eye(num_agents, device=h.device, dtype=torch.bool)

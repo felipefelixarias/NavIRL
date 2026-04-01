@@ -20,6 +20,7 @@ from navirl.humans.pedestrian_state import PedestrianState, PersonalityTag
 # Attention model
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AttentionModel:
     """Models a pedestrian's spatial awareness and distraction.
@@ -72,9 +73,7 @@ class AttentionModel:
         else:
             if rng.random() < self.distraction_probability * dt:
                 self._distracted = True
-                self._distraction_remaining = float(
-                    rng.exponential(self.distraction_duration_mean)
-                )
+                self._distraction_remaining = float(rng.exponential(self.distraction_duration_mean))
 
     def can_perceive(
         self,
@@ -134,6 +133,7 @@ class AttentionModel:
 # ---------------------------------------------------------------------------
 # Personality parameters
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PersonalityParams:
@@ -243,6 +243,7 @@ def get_personality_params(tag: PersonalityTag) -> PersonalityParams:
 # ---------------------------------------------------------------------------
 # BehaviorModel
 # ---------------------------------------------------------------------------
+
 
 class BehaviorModel:
     """Configurable pedestrian behavior model.
@@ -715,11 +716,7 @@ class BehaviorModel:
         self.attention.step(dt, self.rng)
 
         # Filter neighbours by perception.
-        perceived = [
-            n
-            for n in nearby_states
-            if self.attention.can_perceive(ego, n.position)
-        ]
+        perceived = [n for n in nearby_states if self.attention.can_perceive(ego, n.position)]
 
         adapted_speed = self.adapt_speed(ego, perceived)
         comfort = self.compute_comfort(ego, perceived)
@@ -740,6 +737,7 @@ class BehaviorModel:
 # ---------------------------------------------------------------------------
 # Population-level utilities
 # ---------------------------------------------------------------------------
+
 
 def sample_personality(
     rng: np.random.Generator,

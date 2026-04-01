@@ -228,11 +228,16 @@ class Trajectron(nn.Module):
             z = self._reparameterize(recog_mu, recog_log_var)
 
             # KL divergence.
-            kl = -0.5 * torch.sum(
-                1 + recog_log_var - prior_log_var
-                - (recog_log_var.exp() + (recog_mu - prior_mu) ** 2) / prior_log_var.exp(),
-                dim=1,
-            ).mean()
+            kl = (
+                -0.5
+                * torch.sum(
+                    1
+                    + recog_log_var
+                    - prior_log_var
+                    - (recog_log_var.exp() + (recog_mu - prior_mu) ** 2) / prior_log_var.exp(),
+                    dim=1,
+                ).mean()
+            )
         else:
             z = self._reparameterize(prior_mu, prior_log_var)
             kl = torch.tensor(0.0, device=context.device)

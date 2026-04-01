@@ -333,22 +333,24 @@ class SACAgent(BaseAgent):
         # ---- Entropy temperature (alpha) ----
         if config.auto_alpha:
             self.target_entropy = (
-                config.target_entropy
-                if config.target_entropy is not None
-                else -float(action_dim)
+                config.target_entropy if config.target_entropy is not None else -float(action_dim)
             )
             self.log_alpha = torch.tensor(
-                np.log(config.alpha), dtype=torch.float32,
-                device=self._device, requires_grad=True,
+                np.log(config.alpha),
+                dtype=torch.float32,
+                device=self._device,
+                requires_grad=True,
             )
             self.alpha_optimizer = torch.optim.Adam(
-                [self.log_alpha], lr=config.lr_alpha,
+                [self.log_alpha],
+                lr=config.lr_alpha,
             )
             self._optimizers["alpha"] = self.alpha_optimizer
         else:
             self.target_entropy = None
             self.log_alpha = torch.tensor(
-                np.log(config.alpha), dtype=torch.float32,
+                np.log(config.alpha),
+                dtype=torch.float32,
                 device=self._device,
             )
             self.alpha_optimizer = None
@@ -359,17 +361,22 @@ class SACAgent(BaseAgent):
         actor_params = list(self.actor_trunk.parameters()) + list(self.actor_head.parameters())
         self.actor_optimizer = torch.optim.Adam(actor_params, lr=config.lr_actor)
         self.critic_optimizer = torch.optim.Adam(
-            self.critic.parameters(), lr=config.lr_critic,
+            self.critic.parameters(),
+            lr=config.lr_critic,
         )
 
         self._optimizers["actor"] = self.actor_optimizer
         self._optimizers["critic"] = self.critic_optimizer
 
         # ---- Register modules for train/eval toggling ----
-        self._modules.extend([
-            self.actor_trunk, self.actor_head,
-            self.critic, self.critic_target,
-        ])
+        self._modules.extend(
+            [
+                self.actor_trunk,
+                self.actor_head,
+                self.critic,
+                self.critic_target,
+            ]
+        )
 
         # ---- Update counter for actor update frequency ----
         self._critic_update_count: int = 0
@@ -523,11 +530,13 @@ class SACAgent(BaseAgent):
             # Distribute probability mass
             offset = torch.arange(obs.size(0), device=obs.device).unsqueeze(1) * cfg.n_atoms
             target_dist.view(-1).index_add_(
-                0, (lower + offset).view(-1),
+                0,
+                (lower + offset).view(-1),
                 (tgt_probs * (upper.float() - b)).view(-1),
             )
             target_dist.view(-1).index_add_(
-                0, (upper + offset).view(-1),
+                0,
+                (upper + offset).view(-1),
                 (tgt_probs * (b - lower.float())).view(-1),
             )
 
@@ -579,7 +588,12 @@ class SACAgent(BaseAgent):
         # ---- 1. Critic update ----
         if cfg.distributional:
             q_loss = self._compute_distributional_critic_loss(
-                obs, action, reward, next_obs, done, current_alpha,
+                obs,
+                action,
+                reward,
+                next_obs,
+                done,
+                current_alpha,
             )
             # For logging, compute scalar Q-values
             with torch.no_grad():
@@ -629,9 +643,8 @@ class SACAgent(BaseAgent):
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             if cfg.max_grad_norm is not None:
-                actor_params = (
-                    list(self.actor_trunk.parameters())
-                    + list(self.actor_head.parameters())
+                actor_params = list(self.actor_trunk.parameters()) + list(
+                    self.actor_head.parameters()
                 )
                 self._clip_grad_norm(actor_params, cfg.max_grad_norm)
             self.actor_optimizer.step()
@@ -641,9 +654,7 @@ class SACAgent(BaseAgent):
 
             # ---- 3. Alpha (temperature) update ----
             if cfg.auto_alpha and self.alpha_optimizer is not None:
-                alpha_loss = -(
-                    self.log_alpha * (log_prob.detach() + self.target_entropy)
-                ).mean()
+                alpha_loss = -(self.log_alpha * (log_prob.detach() + self.target_entropy)).mean()
                 self.alpha_optimizer.zero_grad()
                 alpha_loss.backward()
                 self.alpha_optimizer.step()

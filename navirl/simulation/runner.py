@@ -28,6 +28,7 @@ from navirl.simulation.world import World
 # Episode result
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class EpisodeResult:
     """Summary of a single simulation episode."""
@@ -61,6 +62,7 @@ class EpisodeResult:
 # Progress callback protocol
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ProgressInfo:
     """Information passed to progress callbacks."""
@@ -86,6 +88,7 @@ ProgressCallback = Callable[[ProgressInfo], None]
 # ---------------------------------------------------------------------------
 # SimulationRunner
 # ---------------------------------------------------------------------------
+
 
 class SimulationRunner:
     """High-level simulation orchestrator.
@@ -159,9 +162,7 @@ class SimulationRunner:
         """Register a progress reporting callback."""
         self._progress_callbacks.append(callback)
 
-    def add_termination_condition(
-        self, condition: Callable[[SimulationRunner], bool]
-    ) -> None:
+    def add_termination_condition(self, condition: Callable[[SimulationRunner], bool]) -> None:
         """Add a custom termination condition.
 
         The callable receives the runner and should return ``True`` to
@@ -530,15 +531,17 @@ class SimulationRunner:
                 results.append(er)
                 # Report progress
                 for cb in self._progress_callbacks:
-                    cb(ProgressInfo(
-                        episode=len(results),
-                        total_episodes=n_episodes,
-                        step=0,
-                        sim_time=er.sim_time,
-                        wall_time=er.wall_time,
-                        done=len(results) == n_episodes,
-                        message=f"Episode {er.episode_id} complete",
-                    ))
+                    cb(
+                        ProgressInfo(
+                            episode=len(results),
+                            total_episodes=n_episodes,
+                            step=0,
+                            sim_time=er.sim_time,
+                            wall_time=er.wall_time,
+                            done=len(results) == n_episodes,
+                            message=f"Episode {er.episode_id} complete",
+                        )
+                    )
 
         results.sort(key=lambda r: r.episode_id)
         return results
@@ -584,9 +587,7 @@ class SimulationRunner:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _build_result(
-        self, steps: int, wall_time: float, terminated: bool
-    ) -> EpisodeResult:
+    def _build_result(self, steps: int, wall_time: float, terminated: bool) -> EpisodeResult:
         """Construct an :class:`EpisodeResult` from current state."""
         final_pos: dict[int, list[float]] = {}
         for eid, edata in self.world.entities.items():

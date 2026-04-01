@@ -70,8 +70,7 @@ class BaseScenario(ABC):
     ) -> list[Position]:
         angles = [offset_angle + 2 * math.pi * i / n for i in range(n)]
         return [
-            (center[0] + radius * math.cos(a), center[1] + radius * math.sin(a))
-            for a in angles
+            (center[0] + radius * math.cos(a), center[1] + radius * math.sin(a)) for a in angles
         ]
 
     @staticmethod
@@ -79,9 +78,7 @@ class BaseScenario(ABC):
         positions: list[Position],
         center: tuple[float, float] = (0.0, 0.0),
     ) -> list[Position]:
-        return [
-            (2 * center[0] - px, 2 * center[1] - py) for (px, py) in positions
-        ]
+        return [(2 * center[0] - px, 2 * center[1] - py) for (px, py) in positions]
 
 
 # ---------------------------------------------------------------------------
@@ -291,10 +288,10 @@ class IntersectionCrossing(BaseScenario):
         robot_goal = (0.0, self.approach_distance)
 
         directions = [
-            ((0.0, -1.0), (0.0, 1.0)),   # south -> north
-            ((0.0, 1.0), (0.0, -1.0)),    # north -> south
-            ((-1.0, 0.0), (1.0, 0.0)),    # west  -> east
-            ((1.0, 0.0), (-1.0, 0.0)),    # east  -> west
+            ((0.0, -1.0), (0.0, 1.0)),  # south -> north
+            ((0.0, 1.0), (0.0, -1.0)),  # north -> south
+            ((-1.0, 0.0), (1.0, 0.0)),  # west  -> east
+            ((1.0, 0.0), (-1.0, 0.0)),  # east  -> west
         ]
 
         human_starts: list[Position] = []
@@ -302,7 +299,9 @@ class IntersectionCrossing(BaseScenario):
 
         for (sx, sy), (gx, gy) in directions:
             for _ in range(self.num_humans_per_direction):
-                lateral = float(rng.uniform(-self.intersection_size / 2, self.intersection_size / 2))
+                lateral = float(
+                    rng.uniform(-self.intersection_size / 2, self.intersection_size / 2)
+                )
                 start = (
                     sx * self.approach_distance + gy * lateral,
                     sy * self.approach_distance + gx * lateral,
@@ -502,14 +501,10 @@ class ScenarioDifficultyScaler(BaseScenario):
         # Make corridors / doorways narrower at higher difficulty
         if hasattr(self.base_scenario, "corridor_width"):
             base_w = self.base_scenario.corridor_width  # type: ignore[union-attr]
-            object.__setattr__(
-                self.base_scenario, "corridor_width", base_w * (1.0 - 0.5 * d)
-            )
+            object.__setattr__(self.base_scenario, "corridor_width", base_w * (1.0 - 0.5 * d))
         if hasattr(self.base_scenario, "door_width"):
             base_w = self.base_scenario.door_width  # type: ignore[union-attr]
-            object.__setattr__(
-                self.base_scenario, "door_width", base_w * (1.0 - 0.5 * d)
-            )
+            object.__setattr__(self.base_scenario, "door_width", base_w * (1.0 - 0.5 * d))
 
         config = self.base_scenario.generate(rng)
         config["difficulty"] = d
@@ -561,9 +556,7 @@ class ProceduralScenarioGenerator(BaseScenario):
         if self.difficulty_range is not None:
             lo, hi = self.difficulty_range
             diff = float(rng.uniform(lo, hi))
-            scenario = ScenarioDifficultyScaler(
-                base_scenario=scenario, difficulty=diff
-            )
+            scenario = ScenarioDifficultyScaler(base_scenario=scenario, difficulty=diff)
 
         config = scenario.generate(rng)
         config["scenario_index"] = idx

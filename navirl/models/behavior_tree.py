@@ -238,6 +238,7 @@ class IsObstacleAhead(Condition):
 
 class ActionNode(Node):
     """Base for leaf nodes that produce motor commands."""
+
     pass
 
 
@@ -483,20 +484,26 @@ class BehaviorTree:
             5. Maintain comfortable distance from neighbours.
             6. Go to goal.
         """
-        root = Selector([
-            WaitInQueue(),
-            YieldAtDoorway(),
-            Sequence([
+        root = Selector(
+            [
+                WaitInQueue(),
+                YieldAtDoorway(),
+                Sequence(
+                    [
+                        GoToGoal(),
+                        AvoidCollision(),
+                        MaintainDistance(),
+                    ]
+                ),
+                Sequence(
+                    [
+                        FollowGroup(),
+                        GoToGoal(),
+                    ]
+                ),
                 GoToGoal(),
-                AvoidCollision(),
-                MaintainDistance(),
-            ]),
-            Sequence([
-                FollowGroup(),
-                GoToGoal(),
-            ]),
-            GoToGoal(),
-        ])
+            ]
+        )
         return cls(root)
 
 
@@ -561,10 +568,14 @@ class BehaviorTreeHumanController(HumanController):
                 prev = self.goals[hid]
                 self.goals[hid] = self.starts[hid]
                 self.starts[hid] = prev
-                emit_event("goal_swap", hid, {
-                    "new_goal": list(self.goals[hid]),
-                    "new_start": list(self.starts[hid]),
-                })
+                emit_event(
+                    "goal_swap",
+                    hid,
+                    {
+                        "new_goal": list(self.goals[hid]),
+                        "new_start": list(self.starts[hid]),
+                    },
+                )
                 gx, gy = self.goals[hid]
 
             # Build neighbour list.

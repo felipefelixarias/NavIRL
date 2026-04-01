@@ -129,9 +129,7 @@ class TrainingLogger:
                 self._tb_writer = SummaryWriter(log_dir=tb_path)
                 logger.info("TensorBoard logging enabled at %s", tb_path)
             except ImportError:
-                logger.warning(
-                    "tensorboard not installed -- TensorBoard logging disabled"
-                )
+                logger.warning("tensorboard not installed -- TensorBoard logging disabled")
 
         # -- Weights & Biases ------------------------------------------------
         self._wandb = None
@@ -143,9 +141,7 @@ class TrainingLogger:
                     self._wandb = wandb
                     logger.info("W&B logging enabled (run=%s)", wandb.run.name)
                 else:
-                    logger.warning(
-                        "wandb imported but no active run -- W&B logging disabled"
-                    )
+                    logger.warning("wandb imported but no active run -- W&B logging disabled")
             except ImportError:
                 logger.warning("wandb not installed -- W&B logging disabled")
 
@@ -375,19 +371,13 @@ class Trainer:
                 )
                 if eval_result.mean_reward > self._best_mean_reward:
                     self._best_mean_reward = eval_result.mean_reward
-                    self.save_checkpoint(
-                        os.path.join(cfg.checkpoint_dir, "best_model")
-                    )
-                self._fire(
-                    "on_eval", step=self._global_step, eval_result=eval_result
-                )
+                    self.save_checkpoint(os.path.join(cfg.checkpoint_dir, "best_model"))
+                self._fire("on_eval", step=self._global_step, eval_result=eval_result)
 
             # 5. Save checkpoints.
             if self._global_step % cfg.save_interval < cfg.n_envs:
                 self.save_checkpoint(
-                    os.path.join(
-                        cfg.checkpoint_dir, f"checkpoint_{self._global_step}"
-                    )
+                    os.path.join(cfg.checkpoint_dir, f"checkpoint_{self._global_step}")
                 )
 
             self._fire("on_step_end", step=self._global_step)
@@ -500,9 +490,7 @@ class Trainer:
             self._global_step = meta.get("global_step", 0)
             self._episodes_done = meta.get("episodes_done", 0)
             self._best_mean_reward = meta.get("best_mean_reward", float("-inf"))
-            logger.info(
-                "Checkpoint loaded from %s (step=%d)", path, self._global_step
-            )
+            logger.info("Checkpoint loaded from %s (step=%d)", path, self._global_step)
         else:
             logger.warning("No trainer_meta.json at %s -- only agent state loaded", path)
 
@@ -522,9 +510,7 @@ class Trainer:
                 return SubprocVecEnv([self.env_fn for _ in range(n)])
             return DummyVecEnv([self.env_fn])
         except Exception:
-            logger.warning(
-                "Vectorised env wrappers unavailable -- using a single-env shim"
-            )
+            logger.warning("Vectorised env wrappers unavailable -- using a single-env shim")
             return _SingleEnvShim(self.env_fn())
 
 

@@ -47,6 +47,7 @@ from navirl.training.trainer import EvalResult, TrainerConfig, TrainingLogger
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def replay_buffer():
     return ReplayBuffer(capacity=100, obs_shape=(4,), action_shape=(2,))
@@ -63,12 +64,16 @@ def prioritized_buffer():
 # ReplayBuffer
 # ---------------------------------------------------------------------------
 
+
 class TestReplayBuffer:
     def test_add_and_size(self, replay_buffer):
         assert len(replay_buffer) == 0
         replay_buffer.add(
-            obs=np.zeros(4), action=np.zeros(2), reward=1.0,
-            next_obs=np.ones(4), done=False,
+            obs=np.zeros(4),
+            action=np.zeros(2),
+            reward=1.0,
+            next_obs=np.ones(4),
+            done=False,
         )
         assert len(replay_buffer) == 1
 
@@ -113,6 +118,7 @@ class TestReplayBuffer:
 # PrioritizedReplayBuffer
 # ---------------------------------------------------------------------------
 
+
 class TestPrioritizedReplayBuffer:
     def test_add_and_sample(self, prioritized_buffer):
         for i in range(20):
@@ -147,6 +153,7 @@ class TestPrioritizedReplayBuffer:
 # ---------------------------------------------------------------------------
 # Curriculum Learning
 # ---------------------------------------------------------------------------
+
 
 class TestDifficultyDimension:
     def test_default_current_value(self):
@@ -270,6 +277,7 @@ class TestCurriculumManager:
 # ---------------------------------------------------------------------------
 # Schedulers
 # ---------------------------------------------------------------------------
+
 
 class TestLinearSchedule:
     def test_start_value(self):
@@ -413,6 +421,7 @@ class TestCompositeSchedule:
 # Callbacks
 # ---------------------------------------------------------------------------
 
+
 class TestCallbacks:
     def test_callback_default_returns_true(self):
         cb = Callback.__new__(Callback)
@@ -424,6 +433,7 @@ class TestCallbacks:
         class TrackingCallback(Callback):
             def __init__(self, name):
                 self.name = name
+
             def on_step(self, locals_):
                 called.append(self.name)
                 return True
@@ -463,6 +473,7 @@ class TestCallbacks:
 # ---------------------------------------------------------------------------
 # TrainerConfig & TrainingLogger
 # ---------------------------------------------------------------------------
+
 
 class TestTrainerConfig:
     def test_defaults(self):
@@ -505,8 +516,10 @@ class TestTrainingLogger:
 class TestEvalResult:
     def test_to_dict(self):
         er = EvalResult(
-            mean_reward=10.0, std_reward=2.0,
-            mean_length=50.0, success_rate=0.8,
+            mean_reward=10.0,
+            std_reward=2.0,
+            mean_length=50.0,
+            success_rate=0.8,
         )
         d = er.to_dict()
         assert d["mean_reward"] == 10.0
@@ -516,6 +529,7 @@ class TestEvalResult:
 # ---------------------------------------------------------------------------
 # Experiment tracking
 # ---------------------------------------------------------------------------
+
 
 class TestExperiment:
     def test_lifecycle(self):

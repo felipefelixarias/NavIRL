@@ -160,7 +160,13 @@ class MetricGroup:
         """
         self._logger.add_scalars(self._tag(main_tag), values, step=step)
 
-    def histogram(self, name: str, values: np.ndarray | Sequence[float], step: int | None = None, bins: str = "tensorflow") -> None:
+    def histogram(
+        self,
+        name: str,
+        values: np.ndarray | Sequence[float],
+        step: int | None = None,
+        bins: str = "tensorflow",
+    ) -> None:
         """Log a histogram under this group.
 
         Args:
@@ -618,8 +624,14 @@ class TBLogger:
 
         # Simple colour palette
         colours = [
-            (255, 0, 0), (0, 0, 255), (0, 180, 0), (255, 165, 0),
-            (128, 0, 128), (0, 128, 128), (255, 20, 147), (139, 69, 19),
+            (255, 0, 0),
+            (0, 0, 255),
+            (0, 180, 0),
+            (255, 165, 0),
+            (128, 0, 128),
+            (0, 128, 128),
+            (255, 20, 147),
+            (139, 69, 19),
         ]
 
         for idx, (_aid, pts) in enumerate(sorted(positions.items())):

@@ -96,9 +96,7 @@ class MultiAgentNavEnv:
         self._rng: np.random.Generator = np.random.default_rng()
 
         # Agent naming
-        self.possible_agents: list[str] = [
-            f"robot_{i}" for i in range(self.config.num_robots)
-        ]
+        self.possible_agents: list[str] = [f"robot_{i}" for i in range(self.config.num_robots)]
         self.agents: list[str] = list(self.possible_agents)
 
         # Internal id mapping: agent_name -> backend agent_id
@@ -201,9 +199,7 @@ class MultiAgentNavEnv:
         # Init communication buffers to zeros
         if self.config.communication_dim > 0:
             for name in self.possible_agents:
-                self._comm_buffer[name] = np.zeros(
-                    self.config.communication_dim, dtype=np.float32
-                )
+                self._comm_buffer[name] = np.zeros(self.config.communication_dim, dtype=np.float32)
 
         # Place robots
         self._name_to_id = {}
@@ -239,10 +235,10 @@ class MultiAgentNavEnv:
         self,
         actions: dict[str, Any],
     ) -> tuple[
-        dict[str, Any],       # observations
-        dict[str, float],     # rewards
-        dict[str, bool],      # terminated
-        dict[str, bool],      # truncated
+        dict[str, Any],  # observations
+        dict[str, float],  # rewards
+        dict[str, bool],  # terminated
+        dict[str, bool],  # truncated
         dict[str, dict[str, Any]],  # infos
     ]:
         assert self._backend is not None, "Call reset() before step()."
@@ -288,7 +284,8 @@ class MultiAgentNavEnv:
             if self._terminated[name]:
                 # Already done – provide dummy outputs
                 observations[name] = np.zeros(
-                    self.observation_spaces[name].shape, dtype=np.float32  # type: ignore[union-attr]
+                    self.observation_spaces[name].shape,
+                    dtype=np.float32,  # type: ignore[union-attr]
                 )
                 rewards[name] = 0.0
                 terminated[name] = True
@@ -394,7 +391,9 @@ class MultiAgentNavEnv:
                 np.array([ox - rx, oy - ry, ovx - rvx, ovy - rvy], dtype=np.float32)
             )
         other_robots_vec = (
-            np.concatenate(other_robots_parts) if other_robots_parts else np.array([], dtype=np.float32)
+            np.concatenate(other_robots_parts)
+            if other_robots_parts
+            else np.array([], dtype=np.float32)
         )
 
         # Humans (relative, sorted by distance, capped)
@@ -421,10 +420,14 @@ class MultiAgentNavEnv:
             for other_name in self.possible_agents:
                 if other_name == name:
                     continue
-                comm_parts.append(self._comm_buffer.get(
-                    other_name, np.zeros(cfg.communication_dim, dtype=np.float32)
-                ))
-            parts.append(np.concatenate(comm_parts) if comm_parts else np.array([], dtype=np.float32))
+                comm_parts.append(
+                    self._comm_buffer.get(
+                        other_name, np.zeros(cfg.communication_dim, dtype=np.float32)
+                    )
+                )
+            parts.append(
+                np.concatenate(comm_parts) if comm_parts else np.array([], dtype=np.float32)
+            )
 
         return np.concatenate(parts)
 

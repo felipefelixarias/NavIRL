@@ -120,7 +120,9 @@ def _stylized_background(map_img: np.ndarray, scale: float) -> np.ndarray:
     return np.clip(base, 0, 255).astype(np.uint8)
 
 
-def _agent_palette(kind: str, behavior: str) -> tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]]:
+def _agent_palette(
+    kind: str, behavior: str
+) -> tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]]:
     if kind == "robot":
         return (46, 56, 72), (57, 168, 244), (245, 234, 198)
 
@@ -243,7 +245,9 @@ def render_trace(
         for agent in row["agents"]:
             aid = int(agent["id"])
             x, y = float(agent["x"]), float(agent["y"])
-            px, py = _world_to_px(x, y, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0)
+            px, py = _world_to_px(
+                x, y, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0
+            )
             history.setdefault(aid, []).append((px, py))
             if len(history[aid]) > trail_len:
                 history[aid] = history[aid][-trail_len:]
@@ -280,17 +284,23 @@ def render_trace(
             x, y = float(agent["x"]), float(agent["y"])
             radius = float(agent.get("radius", 0.18))
 
-            px, py = _world_to_px(x, y, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0)
+            px, py = _world_to_px(
+                x, y, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0
+            )
             rad_px = max(3, int(round(radius * ppm * scale)))
 
             edge_color, fill_color, highlight_color = _agent_palette(kind, behavior)
 
             halo_radius = int(round(rad_px * 2.6))
             halo_color = (112, 208, 255) if kind == "robot" else (109, 228, 148)
-            cv2.circle(halo_layer, (px, py), halo_radius, halo_color, thickness=-1, lineType=cv2.LINE_AA)
+            cv2.circle(
+                halo_layer, (px, py), halo_radius, halo_color, thickness=-1, lineType=cv2.LINE_AA
+            )
 
             # Soft shadow for depth.
-            cv2.circle(canvas, (px + 2, py + 2), rad_px, (22, 22, 28), thickness=-1, lineType=cv2.LINE_AA)
+            cv2.circle(
+                canvas, (px + 2, py + 2), rad_px, (22, 22, 28), thickness=-1, lineType=cv2.LINE_AA
+            )
             cv2.circle(canvas, (px, py), rad_px, fill_color, thickness=-1, lineType=cv2.LINE_AA)
             cv2.circle(canvas, (px, py), rad_px, edge_color, thickness=2, lineType=cv2.LINE_AA)
             if kind != "robot":
@@ -313,20 +323,35 @@ def render_trace(
             x, y = float(agent["x"]), float(agent["y"])
             vx, vy = float(agent["vx"]), float(agent["vy"])
 
-            px, py = _world_to_px(x, y, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0)
+            px, py = _world_to_px(
+                x, y, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0
+            )
             last_heading = heading_cache.get(aid)
             tx, ty, new_heading = _arrow_endpoint(x, y, vx, vy, last_heading)
             if new_heading is not None:
                 heading_cache[aid] = new_heading
-                apx, apy = _world_to_px(tx, ty, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0)
+                apx, apy = _world_to_px(
+                    tx, ty, map_img_full.shape, scale, ppm, row_offset=row0, col_offset=col0
+                )
                 arrow_core = (28, 30, 34)
                 arrow_highlight = (56, 187, 255) if kind == "robot" else (72, 212, 128)
-                cv2.arrowedLine(canvas, (px, py), (apx, apy), arrow_core, 3, cv2.LINE_AA, tipLength=0.25)
-                cv2.arrowedLine(canvas, (px, py), (apx, apy), arrow_highlight, 2, cv2.LINE_AA, tipLength=0.27)
+                cv2.arrowedLine(
+                    canvas, (px, py), (apx, apy), arrow_core, 3, cv2.LINE_AA, tipLength=0.25
+                )
+                cv2.arrowedLine(
+                    canvas, (px, py), (apx, apy), arrow_highlight, 2, cv2.LINE_AA, tipLength=0.27
+                )
                 total_arrows_drawn += 1
 
             if token_holder is not None and aid == int(token_holder):
-                cv2.circle(canvas, (px, py), max(6, int(round(0.34 * ppm * scale))), (70, 204, 255), 2, cv2.LINE_AA)
+                cv2.circle(
+                    canvas,
+                    (px, py),
+                    max(6, int(round(0.34 * ppm * scale))),
+                    (70, 204, 255),
+                    2,
+                    cv2.LINE_AA,
+                )
 
             if show_labels:
                 cv2.putText(

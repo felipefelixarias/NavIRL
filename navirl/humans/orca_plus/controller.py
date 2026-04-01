@@ -147,7 +147,11 @@ class ORCAPlusHumanController(ORCAHumanController):
             st = states[hid]
             act = actions[hid]
 
-            if self.enable_doorway_token and self.token_holder is not None and hid != self.token_holder:
+            if (
+                self.enable_doorway_token
+                and self.token_holder is not None
+                and hid != self.token_holder
+            ):
                 if self._in_doorway(st.x, st.y, margin=self.door_approach_margin):
                     emit_event("doorway_yield", hid, {"to_agent": self.token_holder})
                     actions[hid] = Action(pref_vx=0.0, pref_vy=0.0, behavior="YIELDING")
@@ -165,7 +169,9 @@ class ORCAPlusHumanController(ORCAHumanController):
             if self.enable_speed_profile:
                 prev_speed = self.current_speed.get(hid, 0.0)
                 max_delta = self.accel_limit * dt
-                bounded_speed = max(prev_speed - max_delta, min(prev_speed + max_delta, target_speed))
+                bounded_speed = max(
+                    prev_speed - max_delta, min(prev_speed + max_delta, target_speed)
+                )
 
                 if self.rng.random() < self.hesitation_prob:
                     bounded_speed *= self.hesitation_scale

@@ -18,6 +18,7 @@ import yaml  # PyYAML -- already a NavIRL dependency
 # Launch description generator
 # ---------------------------------------------------------------------------
 
+
 def generate_launch_description(
     agent_config: dict[str, Any],
     *,
@@ -64,9 +65,7 @@ def generate_launch_description(
 
     remappings_lines = ""
     if extra_remappings:
-        pairs = ", ".join(
-            f'("{src}", "{dst}")' for src, dst in extra_remappings.items()
-        )
+        pairs = ", ".join(f'("{src}", "{dst}")' for src, dst in extra_remappings.items())
         remappings_lines = f"        remappings=[{pairs}],"
 
     params_repr = repr(params)
@@ -98,6 +97,7 @@ def generate_launch_description(
 # ---------------------------------------------------------------------------
 # Parameter file writer
 # ---------------------------------------------------------------------------
+
 
 def create_param_file(
     config: dict[str, Any],
@@ -147,6 +147,7 @@ def create_param_file(
 # ---------------------------------------------------------------------------
 # Workspace scaffolding
 # ---------------------------------------------------------------------------
+
 
 def setup_workspace(
     path: str | Path,
@@ -256,8 +257,6 @@ def setup_workspace(
     (resource_dir / package_name).touch()
 
     # Python package __init__
-    (pkg_py / "__init__.py").write_text(
-        '"""ROS2 package wrapper for NavIRL."""\n'
-    )
+    (pkg_py / "__init__.py").write_text('"""ROS2 package wrapper for NavIRL."""\n')
 
     return ws

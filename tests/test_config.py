@@ -29,6 +29,7 @@ from navirl.config.validation import ConfigValidator, SchemaBuilder
 # ConfigValidator
 # ---------------------------------------------------------------------------
 
+
 class TestConfigValidator:
     def test_valid_config(self):
         schema = {
@@ -120,13 +121,16 @@ class TestConfigValidator:
         is_valid, errors = ConfigValidator.validate(config, schema)
         assert is_valid is True
 
-    @pytest.mark.parametrize("value,expected_valid", [
-        (0, True),
-        (0.5, True),
-        (1.0, True),
-        (-0.1, False),
-        (1.1, False),
-    ])
+    @pytest.mark.parametrize(
+        "value,expected_valid",
+        [
+            (0, True),
+            (0.5, True),
+            (1.0, True),
+            (-0.1, False),
+            (1.1, False),
+        ],
+    )
     def test_numeric_bounds(self, value, expected_valid):
         schema = {"x": {"type": (int, float), "required": True, "min": 0, "max": 1.0}}
         config = {"x": value}
@@ -137,6 +141,7 @@ class TestConfigValidator:
 # ---------------------------------------------------------------------------
 # SchemaBuilder
 # ---------------------------------------------------------------------------
+
 
 class TestSchemaBuilder:
     def test_from_dataclass(self):
@@ -173,6 +178,7 @@ class TestSchemaBuilder:
 # ---------------------------------------------------------------------------
 # Serialization: save / load
 # ---------------------------------------------------------------------------
+
 
 class TestSerialization:
     def test_save_load_json(self, tmp_path):
@@ -212,6 +218,7 @@ class TestSerialization:
 # ---------------------------------------------------------------------------
 # CLI argument conversion
 # ---------------------------------------------------------------------------
+
 
 class TestCLIConversion:
     def test_config_to_cli_args(self):
@@ -253,6 +260,7 @@ class TestCLIConversion:
 # ---------------------------------------------------------------------------
 # Merge / diff
 # ---------------------------------------------------------------------------
+
 
 class TestMergeDiff:
     def test_merge_simple(self):
@@ -302,6 +310,7 @@ class TestMergeDiff:
 # ---------------------------------------------------------------------------
 # ComponentRegistry
 # ---------------------------------------------------------------------------
+
 
 class TestComponentRegistry:
     def test_register_and_get(self):
@@ -373,19 +382,23 @@ class TestComponentRegistry:
 # Pre-built registries
 # ---------------------------------------------------------------------------
 
+
 class TestPrebuiltRegistries:
     def test_agents_registry_exists(self):
         from navirl.config.registry import agents_registry
+
         assert isinstance(agents_registry, ComponentRegistry)
 
     def test_environments_registry_exists(self):
         from navirl.config.registry import environments_registry
+
         assert isinstance(environments_registry, ComponentRegistry)
 
 
 # ---------------------------------------------------------------------------
 # Presets
 # ---------------------------------------------------------------------------
+
 
 class TestPresets:
     def test_known_presets(self):
@@ -417,10 +430,13 @@ class TestPresets:
         assert "debug" in names
 
     def test_merge_presets(self):
-        merged = merge_presets("debug", {
-            "env_config": {"num_humans": 100},
-            "name": "custom_debug",
-        })
+        merged = merge_presets(
+            "debug",
+            {
+                "env_config": {"num_humans": 100},
+                "name": "custom_debug",
+            },
+        )
         assert merged.name == "custom_debug"
         assert merged.env_config["num_humans"] == 100
         # Original values should still be present
@@ -428,9 +444,12 @@ class TestPresets:
 
     def test_merge_presets_with_preset_object(self):
         base = get_preset("fast_train")
-        merged = merge_presets(base, {
-            "agent_config": {"learning_rate": 1e-5},
-        })
+        merged = merge_presets(
+            base,
+            {
+                "agent_config": {"learning_rate": 1e-5},
+            },
+        )
         assert merged.agent_config["learning_rate"] == 1e-5
 
     def test_preset_dataclass(self):
@@ -458,6 +477,7 @@ class TestPresets:
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestConfigEdgeCases:
     def test_empty_schema_validates_anything(self):

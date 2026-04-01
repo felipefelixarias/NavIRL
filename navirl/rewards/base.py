@@ -211,10 +211,7 @@ class RewardComponent:
         return base
 
     def __repr__(self) -> str:
-        return (
-            f"RewardComponent(name={self.name!r}, weight={self.weight}, "
-            f"enabled={self.enabled})"
-        )
+        return f"RewardComponent(name={self.name!r}, weight={self.weight}, enabled={self.enabled})"
 
 
 # ---------------------------------------------------------------------------
@@ -366,9 +363,7 @@ class CompositeReward(RewardFunction):
         for comp in self._components:
             status = "ON " if comp.enabled else "OFF"
             tags = ", ".join(comp.tags) if comp.tags else ""
-            lines.append(
-                f"  [{status}] {comp.name:30s}  w={comp.weight:+.4f}  tags=[{tags}]"
-            )
+            lines.append(f"  [{status}] {comp.name:30s}  w={comp.weight:+.4f}  tags=[{tags}]")
         return "\n".join(lines)
 
     def __len__(self) -> int:

@@ -127,9 +127,7 @@ class LinearDecayNoise(NoiseSchedule):
         Number of steps over which the decay occurs.
     """
 
-    def __init__(
-        self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000
-    ) -> None:
+    def __init__(self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000) -> None:
         self.start = start
         self.end = end
         self.decay_steps = max(decay_steps, 1)
@@ -152,8 +150,7 @@ class LinearDecayNoise(NoiseSchedule):
 
     def __repr__(self) -> str:
         return (
-            f"LinearDecayNoise(start={self.start}, end={self.end}, "
-            f"decay_steps={self.decay_steps})"
+            f"LinearDecayNoise(start={self.start}, end={self.end}, decay_steps={self.decay_steps})"
         )
 
 
@@ -170,9 +167,7 @@ class CosineDecayNoise(NoiseSchedule):
         Number of steps for one cosine half-period.
     """
 
-    def __init__(
-        self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000
-    ) -> None:
+    def __init__(self, start: float = 0.3, end: float = 0.05, decay_steps: int = 500_000) -> None:
         self.start = start
         self.end = end
         self.decay_steps = max(decay_steps, 1)
@@ -195,8 +190,7 @@ class CosineDecayNoise(NoiseSchedule):
 
     def __repr__(self) -> str:
         return (
-            f"CosineDecayNoise(start={self.start}, end={self.end}, "
-            f"decay_steps={self.decay_steps})"
+            f"CosineDecayNoise(start={self.start}, end={self.end}, decay_steps={self.decay_steps})"
         )
 
 
@@ -362,10 +356,14 @@ class TD3Agent(BaseAgent):
 
         # Action bounds for clipping
         self._action_low = torch.tensor(
-            action_space.low, dtype=torch.float32, device=self._device,
+            action_space.low,
+            dtype=torch.float32,
+            device=self._device,
         )
         self._action_high = torch.tensor(
-            action_space.high, dtype=torch.float32, device=self._device,
+            action_space.high,
+            dtype=torch.float32,
+            device=self._device,
         )
 
         # ---- Observation normalization ----
@@ -390,7 +388,9 @@ class TD3Agent(BaseAgent):
             )
         else:
             self._noise_scale = torch.ones(
-                action_dim, dtype=torch.float32, device=self._device,
+                action_dim,
+                dtype=torch.float32,
+                device=self._device,
             )
 
         # ---- Actor ----
@@ -449,11 +449,18 @@ class TD3Agent(BaseAgent):
         self._optimizers["critic"] = self.critic_optimizer
 
         # ---- Register modules for train/eval toggling ----
-        self._modules.extend([
-            self.actor_trunk, self.actor_head,
-            self.actor_trunk_target, self.actor_head_target,
-            self.q1, self.q2, self.q1_target, self.q2_target,
-        ])
+        self._modules.extend(
+            [
+                self.actor_trunk,
+                self.actor_head,
+                self.actor_trunk_target,
+                self.actor_head_target,
+                self.q1,
+                self.q2,
+                self.q1_target,
+                self.q2_target,
+            ]
+        )
 
         # ---- Update counter for delayed policy updates ----
         self._update_count: int = 0
@@ -591,10 +598,12 @@ class TD3Agent(BaseAgent):
 
             # Add clipped noise for target policy smoothing
             noise = (torch.randn_like(next_action) * cfg.policy_noise).clamp(
-                -cfg.noise_clip, cfg.noise_clip,
+                -cfg.noise_clip,
+                cfg.noise_clip,
             )
             next_action = (next_action + noise).clamp(
-                self._action_low, self._action_high,
+                self._action_low,
+                self._action_high,
             )
 
             # Clipped double Q
@@ -634,9 +643,8 @@ class TD3Agent(BaseAgent):
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             if cfg.max_grad_norm is not None:
-                actor_params = (
-                    list(self.actor_trunk.parameters())
-                    + list(self.actor_head.parameters())
+                actor_params = list(self.actor_trunk.parameters()) + list(
+                    self.actor_head.parameters()
                 )
                 self._clip_grad_norm(actor_params, cfg.max_grad_norm)
             self.actor_optimizer.step()
@@ -662,9 +670,7 @@ class TD3Agent(BaseAgent):
     # Evaluation helpers
     # ------------------------------------------------------------------
 
-    def get_q_values(
-        self, observation: np.ndarray, action: np.ndarray
-    ) -> tuple[float, float]:
+    def get_q_values(self, observation: np.ndarray, action: np.ndarray) -> tuple[float, float]:
         """Compute Q-values for a given state-action pair.
 
         Useful for debugging and analysis.

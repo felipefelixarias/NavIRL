@@ -318,9 +318,7 @@ class DAggerAgent(BaseAgent):
 
                 pred = self._policy(obs_batch)
                 if cfg.action_type == "discrete":
-                    loss = nn.functional.cross_entropy(
-                        pred, act_batch.long().squeeze(-1)
-                    )
+                    loss = nn.functional.cross_entropy(pred, act_batch.long().squeeze(-1))
                 else:
                     loss = nn.functional.mse_loss(pred, act_batch)
 
@@ -371,9 +369,7 @@ class DAggerAgent(BaseAgent):
 
         expert_fn = cfg.expert_policy_fn
         if expert_fn is None:
-            raise ValueError(
-                "DAggerConfig.expert_policy_fn must be set before calling train()."
-            )
+            raise ValueError("DAggerConfig.expert_policy_fn must be set before calling train().")
 
         # Seed with initial demonstrations if available
         if demo_buffer is not None and len(demo_buffer) > 0:
@@ -394,9 +390,7 @@ class DAggerAgent(BaseAgent):
             betas.append(beta)
 
             # Collect on-policy data with expert labels
-            new_obs, new_actions = self.collect_rollouts(
-                env, expert_fn, cfg.rollout_steps, beta
-            )
+            new_obs, new_actions = self.collect_rollouts(env, expert_fn, cfg.rollout_steps, beta)
             self._aggregate(new_obs, new_actions)
 
             # Retrain on aggregated data
@@ -485,9 +479,7 @@ class DAggerAgent(BaseAgent):
             ``{"dagger/loss": <float>}``.
         """
         cfg: DAggerConfig = self._config  # type: ignore[assignment]
-        obs_t = self._to_tensor(batch["obs"], dtype=torch.float32).reshape(
-            -1, self._obs_dim
-        )
+        obs_t = self._to_tensor(batch["obs"], dtype=torch.float32).reshape(-1, self._obs_dim)
         act_t = self._to_tensor(batch["actions"], dtype=torch.float32)
 
         pred = self._policy(obs_t)

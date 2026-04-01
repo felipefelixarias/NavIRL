@@ -73,9 +73,7 @@ class NavIRLLogLoader:
         for aid, rows in sorted(grouped.items()):
             rows.sort(key=lambda r: r.get("t", 0.0))
             ts = np.array([r.get("t", 0.0) for r in rows], dtype=np.float64)
-            pos = np.array(
-                [[r.get("x", 0.0), r.get("y", 0.0)] for r in rows], dtype=np.float64
-            )
+            pos = np.array([[r.get("x", 0.0), r.get("y", 0.0)] for r in rows], dtype=np.float64)
             vel = None
             if "vx" in rows[0] and "vy" in rows[0]:
                 vel = np.array(
@@ -215,11 +213,7 @@ class GenericCSVLoader:
                 t_idx = col_map.get(str(self.timestamp_col), 0)
                 x_idx = col_map.get(str(self.x_col), 1)
                 y_idx = col_map.get(str(self.y_col), 2)
-                a_idx = (
-                    col_map.get(str(self.agent_col))
-                    if self.agent_col is not None
-                    else None
-                )
+                a_idx = col_map.get(str(self.agent_col)) if self.agent_col is not None else None
             else:
                 t_idx = int(self.timestamp_col)
                 x_idx = int(self.x_col)

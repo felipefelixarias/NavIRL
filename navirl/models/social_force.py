@@ -35,6 +35,7 @@ __all__ = [
 #  Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SocialForceConfig:
     """Configuration for the Social Force Model.
@@ -69,6 +70,7 @@ class SocialForceConfig:
 #  Helpers
 # ---------------------------------------------------------------------------
 
+
 def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
     """Return (unit_x, unit_y, magnitude)."""
     n = math.hypot(vx, vy)
@@ -77,9 +79,7 @@ def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
     return vx / n, vy / n, n
 
 
-def _anisotropy_weight(
-    ex: float, ey: float, nx: float, ny: float, lam: float
-) -> float:
+def _anisotropy_weight(ex: float, ey: float, nx: float, ny: float, lam: float) -> float:
     """Compute the anisotropic field-of-view weight.
 
     w = lam + (1 - lam) * (1 + cos(theta)) / 2
@@ -120,6 +120,7 @@ def _point_to_segment_distance(
 # ---------------------------------------------------------------------------
 #  Social Force Model
 # ---------------------------------------------------------------------------
+
 
 class SocialForceModel:
     """Core Social Force Model computation engine.
@@ -175,9 +176,7 @@ class SocialForceModel:
             heading_y = state.vy / speed
         else:
             # Default heading toward goal
-            heading_x, heading_y, _ = _normalize(
-                state.goal_x - state.x, state.goal_y - state.y
-            )
+            heading_x, heading_y, _ = _normalize(state.goal_x - state.x, state.goal_y - state.y)
 
         for other in other_states:
             if other.agent_id == state.agent_id:
@@ -198,9 +197,7 @@ class SocialForceModel:
             magnitude = self.cfg.A * math.exp((r_ij - dist) / self.cfg.B)
 
             # Anisotropy weight
-            w = _anisotropy_weight(
-                heading_x, heading_y, nx, ny, self.cfg.lambda_anisotropy
-            )
+            w = _anisotropy_weight(heading_x, heading_y, nx, ny, self.cfg.lambda_anisotropy)
 
             fx_total += magnitude * nx * w
             fy_total += magnitude * ny * w
@@ -222,9 +219,7 @@ class SocialForceModel:
         fx_total, fy_total = 0.0, 0.0
 
         for x1, y1, x2, y2 in walls:
-            dist, wx, wy = _point_to_segment_distance(
-                state.x, state.y, x1, y1, x2, y2
-            )
+            dist, wx, wy = _point_to_segment_distance(state.x, state.y, x1, y1, x2, y2)
 
             if dist < EPSILON or dist > self.cfg.wall_interaction_range:
                 continue
@@ -232,9 +227,7 @@ class SocialForceModel:
             nx = (state.x - wx) / dist
             ny = (state.y - wy) / dist
 
-            magnitude = self.cfg.A_wall * math.exp(
-                (state.radius - dist) / self.cfg.B_wall
-            )
+            magnitude = self.cfg.A_wall * math.exp((state.radius - dist) / self.cfg.B_wall)
 
             # Contact compression if overlapping the wall
             overlap = state.radius - dist
@@ -370,6 +363,7 @@ class SocialForceModel:
 #  HumanController wrapper
 # ---------------------------------------------------------------------------
 
+
 class SocialForceHumanController(HumanController):
     """Human behavior controller driven by the Social Force Model.
 
@@ -454,9 +448,7 @@ class SocialForceHumanController(HumanController):
                 max_speed=state.max_speed,
             )
 
-            fx, fy = self.model.compute_total_force(
-                goal_state, all_states, self.walls
-            )
+            fx, fy = self.model.compute_total_force(goal_state, all_states, self.walls)
 
             # Compute preferred velocity from force
             pref_vx = state.vx + fx * dt

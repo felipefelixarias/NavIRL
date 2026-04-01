@@ -33,6 +33,7 @@ from typing import Any, get_type_hints
 # ConfigValidator
 # ---------------------------------------------------------------------------
 
+
 class ConfigValidator:
     """Validates configuration dicts against schemas.
 
@@ -75,27 +76,20 @@ class ConfigValidator:
             expected_type = spec.get("type")
             if expected_type is not None and not isinstance(value, expected_type):
                 errors.append(
-                    f"Key '{key}': expected type {expected_type}, "
-                    f"got {type(value).__name__}"
+                    f"Key '{key}': expected type {expected_type}, got {type(value).__name__}"
                 )
                 continue  # skip further checks on wrong type
 
             # Choices.
             choices = spec.get("choices")
             if choices is not None and value not in choices:
-                errors.append(
-                    f"Key '{key}': value {value!r} not in {choices}"
-                )
+                errors.append(f"Key '{key}': value {value!r} not in {choices}")
 
             # Numeric bounds.
             if "min" in spec and value < spec["min"]:
-                errors.append(
-                    f"Key '{key}': value {value} < minimum {spec['min']}"
-                )
+                errors.append(f"Key '{key}': value {value} < minimum {spec['min']}")
             if "max" in spec and value > spec["max"]:
-                errors.append(
-                    f"Key '{key}': value {value} > maximum {spec['max']}"
-                )
+                errors.append(f"Key '{key}': value {value} > maximum {spec['max']}")
 
             # Nested schema.
             nested = spec.get("nested")
@@ -110,6 +104,7 @@ class ConfigValidator:
 # ---------------------------------------------------------------------------
 # SchemaBuilder
 # ---------------------------------------------------------------------------
+
 
 class SchemaBuilder:
     """Build validation schemas from dataclasses."""
@@ -160,8 +155,7 @@ class SchemaBuilder:
 
             # Required if no default.
             has_default = (
-                f.default is not dataclasses.MISSING
-                or f.default_factory is not dataclasses.MISSING  # type: ignore[misc]
+                f.default is not dataclasses.MISSING or f.default_factory is not dataclasses.MISSING  # type: ignore[misc]
             )
             entry["required"] = not has_default
 

@@ -24,7 +24,12 @@ def _minimal_summary() -> dict:
         },
         "invariants": {
             "checks": [
-                {"name": "motion_jitter", "worst_flip_rate": 0.95, "max_flip_rate": 0.8, "pass": False},
+                {
+                    "name": "motion_jitter",
+                    "worst_flip_rate": 0.95,
+                    "max_flip_rate": 0.8,
+                    "pass": False,
+                },
                 {
                     "name": "wall_proximity_fraction",
                     "near_wall_fraction": 0.17,
@@ -67,7 +72,9 @@ def test_aegis_review_fallback_mode(tmp_path: Path):
         "robot": {"radius": 1.4},
         "humans": {"radius": 0.18},
     }
-    (bundle_dir / "scenario.yaml").write_text(yaml.safe_dump(scenario, sort_keys=False), encoding="utf-8")
+    (bundle_dir / "scenario.yaml").write_text(
+        yaml.safe_dump(scenario, sort_keys=False), encoding="utf-8"
+    )
     (bundle_dir / "state.jsonl").write_text(json.dumps({"agents": []}) + "\n", encoding="utf-8")
 
     payload = run_aegis_review(

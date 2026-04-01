@@ -19,6 +19,7 @@ from typing import (
 # Event types
 # ---------------------------------------------------------------------------
 
+
 class EventType(enum.Enum):
     """Built-in simulation event types."""
 
@@ -43,6 +44,7 @@ class EventType(enum.Enum):
 # ---------------------------------------------------------------------------
 # Event record
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class EventRecord:
@@ -99,6 +101,7 @@ class EventRecord:
 # Subscription handle
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _Subscription:
     """Internal subscription entry."""
@@ -115,6 +118,7 @@ class _Subscription:
 # ---------------------------------------------------------------------------
 # EventFilter helper
 # ---------------------------------------------------------------------------
+
 
 class EventFilter:
     """Composable predicate for filtering :class:`EventRecord` instances.
@@ -184,6 +188,7 @@ class _CombinedFilter(EventFilter):
 # ---------------------------------------------------------------------------
 # EventBus
 # ---------------------------------------------------------------------------
+
 
 class EventBus:
     """Publish / subscribe event bus for simulation events.
@@ -316,10 +321,7 @@ class EventBus:
                 continue
             # Entity filter
             if sub.entity_filter is not None:
-                if (
-                    record.source_id != sub.entity_filter
-                    and record.target_id != sub.entity_filter
-                ):
+                if record.source_id != sub.entity_filter and record.target_id != sub.entity_filter:
                     continue
             # Tag filter
             if sub.tag_filter is not None:
@@ -334,9 +336,7 @@ class EventBus:
         if to_remove:
             self._subs = [s for s in self._subs if s.active]
             for key in self._sub_index:
-                self._sub_index[key] = [
-                    s for s in self._sub_index[key] if s.active
-                ]
+                self._sub_index[key] = [s for s in self._sub_index[key] if s.active]
 
     # ------------------------------------------------------------------
     # Convenience publishers
@@ -364,9 +364,7 @@ class EventBus:
             data=data,
         )
 
-    def emit_goal_reached(
-        self, sim_time: float, entity_id: int, goal_id: int = -1
-    ) -> EventRecord:
+    def emit_goal_reached(self, sim_time: float, entity_id: int, goal_id: int = -1) -> EventRecord:
         """Emit a goal-reached event."""
         return self.publish(
             EventType.GOAL_REACHED,
@@ -379,9 +377,7 @@ class EventBus:
         """Emit a timeout event."""
         return self.publish(EventType.TIMEOUT, sim_time=sim_time)
 
-    def emit_zone_enter(
-        self, sim_time: float, entity_id: int, zone_id: int
-    ) -> EventRecord:
+    def emit_zone_enter(self, sim_time: float, entity_id: int, zone_id: int) -> EventRecord:
         """Emit a zone-enter event."""
         return self.publish(
             EventType.ZONE_ENTER,
@@ -390,9 +386,7 @@ class EventBus:
             target_id=zone_id,
         )
 
-    def emit_zone_exit(
-        self, sim_time: float, entity_id: int, zone_id: int
-    ) -> EventRecord:
+    def emit_zone_exit(self, sim_time: float, entity_id: int, zone_id: int) -> EventRecord:
         """Emit a zone-exit event."""
         return self.publish(
             EventType.ZONE_EXIT,
@@ -446,21 +440,13 @@ class EventBus:
         """Return history records of a given type."""
         return [r for r in self._history if r.event_type == event_type]
 
-    def history_in_range(
-        self, t_start: float, t_end: float
-    ) -> list[EventRecord]:
+    def history_in_range(self, t_start: float, t_end: float) -> list[EventRecord]:
         """Return history records within a sim-time range."""
-        return [
-            r for r in self._history
-            if t_start <= r.sim_time <= t_end
-        ]
+        return [r for r in self._history if t_start <= r.sim_time <= t_end]
 
     def history_for_entity(self, entity_id: int) -> list[EventRecord]:
         """Return history records involving *entity_id*."""
-        return [
-            r for r in self._history
-            if r.source_id == entity_id or r.target_id == entity_id
-        ]
+        return [r for r in self._history if r.source_id == entity_id or r.target_id == entity_id]
 
     def event_counts(self) -> dict[str, int]:
         """Return a dict mapping event type names to counts."""
@@ -474,9 +460,7 @@ class EventBus:
     # Replay
     # ------------------------------------------------------------------
 
-    def register_replay_callback(
-        self, callback: Callable[[EventRecord], None]
-    ) -> None:
+    def register_replay_callback(self, callback: Callable[[EventRecord], None]) -> None:
         """Register a callback invoked during replay."""
         self._replay_callbacks.append(callback)
 

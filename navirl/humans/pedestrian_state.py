@@ -20,6 +20,7 @@ import numpy as np
 # Enumerations
 # ---------------------------------------------------------------------------
 
+
 class Activity(enum.Enum):
     """Discrete activity labels for a pedestrian."""
 
@@ -47,6 +48,7 @@ class PersonalityTag(enum.Enum):
 # ---------------------------------------------------------------------------
 # Gaze direction helper
 # ---------------------------------------------------------------------------
+
 
 @dataclass(slots=True)
 class GazeDirection:
@@ -97,6 +99,7 @@ class GazeDirection:
 # ---------------------------------------------------------------------------
 # Core pedestrian state
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PedestrianState:
@@ -336,6 +339,7 @@ class PedestrianState:
 # State history tracker
 # ---------------------------------------------------------------------------
 
+
 class StateHistory:
     """Fixed-capacity ring-buffer that stores past :class:`PedestrianState` snapshots.
 
@@ -511,6 +515,7 @@ class StateHistory:
 # State prediction
 # ---------------------------------------------------------------------------
 
+
 class StatePredictor:
     """Linear-extrapolation predictor for pedestrian state.
 
@@ -527,9 +532,7 @@ class StatePredictor:
     def __init__(self, use_acceleration: bool = False) -> None:
         self.use_acceleration: bool = use_acceleration
 
-    def predict_position(
-        self, state: PedestrianState, dt: float
-    ) -> np.ndarray:
+    def predict_position(self, state: PedestrianState, dt: float) -> np.ndarray:
         """Predict position after *dt* seconds from the given *state*.
 
         Parameters
@@ -684,6 +687,7 @@ class StatePredictor:
 # Batch utilities
 # ---------------------------------------------------------------------------
 
+
 def states_to_array(states: list[PedestrianState]) -> np.ndarray:
     """Pack a list of pedestrian states into a structured numpy array.
 
@@ -734,9 +738,7 @@ def pairwise_distances(states: list[PedestrianState]) -> np.ndarray:
     return np.sqrt(np.sum(diff * diff, axis=-1))
 
 
-def filter_by_activity(
-    states: list[PedestrianState], activity: Activity
-) -> list[PedestrianState]:
+def filter_by_activity(states: list[PedestrianState], activity: Activity) -> list[PedestrianState]:
     """Return only states matching the given *activity*.
 
     Parameters
@@ -754,9 +756,7 @@ def filter_by_activity(
     return [s for s in states if s.activity == activity]
 
 
-def filter_by_group(
-    states: list[PedestrianState], group_id: int
-) -> list[PedestrianState]:
+def filter_by_group(states: list[PedestrianState], group_id: int) -> list[PedestrianState]:
     """Return only states belonging to *group_id*.
 
     Parameters

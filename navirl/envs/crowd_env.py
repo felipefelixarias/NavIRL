@@ -149,9 +149,7 @@ class CrowdNavEnv(NavEnv):
         # --- Density penalty: penalise being in high-density zones ---
         local_density = self._local_density(rx, ry, radius=3.0)
         if local_density > LOS.C_max_density:
-            density_penalty = -cfg.density_reward_weight * (
-                local_density - LOS.C_max_density
-            )
+            density_penalty = -cfg.density_reward_weight * (local_density - LOS.C_max_density)
             reward += density_penalty
             info["density_penalty"] = density_penalty
         info["local_density"] = local_density
@@ -170,7 +168,8 @@ class CrowdNavEnv(NavEnv):
             d = math.hypot(rx - hx, ry - hy)
             if PROXEMICS.intimate.outer <= d < PROXEMICS.personal.outer:
                 reward += -cfg.personal_space_weight * (
-                    1.0 - (d - PROXEMICS.intimate.outer)
+                    1.0
+                    - (d - PROXEMICS.intimate.outer)
                     / (PROXEMICS.personal.outer - PROXEMICS.intimate.outer)
                 )
                 info["personal_space_intrusion"] = True

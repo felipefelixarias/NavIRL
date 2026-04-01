@@ -23,6 +23,7 @@ from navirl.simulation.world import AABB
 # Entity base
 # ---------------------------------------------------------------------------
 
+
 class Entity(abc.ABC):
     """Abstract base for every simulation entity.
 
@@ -87,6 +88,7 @@ class Entity(abc.ABC):
 # Static obstacles
 # ---------------------------------------------------------------------------
 
+
 class StaticObstacle(Entity):
     """Immovable circular obstacle.
 
@@ -130,6 +132,7 @@ class StaticObstacle(Entity):
 # ---------------------------------------------------------------------------
 # Dynamic obstacles
 # ---------------------------------------------------------------------------
+
 
 class DynamicObstacle(Entity):
     """Movable circular obstacle with velocity.
@@ -180,17 +183,20 @@ class DynamicObstacle(Entity):
 
     def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
-        d.update({
-            "velocity": self.velocity.tolist(),
-            "radius": self.radius,
-            "mass": self.mass,
-        })
+        d.update(
+            {
+                "velocity": self.velocity.tolist(),
+                "radius": self.radius,
+                "mass": self.mass,
+            }
+        )
         return d
 
 
 # ---------------------------------------------------------------------------
 # Wall
 # ---------------------------------------------------------------------------
+
 
 class Wall(Entity):
     """A line-segment wall defined by two endpoints.
@@ -266,17 +272,20 @@ class Wall(Entity):
 
     def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
-        d.update({
-            "start": self.start.tolist(),
-            "end": self.end.tolist(),
-            "thickness": self.thickness,
-        })
+        d.update(
+            {
+                "start": self.start.tolist(),
+                "end": self.end.tolist(),
+                "thickness": self.thickness,
+            }
+        )
         return d
 
 
 # ---------------------------------------------------------------------------
 # Door
 # ---------------------------------------------------------------------------
+
 
 class Door(Wall):
     """A wall segment that can be opened or closed.
@@ -363,6 +372,7 @@ class Door(Wall):
 # Region
 # ---------------------------------------------------------------------------
 
+
 class Region(Entity):
     """Rectangular region used as spawn area, goal area, etc.
 
@@ -420,9 +430,7 @@ class Region(Entity):
         y = rng.uniform(self.position[1] - hh, self.position[1] + hh)
         return np.array([x, y])
 
-    def sample_points(
-        self, n: int, rng: np.random.Generator | None = None
-    ) -> np.ndarray:
+    def sample_points(self, n: int, rng: np.random.Generator | None = None) -> np.ndarray:
         """Sample *n* uniformly random points.  Returns (n, 2) array."""
         rng = rng or np.random.default_rng()
         hw, hh = self.size[0] / 2.0, self.size[1] / 2.0
@@ -439,6 +447,7 @@ class Region(Entity):
 # ---------------------------------------------------------------------------
 # Waypoint
 # ---------------------------------------------------------------------------
+
 
 class Waypoint(Entity):
     """A discrete navigation point.
@@ -486,17 +495,20 @@ class Waypoint(Entity):
 
     def to_dict(self) -> dict[str, Any]:
         d = super().to_dict()
-        d.update({
-            "radius": self.radius,
-            "label": self.label,
-            "connections": self.connections,
-        })
+        d.update(
+            {
+                "radius": self.radius,
+                "label": self.label,
+                "connections": self.connections,
+            }
+        )
         return d
 
 
 # ---------------------------------------------------------------------------
 # NavigationGraph
 # ---------------------------------------------------------------------------
+
 
 class NavigationGraph:
     """Graph structure over :class:`Waypoint` entities.
@@ -516,9 +528,7 @@ class NavigationGraph:
         self._nodes[waypoint.entity_id] = waypoint
         self._edges.setdefault(waypoint.entity_id, [])
 
-    def add_edge(
-        self, from_id: int, to_id: int, cost: float | None = None
-    ) -> None:
+    def add_edge(self, from_id: int, to_id: int, cost: float | None = None) -> None:
         """Add a directed edge.  Cost defaults to Euclidean distance."""
         if cost is None:
             a = self._nodes[from_id]
@@ -526,9 +536,7 @@ class NavigationGraph:
             cost = a.distance_to(b)
         self._edges.setdefault(from_id, []).append((to_id, cost))
 
-    def add_edge_bidirectional(
-        self, a_id: int, b_id: int, cost: float | None = None
-    ) -> None:
+    def add_edge_bidirectional(self, a_id: int, b_id: int, cost: float | None = None) -> None:
         """Add an undirected edge (two directed edges)."""
         if cost is None:
             a = self._nodes[a_id]
@@ -542,9 +550,7 @@ class NavigationGraph:
         self._nodes.pop(node_id, None)
         self._edges.pop(node_id, None)
         for nid in list(self._edges):
-            self._edges[nid] = [
-                (t, c) for t, c in self._edges[nid] if t != node_id
-            ]
+            self._edges[nid] = [(t, c) for t, c in self._edges[nid] if t != node_id]
 
     # ------------------------------------------------------------------
 
@@ -571,9 +577,7 @@ class NavigationGraph:
     # Dijkstra
     # ------------------------------------------------------------------
 
-    def shortest_path(
-        self, start_id: int, goal_id: int
-    ) -> tuple[list[int], float]:
+    def shortest_path(self, start_id: int, goal_id: int) -> tuple[list[int], float]:
         """Dijkstra shortest path.
 
         Returns ``(path, cost)`` where *path* is a list of node ids
@@ -643,6 +647,7 @@ class NavigationGraph:
 # ---------------------------------------------------------------------------
 # EntityManager
 # ---------------------------------------------------------------------------
+
 
 class EntityManager:
     """Registry and spatial index for :class:`Entity` instances.
@@ -769,9 +774,7 @@ class EntityManager:
     # Spatial queries
     # ------------------------------------------------------------------
 
-    def query_radius(
-        self, x: float, y: float, radius: float
-    ) -> list[Entity]:
+    def query_radius(self, x: float, y: float, radius: float) -> list[Entity]:
         """Return entities within *radius* of point (x, y)."""
         r0, c0 = self._cell_of(x - radius, y - radius)
         r1, c1 = self._cell_of(x + radius, y + radius)
@@ -798,8 +801,7 @@ class EntityManager:
         return [
             self._entities[eid]
             for eid in candidates
-            if eid in self._entities
-            and self._entities[eid].bounding_box().overlaps(aabb)
+            if eid in self._entities and self._entities[eid].bounding_box().overlaps(aabb)
         ]
 
     def nearest(
@@ -811,18 +813,13 @@ class EntityManager:
         """
         ents = self.query_radius(x, y, max_radius)
         centre = np.array([x, y])
-        dists = [
-            (e, float(np.linalg.norm(e.position - centre))) for e in ents
-        ]
+        dists = [(e, float(np.linalg.norm(e.position - centre))) for e in ents]
         dists.sort(key=lambda t: t[1])
         return dists[:k]
 
     def entities_in_region(self, region: Region) -> list[Entity]:
         """Return entities whose position lies inside *region*."""
-        return [
-            e for e in self._entities.values()
-            if region.contains_point(e.position)
-        ]
+        return [e for e in self._entities.values() if region.contains_point(e.position)]
 
     # ------------------------------------------------------------------
     # Bulk operations

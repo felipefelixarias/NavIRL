@@ -19,6 +19,7 @@ from navirl.safety.shield import SafetyShield
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def speed_constraint():
     return SpeedConstraint(max_speed=1.5)
@@ -53,6 +54,7 @@ def safety_monitor():
 # ---------------------------------------------------------------------------
 # SpeedConstraint
 # ---------------------------------------------------------------------------
+
 
 class TestSpeedConstraint:
     def test_safe_action(self, speed_constraint):
@@ -99,6 +101,7 @@ class TestSpeedConstraint:
 # CollisionConstraint
 # ---------------------------------------------------------------------------
 
+
 class TestCollisionConstraint:
     def test_safe_action(self, collision_constraint):
         state = np.array([0.0, 0.0])
@@ -128,6 +131,7 @@ class TestCollisionConstraint:
 # AccelerationConstraint
 # ---------------------------------------------------------------------------
 
+
 class TestAccelerationConstraint:
     def test_safe_acceleration(self, acceleration_constraint):
         state = np.array([0.0, 0.0, 0.0, 0.0])  # pos + vel
@@ -152,6 +156,7 @@ class TestAccelerationConstraint:
 # SafetyShield
 # ---------------------------------------------------------------------------
 
+
 class TestSafetyShield:
     def test_safe_action_passes_through(self, speed_constraint):
         class MockAgent:
@@ -159,6 +164,7 @@ class TestSafetyShield:
                 return np.array([0.5, 0.0])
 
         from navirl.safety.constraints import ConstraintSet
+
         shield = SafetyShield(
             agent=MockAgent(),
             constraints=ConstraintSet([speed_constraint]),
@@ -173,6 +179,7 @@ class TestSafetyShield:
                 return np.array([5.0, 5.0])
 
         from navirl.safety.constraints import ConstraintSet
+
         shield = SafetyShield(
             agent=MockAgent(),
             constraints=ConstraintSet([speed_constraint]),
@@ -187,6 +194,7 @@ class TestSafetyShield:
                 return np.array([100.0, 100.0])
 
         from navirl.safety.constraints import ConstraintSet
+
         shield = SafetyShield(
             agent=MockAgent(),
             constraints=ConstraintSet([speed_constraint]),
@@ -200,6 +208,7 @@ class TestSafetyShield:
         class MockAgent:
             def __init__(self):
                 self._call = 0
+
             def act(self, obs):
                 self._call += 1
                 if self._call % 2 == 0:
@@ -207,6 +216,7 @@ class TestSafetyShield:
                 return np.array([0.1, 0.0])  # safe
 
         from navirl.safety.constraints import ConstraintSet
+
         shield = SafetyShield(
             agent=MockAgent(),
             constraints=ConstraintSet([speed_constraint]),
@@ -221,6 +231,7 @@ class TestSafetyShield:
                 return np.array([0.0, 0.0])
 
         from navirl.safety.constraints import ConstraintSet
+
         shield = SafetyShield(
             agent=SafeAgent(),
             constraints=ConstraintSet([speed_constraint]),
@@ -232,6 +243,7 @@ class TestSafetyShield:
 # ---------------------------------------------------------------------------
 # RiskEstimator
 # ---------------------------------------------------------------------------
+
 
 class TestRiskEstimator:
     def test_ttc_no_obstacles(self, risk_estimator):
@@ -266,6 +278,7 @@ class TestRiskEstimator:
 # SafetyMonitor
 # ---------------------------------------------------------------------------
 
+
 class TestSafetyMonitor:
     def test_record_step(self, safety_monitor):
         state = np.array([1.0, 2.0])
@@ -285,7 +298,8 @@ class TestSafetyMonitor:
 
     def test_shield_intervention_tracking(self, safety_monitor):
         safety_monitor.record_step(
-            np.zeros(2), np.zeros(2),
+            np.zeros(2),
+            np.zeros(2),
             info={"shield_intervened": True},
         )
         # Implementation may or may not track this directly
@@ -307,7 +321,9 @@ class TestSafetyAlert:
     @pytest.mark.parametrize("severity", [Severity.INFO, Severity.WARNING, Severity.CRITICAL])
     def test_all_severities(self, severity):
         alert = SafetyAlert(
-            timestamp=0.0, severity=severity, constraint_name="test",
+            timestamp=0.0,
+            severity=severity,
+            constraint_name="test",
         )
         assert alert.severity == severity
 
@@ -315,6 +331,7 @@ class TestSafetyAlert:
 # ---------------------------------------------------------------------------
 # Lagrangian multiplier
 # ---------------------------------------------------------------------------
+
 
 class TestLagrangianMultiplier:
     def test_initial_value(self):
@@ -357,6 +374,7 @@ class TestLagrangianMultiplier:
 # Edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestSafetyEdgeCases:
     def test_speed_constraint_exact_limit(self):
         sc = SpeedConstraint(max_speed=1.0)
@@ -380,6 +398,7 @@ class TestSafetyEdgeCases:
                 return np.array([1.0, 0.0])
 
         from navirl.safety.constraints import ConstraintSet
+
         shield = SafetyShield(
             agent=MockAgent(),
             constraints=ConstraintSet([]),

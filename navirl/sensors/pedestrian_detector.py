@@ -20,6 +20,7 @@ from navirl.sensors.base import NoiseModel, SensorBase
 #  Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class PedestrianDetectorConfig:
     """Configuration for the simulated pedestrian detector.
@@ -61,6 +62,7 @@ class PedestrianDetectorConfig:
 #  PedestrianDetector
 # ---------------------------------------------------------------------------
 
+
 class PedestrianDetector(SensorBase):
     """Simulated person detector that returns relative state of nearby agents.
 
@@ -92,19 +94,18 @@ class PedestrianDetector(SensorBase):
         return {
             "shape": ("variable", 5),
             "dtype": np.float64,
-            "low": np.array([-self.config.detection_range,
-                             -self.config.detection_range,
-                             -10.0, -10.0, 0.0]),
-            "high": np.array([self.config.detection_range,
-                              self.config.detection_range,
-                              10.0, 10.0, 1.0]),
+            "low": np.array(
+                [-self.config.detection_range, -self.config.detection_range, -10.0, -10.0, 0.0]
+            ),
+            "high": np.array(
+                [self.config.detection_range, self.config.detection_range, 10.0, 10.0, 1.0]
+            ),
         }
 
     def _raw_observe(self, world_state: dict[str, Any]) -> list[np.ndarray]:
         cfg = self._cfg
         pos = np.asarray(world_state["robot_pos"], dtype=np.float64)
-        vel = np.asarray(world_state.get("robot_vel", [0.0, 0.0]),
-                         dtype=np.float64)
+        vel = np.asarray(world_state.get("robot_vel", [0.0, 0.0]), dtype=np.float64)
         heading = float(world_state.get("robot_heading", 0.0))
         agents = world_state.get("agents", [])
 
@@ -114,10 +115,8 @@ class PedestrianDetector(SensorBase):
         # Build arrays
         if isinstance(agents[0], dict):
             positions = np.array([a["pos"] for a in agents], dtype=np.float64)
-            velocities = np.array([a.get("vel", [0, 0]) for a in agents],
-                                  dtype=np.float64)
-            radii = np.array([a.get("radius", 0.25) for a in agents],
-                             dtype=np.float64)
+            velocities = np.array([a.get("vel", [0, 0]) for a in agents], dtype=np.float64)
+            radii = np.array([a.get("radius", 0.25) for a in agents], dtype=np.float64)
         else:
             arr = np.asarray(agents, dtype=np.float64)
             positions = arr[:, :2]
@@ -189,9 +188,7 @@ class PedestrianDetector(SensorBase):
             rvx += self._rng.normal(0, cfg.velocity_noise_std)
             rvy += self._rng.normal(0, cfg.velocity_noise_std)
 
-            detections.append(
-                np.array([rx, ry, rvx, rvy, radii[idx]], dtype=np.float64)
-            )
+            detections.append(np.array([rx, ry, rvx, rvy, radii[idx]], dtype=np.float64))
 
         return self._maybe_add_false_positives(detections)
 
@@ -199,9 +196,7 @@ class PedestrianDetector(SensorBase):
         """Override base to skip generic noise (noise applied internally)."""
         return self._raw_observe(world_state)
 
-    def _maybe_add_false_positives(
-        self, detections: list[np.ndarray]
-    ) -> list[np.ndarray]:
+    def _maybe_add_false_positives(self, detections: list[np.ndarray]) -> list[np.ndarray]:
         """Randomly inject false-positive detections."""
         cfg = self._cfg
         n_fp = 0
@@ -217,15 +212,14 @@ class PedestrianDetector(SensorBase):
             rvx = self._rng.normal(0, 0.5)
             rvy = self._rng.normal(0, 0.5)
             radius = self._rng.uniform(0.18, 0.35)
-            detections.append(
-                np.array([rx, ry, rvx, rvy, radius], dtype=np.float64)
-            )
+            detections.append(np.array([rx, ry, rvx, rvy, radius], dtype=np.float64))
         return detections
 
 
 # ---------------------------------------------------------------------------
 #  PedestrianTracker
 # ---------------------------------------------------------------------------
+
 
 class PedestrianTracker:
     """Multi-frame pedestrian tracker using Hungarian assignment and Kalman
@@ -267,9 +261,7 @@ class PedestrianTracker:
         self._next_id = 0
         self._tracks.clear()
 
-    def update(
-        self, detections: list[np.ndarray]
-    ) -> list[dict[str, Any]]:
+    def update(self, detections: list[np.ndarray]) -> list[dict[str, Any]]:
         """Process a new frame of detections and return active tracks.
 
         Parameters
@@ -333,8 +325,7 @@ class PedestrianTracker:
                 track.mark_missed()
 
         # Remove dead tracks
-        dead = [tid for tid, t in self._tracks.items()
-                if t.time_since_update > self.max_age]
+        dead = [tid for tid, t in self._tracks.items() if t.time_since_update > self.max_age]
         for tid in dead:
             del self._tracks[tid]
 
@@ -355,14 +346,16 @@ class PedestrianTracker:
         results = []
         for tid, t in self._tracks.items():
             if t.hits >= self.min_hits or t.time_since_update == 0:
-                results.append({
-                    "id": tid,
-                    "state": t.state.copy(),
-                    "radius": t.radius,
-                    "confidence": t.confidence,
-                    "age": t.age,
-                    "hits": t.hits,
-                })
+                results.append(
+                    {
+                        "id": tid,
+                        "state": t.state.copy(),
+                        "radius": t.radius,
+                        "confidence": t.confidence,
+                        "age": t.age,
+                        "hits": t.hits,
+                    }
+                )
         return results
 
     @staticmethod
@@ -373,6 +366,7 @@ class PedestrianTracker:
         """
         try:
             from scipy.optimize import linear_sum_assignment
+
             return linear_sum_assignment(cost)
         except ImportError:
             pass
@@ -398,14 +392,14 @@ class PedestrianTracker:
 #  Internal track representation with simple Kalman filter
 # ---------------------------------------------------------------------------
 
+
 class _Track:
     """Single tracked pedestrian with constant-velocity Kalman filter.
 
     State vector: [x, y, vx, vy].
     """
 
-    def __init__(self, track_id: int, state: np.ndarray,
-                 radius: float) -> None:
+    def __init__(self, track_id: int, state: np.ndarray, radius: float) -> None:
         self.track_id = track_id
         self.state = state.copy()  # (4,)
         self.radius = radius
