@@ -276,7 +276,6 @@ class AvoidCollision(ActionNode):
             dx = n.x - agent.x
             dy = n.y - agent.y
             dist = math.hypot(dx, dy)
-            agent.radius + n.radius + 0.1
             if dist < closest_dist and dist < self.time_horizon * agent.max_speed:
                 closest_dist = dist
                 if dist < EPSILON:

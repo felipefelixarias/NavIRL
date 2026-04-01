@@ -111,4 +111,5 @@ class Planner(ABC):
         Returns:
             A :class:`Path` from *start* toward *goal*.
         """
-        ...
+        del start, goal, obstacles, dynamic_agents
+        raise NotImplementedError

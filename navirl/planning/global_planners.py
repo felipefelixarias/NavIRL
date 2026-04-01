@@ -112,6 +112,7 @@ class AStarPlanner(Planner):
         obstacles: np.ndarray | None = None,
         dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
+        del dynamic_agents
         res = self.config.resolution
         origin = np.zeros(2)
         s = _pos_to_grid(start, origin, res)
@@ -170,6 +171,7 @@ class DijkstraPlanner(Planner):
         obstacles: np.ndarray | None = None,
         dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
+        del dynamic_agents
         res = self.config.resolution
         origin = np.zeros(2)
         s = _pos_to_grid(start, origin, res)
@@ -261,6 +263,7 @@ class ThetaStarPlanner(Planner):
         obstacles: np.ndarray | None = None,
         dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
+        del dynamic_agents
         res = self.config.resolution
         origin = np.zeros(2)
         s = _pos_to_grid(start, origin, res)
@@ -379,6 +382,7 @@ class RRTPlanner(Planner):
         obstacles: np.ndarray | None = None,
         dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
+        del dynamic_agents
         if self.bounds is not None:
             low, high = self.bounds
         else:
@@ -463,6 +467,7 @@ class RRTStarPlanner(Planner):
         obstacles: np.ndarray | None = None,
         dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
+        del dynamic_agents
         if self.bounds is not None:
             low, high = self.bounds
         else:
@@ -588,6 +593,7 @@ class PRMPlanner(Planner):
         obstacles: np.ndarray | None = None,
         dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
+        del dynamic_agents
         if self.bounds is not None:
             low, high = self.bounds
         else:
