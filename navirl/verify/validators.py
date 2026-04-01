@@ -85,40 +85,40 @@ def validate_units_metadata(scenario: dict) -> dict:
         violations.append({"reason": "missing_map_scale"})
     else:
         if ppm is None and mpp is not None:
-            ppm = 1.0 / float(mpp)
+            ppm = 1.0 / mpp
         if mpp is None and ppm is not None:
-            mpp = 1.0 / float(ppm)
+            mpp = 1.0 / ppm
 
     if ppm is not None:
-        if float(ppm) <= 0.0:
+        if ppm <= 0.0:
             violations.append({"reason": "pixels_per_meter_nonpositive", "pixels_per_meter": ppm})
     if mpp is not None:
-        if float(mpp) <= 0.0:
+        if mpp <= 0.0:
             violations.append({"reason": "meters_per_pixel_nonpositive", "meters_per_pixel": mpp})
 
     if ppm is not None and mpp is not None:
-        expected = 1.0 / float(ppm)
-        if abs(float(mpp) - expected) > max(1e-9, expected * 0.02):
+        expected = 1.0 / ppm
+        if abs(mpp - expected) > max(1e-9, expected * 0.02):
             violations.append(
                 {
                     "reason": "scale_inconsistent",
-                    "pixels_per_meter": float(ppm),
-                    "meters_per_pixel": float(mpp),
+                    "pixels_per_meter": ppm,
+                    "meters_per_pixel": mpp,
                 }
             )
 
-    if width_m is not None and float(width_m) <= 0.0:
+    if width_m is not None and width_m <= 0.0:
         violations.append({"reason": "width_m_nonpositive", "width_m": width_m})
-    if height_m is not None and float(height_m) <= 0.0:
+    if height_m is not None and height_m <= 0.0:
         violations.append({"reason": "height_m_nonpositive", "height_m": height_m})
 
     return {
         "name": "units_metadata",
         "pass": len(violations) == 0,
-        "pixels_per_meter": float(ppm) if ppm is not None else None,
-        "meters_per_pixel": float(mpp) if mpp is not None else None,
-        "width_m": float(width_m) if width_m is not None else None,
-        "height_m": float(height_m) if height_m is not None else None,
+        "pixels_per_meter": ppm,  # Already numeric, no conversion needed
+        "meters_per_pixel": mpp,  # Already numeric, no conversion needed
+        "width_m": width_m,  # Already numeric, no conversion needed
+        "height_m": height_m,  # Already numeric, no conversion needed
         "num_violations": len(violations),
         "violations": violations,
     }

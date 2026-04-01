@@ -101,25 +101,25 @@ def _validate_scene(scene: dict, errors: list[str]) -> None:
         downsample = map_cfg.get("downsample", 1.0)
         if ppm is not None:
             _require(
-                isinstance(ppm, (int, float)) and float(ppm) > 0.0,
+                isinstance(ppm, (int, float)) and ppm > 0.0,  # No float() needed - already numeric
                 "scene.map.pixels_per_meter must be > 0 when provided",
                 errors,
             )
         if mpp is not None:
             _require(
-                isinstance(mpp, (int, float)) and float(mpp) > 0.0,
+                isinstance(mpp, (int, float)) and mpp > 0.0,  # No float() needed - already numeric
                 "scene.map.meters_per_pixel must be > 0 when provided",
                 errors,
             )
         if ppm is not None and mpp is not None:
-            exp_mpp = 1.0 / float(ppm)
+            exp_mpp = 1.0 / ppm  # No float() needed - already numeric
             _require(
-                abs(float(mpp) - exp_mpp) <= max(1e-9, exp_mpp * 0.02),
+                abs(mpp - exp_mpp) <= max(1e-9, exp_mpp * 0.02),  # No float() needed
                 "scene.map.pixels_per_meter and scene.map.meters_per_pixel are inconsistent",
                 errors,
             )
         _require(
-            isinstance(downsample, (int, float)) and float(downsample) > 0.0,
+            isinstance(downsample, (int, float)) and downsample > 0.0,  # No float() needed
             "scene.map.downsample must be > 0 when provided",
             errors,
         )
