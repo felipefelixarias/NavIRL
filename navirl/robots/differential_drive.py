@@ -21,6 +21,7 @@ from navirl.robots.base import EventSink, RobotController
 # Configuration
 # -----------------------------------------------------------------------
 
+
 @dataclass
 class DifferentialDriveConfig:
     """Parameters for a differential-drive robot.
@@ -74,6 +75,7 @@ class SensorMountPoint:
 # -----------------------------------------------------------------------
 # PID controller
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class PIDGains:
@@ -136,16 +138,13 @@ class PIDController:
             derivative = (error - self._prev_error) / dt
 
         self._prev_error = error
-        return (
-            self.gains.kp * error
-            + self.gains.ki * self._integral
-            + self.gains.kd * derivative
-        )
+        return self.gains.kp * error + self.gains.ki * self._integral + self.gains.kd * derivative
 
 
 # -----------------------------------------------------------------------
 # Unicycle kinematics helpers
 # -----------------------------------------------------------------------
+
 
 def _wrap_angle(a: float) -> float:
     """Wrap angle to [-pi, pi)."""
@@ -273,6 +272,7 @@ def wheel_velocities_to_body(
 # Trajectory tracking
 # -----------------------------------------------------------------------
 
+
 def track_trajectory(
     waypoints: np.ndarray,
     x0: float,
@@ -356,6 +356,7 @@ def track_trajectory(
 # Odometry model
 # -----------------------------------------------------------------------
 
+
 class OdometryAccumulator:
     """Accumulate odometry with optional Gaussian noise.
 
@@ -409,6 +410,7 @@ class OdometryAccumulator:
 # Wheel slip model
 # -----------------------------------------------------------------------
 
+
 def apply_wheel_slip(
     v_cmd: float,
     omega_cmd: float,
@@ -430,9 +432,7 @@ def apply_wheel_slip(
     v_actual = v_cmd * (1.0 - config.slip_longitudinal)
     # Lateral slip adds a random angular disturbance proportional to speed.
     lateral_disturbance = (
-        config.slip_lateral * v_cmd * np.random.normal(0.0, 1.0)
-        if config.slip_lateral > 0
-        else 0.0
+        config.slip_lateral * v_cmd * np.random.normal(0.0, 1.0) if config.slip_lateral > 0 else 0.0
     )
     omega_actual = omega_cmd + lateral_disturbance
     return (v_actual, omega_actual)
@@ -441,6 +441,7 @@ def apply_wheel_slip(
 # -----------------------------------------------------------------------
 # Sensor mounting helpers
 # -----------------------------------------------------------------------
+
 
 def sensor_world_pose(
     robot_x: float,
@@ -508,6 +509,7 @@ def sensor_fov_polygon(
 # Rate limiter (acceleration constraints)
 # -----------------------------------------------------------------------
 
+
 def rate_limit(
     v_cmd: float,
     omega_cmd: float,
@@ -541,6 +543,7 @@ def rate_limit(
 # -----------------------------------------------------------------------
 # DifferentialDriveRobot controller
 # -----------------------------------------------------------------------
+
 
 class DifferentialDriveRobot(RobotController):
     """Differential-drive robot with full unicycle kinematics.
@@ -666,9 +669,7 @@ class DifferentialDriveRobot(RobotController):
         v_cmd *= max(0.0, np.cos(heading_error))
 
         # Acceleration limiting.
-        v_cmd, omega_cmd = rate_limit(
-            v_cmd, omega_cmd, self._v, self._omega, dt, self.config
-        )
+        v_cmd, omega_cmd = rate_limit(v_cmd, omega_cmd, self._v, self._omega, dt, self.config)
 
         # Wheel slip.
         v_actual, omega_actual = apply_wheel_slip(v_cmd, omega_cmd, self.config)
@@ -722,10 +723,7 @@ class DifferentialDriveRobot(RobotController):
 
     def get_sensor_poses(self) -> list[tuple[float, float, float]]:
         """Return world-frame poses of all mounted sensors."""
-        return [
-            sensor_world_pose(self._x, self._y, self._theta, m)
-            for m in self.sensor_mounts
-        ]
+        return [sensor_world_pose(self._x, self._y, self._theta, m) for m in self.sensor_mounts]
 
     def get_wheel_speeds(self) -> tuple[float, float]:
         """Return current ``(omega_left, omega_right)`` wheel speeds."""

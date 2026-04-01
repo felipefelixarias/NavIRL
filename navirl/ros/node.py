@@ -44,10 +44,12 @@ except ImportError as _exc:  # pragma: no cover
 # Optional: person tracking message (custom or from pedsim)
 try:
     from spencer_tracking_msgs.msg import TrackedPersons as PersonArray
+
     _HAS_PERSON_MSG = True
 except ImportError:
     try:
         from pedsim_msgs.msg import TrackedPersons as PersonArray
+
         _HAS_PERSON_MSG = True
     except ImportError:
         _HAS_PERSON_MSG = False
@@ -56,6 +58,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Node
 # ---------------------------------------------------------------------------
+
 
 class NavIRLNode(Node):  # type: ignore[misc]
     """Bridge between a NavIRL agent and the ROS2 topic graph.
@@ -102,8 +105,12 @@ class NavIRLNode(Node):  # type: ignore[misc]
 
         self._agent_type: str = self.get_parameter("agent_type").get_parameter_value().string_value
         self._model_path: str = self.get_parameter("model_path").get_parameter_value().string_value
-        self._action_rate: float = self.get_parameter("action_rate").get_parameter_value().double_value
-        self._obs_type: str = self.get_parameter("observation_type").get_parameter_value().string_value
+        self._action_rate: float = (
+            self.get_parameter("action_rate").get_parameter_value().double_value
+        )
+        self._obs_type: str = (
+            self.get_parameter("observation_type").get_parameter_value().string_value
+        )
 
         self.get_logger().info(
             f"NavIRLNode starting  agent_type={self._agent_type}  "
@@ -128,12 +135,8 @@ class NavIRLNode(Node):  # type: ignore[misc]
         )
 
         # -- Subscribers -------------------------------------------------------
-        self._sub_scan = self.create_subscription(
-            LaserScan, "/scan", self._scan_cb, sensor_qos
-        )
-        self._sub_odom = self.create_subscription(
-            Odometry, "/odom", self._odom_cb, sensor_qos
-        )
+        self._sub_scan = self.create_subscription(LaserScan, "/scan", self._scan_cb, sensor_qos)
+        self._sub_odom = self.create_subscription(Odometry, "/odom", self._odom_cb, sensor_qos)
         self._sub_image = self.create_subscription(
             Image, "/camera/image_raw", self._image_cb, sensor_qos
         )
@@ -144,16 +147,13 @@ class NavIRLNode(Node):  # type: ignore[misc]
         else:
             self._sub_persons = None
             self.get_logger().warn(
-                "Person tracking message type not found -- "
-                "/tracked_persons subscription disabled."
+                "Person tracking message type not found -- /tracked_persons subscription disabled."
             )
 
         # -- Publishers --------------------------------------------------------
         self._pub_cmd_vel = self.create_publisher(Twist, "/cmd_vel", 10)
         self._pub_status = self.create_publisher(String, "/navirl/status", 10)
-        self._pub_debug_markers = self.create_publisher(
-            MarkerArray, "/navirl/debug_markers", 10
-        )
+        self._pub_debug_markers = self.create_publisher(MarkerArray, "/navirl/debug_markers", 10)
 
         # -- Timer-based control loop ------------------------------------------
         period_s = 1.0 / max(self._action_rate, 0.1)
@@ -274,9 +274,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
         msg.data = status_text
         self._pub_status.publish(msg)
 
-    def _publish_debug_markers(
-        self, observation: dict[str, Any], action: np.ndarray
-    ) -> None:
+    def _publish_debug_markers(self, observation: dict[str, Any], action: np.ndarray) -> None:
         """Publish visualization markers for debugging in RViz."""
         marker_array = MarkerArray()
 
@@ -314,12 +312,12 @@ class NavIRLNode(Node):  # type: ignore[misc]
 # Entry-point
 # ---------------------------------------------------------------------------
 
+
 def main(args: list[str] | None = None) -> None:
     """``ros2 run`` entry-point."""
     if not _ROS2_AVAILABLE:
         raise ImportError(
-            "ROS2 (rclpy) is not installed.  "
-            "Please install ROS2 and source the workspace."
+            "ROS2 (rclpy) is not installed.  Please install ROS2 and source the workspace."
         )
     rclpy.init(args=args)
     node = NavIRLNode()

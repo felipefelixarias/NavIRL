@@ -27,6 +27,7 @@ from navirl.core.types import AgentState, EventRecord
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TrajectoryPoint:
     """A single point in an agent's trajectory.
@@ -63,7 +64,7 @@ class TrajectoryPoint:
         Returns:
             A new TrajectoryPoint instance.
         """
-        speed = math.sqrt(state.vx ** 2 + state.vy ** 2)
+        speed = math.sqrt(state.vx**2 + state.vy**2)
         heading = math.atan2(state.vy, state.vx)
         return cls(
             step=step,
@@ -349,15 +350,14 @@ class EpisodeStatistics:
             "mean_path_efficiency": self.mean_path_efficiency,
             "total_distance_all": self.total_distance_all,
             "event_counts": dict(self.event_counts),
-            "per_agent_stats": {
-                str(k): dict(v) for k, v in self.per_agent_stats.items()
-            },
+            "per_agent_stats": {str(k): dict(v) for k, v in self.per_agent_stats.items()},
         }
 
 
 # ---------------------------------------------------------------------------
 # Main logger
 # ---------------------------------------------------------------------------
+
 
 class EpisodeLogger:
     """Comprehensive episode logger for NavIRL simulations.
@@ -725,10 +725,7 @@ class EpisodeLogger:
 
     def save_trajectories(self) -> None:
         """Write all trajectories to a JSON file."""
-        data = {
-            str(aid): traj.to_dict()
-            for aid, traj in self._trajectories.items()
-        }
+        data = {str(aid): traj.to_dict() for aid, traj in self._trajectories.items()}
         with self.trajectories_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
@@ -802,8 +799,18 @@ class EpisodeLogger:
         self._flush_state_buffer()
 
         fieldnames = [
-            "step", "time_s", "agent_id", "kind", "x", "y",
-            "vx", "vy", "goal_x", "goal_y", "radius", "max_speed",
+            "step",
+            "time_s",
+            "agent_id",
+            "kind",
+            "x",
+            "y",
+            "vx",
+            "vy",
+            "goal_x",
+            "goal_y",
+            "radius",
+            "max_speed",
             "behavior",
         ]
 
@@ -853,14 +860,16 @@ class EpisodeLogger:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for ev in self._events:
-                writer.writerow({
-                    "step": ev.step,
-                    "time_s": ev.time_s,
-                    "event_type": ev.event_type,
-                    "agent_id": ev.agent_id,
-                    "wall_time": ev.wall_time,
-                    "payload": json.dumps(ev.payload),
-                })
+                writer.writerow(
+                    {
+                        "step": ev.step,
+                        "time_s": ev.time_s,
+                        "event_type": ev.event_type,
+                        "agent_id": ev.agent_id,
+                        "wall_time": ev.wall_time,
+                        "payload": json.dumps(ev.payload),
+                    }
+                )
         return output_path
 
     def export_json(self, output_path: Path | None = None) -> Path:
@@ -893,10 +902,7 @@ class EpisodeLogger:
             "metadata": self._metadata,
             "states": states,
             "events": [ev.to_dict() for ev in self._events],
-            "trajectories": {
-                str(aid): traj.to_dict()
-                for aid, traj in self._trajectories.items()
-            },
+            "trajectories": {str(aid): traj.to_dict() for aid, traj in self._trajectories.items()},
             "rewards": self._reward_history,
             "statistics": self.compute_statistics().to_dict(),
         }
@@ -985,7 +991,7 @@ class EpisodeLogger:
 
         pos_arr = np.array(positions, dtype=np.float64)
         diff = pos_arr[:, np.newaxis, :] - pos_arr[np.newaxis, :, :]
-        return np.sqrt(np.sum(diff ** 2, axis=-1))
+        return np.sqrt(np.sum(diff**2, axis=-1))
 
     def minimum_separation(self) -> float:
         """Find the minimum separation between any two agents across all steps.

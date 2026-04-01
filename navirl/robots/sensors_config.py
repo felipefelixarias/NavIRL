@@ -15,8 +15,10 @@ import numpy as np
 # Sensor types
 # -----------------------------------------------------------------------
 
+
 class SensorType(enum.Enum):
     """Supported sensor modalities."""
+
     LIDAR_2D = "lidar_2d"
     LIDAR_3D = "lidar_3d"
     CAMERA_RGB = "camera_rgb"
@@ -32,6 +34,7 @@ class SensorType(enum.Enum):
 # Noise models
 # -----------------------------------------------------------------------
 
+
 @dataclass
 class GaussianNoise:
     """Additive zero-mean Gaussian noise.
@@ -39,6 +42,7 @@ class GaussianNoise:
     Attributes:
         std_dev: Standard deviation of the noise.
     """
+
     std_dev: float = 0.01
 
     def sample(self, shape: tuple[int, ...] = ()) -> np.ndarray:
@@ -60,6 +64,7 @@ class UniformNoise:
     Attributes:
         half_range: Noise is drawn from ``[-half_range, half_range]``.
     """
+
     half_range: float = 0.01
 
     def sample(self, shape: tuple[int, ...] = ()) -> np.ndarray:
@@ -76,6 +81,7 @@ class RangeProportionalNoise:
     Attributes:
         coefficient: Proportionality constant.
     """
+
     coefficient: float = 0.005
 
     def sample_at_range(self, ranges: np.ndarray) -> np.ndarray:
@@ -101,6 +107,7 @@ class SaltPepperNoise:
         p_salt: Probability of a max-range reading.
         p_pepper: Probability of a zero reading.
     """
+
     p_salt: float = 0.01
     p_pepper: float = 0.005
 
@@ -125,6 +132,7 @@ class SaltPepperNoise:
 # -----------------------------------------------------------------------
 # Sensor mount
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class SensorMount:
@@ -173,6 +181,7 @@ class SensorMount:
 # -----------------------------------------------------------------------
 # World-frame transforms
 # -----------------------------------------------------------------------
+
 
 def _wrap_angle(a: float) -> float:
     return float((a + np.pi) % (2.0 * np.pi) - np.pi)
@@ -227,24 +236,29 @@ def sensor_world_pose_3d(
     cy, sy = np.cos(robot_yaw), np.sin(robot_yaw)
     cp, sp = np.cos(robot_pitch), np.sin(robot_pitch)
     cr, sr = np.cos(robot_roll), np.sin(robot_roll)
-    R = np.array([
-        [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
-        [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
-        [-sp, cp * sr, cp * cr],
-    ])
+    R = np.array(
+        [
+            [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+            [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+            [-sp, cp * sr, cp * cr],
+        ]
+    )
     offset = np.array([mount.offset_x, mount.offset_y, mount.offset_z])
     world_pos = np.array([robot_x, robot_y, robot_z]) + R @ offset
-    world_rpy = np.array([
-        _wrap_angle(robot_roll + mount.roll),
-        _wrap_angle(robot_pitch + mount.pitch),
-        _wrap_angle(robot_yaw + mount.yaw),
-    ])
+    world_rpy = np.array(
+        [
+            _wrap_angle(robot_roll + mount.roll),
+            _wrap_angle(robot_pitch + mount.pitch),
+            _wrap_angle(robot_yaw + mount.yaw),
+        ]
+    )
     return (world_pos, world_rpy)
 
 
 # -----------------------------------------------------------------------
 # FOV computation
 # -----------------------------------------------------------------------
+
 
 def compute_fov_polygon(
     sensor_x: float,
@@ -305,6 +319,7 @@ def compute_fov_rays(
 # -----------------------------------------------------------------------
 # Occlusion checking
 # -----------------------------------------------------------------------
+
 
 def check_point_visibility(
     sensor_x: float,
@@ -415,8 +430,13 @@ def compute_visible_points(
             continue
         if obstacles is not None and obstacles.shape[0] > 0:
             if raytrace_occlusion(
-                sensor_x, sensor_y, sensor_yaw, mount, points[i],
-                obstacles, obstacle_radius,
+                sensor_x,
+                sensor_y,
+                sensor_yaw,
+                mount,
+                points[i],
+                obstacles,
+                obstacle_radius,
             ):
                 continue
         visible[i] = True
@@ -426,6 +446,7 @@ def compute_visible_points(
 # -----------------------------------------------------------------------
 # Simulated range scan
 # -----------------------------------------------------------------------
+
 
 def simulate_range_scan(
     sensor_x: float,
@@ -472,7 +493,7 @@ def simulate_range_scan(
             closest = origin + ray_dir * proj
             perp_dist = float(np.linalg.norm(obs[:2] - closest))
             if perp_dist < obstacle_radius:
-                hit_dist = proj - np.sqrt(max(obstacle_radius ** 2 - perp_dist ** 2, 0.0))
+                hit_dist = proj - np.sqrt(max(obstacle_radius**2 - perp_dist**2, 0.0))
                 if mount.min_range <= hit_dist < ranges[ri]:
                     ranges[ri] = hit_dist
 
@@ -493,6 +514,7 @@ def simulate_range_scan(
 # -----------------------------------------------------------------------
 # Sensor suite
 # -----------------------------------------------------------------------
+
 
 class SensorSuite:
     """Collection of sensors mounted on a robot.
@@ -646,7 +668,13 @@ class SensorSuite:
                 continue
             sx, sy, syaw = sensor_world_pose_2d(robot_x, robot_y, robot_theta, m)
             vis = compute_visible_points(
-                sx, sy, syaw, m, points, obstacles, obstacle_radius,
+                sx,
+                sy,
+                syaw,
+                m,
+                points,
+                obstacles,
+                obstacle_radius,
             )
             combined |= vis
         return combined
@@ -682,7 +710,14 @@ class SensorSuite:
                 continue
             sx, sy, syaw = sensor_world_pose_2d(robot_x, robot_y, robot_theta, m)
             r, a = simulate_range_scan(
-                sx, sy, syaw, m, obstacles, obstacle_radius, noise, salt_pepper,
+                sx,
+                sy,
+                syaw,
+                m,
+                obstacles,
+                obstacle_radius,
+                noise,
+                salt_pepper,
             )
             results[m.name] = (r, a)
         return results
@@ -691,6 +726,7 @@ class SensorSuite:
 # -----------------------------------------------------------------------
 # Sensor fusion configuration
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class FusionWeight:
@@ -701,6 +737,7 @@ class FusionWeight:
         weight: Relative weight (higher = more trusted).
         delay_s: Sensor delay / latency (seconds).
     """
+
     sensor_name: str = ""
     weight: float = 1.0
     delay_s: float = 0.0
@@ -717,6 +754,7 @@ class SensorFusionConfig:
         outlier_rejection: If ``True`` apply outlier filtering.
         outlier_threshold: Mahalanobis-distance threshold for outliers.
     """
+
     weights: list[FusionWeight] = field(default_factory=list)
     fusion_method: str = "weighted_average"
     outlier_rejection: bool = False
@@ -805,6 +843,7 @@ def fuse_with_covariance(
 # -----------------------------------------------------------------------
 # Preset sensor configurations
 # -----------------------------------------------------------------------
+
 
 def default_mobile_robot_suite() -> SensorSuite:
     """Create a typical mobile-robot sensor suite.

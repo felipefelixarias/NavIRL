@@ -79,9 +79,7 @@ class SplitConfig:
     def __post_init__(self) -> None:
         total = self.train_ratio + self.val_ratio + self.test_ratio
         if abs(total - 1.0) > 1e-6:
-            raise ValueError(
-                f"Split ratios must sum to 1.0, got {total:.6f}"
-            )
+            raise ValueError(f"Split ratios must sum to 1.0, got {total:.6f}")
 
 
 @dataclass
@@ -168,11 +166,7 @@ def _load_csv(path: Path) -> list[Trajectory]:
     for aid, data in agent_data.items():
         ts = np.array(data["timestamps"], dtype=np.float64)
         pos = np.array(data["positions"], dtype=np.float64)
-        vel = (
-            np.array(data["velocities"], dtype=np.float64)
-            if data["velocities"]
-            else None
-        )
+        vel = np.array(data["velocities"], dtype=np.float64) if data["velocities"] else None
         # Sort by timestamp
         order = np.argsort(ts)
         trajectories.append(
@@ -218,11 +212,7 @@ def _load_json(path: Path) -> list[Trajectory]:
     for entry in traj_list:
         ts = np.array(entry["timestamps"], dtype=np.float64)
         pos = np.array(entry["positions"], dtype=np.float64)
-        vel = (
-            np.array(entry["velocities"], dtype=np.float64)
-            if "velocities" in entry
-            else None
-        )
+        vel = np.array(entry["velocities"], dtype=np.float64) if "velocities" in entry else None
         agent_id = entry.get("agent_id", entry.get("id", len(trajectories)))
         order = np.argsort(ts)
         trajectories.append(
@@ -276,9 +266,9 @@ def _load_protobuf(path: Path) -> list[Trajectory]:
         offset += num_t * 8
 
         # Positions
-        pos = np.frombuffer(
-            raw, dtype="<f8", count=num_t * 2, offset=offset
-        ).reshape(num_t, 2).copy()
+        pos = (
+            np.frombuffer(raw, dtype="<f8", count=num_t * 2, offset=offset).reshape(num_t, 2).copy()
+        )
         offset += num_t * 16
 
         # Velocities flag
@@ -290,9 +280,11 @@ def _load_protobuf(path: Path) -> list[Trajectory]:
 
         vel = None
         if has_vel:
-            vel = np.frombuffer(
-                raw, dtype="<f8", count=num_t * 2, offset=offset
-            ).reshape(num_t, 2).copy()
+            vel = (
+                np.frombuffer(raw, dtype="<f8", count=num_t * 2, offset=offset)
+                .reshape(num_t, 2)
+                .copy()
+            )
             offset += num_t * 16
 
         trajectories.append(
@@ -700,9 +692,7 @@ def find_neighbors(
     for w_idx, w in enumerate(windows):
         for t_idx, t in enumerate(w.timestamps_obs):
             rounded_t = round(t / timestamp_tolerance) * timestamp_tolerance
-            ts_lookup.setdefault(rounded_t, []).append(
-                (w.agent_id, w_idx, w.observed[t_idx])
-            )
+            ts_lookup.setdefault(rounded_t, []).append((w.agent_id, w_idx, w.observed[t_idx]))
 
     for w_idx, w in enumerate(windows):
         neighbor_pos_per_step: list[np.ndarray] = []
@@ -722,9 +712,7 @@ def find_neighbors(
             # Sort by distance and limit
             neighbors.sort(key=lambda x: x[0])
             if neighbors:
-                nbr_arr = np.array(
-                    [n[1] for n in neighbors[:max_neighbors]], dtype=np.float64
-                )
+                nbr_arr = np.array([n[1] for n in neighbors[:max_neighbors]], dtype=np.float64)
             else:
                 nbr_arr = np.zeros((0, 2), dtype=np.float64)
             neighbor_pos_per_step.append(nbr_arr)
@@ -934,14 +922,10 @@ class TrajectoryDatasetPipeline:
             ``self`` for method chaining.
         """
         # Windowing
-        self._windows = create_windows(
-            self._trajectories, self.obs_len, self.pred_len, self.stride
-        )
+        self._windows = create_windows(self._trajectories, self.obs_len, self.pred_len, self.stride)
 
         # Neighbor finding
-        find_neighbors(
-            self._windows, self.neighbor_radius, self.max_neighbors
-        )
+        find_neighbors(self._windows, self.neighbor_radius, self.max_neighbors)
 
         # Scene context
         if self.scene_map is not None:
@@ -957,9 +941,7 @@ class TrajectoryDatasetPipeline:
             self._windows = augment_dataset(self._windows, self.augmentation)
 
         # Splitting
-        self._train, self._val, self._test = split_windows(
-            self._windows, self.split_config
-        )
+        self._train, self._val, self._test = split_windows(self._windows, self.split_config)
         return self
 
     # ---- Accessors -------------------------------------------------------
@@ -984,9 +966,7 @@ class TrajectoryDatasetPipeline:
         """All processed trajectory windows (before splitting)."""
         return self._windows
 
-    def get_numpy_arrays(
-        self, split: str = "train"
-    ) -> dict[str, np.ndarray]:
+    def get_numpy_arrays(self, split: str = "train") -> dict[str, np.ndarray]:
         """Return numpy arrays for a given split suitable for model training.
 
         Parameters:

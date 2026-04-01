@@ -63,12 +63,8 @@ class CrowdAnalyzer:
             return grid
 
         # Bin each agent into its grid cell.
-        col_idx = np.clip(
-            ((positions[:, 0] - x_min) / cell_size).astype(int), 0, n_cols - 1
-        )
-        row_idx = np.clip(
-            ((positions[:, 1] - y_min) / cell_size).astype(int), 0, n_rows - 1
-        )
+        col_idx = np.clip(((positions[:, 0] - x_min) / cell_size).astype(int), 0, n_cols - 1)
+        row_idx = np.clip(((positions[:, 1] - y_min) / cell_size).astype(int), 0, n_rows - 1)
 
         np.add.at(grid, (row_idx, col_idx), 1)
 
@@ -113,12 +109,8 @@ class CrowdAnalyzer:
         if len(positions) == 0:
             return flow
 
-        col_idx = np.clip(
-            ((positions[:, 0] - x_min) / cell_size).astype(int), 0, n_cols - 1
-        )
-        row_idx = np.clip(
-            ((positions[:, 1] - y_min) / cell_size).astype(int), 0, n_rows - 1
-        )
+        col_idx = np.clip(((positions[:, 0] - x_min) / cell_size).astype(int), 0, n_cols - 1)
+        row_idx = np.clip(((positions[:, 1] - y_min) / cell_size).astype(int), 0, n_rows - 1)
 
         np.add.at(flow[:, :, 0], (row_idx, col_idx), velocities[:, 0])
         np.add.at(flow[:, :, 1], (row_idx, col_idx), velocities[:, 1])

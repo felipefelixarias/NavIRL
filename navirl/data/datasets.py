@@ -131,9 +131,7 @@ class ETHUCYDataset(TrajectoryDataset):
         super().__init__()
         for s in scenes:
             if s not in _ETH_UCY_SCENES:
-                raise ValueError(
-                    f"Unknown ETH/UCY scene '{s}'. Choose from {_ETH_UCY_SCENES}"
-                )
+                raise ValueError(f"Unknown ETH/UCY scene '{s}'. Choose from {_ETH_UCY_SCENES}")
         self.scene_names = list(scenes)
         self.delim = delim
 

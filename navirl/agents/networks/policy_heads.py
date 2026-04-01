@@ -594,7 +594,9 @@ class TwinQHead(nn.Module):
 
     # ------------------------------------------------------------------
     def forward(
-        self, state: Tensor, action: Tensor,
+        self,
+        state: Tensor,
+        action: Tensor,
     ) -> tuple[Tensor, Tensor]:
         """Compute Q-values from both networks.
 

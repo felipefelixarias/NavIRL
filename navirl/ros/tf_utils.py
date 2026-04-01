@@ -25,6 +25,7 @@ try:
     from geometry_msgs.msg import TransformStamped
     from rclpy.time import Time as RosTime
     from tf2_ros import TransformException
+
     _TF2_AVAILABLE = True
 except ImportError:
     _TF2_AVAILABLE = False
@@ -34,6 +35,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Pure-numpy helpers (no ROS2 dependency)
 # ---------------------------------------------------------------------------
+
 
 def _yaw_to_rotation_matrix(yaw: float) -> np.ndarray:
     """Return a 2x2 rotation matrix for the given yaw angle."""
@@ -106,6 +108,7 @@ def robot_to_world(
 # TransformManager
 # ---------------------------------------------------------------------------
 
+
 class TransformManager:
     """Cache and look up TF2 transforms between coordinate frames.
 
@@ -139,10 +142,7 @@ class TransformManager:
         if _TF2_AVAILABLE:
             self._init_tf2()
         else:
-            logger.info(
-                "TransformManager: tf2_ros not available -- "
-                "using manual cache mode."
-            )
+            logger.info("TransformManager: tf2_ros not available -- using manual cache mode.")
 
     def _init_tf2(self) -> None:
         if self._node is None:
@@ -153,9 +153,7 @@ class TransformManager:
         self._tf_buffer = tf2_ros.Buffer(
             cache_time=rclpy.duration.Duration(seconds=self._cache_duration)
         )
-        self._tf_listener = tf2_ros.TransformListener(
-            self._tf_buffer, self._node
-        )
+        self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self._node)
         logger.info("TransformManager: TF2 listener initialised.")
 
     # -- Public API ---------------------------------------------------------
@@ -169,9 +167,7 @@ class TransformManager:
         yaw: float,
     ) -> None:
         """Manually cache a 2-D transform (useful when TF2 is unavailable)."""
-        self._manual_cache[(parent_frame, child_frame)] = (
-            x, y, yaw, time.time()
-        )
+        self._manual_cache[(parent_frame, child_frame)] = (x, y, yaw, time.time())
 
     def lookup(
         self,
@@ -209,7 +205,9 @@ class TransformManager:
             else:
                 logger.warning(
                     "TransformManager: cached transform %s -> %s is stale (%.1fs old).",
-                    target_frame, source_frame, age,
+                    target_frame,
+                    source_frame,
+                    age,
                 )
                 return (x, y, yaw)
 
@@ -248,6 +246,7 @@ class TransformManager:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
     siny_cosp = 2.0 * (qw * qz + qx * qy)

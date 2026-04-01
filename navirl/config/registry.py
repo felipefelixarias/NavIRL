@@ -17,6 +17,7 @@ T = TypeVar("T")
 # Generic registry
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _Entry:
     """Internal bookkeeping for a registered component."""
@@ -70,9 +71,7 @@ class ComponentRegistry:
             If *name* is already registered.
         """
         if name in self._entries:
-            raise ValueError(
-                f"'{name}' is already registered in the '{self.name}' registry."
-            )
+            raise ValueError(f"'{name}' is already registered in the '{self.name}' registry.")
         self._entries[name] = _Entry(cls=cls, metadata=metadata or {})
 
     # -- queries ------------------------------------------------------------
@@ -87,10 +86,7 @@ class ComponentRegistry:
         """
         if name not in self._entries:
             available = ", ".join(sorted(self._entries))
-            raise KeyError(
-                f"'{name}' not found in '{self.name}' registry. "
-                f"Available: {available}"
-            )
+            raise KeyError(f"'{name}' not found in '{self.name}' registry. Available: {available}")
         return self._entries[name].cls
 
     def list_registered(self) -> list[tuple[str, dict[str, Any]]]:

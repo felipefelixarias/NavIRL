@@ -7,6 +7,7 @@ import pytest
 
 try:
     import torch
+
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
@@ -17,6 +18,7 @@ pytestmark = pytest.mark.skipif(not _TORCH_AVAILABLE, reason="PyTorch not instal
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def expert_data():
@@ -41,10 +43,12 @@ def expert_data():
 def obs_space():
     class _Space:
         shape = (8,)
+
         def __init__(self):
             self.dtype = np.float32
             self.low = np.full(8, -np.inf)
             self.high = np.full(8, np.inf)
+
     return _Space()
 
 
@@ -52,11 +56,13 @@ def obs_space():
 def action_space():
     class _Space:
         shape = (2,)
+
         def __init__(self):
             self.dtype = np.float32
             self.low = np.array([-1, -1], dtype=np.float32)
             self.high = np.array([1, 1], dtype=np.float32)
             self.n = None
+
     return _Space()
 
 
@@ -64,15 +70,18 @@ def action_space():
 # MaxEntIRL
 # ---------------------------------------------------------------------------
 
+
 class TestMaxEntIRL:
     def test_config_creation(self):
         from navirl.imitation.irl import MaxEntIRLConfig
+
         cfg = MaxEntIRLConfig(lr=0.01, feature_dim=32, num_iterations=50)
         assert cfg.lr == 0.01
         assert cfg.feature_dim == 32
 
     def test_config_to_dict(self):
         from navirl.imitation.irl import MaxEntIRLConfig
+
         cfg = MaxEntIRLConfig()
         d = cfg.to_dict()
         assert "lr" in d
@@ -80,12 +89,14 @@ class TestMaxEntIRL:
 
     def test_reward_initialization(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
+
         cfg = MaxEntIRLConfig(feature_dim=16)
         irl = MaxEntIRL(cfg)
         assert irl.theta.shape == (16,)
 
     def test_compute_reward(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
+
         cfg = MaxEntIRLConfig(feature_dim=8)
         irl = MaxEntIRL(cfg)
         features = np.random.randn(8).astype(np.float64)
@@ -94,6 +105,7 @@ class TestMaxEntIRL:
 
     def test_update_step(self):
         from navirl.imitation.irl import MaxEntIRL, MaxEntIRLConfig
+
         cfg = MaxEntIRLConfig(feature_dim=8, lr=0.1)
         irl = MaxEntIRL(cfg)
         expert_features = np.ones(8)
@@ -108,17 +120,18 @@ class TestMaxEntIRL:
 # GAIL
 # ---------------------------------------------------------------------------
 
+
 class TestGAIL:
     def test_config_creation(self):
         from navirl.imitation.gail import GAILConfig
+
         cfg = GAILConfig(lr_discriminator=1e-4, disc_hidden_dims=(64, 64))
         assert cfg.lr_discriminator == 1e-4
 
     def test_discriminator_forward(self):
         from navirl.imitation.gail import Discriminator
-        disc = Discriminator(
-            state_dim=8, action_dim=2, hidden_dims=(32, 32)
-        )
+
+        disc = Discriminator(state_dim=8, action_dim=2, hidden_dims=(32, 32))
         state = torch.randn(4, 8)
         action = torch.randn(4, 2)
         output = disc(state, action)
@@ -128,6 +141,7 @@ class TestGAIL:
 
     def test_discriminator_gradient(self):
         from navirl.imitation.gail import Discriminator
+
         disc = Discriminator(state_dim=8, action_dim=2, hidden_dims=(16,))
         state = torch.randn(2, 8)
         action = torch.randn(2, 2)
@@ -139,12 +153,14 @@ class TestGAIL:
 
     def test_gail_agent_creation(self, obs_space, action_space):
         from navirl.imitation.gail import GAILAgent, GAILConfig
+
         cfg = GAILConfig(disc_hidden_dims=(16,), policy_hidden_dims=(16,))
         agent = GAILAgent(cfg, obs_space, action_space, device="cpu")
         assert agent is not None
 
     def test_gail_agent_act(self, obs_space, action_space):
         from navirl.imitation.gail import GAILAgent, GAILConfig
+
         cfg = GAILConfig(disc_hidden_dims=(16,), policy_hidden_dims=(16,))
         agent = GAILAgent(cfg, obs_space, action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -156,15 +172,18 @@ class TestGAIL:
 # AIRL
 # ---------------------------------------------------------------------------
 
+
 class TestAIRL:
     def test_config_creation(self):
         from navirl.imitation.airl import AIRLConfig
+
         cfg = AIRLConfig(gamma=0.99, state_only=True)
         assert cfg.gamma == 0.99
         assert cfg.state_only is True
 
     def test_reward_network_forward(self):
         from navirl.imitation.airl import RewardNetwork
+
         net = RewardNetwork(state_dim=8, action_dim=2, hidden_dims=(32,), gamma=0.99)
         state = torch.randn(4, 8)
         action = torch.randn(4, 2)
@@ -175,9 +194,13 @@ class TestAIRL:
 
     def test_reward_network_state_only(self):
         from navirl.imitation.airl import RewardNetwork
+
         net = RewardNetwork(
-            state_dim=8, action_dim=2, hidden_dims=(16,),
-            gamma=0.99, state_only=True,
+            state_dim=8,
+            action_dim=2,
+            hidden_dims=(16,),
+            gamma=0.99,
+            state_only=True,
         )
         state = torch.randn(2, 8)
         action = torch.randn(2, 2)
@@ -187,12 +210,14 @@ class TestAIRL:
 
     def test_airl_agent_creation(self, obs_space, action_space):
         from navirl.imitation.airl import AIRLAgent, AIRLConfig
+
         cfg = AIRLConfig(disc_hidden_dims=(16,), policy_hidden_dims=(16,))
         agent = AIRLAgent(cfg, obs_space, action_space, device="cpu")
         assert agent is not None
 
     def test_airl_agent_act(self, obs_space, action_space):
         from navirl.imitation.airl import AIRLAgent, AIRLConfig
+
         cfg = AIRLConfig(disc_hidden_dims=(16,), policy_hidden_dims=(16,))
         agent = AIRLAgent(cfg, obs_space, action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -204,9 +229,11 @@ class TestAIRL:
 # DemonstrationDataset
 # ---------------------------------------------------------------------------
 
+
 class TestDemonstrationDataset:
     def test_from_arrays(self, expert_data):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=expert_data["observations"],
             actions=expert_data["actions"],
@@ -215,6 +242,7 @@ class TestDemonstrationDataset:
 
     def test_getitem(self, expert_data):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=expert_data["observations"],
             actions=expert_data["actions"],
@@ -224,6 +252,7 @@ class TestDemonstrationDataset:
 
     def test_save_load_npz(self, expert_data, tmp_path):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=expert_data["observations"],
             actions=expert_data["actions"],
@@ -237,6 +266,7 @@ class TestDemonstrationDataset:
 
     def test_normalize(self, expert_data):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=expert_data["observations"],
             actions=expert_data["actions"],
@@ -247,6 +277,7 @@ class TestDemonstrationDataset:
 
     def test_split(self, expert_data):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=expert_data["observations"],
             actions=expert_data["actions"],
@@ -260,9 +291,11 @@ class TestDemonstrationDataset:
 # Dataset edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestDatasetEdgeCases:
     def test_empty_dataset(self):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=np.empty((0, 4), dtype=np.float32),
             actions=np.empty((0, 2), dtype=np.float32),
@@ -271,6 +304,7 @@ class TestDatasetEdgeCases:
 
     def test_single_transition(self):
         from navirl.imitation.dataset import DemonstrationDataset
+
         ds = DemonstrationDataset(
             observations=np.ones((1, 4), dtype=np.float32),
             actions=np.ones((1, 2), dtype=np.float32),
@@ -279,6 +313,7 @@ class TestDatasetEdgeCases:
 
     def test_feature_statistics(self, expert_data):
         from navirl.imitation.dataset import FeatureStatistics
+
         stats = FeatureStatistics(
             obs_mean=np.zeros(8),
             obs_std=np.ones(8),
@@ -292,9 +327,11 @@ class TestDatasetEdgeCases:
 # Discriminator training step
 # ---------------------------------------------------------------------------
 
+
 class TestDiscriminatorTraining:
     def test_single_update(self, expert_data):
         from navirl.imitation.gail import Discriminator
+
         disc = Discriminator(state_dim=8, action_dim=2, hidden_dims=(32,))
         optimizer = torch.optim.Adam(disc.parameters(), lr=1e-3)
 
@@ -315,6 +352,7 @@ class TestDiscriminatorTraining:
 
     def test_discriminator_different_sizes(self):
         from navirl.imitation.gail import Discriminator
+
         for hdims in [(16,), (32, 32), (64, 32, 16)]:
             disc = Discriminator(state_dim=4, action_dim=2, hidden_dims=hdims)
             out = disc(torch.randn(1, 4), torch.randn(1, 2))
@@ -324,6 +362,7 @@ class TestDiscriminatorTraining:
 # ---------------------------------------------------------------------------
 # Reward learning integration
 # ---------------------------------------------------------------------------
+
 
 class TestRewardLearningIntegration:
     def test_irl_reward_matches_expert(self):

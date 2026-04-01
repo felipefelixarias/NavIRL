@@ -19,6 +19,7 @@ from navirl.sensors.base import GaussianNoise, NoiseModel, SensorBase
 #  Configuration dataclasses
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CameraConfig:
     """Configuration for the simulated monocular camera.
@@ -52,6 +53,7 @@ class DepthSensorConfig:
 # ---------------------------------------------------------------------------
 #  CameraSensor
 # ---------------------------------------------------------------------------
+
 
 class CameraSensor(SensorBase):
     """Simulated monocular RGB camera.
@@ -123,7 +125,7 @@ class CameraSensor(SensorBase):
         def draw_filled_circle(img, cx, cy, r_px, color):
             """Draw a filled circle using numpy indexing."""
             yy, xx = np.ogrid[:H, :W]
-            mask = (xx - cx) ** 2 + (yy - cy) ** 2 <= r_px ** 2
+            mask = (xx - cx) ** 2 + (yy - cy) ** 2 <= r_px**2
             img[mask] = color
 
         # Draw agents
@@ -133,7 +135,9 @@ class CameraSensor(SensorBase):
             ar = agent["radius"] if isinstance(agent, dict) else agent[2]
             px, py = world_to_pixel(ap[0], ap[1])
             r_px = max(1, int(ar / m_per_px))
-            color = agent.get("color", [255, 127, 14]) if isinstance(agent, dict) else [255, 127, 14]
+            color = (
+                agent.get("color", [255, 127, 14]) if isinstance(agent, dict) else [255, 127, 14]
+            )
             draw_filled_circle(img, px, py, r_px, color)
 
         # Draw static circular obstacles
@@ -156,8 +160,7 @@ class CameraSensor(SensorBase):
                 self._draw_line(img, x0, y0, x1, y1, color=[40, 40, 40])
 
         # Draw robot at centre
-        draw_filled_circle(img, W // 2, H // 2,
-                           max(2, int(0.2 / m_per_px)), [31, 119, 180])
+        draw_filled_circle(img, W // 2, H // 2, max(2, int(0.2 / m_per_px)), [31, 119, 180])
 
         return img
 
@@ -174,13 +177,14 @@ class CameraSensor(SensorBase):
 
         agents = ws.get("agents", [])
         for agent in agents:
-            ap = np.asarray(agent["pos"] if isinstance(agent, dict) else agent[:2],
-                            dtype=np.float64)
+            ap = np.asarray(
+                agent["pos"] if isinstance(agent, dict) else agent[:2], dtype=np.float64
+            )
             ar = agent["radius"] if isinstance(agent, dict) else agent[2]
 
             # Transform to camera frame
             dx, dy = ap[0] - pos[0], ap[1] - pos[1]
-            cam_x = dx * cos_h + dy * sin_h   # forward
+            cam_x = dx * cos_h + dy * sin_h  # forward
             cam_y = -dx * sin_h + dy * cos_h  # right
 
             if cam_x < EPSILON:
@@ -195,16 +199,17 @@ class CameraSensor(SensorBase):
             # Vertical: place at horizon with size proportional to distance
             py = H // 2
 
-            color = agent.get("color", [255, 127, 14]) if isinstance(agent, dict) else [255, 127, 14]
+            color = (
+                agent.get("color", [255, 127, 14]) if isinstance(agent, dict) else [255, 127, 14]
+            )
             yy, xx = np.ogrid[:H, :W]
-            mask = (xx - px) ** 2 + (yy - py) ** 2 <= r_px ** 2
+            mask = (xx - px) ** 2 + (yy - py) ** 2 <= r_px**2
             img[mask] = color
 
         return img
 
     @staticmethod
-    def _draw_line(img: np.ndarray, x0: int, y0: int, x1: int, y1: int,
-                   color: list) -> None:
+    def _draw_line(img: np.ndarray, x0: int, y0: int, x1: int, y1: int, color: list) -> None:
         """Bresenham line drawing on an image array."""
         H, W = img.shape[:2]
         dx = abs(x1 - x0)
@@ -230,6 +235,7 @@ class CameraSensor(SensorBase):
 #  DepthSensor
 # ---------------------------------------------------------------------------
 
+
 class DepthSensor(SensorBase):
     """Simulated 1-D depth sensor.
 
@@ -250,8 +256,7 @@ class DepthSensor(SensorBase):
         super().__init__(config=config, noise_model=noise_model)
 
         half = self.config.fov_horizontal / 2.0
-        self._angles = np.linspace(-half, half, self.config.resolution,
-                                   endpoint=False)
+        self._angles = np.linspace(-half, half, self.config.resolution, endpoint=False)
         self._cos = np.cos(self._angles)
         self._sin = np.sin(self._angles)
 
@@ -277,8 +282,7 @@ class DepthSensor(SensorBase):
         world_cos = self._cos * cos_h - self._sin * sin_h
         world_sin = self._cos * sin_h + self._sin * cos_h
 
-        ranges = np.full(self.config.resolution, self.config.max_range,
-                         dtype=np.float64)
+        ranges = np.full(self.config.resolution, self.config.max_range, dtype=np.float64)
 
         # Segments
         segments = world_state.get("obstacles_segments", None)
@@ -286,7 +290,8 @@ class DepthSensor(SensorBase):
             segments = np.asarray(segments, dtype=np.float64)
             if segments.ndim == 3 and segments.shape[0] > 0:
                 seg_r = _ray_segment_intersection(
-                    pos, world_cos, world_sin, segments, self.config.max_range)
+                    pos, world_cos, world_sin, segments, self.config.max_range
+                )
                 ranges = np.minimum(ranges, seg_r)
 
         # Circular obstacles
@@ -296,8 +301,8 @@ class DepthSensor(SensorBase):
             radii_arr = np.asarray(obs_c["radii"], dtype=np.float64)
             if centres.shape[0] > 0:
                 cr = _ray_circle_intersection(
-                    pos, world_cos, world_sin, centres, radii_arr,
-                    self.config.max_range)
+                    pos, world_cos, world_sin, centres, radii_arr, self.config.max_range
+                )
                 ranges = np.minimum(ranges, cr)
 
         # Dynamic agents
@@ -311,8 +316,8 @@ class DepthSensor(SensorBase):
                 centres = agents_arr[:, :2]
                 radii_arr = agents_arr[:, 2]
             ar = _ray_circle_intersection(
-                pos, world_cos, world_sin, centres, radii_arr,
-                self.config.max_range)
+                pos, world_cos, world_sin, centres, radii_arr, self.config.max_range
+            )
             ranges = np.minimum(ranges, ar)
 
         ranges = np.clip(ranges, self.config.min_range, self.config.max_range)

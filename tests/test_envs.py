@@ -8,6 +8,7 @@ import pytest
 try:
     import gymnasium as gym
     from gymnasium import spaces
+
     _GYM_AVAILABLE = True
 except ImportError:
     _GYM_AVAILABLE = False
@@ -20,17 +21,24 @@ pytestmark = pytest.mark.skipif(not _GYM_AVAILABLE, reason="gymnasium not instal
 # ---------------------------------------------------------------------------
 
 if _GYM_AVAILABLE:
+
     class MockNavEnv(gym.Env):
         """Minimal Gymnasium env for testing wrappers."""
 
         def __init__(self, obs_dim: int = 8, continuous: bool = True):
             super().__init__()
             self.observation_space = spaces.Box(
-                low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32,
+                low=-np.inf,
+                high=np.inf,
+                shape=(obs_dim,),
+                dtype=np.float32,
             )
             if continuous:
                 self.action_space = spaces.Box(
-                    low=-1.0, high=1.0, shape=(2,), dtype=np.float32,
+                    low=-1.0,
+                    high=1.0,
+                    shape=(2,),
+                    dtype=np.float32,
                 )
             else:
                 self.action_space = spaces.Discrete(5)
@@ -52,6 +60,7 @@ if _GYM_AVAILABLE:
             info = {"success": terminated}
             return obs, reward, terminated, truncated, info
 else:
+
     class MockNavEnv:
         """Placeholder to keep module importable when Gymnasium is absent."""
 
@@ -62,6 +71,7 @@ else:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_env():
@@ -76,6 +86,7 @@ def mock_discrete_env():
 # ---------------------------------------------------------------------------
 # Base env step / reset
 # ---------------------------------------------------------------------------
+
 
 class TestBaseEnv:
     def test_reset_returns_obs_and_info(self, mock_env):
@@ -126,15 +137,18 @@ class TestBaseEnv:
 # FrameStack wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestFrameStack:
     def test_stacked_obs_shape(self, mock_env):
         from navirl.envs.wrappers import FrameStack
+
         wrapped = FrameStack(mock_env, num_stack=4)
         obs, _ = wrapped.reset()
         assert obs.shape == (4, 8)
 
     def test_stacking_accumulates(self, mock_env):
         from navirl.envs.wrappers import FrameStack
+
         wrapped = FrameStack(mock_env, num_stack=3)
         obs, _ = wrapped.reset()
         # After reset, all frames should be the same
@@ -145,12 +159,14 @@ class TestFrameStack:
     def test_various_stack_sizes(self, num_stack):
         env = MockNavEnv(obs_dim=4)
         from navirl.envs.wrappers import FrameStack
+
         wrapped = FrameStack(env, num_stack=num_stack)
         obs, _ = wrapped.reset()
         assert obs.shape == (num_stack, 4)
 
     def test_step_updates_stack(self, mock_env):
         from navirl.envs.wrappers import FrameStack
+
         wrapped = FrameStack(mock_env, num_stack=2)
         obs0, _ = wrapped.reset()
         action = mock_env.action_space.sample()
@@ -163,9 +179,11 @@ class TestFrameStack:
 # NormalizeObservation wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestNormalizeObservation:
     def test_normalized_shape(self, mock_env):
         from navirl.envs.wrappers import NormalizeObservation
+
         wrapped = NormalizeObservation(mock_env)
         obs, _ = wrapped.reset()
         assert obs.shape == (8,)
@@ -173,6 +191,7 @@ class TestNormalizeObservation:
 
     def test_observations_are_clipped(self, mock_env):
         from navirl.envs.wrappers import NormalizeObservation
+
         wrapped = NormalizeObservation(mock_env, clip=5.0)
         wrapped.reset()
         for _ in range(20):
@@ -185,17 +204,26 @@ class TestNormalizeObservation:
 # RewardShaping wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestRewardShaping:
     def test_reward_shaping(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda r, obs, act, info: r * 2.0)
+
+        # Shaping function returns additional reward (original + additional = 2.0, so additional = 1.0)
+        wrapped = RewardShaping(
+            mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: 1.0
+        )
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
         assert reward == pytest.approx(2.0)
 
     def test_reward_shaping_penalty(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda r, obs, act, info: r - 0.5)
+
+        # Shaping function returns penalty (original + penalty = 0.5, so penalty = -0.5)
+        wrapped = RewardShaping(
+            mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: -0.5
+        )
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
         assert reward == pytest.approx(0.5)
@@ -205,10 +233,12 @@ class TestRewardShaping:
 # ActionRepeat wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestActionRepeat:
     def test_action_repeat(self, mock_env):
         from navirl.envs.wrappers import ActionRepeat
-        wrapped = ActionRepeat(mock_env, repeat=4)
+
+        wrapped = ActionRepeat(mock_env, num_repeat=4)
         wrapped.reset()
         action = mock_env.action_space.sample()
         obs, reward, terminated, truncated, info = wrapped.step(action)
@@ -219,7 +249,8 @@ class TestActionRepeat:
         env = MockNavEnv(obs_dim=4)
         env._max_steps = 2
         from navirl.envs.wrappers import ActionRepeat
-        wrapped = ActionRepeat(env, repeat=10)
+
+        wrapped = ActionRepeat(env, num_repeat=10)
         wrapped.reset()
         _, reward, terminated, truncated, _ = wrapped.step(env.action_space.sample())
         # Should terminate after 2 steps, not 10
@@ -231,9 +262,11 @@ class TestActionRepeat:
 # ClipAction wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestClipAction:
     def test_clip_action(self, mock_env):
         from navirl.envs.wrappers import ClipAction
+
         wrapped = ClipAction(mock_env)
         wrapped.reset()
         # Pass an action outside bounds
@@ -247,9 +280,11 @@ class TestClipAction:
 # RecordEpisode wrapper
 # ---------------------------------------------------------------------------
 
+
 class TestRecordEpisode:
     def test_records_episode(self, mock_env):
         from navirl.envs.wrappers import RecordEpisode
+
         wrapped = RecordEpisode(mock_env)
         wrapped.reset()
         for _ in range(5):
@@ -261,6 +296,7 @@ class TestRecordEpisode:
 # CurriculumWrapper
 # ---------------------------------------------------------------------------
 
+
 class TestCurriculumWrapper:
     def test_curriculum_wrapper(self, mock_env):
         from navirl.envs.wrappers import CurriculumWrapper
@@ -268,6 +304,7 @@ class TestCurriculumWrapper:
         class MockCurriculum:
             def __init__(self):
                 self.difficulty = 0.0
+
             def get_env_config(self):
                 return {"difficulty": self.difficulty}
 
@@ -280,6 +317,7 @@ class TestCurriculumWrapper:
 # ---------------------------------------------------------------------------
 # Multi-step episode test
 # ---------------------------------------------------------------------------
+
 
 class TestFullEpisode:
     def test_full_episode_continuous(self, mock_env):
@@ -310,9 +348,11 @@ class TestFullEpisode:
 # Wrapper composition
 # ---------------------------------------------------------------------------
 
+
 class TestWrapperComposition:
     def test_normalize_then_frame_stack(self, mock_env):
         from navirl.envs.wrappers import FrameStack, NormalizeObservation
+
         wrapped = NormalizeObservation(mock_env)
         wrapped = FrameStack(wrapped, num_stack=3)
         obs, _ = wrapped.reset()
@@ -320,6 +360,7 @@ class TestWrapperComposition:
 
     def test_clip_and_reward_shape(self, mock_env):
         from navirl.envs.wrappers import ClipAction, RewardShaping
+
         wrapped = ClipAction(mock_env)
         wrapped = RewardShaping(wrapped, shaping_fn=lambda r, o, a, i: r + 1.0)
         wrapped.reset()
@@ -331,15 +372,18 @@ class TestWrapperComposition:
 # Scenario loading
 # ---------------------------------------------------------------------------
 
+
 class TestScenarios:
     def test_scenarios_module_importable(self):
         from navirl.envs import scenarios
+
         assert hasattr(scenarios, "__file__")
 
 
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     def test_env_with_zero_dim_obs(self):

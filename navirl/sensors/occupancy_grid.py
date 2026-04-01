@@ -19,6 +19,7 @@ from navirl.sensors.base import NoiseModel, SensorBase
 #  Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class OccupancyGridConfig:
     """Configuration for the ego-centric occupancy grid sensor.
@@ -45,14 +46,14 @@ class OccupancyGridConfig:
 
     grid_size: int = 64
     resolution: float = 0.25  # metres per cell
-    layers: tuple[str, ...] = ("static", "dynamic", "velocity_x",
-                                "velocity_y", "social")
+    layers: tuple[str, ...] = ("static", "dynamic", "velocity_x", "velocity_y", "social")
     decay: float = 0.0
 
 
 # ---------------------------------------------------------------------------
 #  OccupancyGridSensor
 # ---------------------------------------------------------------------------
+
 
 class OccupancyGridSensor(SensorBase):
     """Local ego-centric multi-layer occupancy grid.
@@ -126,31 +127,31 @@ class OccupancyGridSensor(SensorBase):
 
         for li, layer_name in enumerate(self._layer_names):
             if layer_name == "static":
-                grid[li] = self._render_static(
-                    world_state, world_x, world_y, gs, res)
+                grid[li] = self._render_static(world_state, world_x, world_y, gs, res)
             elif layer_name == "dynamic":
-                grid[li] = self._render_dynamic(
-                    world_state, world_x, world_y, gs, res)
+                grid[li] = self._render_dynamic(world_state, world_x, world_y, gs, res)
             elif layer_name == "velocity_x":
                 grid[li] = self._render_velocity(
-                    world_state, world_x, world_y, gs, res,
-                    component=0, heading=heading)
+                    world_state, world_x, world_y, gs, res, component=0, heading=heading
+                )
             elif layer_name == "velocity_y":
                 grid[li] = self._render_velocity(
-                    world_state, world_x, world_y, gs, res,
-                    component=1, heading=heading)
+                    world_state, world_x, world_y, gs, res, component=1, heading=heading
+                )
             elif layer_name == "social":
-                grid[li] = self._render_social(
-                    world_state, world_x, world_y, gs, res)
+                grid[li] = self._render_social(world_state, world_x, world_y, gs, res)
 
         return grid
 
     # -- Layer renderers -----------------------------------------------------
 
     def _render_static(
-        self, ws: dict[str, Any],
-        wx: np.ndarray, wy: np.ndarray,
-        gs: int, res: float,
+        self,
+        ws: dict[str, Any],
+        wx: np.ndarray,
+        wy: np.ndarray,
+        gs: int,
+        res: float,
     ) -> np.ndarray:
         """Binary static obstacle layer."""
         layer = np.zeros(gs * gs, dtype=np.float32)
@@ -187,9 +188,12 @@ class OccupancyGridSensor(SensorBase):
         return layer.reshape(gs, gs)
 
     def _render_dynamic(
-        self, ws: dict[str, Any],
-        wx: np.ndarray, wy: np.ndarray,
-        gs: int, res: float,
+        self,
+        ws: dict[str, Any],
+        wx: np.ndarray,
+        wy: np.ndarray,
+        gs: int,
+        res: float,
     ) -> np.ndarray:
         """Binary dynamic agent (pedestrian) layer."""
         layer = np.zeros(gs * gs, dtype=np.float32)
@@ -208,10 +212,14 @@ class OccupancyGridSensor(SensorBase):
         return layer.reshape(gs, gs)
 
     def _render_velocity(
-        self, ws: dict[str, Any],
-        wx: np.ndarray, wy: np.ndarray,
-        gs: int, res: float,
-        component: int, heading: float,
+        self,
+        ws: dict[str, Any],
+        wx: np.ndarray,
+        wy: np.ndarray,
+        gs: int,
+        res: float,
+        component: int,
+        heading: float,
     ) -> np.ndarray:
         """Velocity component layer (in ego frame)."""
         layer = np.zeros(gs * gs, dtype=np.float32)
@@ -243,9 +251,12 @@ class OccupancyGridSensor(SensorBase):
         return layer.reshape(gs, gs)
 
     def _render_social(
-        self, ws: dict[str, Any],
-        wx: np.ndarray, wy: np.ndarray,
-        gs: int, res: float,
+        self,
+        ws: dict[str, Any],
+        wx: np.ndarray,
+        wy: np.ndarray,
+        gs: int,
+        res: float,
     ) -> np.ndarray:
         """Social zone layer.
 
@@ -274,11 +285,8 @@ class OccupancyGridSensor(SensorBase):
 
         # Classify by proxemic zone
         layer[min_dist < PROXEMICS.intimate.outer] = 4.0
-        layer[(min_dist >= PROXEMICS.intimate.outer) &
-              (min_dist < PROXEMICS.personal.outer)] = 3.0
-        layer[(min_dist >= PROXEMICS.personal.outer) &
-              (min_dist < PROXEMICS.social.outer)] = 2.0
-        layer[(min_dist >= PROXEMICS.social.outer) &
-              (min_dist < PROXEMICS.public.outer)] = 1.0
+        layer[(min_dist >= PROXEMICS.intimate.outer) & (min_dist < PROXEMICS.personal.outer)] = 3.0
+        layer[(min_dist >= PROXEMICS.personal.outer) & (min_dist < PROXEMICS.social.outer)] = 2.0
+        layer[(min_dist >= PROXEMICS.social.outer) & (min_dist < PROXEMICS.public.outer)] = 1.0
 
         return layer.reshape(gs, gs)

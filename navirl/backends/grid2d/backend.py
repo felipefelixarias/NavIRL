@@ -104,12 +104,17 @@ class Grid2DBackend(SceneBackend):
         required_px = int(round(self._required_clearance_px(radius, with_buffer=with_buffer)))
 
         if 0 <= row < h and 0 <= col < w:
-            if self.env.map[row, col] != OBSTACLE_SPACE and self._clearance_px[row, col] >= required_px:
+            if (
+                self.env.map[row, col] != OBSTACLE_SPACE
+                and self._clearance_px[row, col] >= required_px
+            ):
                 return float(position[0]), float(position[1])
 
         candidates = self._clearance_cache.get(required_px)
         if candidates is None:
-            candidates = np.argwhere((self.env.map == FREE_SPACE) & (self._clearance_px >= required_px))
+            candidates = np.argwhere(
+                (self.env.map == FREE_SPACE) & (self._clearance_px >= required_px)
+            )
             self._clearance_cache[required_px] = candidates
 
         if candidates.size == 0:
@@ -211,7 +216,9 @@ class Grid2DBackend(SceneBackend):
             return [(sx, sy), (gx, gy)]
         adjusted: list[tuple[float, float]] = []
         for p in waypoints:
-            x, y = self._nearest_clear_world((float(p[0]), float(p[1])), path_radius, with_buffer=False)
+            x, y = self._nearest_clear_world(
+                (float(p[0]), float(p[1])), path_radius, with_buffer=False
+            )
             adjusted.append((x, y))
         return adjusted
 
@@ -223,7 +230,9 @@ class Grid2DBackend(SceneBackend):
         required = self._required_clearance_px(radius, with_buffer=False)
         return self._clearance_at(position) + 1e-6 < required
 
-    def nearest_clear_point(self, position: tuple[float, float], radius: float) -> tuple[float, float]:
+    def nearest_clear_point(
+        self, position: tuple[float, float], radius: float
+    ) -> tuple[float, float]:
         x, y = self._nearest_clear_world(position, radius, with_buffer=False)
         return float(x), float(y)
 

@@ -20,6 +20,7 @@ from navirl.sensors.base import NoiseModel, SensorBase
 #  Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class IMUConfig:
     """Configuration for the simulated IMU.
@@ -54,6 +55,7 @@ class IMUConfig:
 # ---------------------------------------------------------------------------
 #  IMUSensor
 # ---------------------------------------------------------------------------
+
 
 class IMUSensor(SensorBase):
     """Simulated 6-axis IMU (accelerometer + gyroscope).
@@ -127,8 +129,7 @@ class IMUSensor(SensorBase):
         if "robot_accel" in world_state:
             accel_2d = np.asarray(world_state["robot_accel"], dtype=np.float64)
         else:
-            vel_2d = np.asarray(world_state.get("robot_vel", [0.0, 0.0]),
-                                dtype=np.float64)
+            vel_2d = np.asarray(world_state.get("robot_vel", [0.0, 0.0]), dtype=np.float64)
             if self._prev_vel is not None:
                 accel_2d = (vel_2d - self._prev_vel) / dt
             else:
@@ -144,29 +145,21 @@ class IMUSensor(SensorBase):
         gyro_3d = np.array([0.0, 0.0, omega_z], dtype=np.float64)
 
         # --- Bias random walk ---
-        self._accel_bias += self._rng.normal(
-            0, self._cfg.accel_bias_std, size=3) * np.sqrt(dt)
-        self._gyro_bias += self._rng.normal(
-            0, self._cfg.gyro_bias_std, size=3) * np.sqrt(dt)
+        self._accel_bias += self._rng.normal(0, self._cfg.accel_bias_std, size=3) * np.sqrt(dt)
+        self._gyro_bias += self._rng.normal(0, self._cfg.gyro_bias_std, size=3) * np.sqrt(dt)
 
         # --- Apply bias and noise ---
         accel_noisy = (
-            accel_3d
-            + self._accel_bias
-            + self._rng.normal(0, self._cfg.accel_noise_std, size=3)
+            accel_3d + self._accel_bias + self._rng.normal(0, self._cfg.accel_noise_std, size=3)
         )
         gyro_noisy = (
-            gyro_3d
-            + self._gyro_bias
-            + self._rng.normal(0, self._cfg.gyro_noise_std, size=3)
+            gyro_3d + self._gyro_bias + self._rng.normal(0, self._cfg.gyro_noise_std, size=3)
         )
 
         # --- Integrate orientation ---
         self._orientation += gyro_noisy * dt
         # Wrap yaw to [-pi, pi]
-        self._orientation[2] = (
-            (self._orientation[2] + np.pi) % (2 * np.pi) - np.pi
-        )
+        self._orientation[2] = (self._orientation[2] + np.pi) % (2 * np.pi) - np.pi
 
         return {
             "linear_acceleration": accel_noisy,

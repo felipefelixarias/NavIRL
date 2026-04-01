@@ -105,11 +105,7 @@ def compute_social_features(
                 continue
             closest_idx = int(np.argmin(np.abs(ntraj.timestamps - ts)))
             n_pos = ntraj.positions[closest_idx]
-            n_vel = (
-                ntraj.velocities[closest_idx]
-                if ntraj.velocities is not None
-                else np.zeros(2)
-            )
+            n_vel = ntraj.velocities[closest_idx] if ntraj.velocities is not None else np.zeros(2)
             dist = float(np.linalg.norm(n_pos - ego_pos))
             neighbours.append((dist, n_pos, n_vel))
 

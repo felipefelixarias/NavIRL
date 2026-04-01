@@ -42,6 +42,7 @@ from navirl.data.trajectory import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def simple_trajectory():
     """Straight-line trajectory with 10 timesteps."""
@@ -71,6 +72,7 @@ def collection(simple_trajectory, curved_trajectory):
 # ---------------------------------------------------------------------------
 # Trajectory dataclass
 # ---------------------------------------------------------------------------
+
 
 class TestTrajectory:
     def test_construction_basic(self):
@@ -104,6 +106,7 @@ class TestTrajectory:
 # ---------------------------------------------------------------------------
 # TrajectoryCollection
 # ---------------------------------------------------------------------------
+
 
 class TestTrajectoryCollection:
     def test_empty_collection(self):
@@ -150,6 +153,7 @@ class TestTrajectoryCollection:
 # Interpolation / resampling
 # ---------------------------------------------------------------------------
 
+
 class TestInterpolation:
     def test_interpolate_uniform(self, simple_trajectory):
         result = interpolate(simple_trajectory, dt=0.05)
@@ -185,6 +189,7 @@ class TestInterpolation:
 # Smoothing
 # ---------------------------------------------------------------------------
 
+
 class TestSmoothing:
     def test_smooth_reduces_noise(self):
         rng = np.random.default_rng(42)
@@ -214,6 +219,7 @@ class TestSmoothing:
 # ---------------------------------------------------------------------------
 # Velocity / acceleration computation
 # ---------------------------------------------------------------------------
+
 
 class TestVelocityAcceleration:
     def test_compute_velocities_shape(self):
@@ -247,6 +253,7 @@ class TestVelocityAcceleration:
 # Alignment and cropping
 # ---------------------------------------------------------------------------
 
+
 class TestAlignment:
     def test_align_trajectories_overlap(self):
         t1 = Trajectory(timestamps=np.arange(10) * 0.1, positions=np.zeros((10, 2)), agent_id="a")
@@ -279,6 +286,7 @@ class TestAlignment:
 # ---------------------------------------------------------------------------
 # Augmentation
 # ---------------------------------------------------------------------------
+
 
 class TestAugmentation:
     def test_rotate_trajectory(self, simple_trajectory):
@@ -348,6 +356,7 @@ class TestAugmentation:
 # Preprocessing
 # ---------------------------------------------------------------------------
 
+
 class TestPreprocessing:
     def test_normalize_minmax(self, collection):
         normed, stats = normalize_positions(collection, method="minmax")
@@ -412,6 +421,7 @@ class TestPreprocessing:
 # Dataset loading with mock data
 # ---------------------------------------------------------------------------
 
+
 class TestDatasets:
     def test_ethucy_invalid_scene(self):
         with pytest.raises(ValueError, match="Unknown ETH/UCY scene"):
@@ -473,6 +483,7 @@ class TestDatasets:
 # Loaders
 # ---------------------------------------------------------------------------
 
+
 class TestLoaders:
     def test_navirl_log_loader(self, tmp_path):
         state_file = tmp_path / "state.jsonl"
@@ -529,6 +540,7 @@ class TestLoaders:
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     def test_empty_trajectory_collection_to_numpy(self):

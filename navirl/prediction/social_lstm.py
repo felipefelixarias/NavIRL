@@ -114,7 +114,9 @@ class SocialLSTM(nn.Module):
         self.output_layer = nn.Linear(hidden_dim, 5)  # mu_x, mu_y, sigma_x, sigma_y, rho
         self.dropout = nn.Dropout(dropout)
 
-    def init_hidden(self, batch_size: int, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+    def init_hidden(
+        self, batch_size: int, device: torch.device
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         h = torch.zeros(batch_size, self.hidden_dim, device=device)
         c = torch.zeros(batch_size, self.hidden_dim, device=device)
         return h, c
@@ -214,11 +216,7 @@ class SocialLSTM(nn.Module):
         dx = targets[:, :, 0] - mu_x
         dy = targets[:, :, 1] - mu_y
 
-        z = (
-            (dx / sigma_x) ** 2
-            + (dy / sigma_y) ** 2
-            - 2 * rho * dx * dy / (sigma_x * sigma_y)
-        )
+        z = (dx / sigma_x) ** 2 + (dy / sigma_y) ** 2 - 2 * rho * dx * dy / (sigma_x * sigma_y)
         denom = 1.0 - rho**2 + 1e-6
         nll = (
             0.5 * z / denom

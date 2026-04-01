@@ -251,17 +251,13 @@ class AlertManager:
             threshold: Threshold to compare against.
             direction: ``"above"`` or ``"below"``.
         """
-        triggered = (
-            (direction == "above" and value > threshold)
-            or (direction == "below" and value < threshold)
+        triggered = (direction == "above" and value > threshold) or (
+            direction == "below" and value < threshold
         )
         if triggered:
             self.send(
                 title=f"Metric alert: {metric_name}",
-                text=(
-                    f"{metric_name} = {value:.6g} is {direction} "
-                    f"threshold {threshold:.6g}"
-                ),
+                text=(f"{metric_name} = {value:.6g} is {direction} threshold {threshold:.6g}"),
                 level="WARN",
             )
 
@@ -332,9 +328,7 @@ class WandbLogger:
 
         if enabled and not _WANDB_AVAILABLE:
             if mode != "disabled":
-                raise ImportError(
-                    "wandb is not installed. Install with: pip install wandb"
-                )
+                raise ImportError("wandb is not installed. Install with: pip install wandb")
             self._enabled = False
 
         if self._enabled:
@@ -646,7 +640,7 @@ class WandbLogger:
             row: list[Any] = [i, agent_id, float(positions[i, 0]), float(positions[i, 1])]
             if velocities is not None:
                 vx, vy = float(velocities[i, 0]), float(velocities[i, 1])
-                speed = float(np.sqrt(vx ** 2 + vy ** 2))
+                speed = float(np.sqrt(vx**2 + vy**2))
                 row.extend([vx, vy, speed])
             if rewards is not None:
                 row.append(float(rewards[i]))
@@ -912,11 +906,16 @@ class WandbLogger:
 
         if chart_id in self._custom_charts:
             self._custom_charts[chart_id]
-            self.log({chart_id: wandb.plot_table(
-                vega_spec_name="",
-                data_table=table,
-                fields={c: c for c in columns},
-            )}, step=step)
+            self.log(
+                {
+                    chart_id: wandb.plot_table(
+                        vega_spec_name="",
+                        data_table=table,
+                        fields={c: c for c in columns},
+                    )
+                },
+                step=step,
+            )
         else:
             self.log({chart_id: table}, step=step)
 
@@ -1044,8 +1043,7 @@ def create_wandb_logger(
     """
     if enabled and not _WANDB_AVAILABLE:
         warnings.warn(
-            "wandb is not installed; logger will be disabled. "
-            "Install with: pip install wandb",
+            "wandb is not installed; logger will be disabled. Install with: pip install wandb",
             stacklevel=2,
         )
         enabled = False

@@ -14,6 +14,7 @@ from navirl.agents.base import (
 
 try:
     import torch
+
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
@@ -25,51 +26,65 @@ pytestmark = pytest.mark.skipif(not _TORCH_AVAILABLE, reason="PyTorch not instal
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def obs_space():
     """Minimal mock observation space."""
+
     class _Space:
         shape = (8,)
+
         def __init__(self):
             self.dtype = np.float32
             self.low = np.full(8, -np.inf)
             self.high = np.full(8, np.inf)
+
         def sample(self):
             return np.random.randn(8).astype(np.float32)
+
     return _Space()
 
 
 @pytest.fixture
 def cont_action_space():
     """Continuous action space mock."""
+
     class _Space:
         shape = (2,)
+
         def __init__(self):
             self.dtype = np.float32
             self.low = np.array([-1.0, -1.0], dtype=np.float32)
             self.high = np.array([1.0, 1.0], dtype=np.float32)
             self.n = None
+
         def sample(self):
             return np.random.uniform(-1, 1, 2).astype(np.float32)
+
     return _Space()
 
 
 @pytest.fixture
 def disc_action_space():
     """Discrete action space mock."""
+
     class _Space:
         n = 5
         shape = ()
+
         def __init__(self):
             self.dtype = np.int64
+
         def sample(self):
             return np.random.randint(0, 5)
+
     return _Space()
 
 
 # ---------------------------------------------------------------------------
 # HyperParameters
 # ---------------------------------------------------------------------------
+
 
 class TestHyperParameters:
     def test_to_dict(self):
@@ -134,9 +149,11 @@ class TestHyperParameters:
 # MetricsLogger
 # ---------------------------------------------------------------------------
 
+
 class TestMetricsLogger:
     def test_record_and_dump(self):
         logged = {}
+
         def callback(metrics, step):
             logged.update(metrics)
 
@@ -163,6 +180,7 @@ class TestMetricsLogger:
 # ---------------------------------------------------------------------------
 # RunningMeanStd
 # ---------------------------------------------------------------------------
+
 
 class TestRunningMeanStd:
     def test_update_single(self):
@@ -207,15 +225,18 @@ class TestRunningMeanStd:
 # Concrete agent creation (PPO, SAC, DQN, A2C, TD3)
 # ---------------------------------------------------------------------------
 
+
 class TestPPOAgent:
     def test_create(self, obs_space, cont_action_space):
         from navirl.agents.ppo import PPOAgent, PPOConfig
+
         config = PPOConfig(lr=1e-3, hidden_dims=(32, 32), ppo_epochs=2)
         agent = PPOAgent(config, obs_space, cont_action_space, device="cpu")
         assert agent is not None
 
     def test_act(self, obs_space, cont_action_space):
         from navirl.agents.ppo import PPOAgent, PPOConfig
+
         config = PPOConfig(hidden_dims=(16, 16))
         agent = PPOAgent(config, obs_space, cont_action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -225,6 +246,7 @@ class TestPPOAgent:
 
     def test_act_deterministic(self, obs_space, cont_action_space):
         from navirl.agents.ppo import PPOAgent, PPOConfig
+
         config = PPOConfig(hidden_dims=(16, 16))
         agent = PPOAgent(config, obs_space, cont_action_space, device="cpu", seed=42)
         obs = np.random.randn(8).astype(np.float32)
@@ -236,12 +258,14 @@ class TestPPOAgent:
 class TestSACAgent:
     def test_create(self, obs_space, cont_action_space):
         from navirl.agents.sac import SACAgent, SACConfig
+
         config = SACConfig(hidden_dims=(32, 32))
         agent = SACAgent(config, obs_space, cont_action_space, device="cpu")
         assert agent is not None
 
     def test_act(self, obs_space, cont_action_space):
         from navirl.agents.sac import SACAgent, SACConfig
+
         config = SACConfig(hidden_dims=(16, 16))
         agent = SACAgent(config, obs_space, cont_action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -252,12 +276,14 @@ class TestSACAgent:
 class TestDQNAgent:
     def test_create(self, obs_space, disc_action_space):
         from navirl.agents.dqn import DQNAgent, DQNConfig
+
         config = DQNConfig(hidden_dims=(32, 32))
         agent = DQNAgent(config, obs_space, disc_action_space, device="cpu")
         assert agent is not None
 
     def test_act(self, obs_space, disc_action_space):
         from navirl.agents.dqn import DQNAgent, DQNConfig
+
         config = DQNConfig(hidden_dims=(16, 16))
         agent = DQNAgent(config, obs_space, disc_action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -268,12 +294,14 @@ class TestDQNAgent:
 class TestA2CAgent:
     def test_create(self, obs_space, cont_action_space):
         from navirl.agents.a2c import A2CAgent, A2CConfig
+
         config = A2CConfig(hidden_dims=(32, 32))
         agent = A2CAgent(config, obs_space, cont_action_space, device="cpu")
         assert agent is not None
 
     def test_act(self, obs_space, cont_action_space):
         from navirl.agents.a2c import A2CAgent, A2CConfig
+
         config = A2CConfig(hidden_dims=(16, 16))
         agent = A2CAgent(config, obs_space, cont_action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -284,12 +312,14 @@ class TestA2CAgent:
 class TestTD3Agent:
     def test_create(self, obs_space, cont_action_space):
         from navirl.agents.td3 import TD3Agent, TD3Config
+
         config = TD3Config(hidden_dims=(32, 32))
         agent = TD3Agent(config, obs_space, cont_action_space, device="cpu")
         assert agent is not None
 
     def test_act(self, obs_space, cont_action_space):
         from navirl.agents.td3 import TD3Agent, TD3Config
+
         config = TD3Config(hidden_dims=(16, 16))
         agent = TD3Agent(config, obs_space, cont_action_space, device="cpu")
         obs = np.random.randn(8).astype(np.float32)
@@ -301,9 +331,11 @@ class TestTD3Agent:
 # Network architectures
 # ---------------------------------------------------------------------------
 
+
 class TestMLP:
     def test_forward(self):
         from navirl.agents.networks.mlp import MLP
+
         net = MLP(input_dim=8, hidden_dims=[32, 32], output_dim=4)
         x = torch.randn(1, 8)
         out = net(x)
@@ -311,6 +343,7 @@ class TestMLP:
 
     def test_different_activations(self):
         from navirl.agents.networks.mlp import MLP
+
         for act in ["relu", "tanh"]:
             net = MLP(input_dim=4, hidden_dims=[16], output_dim=2, activation=act)
             out = net(torch.randn(1, 4))
@@ -321,6 +354,7 @@ class TestCNN:
     def test_forward(self):
         # TODO: CNNExtractor doesn't exist, using NatureDQN as placeholder
         from navirl.agents.networks.cnn import NatureDQN
+
         net = NatureDQN(input_channels=3, input_height=84, input_width=84, output_dim=64)
         # Assume input is (batch, C, H, W)
         x = torch.randn(1, 3, 84, 84)
@@ -333,6 +367,7 @@ class TestRNN:
     def test_forward(self):
         # TODO: RNNEncoder doesn't exist, using SequenceEncoder as replacement
         from navirl.agents.networks.rnn import SequenceEncoder
+
         net = SequenceEncoder(input_dim=8, hidden_size=16, num_layers=1)
         # (batch, seq_len, input_dim)
         x = torch.randn(2, 5, 8)
@@ -343,6 +378,7 @@ class TestRNN:
 class TestAttention:
     def test_forward(self):
         from navirl.agents.networks.attention import SocialAttention
+
         net = SocialAttention(input_dim=16, hidden_dim=32, output_dim=16)
         # SocialAttention expects (robot_state, human_states) - simplified test
         robot_state = torch.randn(2, 16)  # (batch, input_dim)
@@ -353,23 +389,33 @@ class TestAttention:
 
 class TestPolicyHeads:
     def test_gaussian_head(self):
+        from torch.distributions import Normal
+
         from navirl.agents.networks.policy_heads import GaussianPolicyHead
+
         head = GaussianPolicyHead(input_dim=32, action_dim=2)
         x = torch.randn(1, 32)
-        dist = head(x)
+        mean, log_std = head(x)
+        std = log_std.exp()
+        dist = Normal(mean, std)
         sample = dist.sample()
         assert sample.shape == (1, 2)
 
     def test_categorical_head(self):
+        from torch.distributions import Categorical
+
         from navirl.agents.networks.policy_heads import CategoricalPolicyHead
-        head = CategoricalPolicyHead(input_dim=32, n_actions=5)
+
+        head = CategoricalPolicyHead(input_dim=32, num_actions=5)
         x = torch.randn(1, 32)
-        dist = head(x)
+        logits = head(x)
+        dist = Categorical(logits=logits)
         sample = dist.sample()
         assert sample.shape == (1,)
 
     def test_value_head(self):
         from navirl.agents.networks.policy_heads import ValueHead
+
         head = ValueHead(input_dim=32)
         x = torch.randn(4, 32)
         v = head(x)
@@ -380,9 +426,11 @@ class TestPolicyHeads:
 # BaseAgent mode toggles
 # ---------------------------------------------------------------------------
 
+
 class TestBaseAgentModes:
     def _make_agent(self, obs_space, cont_action_space):
         from navirl.agents.ppo import PPOAgent, PPOConfig
+
         config = PPOConfig(hidden_dims=(16,))
         return PPOAgent(config, obs_space, cont_action_space, device="cpu")
 
@@ -413,6 +461,7 @@ class TestBaseAgentModes:
 # Agent registry
 # ---------------------------------------------------------------------------
 
+
 class TestAgentRegistry:
     def test_registry_contains_agents(self):
         registered = BaseAgent.registered_agents()
@@ -421,5 +470,6 @@ class TestAgentRegistry:
 
     def test_make_unknown_agent(self, obs_space, cont_action_space):
         from navirl.agents.ppo import PPOConfig
+
         with pytest.raises(ValueError, match="Unknown agent"):
             BaseAgent.make("NonexistentAgent", PPOConfig(), obs_space, cont_action_space)

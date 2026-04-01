@@ -150,7 +150,9 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
     src_path = scenario.get("_meta", {}).get("source_path")
     base_dir = Path(src_path).parent if src_path else None
     map_info = load_map_info(scenario["scene"], base_dir=base_dir)
-    env = GridEnvironment("verify-feasibility", map_info.binary_map, pixels_per_meter=map_info.pixels_per_meter)
+    env = GridEnvironment(
+        "verify-feasibility", map_info.binary_map, pixels_per_meter=map_info.pixels_per_meter
+    )
     free_mask = (env.map != OBSTACLE_SPACE).astype(np.uint8)
     clearance_px = cv2.distanceTransform(free_mask, cv2.DIST_L2, 3)
 
@@ -216,8 +218,12 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
 
         start_world = env._map_to_world(np.asarray(start_rc, dtype=float))
         goal_world = env._map_to_world(np.asarray(goal_rc, dtype=float))
-        start_shift = math.hypot(float(start_world[0]) - spec["start"][0], float(start_world[1]) - spec["start"][1])
-        goal_shift = math.hypot(float(goal_world[0]) - spec["goal"][0], float(goal_world[1]) - spec["goal"][1])
+        start_shift = math.hypot(
+            float(start_world[0]) - spec["start"][0], float(start_world[1]) - spec["start"][1]
+        )
+        goal_shift = math.hypot(
+            float(goal_world[0]) - spec["goal"][0], float(goal_world[1]) - spec["goal"][1]
+        )
         if start_shift > max_adjust_m or goal_shift > max_adjust_m:
             warnings.append(
                 {
@@ -247,12 +253,16 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
             )
             continue
 
-        path_world, _ = env.shortest_path(np.asarray(spec["start"]), np.asarray(spec["goal"]), entire_path=True)
+        path_world, _ = env.shortest_path(
+            np.asarray(spec["start"]), np.asarray(spec["goal"]), entire_path=True
+        )
         min_clearance_m = float("inf")
         for wp in path_world:
             rr, cc = env._world_to_map(np.asarray(wp, dtype=float))
             if 0 <= rr < env.map.shape[0] and 0 <= cc < env.map.shape[1]:
-                min_clearance_m = min(min_clearance_m, float(clearance_px[rr, cc] / env.pixels_per_meter))
+                min_clearance_m = min(
+                    min_clearance_m, float(clearance_px[rr, cc] / env.pixels_per_meter)
+                )
         path_meta[aid] = {
             "agent_id": aid,
             "radius": radius,
@@ -260,7 +270,9 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
                 float(spec["goal"][0] - spec["start"][0]),
                 float(spec["goal"][1] - spec["start"][1]),
             ),
-            "min_path_clearance_m": float(min_clearance_m) if math.isfinite(min_clearance_m) else None,
+            "min_path_clearance_m": float(min_clearance_m)
+            if math.isfinite(min_clearance_m)
+            else None,
         }
 
     # Bidirectional bottleneck risk detection (warning-level).
@@ -329,7 +341,9 @@ def validate_anchor_layout(bundle_dir: Path) -> dict:
     src_path = scenario.get("_meta", {}).get("source_path")
     base_dir = Path(src_path).parent if src_path else None
     map_info = load_map_info(scenario["scene"], base_dir=base_dir)
-    env = GridEnvironment("verify-anchor-layout", map_info.binary_map, pixels_per_meter=map_info.pixels_per_meter)
+    env = GridEnvironment(
+        "verify-anchor-layout", map_info.binary_map, pixels_per_meter=map_info.pixels_per_meter
+    )
     free_mask = (env.map != OBSTACLE_SPACE).astype(np.uint8)
     clearance_px = cv2.distanceTransform(free_mask, cv2.DIST_L2, 3)
 
@@ -437,7 +451,9 @@ def validate_no_wall_penetration(state_path: Path, bundle_dir: Path) -> dict:
     src_path = scenario.get("_meta", {}).get("source_path")
     base_dir = Path(src_path).parent if src_path else None
     map_info = load_map_info(scenario["scene"], base_dir=base_dir)
-    env = GridEnvironment("verify-map", map_info.binary_map, pixels_per_meter=map_info.pixels_per_meter)
+    env = GridEnvironment(
+        "verify-map", map_info.binary_map, pixels_per_meter=map_info.pixels_per_meter
+    )
     free_mask = (env.map != OBSTACLE_SPACE).astype(np.uint8)
     clearance_px = cv2.distanceTransform(free_mask, cv2.DIST_L2, 3)
 
@@ -452,11 +468,15 @@ def validate_no_wall_penetration(state_path: Path, bundle_dir: Path) -> dict:
             rr, cc = env._world_to_map(np.array([x, y], dtype=float))
             if rr < 0 or cc < 0 or rr >= env.map.shape[0] or cc >= env.map.shape[1]:
                 out_of_bounds += 1
-                violations.append({"step": step, "agent_id": aid, "kind": kind, "reason": "out_of_bounds"})
+                violations.append(
+                    {"step": step, "agent_id": aid, "kind": kind, "reason": "out_of_bounds"}
+                )
                 continue
 
             if env.map[rr, cc] == OBSTACLE_SPACE:
-                violations.append({"step": step, "agent_id": aid, "kind": kind, "reason": "inside_obstacle"})
+                violations.append(
+                    {"step": step, "agent_id": aid, "kind": kind, "reason": "inside_obstacle"}
+                )
                 continue
 
             radius_m = float(agent.get("radius", 0.0))
@@ -573,7 +593,9 @@ def validate_wall_proximity(
         for agent in row["agents"]:
             aid = int(agent["id"])
             radius = float(agent.get("radius", 0.0))
-            rr, cc = env._world_to_map(np.array([float(agent["x"]), float(agent["y"])], dtype=float))
+            rr, cc = env._world_to_map(
+                np.array([float(agent["x"]), float(agent["y"])], dtype=float)
+            )
             if rr < 0 or cc < 0 or rr >= env.map.shape[0] or cc >= env.map.shape[1]:
                 continue
 
@@ -612,7 +634,12 @@ def validate_wall_proximity(
         "samples": int(total),
         "near_samples": int(near),
         "top_agents": [
-            {"agent_id": int(aid), "near_fraction": float(agent_frac), "near_steps": int(near_n), "samples": int(n)}
+            {
+                "agent_id": int(aid),
+                "near_fraction": float(agent_frac),
+                "near_steps": int(near_n),
+                "samples": int(n),
+            }
             for aid, agent_frac, near_n, n in top_agents
         ],
     }
@@ -643,7 +670,9 @@ def validate_no_teleport(state_path: Path, teleport_thresh: float) -> dict:
     }
 
 
-def validate_speed_accel_bounds(state_path: Path, dt: float, max_speed: float, max_accel: float) -> dict:
+def validate_speed_accel_bounds(
+    state_path: Path, dt: float, max_speed: float, max_accel: float
+) -> dict:
     rows = load_state_rows(state_path)
     speed_viol = []
     accel_viol = []
@@ -726,7 +755,9 @@ def validate_motion_jitter(
         )
 
     worst = 0.0 if not by_agent else max(float(r["flip_rate"]) for r in by_agent)
-    avg = 0.0 if not by_agent else float(sum(float(r["flip_rate"]) for r in by_agent) / len(by_agent))
+    avg = (
+        0.0 if not by_agent else float(sum(float(r["flip_rate"]) for r in by_agent) / len(by_agent))
+    )
 
     return {
         "name": "motion_jitter",
@@ -763,7 +794,9 @@ def validate_token_exclusivity(events_path: Path) -> dict:
 
         if et == "door_token_release":
             if holder is None:
-                violations.append({"step": step, "reason": "release_without_holder", "agent_id": aid})
+                violations.append(
+                    {"step": step, "reason": "release_without_holder", "agent_id": aid}
+                )
             elif holder != aid:
                 violations.append(
                     {
@@ -812,7 +845,10 @@ def validate_deadlock_bounded(
                 continue
 
             speed = math.hypot(float(agent["vx"]), float(agent["vy"]))
-            dist_goal = math.hypot(float(agent["goal_x"]) - float(agent["x"]), float(agent["goal_y"]) - float(agent["y"]))
+            dist_goal = math.hypot(
+                float(agent["goal_x"]) - float(agent["x"]),
+                float(agent["goal_y"]) - float(agent["y"]),
+            )
             if speed < speed_thresh and dist_goal > goal_tol:
                 streak[aid] += 1
             else:
@@ -861,7 +897,10 @@ def validate_agent_stop_duration(
             kind = str(agent.get("kind", "unknown"))
             behavior = str(agent.get("behavior", ""))
             speed = math.hypot(float(agent["vx"]), float(agent["vy"]))
-            dist_goal = math.hypot(float(agent["goal_x"]) - float(agent["x"]), float(agent["goal_y"]) - float(agent["y"]))
+            dist_goal = math.hypot(
+                float(agent["goal_x"]) - float(agent["x"]),
+                float(agent["goal_y"]) - float(agent["y"]),
+            )
 
             streak.setdefault(aid, 0)
             longest.setdefault(aid, 0)
@@ -891,7 +930,10 @@ def validate_agent_stop_duration(
                 first_violation_logged[aid] = False
 
     worst = sorted(((aid, n) for aid, n in longest.items()), key=lambda x: x[1], reverse=True)[:10]
-    worst_fmt = [{"agent_id": int(aid), "max_stopped_steps": int(n), "max_stopped_seconds": float(n * dt)} for aid, n in worst]
+    worst_fmt = [
+        {"agent_id": int(aid), "max_stopped_steps": int(n), "max_stopped_seconds": float(n * dt)}
+        for aid, n in worst
+    ]
 
     return {
         "name": "agent_stop_duration",
@@ -994,7 +1036,11 @@ def run_numeric_invariants(bundle_dir: Path) -> dict:
     max_agent_stop_seconds = float(eval_cfg.get("max_agent_stop_seconds", 8.0))
     stop_speed_thresh = float(eval_cfg.get("stop_speed_thresh", 0.02))
 
-    checks = [validate_units_metadata(scenario), validate_scenario_feasibility(bundle_dir), validate_anchor_layout(bundle_dir)]
+    checks = [
+        validate_units_metadata(scenario),
+        validate_scenario_feasibility(bundle_dir),
+        validate_anchor_layout(bundle_dir),
+    ]
     if not bool(eval_cfg.get("expected_wall_penetration", False)):
         checks.append(validate_no_wall_penetration(state_path, bundle_dir))
         if enforce_wall_clearance_buffer:
@@ -1017,7 +1063,9 @@ def run_numeric_invariants(bundle_dir: Path) -> dict:
     checks.extend(
         [
             validate_no_teleport(state_path, teleport_thresh),
-            validate_speed_accel_bounds(state_path, dt=dt, max_speed=max_speed, max_accel=max_accel),
+            validate_speed_accel_bounds(
+                state_path, dt=dt, max_speed=max_speed, max_accel=max_accel
+            ),
             validate_motion_jitter(
                 state_path,
                 min_speed=jitter_speed_thresh,
@@ -1090,7 +1138,9 @@ def build_visual_summary(bundle_dir: Path, invariants: dict) -> dict:
     return {
         "bundle_dir": str(bundle_dir),
         "scenario_id": str(summary.get("scenario_id", scenario.get("id", ""))),
-        "expected_high_interaction": bool(scenario.get("evaluation", {}).get("expected_high_interaction", False)),
+        "expected_high_interaction": bool(
+            scenario.get("evaluation", {}).get("expected_high_interaction", False)
+        ),
         "map": scenario.get("scene", {}).get("map", {}).get("resolved", {}),
         "metrics": summary.get("metrics", {}),
         "invariants": invariants,

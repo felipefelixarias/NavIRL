@@ -54,7 +54,11 @@ def test_path_map_requires_explicit_scale():
         },
         "horizon": {"steps": 10, "dt": 0.1},
         "humans": {"controller": {"type": "orca"}, "count": 0},
-        "robot": {"controller": {"type": "baseline_astar"}, "start": [0.0, 0.0], "goal": [0.1, 0.1]},
+        "robot": {
+            "controller": {"type": "baseline_astar"},
+            "start": [0.0, 0.0],
+            "goal": [0.1, 0.1],
+        },
     }
 
     with pytest.raises(ValueError):

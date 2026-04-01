@@ -33,6 +33,7 @@ from navirl.evaluation.metrics_extended import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def straight_trajectory():
     """Agent moving along x-axis at constant speed."""
@@ -66,6 +67,7 @@ def pedestrian_trajectory():
 # time_to_goal
 # ---------------------------------------------------------------------------
 
+
 class TestTimeToGoal:
     def test_goal_reached(self, straight_trajectory):
         ttg = time_to_goal(straight_trajectory, goal=np.array([5.0, 0.0]), threshold=0.5)
@@ -89,6 +91,7 @@ class TestTimeToGoal:
 # ---------------------------------------------------------------------------
 # path_length / path_efficiency
 # ---------------------------------------------------------------------------
+
 
 class TestPathMetrics:
     def test_path_length_straight(self, straight_trajectory):
@@ -116,6 +119,7 @@ class TestPathMetrics:
 # ---------------------------------------------------------------------------
 # Jerk and smoothness
 # ---------------------------------------------------------------------------
+
 
 class TestSmoothness:
     def test_jerk_straight_line(self, straight_trajectory):
@@ -154,6 +158,7 @@ class TestSmoothness:
 # ---------------------------------------------------------------------------
 # Social metrics
 # ---------------------------------------------------------------------------
+
 
 class TestSocialMetrics:
     def test_personal_space_violations(self, straight_trajectory, pedestrian_trajectory):
@@ -198,6 +203,7 @@ class TestSocialMetrics:
 # Event-based metrics
 # ---------------------------------------------------------------------------
 
+
 class TestEventMetrics:
     def test_collision_rate_none(self):
         events = [{"type": "info"}, {"type": "info"}]
@@ -230,6 +236,7 @@ class TestEventMetrics:
 # Comfort score
 # ---------------------------------------------------------------------------
 
+
 class TestComfortScore:
     def test_comfort_score_range(self, straight_trajectory, pedestrian_trajectory):
         score = comfort_score(straight_trajectory, [pedestrian_trajectory])
@@ -241,8 +248,11 @@ class TestComfortScore:
 
     def test_comfort_score_zero_weights(self, straight_trajectory):
         score = comfort_score(
-            straight_trajectory, [],
-            jerk_weight=0, space_weight=0, heading_weight=0,
+            straight_trajectory,
+            [],
+            jerk_weight=0,
+            space_weight=0,
+            heading_weight=0,
         )
         assert score == 1.0
 
@@ -250,6 +260,7 @@ class TestComfortScore:
 # ---------------------------------------------------------------------------
 # BenchmarkSuite
 # ---------------------------------------------------------------------------
+
 
 class TestBenchmarkSuite:
     def test_from_predefined(self):
@@ -271,15 +282,18 @@ class TestBenchmarkSuite:
         class MockAgent:
             def reset(self):
                 pass
+
             def act(self, obs):
                 return 0
 
         class MockScenario:
             def __init__(self):
                 self._step = 0
+
             def reset(self):
                 self._step = 0
                 return np.zeros(4)
+
             def step(self, action):
                 self._step += 1
                 done = self._step >= 3
@@ -299,6 +313,7 @@ class TestBenchmarkSuite:
 # ---------------------------------------------------------------------------
 # BenchmarkResults
 # ---------------------------------------------------------------------------
+
 
 class TestBenchmarkResults:
     def test_to_table(self):
@@ -334,6 +349,7 @@ class TestBenchmarkResults:
 # AgentComparison
 # ---------------------------------------------------------------------------
 
+
 class TestAgentComparison:
     def _make_results(self, name, values):
         return BenchmarkResults(
@@ -357,6 +373,7 @@ class TestAgentComparison:
 # ---------------------------------------------------------------------------
 # Failure analysis
 # ---------------------------------------------------------------------------
+
 
 class TestFailureAnalysis:
     def test_all_success(self):
@@ -388,6 +405,7 @@ class TestFailureAnalysis:
 # ---------------------------------------------------------------------------
 # Trajectory clustering
 # ---------------------------------------------------------------------------
+
 
 class TestTrajectoryClustering:
     def test_basic_clustering(self):

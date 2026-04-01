@@ -135,11 +135,13 @@ class A2CAgent(BaseAgent):
         self._value_head.to(self._device)
 
         # Register modules for train/eval toggle
-        self._modules.extend([
-            self._feature_extractor,
-            self._policy_head,
-            self._value_head,
-        ])
+        self._modules.extend(
+            [
+                self._feature_extractor,
+                self._policy_head,
+                self._value_head,
+            ]
+        )
 
         # --- Optimizer (single optimizer for all parameters) ---
         all_params = (
@@ -284,9 +286,7 @@ class A2CAgent(BaseAgent):
 
         # Optionally normalize advantages
         if cfg.normalize_advantages and len(advantages_t) > 1:
-            advantages_t = (advantages_t - advantages_t.mean()) / (
-                advantages_t.std() + 1e-8
-            )
+            advantages_t = (advantages_t - advantages_t.mean()) / (advantages_t.std() + 1e-8)
 
         # Evaluate all actions under the current policy
         log_probs, entropy, values = self._evaluate_actions(obs_t, actions_t)
@@ -301,11 +301,7 @@ class A2CAgent(BaseAgent):
         entropy_mean = entropy.mean()
 
         # --- Combined loss ---
-        loss = (
-            policy_loss
-            + cfg.value_loss_coeff * value_loss
-            - cfg.entropy_coeff * entropy_mean
-        )
+        loss = policy_loss + cfg.value_loss_coeff * value_loss - cfg.entropy_coeff * entropy_mean
 
         self._optimizer.zero_grad()
         loss.backward()

@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 try:
     from nav_msgs.msg import OccupancyGrid
+
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False
@@ -35,9 +36,12 @@ NO_INFORMATION = -1
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _world_to_grid(
-    wx: float, wy: float,
-    origin_x: float, origin_y: float,
+    wx: float,
+    wy: float,
+    origin_x: float,
+    origin_y: float,
     resolution: float,
 ) -> tuple[int, int]:
     """Convert world coordinates to grid cell indices."""
@@ -47,8 +51,10 @@ def _world_to_grid(
 
 
 def _grid_to_world(
-    gx: int, gy: int,
-    origin_x: float, origin_y: float,
+    gx: int,
+    gy: int,
+    origin_x: float,
+    origin_y: float,
     resolution: float,
 ) -> tuple[float, float]:
     """Convert grid cell indices to world coordinates (cell centre)."""
@@ -61,13 +67,14 @@ def _gaussian_kernel(size: int, sigma: float) -> np.ndarray:
     """Return a normalized 2-D Gaussian kernel."""
     ax = np.arange(-size // 2 + 1, size // 2 + 1, dtype=np.float64)
     xx, yy = np.meshgrid(ax, ax)
-    kernel = np.exp(-(xx ** 2 + yy ** 2) / (2.0 * sigma ** 2))
+    kernel = np.exp(-(xx**2 + yy**2) / (2.0 * sigma**2))
     return kernel / kernel.sum()
 
 
 # ---------------------------------------------------------------------------
 # CostmapManager
 # ---------------------------------------------------------------------------
+
 
 class CostmapManager:
     """Manages a stack of costmap layers and merges them into a single grid.
@@ -199,6 +206,7 @@ class CostmapManager:
 # Layer base class
 # ---------------------------------------------------------------------------
 
+
 class _CostmapLayerBase:
     """Abstract base for costmap layers."""
 
@@ -211,8 +219,12 @@ class _CostmapLayerBase:
         self._origin_y = 0.0
 
     def resize(
-        self, width: int, height: int, resolution: float,
-        origin_x: float, origin_y: float,
+        self,
+        width: int,
+        height: int,
+        resolution: float,
+        origin_x: float,
+        origin_y: float,
     ) -> None:
         self._width = width
         self._height = height
@@ -235,6 +247,7 @@ class _CostmapLayerBase:
 # ---------------------------------------------------------------------------
 # Static / inflation helpers
 # ---------------------------------------------------------------------------
+
 
 class StaticCostmapLayer(_CostmapLayerBase):
     """Layer loaded from a static map (e.g. SLAM output)."""
@@ -280,6 +293,7 @@ class InflationCostmapLayer(_CostmapLayerBase):
 # ---------------------------------------------------------------------------
 # Social costmap layer
 # ---------------------------------------------------------------------------
+
 
 class SocialCostmapLayer(_CostmapLayerBase):
     """Encodes pedestrian proxemics zones into the costmap.
@@ -362,7 +376,7 @@ class SocialCostmapLayer(_CostmapLayerBase):
 
         # Personal space -> high cost, social zone -> moderate
         personal_r2 = (self.personal_radius / self._resolution) ** 2
-        normalized = dist2 * (sigma_front ** 2)  # back to cell-distance scale
+        normalized = dist2 * (sigma_front**2)  # back to cell-distance scale
         blob = np.where(
             normalized < personal_r2,
             INSCRIBED_COST,
@@ -376,6 +390,7 @@ class SocialCostmapLayer(_CostmapLayerBase):
 # ---------------------------------------------------------------------------
 # Predictive costmap layer
 # ---------------------------------------------------------------------------
+
 
 class PredictiveCostmapLayer(_CostmapLayerBase):
     """Encodes *predicted* pedestrian trajectories into the costmap.
@@ -422,15 +437,11 @@ class PredictiveCostmapLayer(_CostmapLayerBase):
             cost_scale = 1.0
             for t in range(traj.shape[0]):
                 wx, wy = float(traj[t, 0]), float(traj[t, 1])
-                cx, cy = _world_to_grid(
-                    wx, wy, self._origin_x, self._origin_y, self._resolution
-                )
+                cx, cy = _world_to_grid(wx, wy, self._origin_x, self._origin_y, self._resolution)
                 self._stamp_circle(cx, cy, radius_cells, cost_scale)
                 cost_scale *= self.decay_factor
 
-    def _stamp_circle(
-        self, cx: int, cy: int, radius: int, scale: float
-    ) -> None:
+    def _stamp_circle(self, cx: int, cy: int, radius: int, scale: float) -> None:
         """Stamp a filled circle of cost onto the grid."""
         y_lo = max(cy - radius, 0)
         y_hi = min(cy + radius + 1, self._height)
@@ -443,13 +454,11 @@ class PredictiveCostmapLayer(_CostmapLayerBase):
         ys = np.arange(y_lo, y_hi) - cy
         xs = np.arange(x_lo, x_hi) - cx
         xx, yy = np.meshgrid(xs, ys)
-        dist2 = xx ** 2 + yy ** 2
-        mask = dist2 <= radius ** 2
+        dist2 = xx**2 + yy**2
+        mask = dist2 <= radius**2
 
-        cost = (np.exp(-dist2 / (2.0 * (radius * 0.5) ** 2)) * INSCRIBED_COST * scale)
+        cost = np.exp(-dist2 / (2.0 * (radius * 0.5) ** 2)) * INSCRIBED_COST * scale
         cost_int = cost.astype(np.int8)
 
         region = self._grid[y_lo:y_hi, x_lo:x_hi]
-        self._grid[y_lo:y_hi, x_lo:x_hi] = np.where(
-            mask, np.maximum(region, cost_int), region
-        )
+        self._grid[y_lo:y_hi, x_lo:x_hi] = np.where(mask, np.maximum(region, cost_int), region)

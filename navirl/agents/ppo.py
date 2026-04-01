@@ -386,16 +386,20 @@ class PPOAgent(BaseAgent):
         self._value_head.to(self._device)
 
         # Register modules for train/eval toggle
-        self._modules.extend([
-            self._actor_backbone,
-            self._policy_head,
-            self._value_head,
-        ])
+        self._modules.extend(
+            [
+                self._actor_backbone,
+                self._policy_head,
+                self._value_head,
+            ]
+        )
         if not cfg.shared_backbone:
             self._modules.append(self._critic_backbone)
 
         # --- Optimizer ---
-        all_params: list[torch.nn.Parameter] = list(self._actor_backbone.parameters()) + list(self._policy_head.parameters())
+        all_params: list[torch.nn.Parameter] = list(self._actor_backbone.parameters()) + list(
+            self._policy_head.parameters()
+        )
         if not cfg.shared_backbone:
             all_params += list(self._critic_backbone.parameters())
         all_params += list(self._value_head.parameters())
@@ -703,16 +707,18 @@ class PPOAgent(BaseAgent):
 
                 # Evaluate actions under current policy
                 new_log_probs, entropy, new_values = self._evaluate_actions(
-                    mb_obs, mb_actions,
+                    mb_obs,
+                    mb_actions,
                 )
 
                 # --- Policy loss (clipped surrogate) ---
                 log_ratio = new_log_probs - mb_old_log_probs
                 ratio = torch.exp(log_ratio)
                 surr1 = ratio * mb_advantages
-                surr2 = torch.clamp(
-                    ratio, 1.0 - cfg.clip_epsilon, 1.0 + cfg.clip_epsilon
-                ) * mb_advantages
+                surr2 = (
+                    torch.clamp(ratio, 1.0 - cfg.clip_epsilon, 1.0 + cfg.clip_epsilon)
+                    * mb_advantages
+                )
                 policy_loss = -torch.min(surr1, surr2).mean()
 
                 # --- Value loss (optionally clipped) ---
@@ -776,7 +782,10 @@ class PPOAgent(BaseAgent):
                     self._logger.info(
                         "PPO early stopping at epoch %d/%d  "
                         "(approx_kl=%.4f > 1.5 * target_kl=%.4f)",
-                        epoch_idx + 1, cfg.ppo_epochs, mean_kl, cfg.target_kl,
+                        epoch_idx + 1,
+                        cfg.ppo_epochs,
+                        mean_kl,
+                        cfg.target_kl,
                     )
                     early_stopped = True
                     break

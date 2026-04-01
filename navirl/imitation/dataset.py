@@ -130,9 +130,7 @@ class DemonstrationDataset:
             observations=data["obs"].astype(np.float32),
             actions=data["actions"].astype(np.float32),
             rewards=data.get("rewards", np.zeros(len(data["obs"]))).astype(np.float32),
-            next_observations=data.get("next_obs", np.zeros_like(data["obs"])).astype(
-                np.float32
-            ),
+            next_observations=data.get("next_obs", np.zeros_like(data["obs"])).astype(np.float32),
             dones=data.get("dones", np.zeros(len(data["obs"]))).astype(np.float32),
         )
 
@@ -188,9 +186,7 @@ class DemonstrationDataset:
         )
 
     @classmethod
-    def load_from_navirl_logs(
-        cls, log_dir: str | pathlib.Path
-    ) -> DemonstrationDataset:
+    def load_from_navirl_logs(cls, log_dir: str | pathlib.Path) -> DemonstrationDataset:
         """Load demonstrations from NavIRL log directory.
 
         Scans *log_dir* for ``.npz`` files named ``episode_*.npz`` and
@@ -209,9 +205,7 @@ class DemonstrationDataset:
         pattern = str(log_dir / "episode_*.npz")
         files = sorted(glob.glob(pattern))
         if not files:
-            raise FileNotFoundError(
-                f"No episode_*.npz files found in {log_dir}"
-            )
+            raise FileNotFoundError(f"No episode_*.npz files found in {log_dir}")
 
         all_obs: list[np.ndarray] = []
         all_act: list[np.ndarray] = []
@@ -290,9 +284,7 @@ class DemonstrationDataset:
             stats = self.compute_statistics()
         self.observations = (self.observations - stats.obs_mean) / stats.obs_std
         if self.next_observations.shape == self.observations.shape:
-            self.next_observations = (
-                self.next_observations - stats.obs_mean
-            ) / stats.obs_std
+            self.next_observations = (self.next_observations - stats.obs_mean) / stats.obs_std
         if normalize_actions:
             self.actions = (self.actions - stats.action_mean) / stats.action_std
 
@@ -454,8 +446,7 @@ class DemonstrationDataset:
         """
         if not _TORCH_AVAILABLE:
             raise RuntimeError(
-                "PyTorch is required for to_torch_dataset(). "
-                "Install with: pip install torch"
+                "PyTorch is required for to_torch_dataset(). Install with: pip install torch"
             )
         return torch.utils.data.TensorDataset(
             torch.as_tensor(self.observations, dtype=torch.float32),
@@ -512,6 +503,5 @@ class DemonstrationDataset:
         obs_shape = self.observations.shape[1:] if len(self.observations) > 0 else "?"
         act_shape = self.actions.shape[1:] if len(self.actions) > 0 else "?"
         return (
-            f"DemonstrationDataset(n={len(self)}, "
-            f"obs_shape={obs_shape}, action_shape={act_shape})"
+            f"DemonstrationDataset(n={len(self)}, obs_shape={obs_shape}, action_shape={act_shape})"
         )

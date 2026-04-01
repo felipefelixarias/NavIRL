@@ -30,6 +30,7 @@ except ImportError:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
     """Convert a quaternion to a yaw angle (radians)."""
     siny_cosp = 2.0 * (qw * qz + qx * qy)
@@ -40,6 +41,7 @@ def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
 # ---------------------------------------------------------------------------
 # Public conversion functions
 # ---------------------------------------------------------------------------
+
 
 def laser_scan_to_lidar_obs(msg: Any) -> np.ndarray:
     """Convert a ``sensor_msgs/LaserScan`` to a 1-D numpy float32 array.
@@ -129,9 +131,7 @@ def person_array_to_social_obs(msg: Any) -> np.ndarray:
 
         # Orientation
         ori = t.pose.pose.orientation
-        theta = _quat_to_yaw(
-            float(ori.x), float(ori.y), float(ori.z), float(ori.w)
-        )
+        theta = _quat_to_yaw(float(ori.x), float(ori.y), float(ori.z), float(ori.w))
 
         track_id = float(getattr(t, "track_id", getattr(t, "detection_id", 0)))
         score = float(getattr(t, "detection_score", getattr(t, "is_matched", 1.0)))
@@ -166,13 +166,13 @@ def action_to_twist(
     if action_type == "discrete":
         # Map discrete indices to (linear_x, angular_z) pairs
         _DISCRETE_MAP = {
-            0: (0.0, 0.0),    # stop
-            1: (0.5, 0.0),    # forward
-            2: (-0.3, 0.0),   # backward
-            3: (0.2, 0.5),    # turn left
-            4: (0.2, -0.5),   # turn right
-            5: (0.5, 0.3),    # forward-left
-            6: (0.5, -0.3),   # forward-right
+            0: (0.0, 0.0),  # stop
+            1: (0.5, 0.0),  # forward
+            2: (-0.3, 0.0),  # backward
+            3: (0.2, 0.5),  # turn left
+            4: (0.2, -0.5),  # turn right
+            5: (0.5, 0.3),  # forward-left
+            6: (0.5, -0.3),  # forward-right
         }
         idx = int(action[0]) if action.size > 0 else 0
         linear_x, angular_z = _DISCRETE_MAP.get(idx, (0.0, 0.0))

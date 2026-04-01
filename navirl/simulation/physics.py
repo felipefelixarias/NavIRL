@@ -21,6 +21,7 @@ from navirl.simulation.world import CollisionResult, World
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class PhysicsState:
     """Minimal physics state vector for a single entity."""
@@ -63,6 +64,7 @@ class ForceRecord:
 # ---------------------------------------------------------------------------
 # Integration helpers
 # ---------------------------------------------------------------------------
+
 
 def _euler_step(
     pos: np.ndarray,
@@ -118,6 +120,7 @@ def _rk4_step(
 # Abstract motion model
 # ---------------------------------------------------------------------------
 
+
 class MotionModel(abc.ABC):
     """Base class for entity motion models."""
 
@@ -146,6 +149,7 @@ class MotionModel(abc.ABC):
 # ---------------------------------------------------------------------------
 # KinematicModel
 # ---------------------------------------------------------------------------
+
 
 class KinematicModel(MotionModel):
     """Velocity-driven model.
@@ -208,6 +212,7 @@ class KinematicModel(MotionModel):
         """Integrate one timestep."""
         acc = self.compute_acceleration(state, forces, mass, dt)
         if method == "rk4":
+
             def acc_fn(p: np.ndarray, v: np.ndarray) -> np.ndarray:
                 desired = forces / max(mass, 1e-6)
                 sp = float(np.linalg.norm(desired))
@@ -245,6 +250,7 @@ class KinematicModel(MotionModel):
 # ---------------------------------------------------------------------------
 # DynamicModel
 # ---------------------------------------------------------------------------
+
 
 class DynamicModel(MotionModel):
     """Force-driven model with mass, inertia, and friction.
@@ -298,12 +304,7 @@ class DynamicModel(MotionModel):
 
         # Kinetic friction opposes motion
         if spd > 1e-4:
-            friction = (
-                -self.material.kinetic_friction
-                * mass
-                * 9.81
-                * (state.velocity / spd)
-            )
+            friction = -self.material.kinetic_friction * mass * 9.81 * (state.velocity / spd)
             net = net + friction
         else:
             # Static friction prevents creep
@@ -323,9 +324,11 @@ class DynamicModel(MotionModel):
     ) -> PhysicsState:
         """Integrate one timestep (Euler or RK4)."""
         if method == "rk4":
+
             def acc_fn(p: np.ndarray, v: np.ndarray) -> np.ndarray:
                 tmp = PhysicsState(
-                    position=p, velocity=v,
+                    position=p,
+                    velocity=v,
                     acceleration=np.zeros(2),
                     orientation=state.orientation,
                 )
@@ -359,6 +362,7 @@ class DynamicModel(MotionModel):
 # ---------------------------------------------------------------------------
 # Constraint helpers
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class VelocityConstraint:
@@ -417,6 +421,7 @@ class WallConstraint:
 # ---------------------------------------------------------------------------
 # SimplePhysics engine
 # ---------------------------------------------------------------------------
+
 
 class SimplePhysics:
     """Physics engine that manages forces, integration, and collision response.
@@ -499,9 +504,7 @@ class SimplePhysics:
     # Force accumulation
     # ------------------------------------------------------------------
 
-    def apply_force(
-        self, entity_id: int, force: Sequence[float], label: str = ""
-    ) -> None:
+    def apply_force(self, entity_id: int, force: Sequence[float], label: str = "") -> None:
         """Add a force to an entity for the current step."""
         f = np.asarray(force, dtype=np.float64)[:2]
         self._forces.setdefault(entity_id, []).append((f, label))
@@ -533,16 +536,16 @@ class SimplePhysics:
         self, entity_id: int, min_speed: float = 0.0, max_speed: float = 2.0
     ) -> None:
         """Add or update a velocity constraint for an entity."""
-        self._velocity_constraints[entity_id] = VelocityConstraint(
-            entity_id, min_speed, max_speed
-        )
+        self._velocity_constraints[entity_id] = VelocityConstraint(entity_id, min_speed, max_speed)
 
     def remove_velocity_constraint(self, entity_id: int) -> None:
         """Remove velocity constraint for an entity."""
         self._velocity_constraints.pop(entity_id, None)
 
     def add_wall_constraint(
-        self, seg_a: Sequence[float], seg_b: Sequence[float],
+        self,
+        seg_a: Sequence[float],
+        seg_b: Sequence[float],
         restitution: float = 0.0,
     ) -> None:
         """Add a wall constraint segment."""
@@ -558,9 +561,7 @@ class SimplePhysics:
         """Rebuild wall constraints from the world's wall list."""
         self._wall_constraints.clear()
         for a, b in world.walls:
-            self._wall_constraints.append(
-                WallConstraint(a, b, self.collision_restitution)
-            )
+            self._wall_constraints.append(WallConstraint(a, b, self.collision_restitution))
 
     # ------------------------------------------------------------------
     # Integration step
@@ -602,9 +603,7 @@ class SimplePhysics:
             if not edata.get("active", True):
                 continue
             for wc in self._wall_constraints:
-                pos, vel = wc.apply(
-                    edata["position"], edata["velocity"], edata["radius"]
-                )
+                pos, vel = wc.apply(edata["position"], edata["velocity"], edata["radius"])
                 edata["position"][:] = pos
                 edata["velocity"][:] = vel
 
@@ -625,9 +624,7 @@ class SimplePhysics:
         # --- 4. Velocity constraints ---
         for eid, vc in self._velocity_constraints.items():
             if eid in world.entities:
-                world.entities[eid]["velocity"] = vc.apply(
-                    world.entities[eid]["velocity"]
-                )
+                world.entities[eid]["velocity"] = vc.apply(world.entities[eid]["velocity"])
 
         # --- 5. Boundaries ---
         world.enforce_boundaries()

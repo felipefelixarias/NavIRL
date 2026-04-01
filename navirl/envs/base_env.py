@@ -45,10 +45,10 @@ from navirl.core.env import SceneBackend
 
 _DISCRETE_ACTIONS: np.ndarray = np.array(
     [
-        [0.0, 0.0],   # 0 – stop
-        [1.0, 0.0],   # 1 – forward  (+x)
+        [0.0, 0.0],  # 0 – stop
+        [1.0, 0.0],  # 1 – forward  (+x)
         [-1.0, 0.0],  # 2 – backward (-x)
-        [0.0, 1.0],   # 3 – left     (+y)
+        [0.0, 1.0],  # 3 – left     (+y)
         [0.0, -1.0],  # 4 – right    (-y)
     ],
     dtype=np.float32,
@@ -321,9 +321,7 @@ class NavEnv(gym.Env):
         info = self._make_info()
         return obs, info
 
-    def step(
-        self, action: np.ndarray | int
-    ) -> tuple[Any, float, bool, bool, dict[str, Any]]:
+    def step(self, action: np.ndarray | int) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         assert self._backend is not None, "Call reset() before step()."
 
         # --- Convert action to preferred velocity ---

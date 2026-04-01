@@ -18,6 +18,7 @@ import numpy as np
 # Data types
 # ---------------------------------------------------------------------------
 
+
 class Severity(StrEnum):
     """Severity levels for safety alerts."""
 
@@ -51,6 +52,7 @@ class SafetyAlert:
 # ---------------------------------------------------------------------------
 # SafetyMonitor
 # ---------------------------------------------------------------------------
+
 
 class SafetyMonitor:
     """Tracks safety metrics during execution.
@@ -134,15 +136,11 @@ class SafetyMonitor:
             "total_steps": self._step_count,
             "num_violations": len(self._violations),
             "violation_rate": (
-                len(self._violations) / self._step_count
-                if self._step_count > 0
-                else 0.0
+                len(self._violations) / self._step_count if self._step_count > 0 else 0.0
             ),
             "shield_interventions": self._shield_interventions,
             "shield_intervention_rate": (
-                self._shield_interventions / self._step_count
-                if self._step_count > 0
-                else 0.0
+                self._shield_interventions / self._step_count if self._step_count > 0 else 0.0
             ),
         }
 
@@ -151,12 +149,8 @@ class SafetyMonitor:
             stats["max_speed"] = float(np.max(self._speeds))
 
         if self._min_obstacle_distances:
-            stats["min_obstacle_distance"] = float(
-                np.min(self._min_obstacle_distances)
-            )
-            stats["mean_obstacle_distance"] = float(
-                np.mean(self._min_obstacle_distances)
-            )
+            stats["min_obstacle_distance"] = float(np.min(self._min_obstacle_distances))
+            stats["mean_obstacle_distance"] = float(np.mean(self._min_obstacle_distances))
 
         # Break down violations by severity.
         for sev in Severity:
@@ -177,6 +171,7 @@ class SafetyMonitor:
 # ---------------------------------------------------------------------------
 # SafetyLogger
 # ---------------------------------------------------------------------------
+
 
 class SafetyLogger:
     """Logs safety events using the standard :mod:`logging` module.

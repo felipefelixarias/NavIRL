@@ -16,6 +16,7 @@ import numpy as np
 # Abstract base
 # ---------------------------------------------------------------------------
 
+
 class SafetyConstraint(ABC):
     """Base class for all hard safety constraints."""
 
@@ -31,6 +32,7 @@ class SafetyConstraint(ABC):
 # ---------------------------------------------------------------------------
 # Collision constraint
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class CollisionConstraint(SafetyConstraint):
@@ -58,9 +60,7 @@ class CollisionConstraint(SafetyConstraint):
 
     # ---- helpers ----------------------------------------------------------
 
-    def _forward_positions(
-        self, state: np.ndarray, action: np.ndarray
-    ) -> np.ndarray:
+    def _forward_positions(self, state: np.ndarray, action: np.ndarray) -> np.ndarray:
         """Integrate agent position forward over the time horizon.
 
         Returns an array of shape ``(T, 2)`` with predicted positions.
@@ -106,6 +106,7 @@ class CollisionConstraint(SafetyConstraint):
 # Speed constraint
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SpeedConstraint(SafetyConstraint):
     """Enforces a maximum speed limit.
@@ -135,6 +136,7 @@ class SpeedConstraint(SafetyConstraint):
 # Acceleration constraint
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AccelerationConstraint(SafetyConstraint):
     """Limits maximum acceleration and jerk.
@@ -152,9 +154,7 @@ class AccelerationConstraint(SafetyConstraint):
     max_acceleration: float = 3.0
     max_jerk: float | None = None
     dt: float = 0.1
-    _prev_acceleration: np.ndarray | None = field(
-        default=None, init=False, repr=False
-    )
+    _prev_acceleration: np.ndarray | None = field(default=None, init=False, repr=False)
 
     def _acceleration(self, state: np.ndarray, action: np.ndarray) -> np.ndarray:
         current_vel = state[2:4] if state.shape[0] >= 4 else np.zeros(2)
@@ -196,6 +196,7 @@ class AccelerationConstraint(SafetyConstraint):
 # Proxemics constraint
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ProxemicsConstraint(SafetyConstraint):
     """Maintains minimum distance to pedestrians based on proxemic zones.
@@ -220,9 +221,7 @@ class ProxemicsConstraint(SafetyConstraint):
         Simulation timestep.
     """
 
-    pedestrian_positions: np.ndarray = field(
-        default_factory=lambda: np.zeros((0, 2))
-    )
+    pedestrian_positions: np.ndarray = field(default_factory=lambda: np.zeros((0, 2)))
     intimate_radius: float = 0.45
     personal_radius: float = 1.2
     min_distance: float | None = None
@@ -249,7 +248,7 @@ class ProxemicsConstraint(SafetyConstraint):
         next_pos = self._next_position(state, action)
         diffs = next_pos - self.pedestrian_positions
         dists = np.linalg.norm(diffs, axis=1, keepdims=True).clip(min=1e-8)
-        violations = (dists.squeeze() < self.min_distance)  # type: ignore[union-attr]
+        violations = dists.squeeze() < self.min_distance  # type: ignore[union-attr]
         if not np.any(violations):
             return action.copy()
         repulse = (diffs[violations] / dists[violations]).sum(axis=0)
@@ -265,6 +264,7 @@ class ProxemicsConstraint(SafetyConstraint):
 # ---------------------------------------------------------------------------
 # Boundary constraint
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BoundaryConstraint(SafetyConstraint):
@@ -289,19 +289,18 @@ class BoundaryConstraint(SafetyConstraint):
 
     def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
         nxt = self._next_position(state, action)
-        return bool(
-            self.x_min <= nxt[0] <= self.x_max
-            and self.y_min <= nxt[1] <= self.y_max
-        )
+        return bool(self.x_min <= nxt[0] <= self.x_max and self.y_min <= nxt[1] <= self.y_max)
 
     def project(self, state: np.ndarray, action: np.ndarray) -> np.ndarray:
         if self.is_safe(state, action):
             return action.copy()
         nxt = self._next_position(state, action)
-        clamped = np.array([
-            np.clip(nxt[0], self.x_min, self.x_max),
-            np.clip(nxt[1], self.y_min, self.y_max),
-        ])
+        clamped = np.array(
+            [
+                np.clip(nxt[0], self.x_min, self.x_max),
+                np.clip(nxt[1], self.y_min, self.y_max),
+            ]
+        )
         safe_action = action.copy()
         safe_action[:2] = (clamped - state[:2]) / max(self.dt, 1e-8)
         return safe_action
@@ -310,6 +309,7 @@ class BoundaryConstraint(SafetyConstraint):
 # ---------------------------------------------------------------------------
 # Composite set
 # ---------------------------------------------------------------------------
+
 
 class ConstraintSet(SafetyConstraint):
     """Combines multiple constraints and projects actions to satisfy all.

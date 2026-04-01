@@ -71,9 +71,7 @@ class EpsilonSchedule:
 
     def __init__(self, start: float = 1.0, end: float = 0.05, decay_steps: int = 100_000) -> None:
         if not (0.0 <= end <= start <= 1.0):
-            raise ValueError(
-                f"Require 0 <= end <= start <= 1, got start={start}, end={end}"
-            )
+            raise ValueError(f"Require 0 <= end <= start <= 1, got start={start}, end={end}")
         if decay_steps <= 0:
             raise ValueError(f"decay_steps must be positive, got {decay_steps}")
         self.start = start
@@ -98,8 +96,7 @@ class EpsilonSchedule:
 
     def __repr__(self) -> str:
         return (
-            f"EpsilonSchedule(start={self.start}, end={self.end}, "
-            f"decay_steps={self.decay_steps})"
+            f"EpsilonSchedule(start={self.start}, end={self.end}, decay_steps={self.decay_steps})"
         )
 
 
@@ -237,7 +234,7 @@ class DQNAgent(BaseAgent):
         self._update_step: int = 0
 
         # Effective discount for n-step returns ----------------------------
-        self._gamma_n: float = config.gamma ** config.n_step
+        self._gamma_n: float = config.gamma**config.n_step
 
         # Random state for epsilon-greedy ----------------------------------
         self._rng = np.random.RandomState(seed)
@@ -317,9 +314,7 @@ class DQNAgent(BaseAgent):
             return np.array(action), {"q_values": None, "epsilon": epsilon}
 
         # Greedy action from Q-network
-        obs_t = self._to_tensor(
-            np.asarray(observation, dtype=np.float32)
-        ).unsqueeze(0)
+        obs_t = self._to_tensor(np.asarray(observation, dtype=np.float32)).unsqueeze(0)
 
         with torch.no_grad():
             q_values = self._q_net(obs_t)  # (1, num_actions)
@@ -354,9 +349,7 @@ class DQNAgent(BaseAgent):
         # Unpack prioritized vs. uniform replay ----------------------------
         if cfg.prioritized:
             batch_dict, importance_weights, tree_indices = batch
-            weights_t = self._to_tensor(
-                np.asarray(importance_weights, dtype=np.float32)
-            )
+            weights_t = self._to_tensor(np.asarray(importance_weights, dtype=np.float32))
         else:
             batch_dict = batch
             weights_t = None
@@ -382,7 +375,7 @@ class DQNAgent(BaseAgent):
             dones = dones.unsqueeze(-1)
 
         # Current Q-values for chosen actions ------------------------------
-        q_all = self._q_net(obs)                       # (B, num_actions)
+        q_all = self._q_net(obs)  # (B, num_actions)
         q_values = q_all.gather(dim=1, index=actions)  # (B, 1)
 
         # Target Q-values --------------------------------------------------
@@ -420,16 +413,14 @@ class DQNAgent(BaseAgent):
 
         # Reset NoisyNet noise after each update ---------------------------
         if cfg.noisy:
-            self._q_net.reset_noise()   # type: ignore[attr-defined]
+            self._q_net.reset_noise()  # type: ignore[attr-defined]
             self._target_net.reset_noise()  # type: ignore[attr-defined]
 
         # Periodic hard target update --------------------------------------
         self._update_step += 1
         if self._update_step % cfg.target_update_freq == 0:
             self._hard_update(self._target_net, self._q_net)
-            self._logger.debug(
-                "Hard target update at update_step=%d", self._update_step
-            )
+            self._logger.debug("Hard target update at update_step=%d", self._update_step)
 
         # Build metrics ----------------------------------------------------
         epsilon = self._epsilon_schedule.value(self._total_steps)

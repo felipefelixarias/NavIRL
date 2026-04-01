@@ -562,8 +562,7 @@ class BaseAgent(abc.ABC):
         ckpt_version = meta.get("checkpoint_version", 1)
         if ckpt_version > _CHECKPOINT_VERSION:
             logger.warning(
-                "Checkpoint version %d is newer than agent version %d – "
-                "loading may fail.",
+                "Checkpoint version %d is newer than agent version %d – loading may fail.",
                 ckpt_version,
                 _CHECKPOINT_VERSION,
             )
@@ -671,9 +670,7 @@ class BaseAgent(abc.ABC):
         """
         if agent_name not in cls._registry:
             available = ", ".join(sorted(cls._registry.keys()))
-            raise ValueError(
-                f"Unknown agent {agent_name!r}. Registered agents: {available}"
-            )
+            raise ValueError(f"Unknown agent {agent_name!r}. Registered agents: {available}")
         return cls._registry[agent_name](config, observation_space, action_space, **kwargs)
 
     @classmethod

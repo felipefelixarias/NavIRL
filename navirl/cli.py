@@ -242,7 +242,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument("--judge-endpoint", type=str, default=None)
     p_verify.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
     p_verify.add_argument("--judge-native-cmd", type=str, default=None)
-    p_verify.add_argument("--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True)
+    p_verify.add_argument(
+        "--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True
+    )
     p_verify.add_argument("--retention-hours", type=float, default=None)
     p_verify.set_defaults(func=_cmd_verify)
 
@@ -271,7 +273,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_tune.add_argument("--judge-endpoint", type=str, default=None)
     p_tune.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
     p_tune.add_argument("--judge-native-cmd", type=str, default=None)
-    p_tune.add_argument("--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True)
+    p_tune.add_argument(
+        "--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True
+    )
     p_tune.add_argument("--aegis-rerank", action=argparse.BooleanOptionalAction, default=True)
     p_tune.add_argument("--aegis-top-k", type=int, default=6)
     p_tune.add_argument("--max-frames", type=int, default=10)

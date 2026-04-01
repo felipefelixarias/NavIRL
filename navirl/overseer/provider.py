@@ -158,11 +158,7 @@ def _run_native_json(
         output_path = td_path / "response.json"
         selected_images = [str(p) for p in image_paths[: max(0, int(config.max_images))]]
         provider = config.normalized_provider()
-        response_schema = (
-            _strict_json_schema_for_codex(schema)
-            if provider == "codex"
-            else schema
-        )
+        response_schema = _strict_json_schema_for_codex(schema) if provider == "codex" else schema
 
         prompt_payload = {
             "prompt": prompt,
@@ -230,7 +226,8 @@ def _run_openai_compatible_json(
     endpoint = (
         str(config.endpoint).strip()
         if config.endpoint
-        else os.getenv("NAVIRL_VLM_ENDPOINT", "").strip() or "https://api.openai.com/v1/chat/completions"
+        else os.getenv("NAVIRL_VLM_ENDPOINT", "").strip()
+        or "https://api.openai.com/v1/chat/completions"
     )
     model = (
         str(config.model).strip()

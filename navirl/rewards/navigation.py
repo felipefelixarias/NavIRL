@@ -234,9 +234,7 @@ class PathFollowingReward(RewardFunction):
         self._furthest_segment = 0
 
     @staticmethod
-    def _point_segment_distance(
-        p: np.ndarray, a: np.ndarray, b: np.ndarray
-    ) -> float:
+    def _point_segment_distance(p: np.ndarray, a: np.ndarray, b: np.ndarray) -> float:
         """Return the minimum distance from point *p* to segment *a-b*.
 
         Parameters

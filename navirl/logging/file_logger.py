@@ -65,8 +65,7 @@ class LogLevel(IntEnum):
             return cls[upper]
         except KeyError:
             raise ValueError(
-                f"Unknown log level {name!r}. "
-                f"Valid levels: {', '.join(cls.__members__)}"
+                f"Unknown log level {name!r}. Valid levels: {', '.join(cls.__members__)}"
             ) from None
 
 

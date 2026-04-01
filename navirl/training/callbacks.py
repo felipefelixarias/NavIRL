@@ -341,9 +341,7 @@ class LoggingCallback(Callback):
 
         if self._episode_rewards:
             recent = self._episode_rewards[-100:]
-            metrics["mean_episode_reward"] = round(
-                sum(recent) / len(recent), 4
-            )
+            metrics["mean_episode_reward"] = round(sum(recent) / len(recent), 4)
             metrics["episodes"] = len(self._episode_rewards)
 
         # Gather any extra metrics the training loop may expose.
@@ -771,18 +769,17 @@ class GradientMonitorCallback(Callback):
         if parameters is None:
             return
 
-
         total_norm = 0.0
         max_norm = 0.0
         param_count = 0
         for p in parameters:
             if p.grad is not None:
                 pnorm = p.grad.data.norm(2).item()
-                total_norm += pnorm ** 2
+                total_norm += pnorm**2
                 max_norm = max(max_norm, pnorm)
                 param_count += 1
 
-        total_norm = total_norm ** 0.5
+        total_norm = total_norm**0.5
 
         entry = {
             "update": self._update_count,

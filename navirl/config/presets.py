@@ -14,6 +14,7 @@ from typing import Any
 # Preset dataclass
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Preset:
     """A named, self-documenting configuration bundle.
@@ -190,6 +191,7 @@ PRESETS: dict[str, Preset] = {
 # Public helpers
 # ---------------------------------------------------------------------------
 
+
 def get_preset(name: str) -> Preset:
     """Retrieve a preset by name.
 
@@ -210,9 +212,7 @@ def get_preset(name: str) -> Preset:
     """
     if name not in PRESETS:
         available = ", ".join(sorted(PRESETS))
-        raise KeyError(
-            f"Unknown preset '{name}'. Available presets: {available}"
-        )
+        raise KeyError(f"Unknown preset '{name}'. Available presets: {available}")
     return copy.deepcopy(PRESETS[name])
 
 

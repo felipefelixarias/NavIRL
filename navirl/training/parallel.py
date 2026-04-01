@@ -216,10 +216,12 @@ def _worker(
             method_name, args, kwargs = data
             remote.send(getattr(env, method_name)(*args, **kwargs))
         elif cmd == "get_spaces":
-            remote.send((
-                getattr(env, "observation_space", None),
-                getattr(env, "action_space", None),
-            ))
+            remote.send(
+                (
+                    getattr(env, "observation_space", None),
+                    getattr(env, "action_space", None),
+                )
+            )
         else:
             raise ValueError(f"Unknown command: {cmd}")
 
@@ -767,9 +769,7 @@ class VecFrameStack(VecEnvWrapper):
             obs_shape = venv.observation_space.shape
 
         self._obs_shape = obs_shape
-        self.stacked_obs = np.zeros(
-            (venv.num_envs, n_stack, *obs_shape), dtype=np.float32
-        )
+        self.stacked_obs = np.zeros((venv.num_envs, n_stack, *obs_shape), dtype=np.float32)
 
     def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step and update the frame stack.

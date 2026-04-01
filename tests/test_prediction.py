@@ -16,6 +16,7 @@ from navirl.prediction.constant_velocity import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def straight_obs():
     """Observed straight-line trajectory: 8 points along x-axis."""
@@ -38,6 +39,7 @@ def short_obs():
 # ---------------------------------------------------------------------------
 # PredictionResult
 # ---------------------------------------------------------------------------
+
 
 class TestPredictionResult:
     def test_basic_construction(self):
@@ -88,6 +90,7 @@ class TestPredictionResult:
 # ---------------------------------------------------------------------------
 # ConstantVelocityPredictor
 # ---------------------------------------------------------------------------
+
 
 class TestConstantVelocityPredictor:
     def test_basic_prediction(self, straight_obs):
@@ -140,6 +143,7 @@ class TestConstantVelocityPredictor:
 # LinearPredictor
 # ---------------------------------------------------------------------------
 
+
 class TestLinearPredictor:
     def test_basic_prediction(self, straight_obs):
         pred = LinearPredictor(horizon=5, dt=0.4, num_samples=1)
@@ -173,6 +177,7 @@ class TestLinearPredictor:
 # ---------------------------------------------------------------------------
 # KalmanPredictor
 # ---------------------------------------------------------------------------
+
 
 class TestKalmanPredictor:
     def test_basic_prediction(self, straight_obs):
@@ -214,6 +219,7 @@ class TestKalmanPredictor:
 # Abstract base class
 # ---------------------------------------------------------------------------
 
+
 class TestTrajectoryPredictorABC:
     def test_cannot_instantiate(self):
         with pytest.raises(TypeError):
@@ -229,6 +235,7 @@ class TestTrajectoryPredictorABC:
                     probabilities=np.array([1.0]),
                     timestamps=np.arange(n) * 0.4,
                 )
+
         pred = DummyPredictor()
         result = pred.predict(straight_obs)
         assert result.num_samples == 1
@@ -238,15 +245,14 @@ class TestTrajectoryPredictorABC:
 # Trajectory sampling and consistency
 # ---------------------------------------------------------------------------
 
+
 class TestTrajectorySampling:
     def test_cv_deterministic_without_noise(self, straight_obs):
         pred = ConstantVelocityPredictor(horizon=5, dt=0.4, num_samples=5, noise_std=0.0)
         result = pred.predict(straight_obs)
         # All samples should be identical without noise
         for i in range(1, 5):
-            np.testing.assert_array_equal(
-                result.trajectories[0], result.trajectories[i]
-            )
+            np.testing.assert_array_equal(result.trajectories[0], result.trajectories[i])
 
     def test_increasing_noise_with_horizon(self, straight_obs):
         pred = ConstantVelocityPredictor(horizon=20, dt=0.4, num_samples=100, noise_std=0.1)
@@ -260,6 +266,7 @@ class TestTrajectorySampling:
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestPredictionEdgeCases:
     def test_two_point_observation(self, short_obs):

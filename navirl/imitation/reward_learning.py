@@ -222,12 +222,8 @@ class PreferenceRewardModel:
 
                 for i in batch_idx:
                     seg1, seg2, label = preferences[i]
-                    seg1_t = torch.as_tensor(
-                        seg1.astype(np.float32), device=self._device
-                    )
-                    seg2_t = torch.as_tensor(
-                        seg2.astype(np.float32), device=self._device
-                    )
+                    seg1_t = torch.as_tensor(seg1.astype(np.float32), device=self._device)
+                    seg2_t = torch.as_tensor(seg2.astype(np.float32), device=self._device)
 
                     r1 = self._segment_return(seg1_t)
                     r2 = self._segment_return(seg2_t)
@@ -250,9 +246,7 @@ class PreferenceRewardModel:
             avg_loss = total_loss / max(n_batches, 1)
             epoch_losses.append(avg_loss)
 
-            if verbose and (
-                epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1
-            ):
+            if verbose and (epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1):
                 logger.info(
                     "PreferenceReward epoch %3d/%d  loss=%.6f",
                     epoch + 1,
@@ -407,17 +401,11 @@ class DemonstrationRewardModel:
         cfg = self._config
 
         # Build training data
-        expert_sa = np.concatenate(
-            [expert_obs, expert_actions], axis=-1
-        ).astype(np.float32)
-        expert_targets = np.full(
-            len(expert_sa), cfg.target_reward, dtype=np.float32
-        )
+        expert_sa = np.concatenate([expert_obs, expert_actions], axis=-1).astype(np.float32)
+        expert_targets = np.full(len(expert_sa), cfg.target_reward, dtype=np.float32)
 
         if negative_obs is not None and negative_actions is not None:
-            neg_sa = np.concatenate(
-                [negative_obs, negative_actions], axis=-1
-            ).astype(np.float32)
+            neg_sa = np.concatenate([negative_obs, negative_actions], axis=-1).astype(np.float32)
             neg_targets = np.zeros(len(neg_sa), dtype=np.float32)
             all_sa = np.concatenate([expert_sa, neg_sa], axis=0)
             all_targets = np.concatenate([expert_targets, neg_targets], axis=0)
@@ -429,9 +417,7 @@ class DemonstrationRewardModel:
         target_t = torch.as_tensor(all_targets, device=self._device)
 
         dataset = torch.utils.data.TensorDataset(sa_t, target_t)
-        loader = torch.utils.data.DataLoader(
-            dataset, batch_size=cfg.batch_size, shuffle=True
-        )
+        loader = torch.utils.data.DataLoader(dataset, batch_size=cfg.batch_size, shuffle=True)
 
         epoch_losses: list[float] = []
         self._reward_net.train()
@@ -454,9 +440,7 @@ class DemonstrationRewardModel:
             avg_loss = total_loss / max(n_batches, 1)
             epoch_losses.append(avg_loss)
 
-            if verbose and (
-                epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1
-            ):
+            if verbose and (epoch % max(1, cfg.epochs // 10) == 0 or epoch == cfg.epochs - 1):
                 logger.info(
                     "DemoReward epoch %3d/%d  loss=%.6f",
                     epoch + 1,
@@ -599,9 +583,7 @@ class EnsembleRewardModel:
 
     def state_dict(self) -> dict[str, Any]:
         """Return ensemble state."""
-        return {
-            f"member_{i}": m.state_dict() for i, m in enumerate(self._members)
-        }
+        return {f"member_{i}": m.state_dict() for i, m in enumerate(self._members)}
 
     def load_state_dict(self, d: dict[str, Any]) -> None:
         """Load ensemble state."""

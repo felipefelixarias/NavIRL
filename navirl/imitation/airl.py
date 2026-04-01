@@ -145,9 +145,7 @@ class RewardNetwork(nn.Module):
         h_layers.append(nn.Linear(prev, 1))
         self.h_net = nn.Sequential(*h_layers)
 
-    def g(
-        self, obs: torch.Tensor, actions: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def g(self, obs: torch.Tensor, actions: torch.Tensor | None = None) -> torch.Tensor:
         """Compute the reward component g(s, a) (or g(s) if state_only).
 
         Parameters
@@ -270,9 +268,7 @@ class _AIRLPolicyValue(nn.Module):
         self.value_head = nn.Linear(prev, 1)
         self.action_type = action_type
 
-    def forward(
-        self, obs: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         feat = self.features(obs)
         value = self.value_head(feat)
         if self.action_type == "continuous":
@@ -300,9 +296,7 @@ class _AIRLPolicyValue(nn.Module):
 
         return log_probs, value, entropy
 
-    def get_log_prob(
-        self, obs: torch.Tensor, actions: torch.Tensor
-    ) -> torch.Tensor:
+    def get_log_prob(self, obs: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Return log pi(a|s) for AIRL discriminator."""
         feat = self.features(obs)
         if self.action_type == "continuous":
@@ -436,9 +430,7 @@ class AIRLAgent(BaseAgent):
         def _prep(batch: dict[str, np.ndarray]) -> tuple:
             o = self._to_tensor(batch["obs"], torch.float32).reshape(-1, self._obs_dim)
             a = self._to_tensor(batch["actions"], torch.float32)
-            no = self._to_tensor(batch["next_obs"], torch.float32).reshape(
-                -1, self._obs_dim
-            )
+            no = self._to_tensor(batch["next_obs"], torch.float32).reshape(-1, self._obs_dim)
             d = self._to_tensor(batch["dones"], torch.float32)
             return o, a, no, d
 
@@ -488,9 +480,7 @@ class AIRLAgent(BaseAgent):
                 self._reward_net(p_obs, p_act, p_next, p_done)
                 - self._policy_value.get_log_prob(p_obs, p_act)
             )
-            acc = 0.5 * (
-                (e_pred > 0.5).float().mean() + (p_pred <= 0.5).float().mean()
-            )
+            acc = 0.5 * ((e_pred > 0.5).float().mean() + (p_pred <= 0.5).float().mean())
 
         metrics = {
             "airl/disc_loss": total_loss / max(n_updates, 1),
@@ -526,21 +516,11 @@ class AIRLAgent(BaseAgent):
             ret = self._to_tensor(rollout_buffer["returns"], torch.float32)
         else:
             n = rollout_buffer.buffer_size * rollout_buffer.n_envs
-            obs_t = self._to_tensor(
-                rollout_buffer.observations.reshape(n, -1), torch.float32
-            )
-            act_t = self._to_tensor(
-                rollout_buffer.actions.reshape(n, -1), torch.float32
-            )
-            old_lp = self._to_tensor(
-                rollout_buffer.log_probs.reshape(n), torch.float32
-            )
-            adv = self._to_tensor(
-                rollout_buffer.advantages.reshape(n), torch.float32
-            )
-            ret = self._to_tensor(
-                rollout_buffer.returns.reshape(n), torch.float32
-            )
+            obs_t = self._to_tensor(rollout_buffer.observations.reshape(n, -1), torch.float32)
+            act_t = self._to_tensor(rollout_buffer.actions.reshape(n, -1), torch.float32)
+            old_lp = self._to_tensor(rollout_buffer.log_probs.reshape(n), torch.float32)
+            adv = self._to_tensor(rollout_buffer.advantages.reshape(n), torch.float32)
+            ret = self._to_tensor(rollout_buffer.returns.reshape(n), torch.float32)
 
         obs_t = obs_t.reshape(-1, self._obs_dim)
         adv = (adv - adv.mean()) / (adv.std() + 1e-8)
@@ -569,9 +549,7 @@ class AIRLAgent(BaseAgent):
                 self._policy_optimizer.zero_grad()
                 loss.backward()
                 if cfg.max_grad_norm > 0:
-                    nn.utils.clip_grad_norm_(
-                        self._policy_value.parameters(), cfg.max_grad_norm
-                    )
+                    nn.utils.clip_grad_norm_(self._policy_value.parameters(), cfg.max_grad_norm)
                 self._policy_optimizer.step()
 
                 total_pl += pl.item()
@@ -710,9 +688,7 @@ class AIRLAgent(BaseAgent):
             Learned reward values.
         """
         obs_t = self._to_tensor(obs, torch.float32).reshape(-1, self._obs_dim)
-        act_t = (
-            self._to_tensor(actions, torch.float32) if actions is not None else None
-        )
+        act_t = self._to_tensor(actions, torch.float32) if actions is not None else None
         reward_t = self._reward_net.predict_reward(obs_t, act_t)
         return self._to_numpy(reward_t).flatten()
 

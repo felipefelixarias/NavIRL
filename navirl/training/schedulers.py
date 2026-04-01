@@ -136,7 +136,7 @@ class StepSchedule(Schedule):
 
     def value(self, step: int) -> float:
         n_drops = step // self.step_size
-        val = self.initial_value * (self.factor ** n_drops)
+        val = self.initial_value * (self.factor**n_drops)
         return max(val, self.min_value)
 
 
@@ -318,9 +318,7 @@ class ReduceOnPlateauSchedule(Schedule):
             self._no_improvement_count += 1
 
         if self._no_improvement_count >= self.patience:
-            self._current_value = max(
-                self._current_value * self.factor, self.min_value
-            )
+            self._current_value = max(self._current_value * self.factor, self.min_value)
             self._no_improvement_count = 0
 
     def value(self, step: int) -> float:  # noqa: ARG002 (step unused)
@@ -476,10 +474,8 @@ class ExplorationSchedule(Schedule):
             # Compute decay rate so that at total_steps we reach final_eps.
             if self.initial_eps <= 0:
                 return self.final_eps
-            decay_rate = (self.final_eps / self.initial_eps) ** (
-                1.0 / self.total_steps
-            )
-            val = self.initial_eps * (decay_rate ** step)
+            decay_rate = (self.final_eps / self.initial_eps) ** (1.0 / self.total_steps)
+            val = self.initial_eps * (decay_rate**step)
             return max(val, self.final_eps)
         else:
             # Linear decay

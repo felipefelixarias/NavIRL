@@ -67,9 +67,7 @@ class DifficultyDimension:
             Value between 0 (easiest) and 1 (hardest).
         """
         difficulty = max(0.0, min(1.0, difficulty))
-        self.current_value = self.min_value + difficulty * (
-            self.max_value - self.min_value
-        )
+        self.current_value = self.min_value + difficulty * (self.max_value - self.min_value)
 
 
 # ---------------------------------------------------------------------------
@@ -138,9 +136,7 @@ class LinearCurriculum(CurriculumScheduler):
 
     def get_difficulty(self, step: int, metrics: dict[str, float] | None = None) -> float:
         progress = min(step / max(self.total_steps, 1), 1.0)
-        return self.start_difficulty + progress * (
-            self.end_difficulty - self.start_difficulty
-        )
+        return self.start_difficulty + progress * (self.end_difficulty - self.start_difficulty)
 
     def update(self, step: int, metrics: dict[str, float] | None = None) -> None:
         # Linear curriculum is purely step-based; nothing to update.
@@ -194,8 +190,7 @@ class PerformanceCurriculum(CurriculumScheduler):
         if value >= self.threshold:
             self._difficulty = min(1.0, self._difficulty + self.increase_rate)
             logger.debug(
-                "PerformanceCurriculum: metric %.3f >= threshold %.3f -- "
-                "difficulty -> %.3f",
+                "PerformanceCurriculum: metric %.3f >= threshold %.3f -- difficulty -> %.3f",
                 value,
                 self.threshold,
                 self._difficulty,
@@ -203,8 +198,7 @@ class PerformanceCurriculum(CurriculumScheduler):
         else:
             self._difficulty = max(0.0, self._difficulty - self.decrease_rate)
             logger.debug(
-                "PerformanceCurriculum: metric %.3f < threshold %.3f -- "
-                "difficulty -> %.3f",
+                "PerformanceCurriculum: metric %.3f < threshold %.3f -- difficulty -> %.3f",
                 value,
                 self.threshold,
                 self._difficulty,
@@ -326,9 +320,7 @@ class CurriculumManager:
         dimensions: Sequence[DifficultyDimension],
         scheduler: CurriculumScheduler,
     ) -> None:
-        self.dimensions: list[DifficultyDimension] = [
-            copy.deepcopy(d) for d in dimensions
-        ]
+        self.dimensions: list[DifficultyDimension] = [copy.deepcopy(d) for d in dimensions]
         self.scheduler = scheduler
 
     def update(self, step: int, metrics: dict[str, float] | None = None) -> None:

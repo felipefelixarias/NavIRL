@@ -3,6 +3,7 @@
 Provides the main simulation environment that manages agents,
 obstacles, and physics in a continuous 2-D world.
 """
+
 from __future__ import annotations
 
 import math
@@ -193,11 +194,13 @@ class ContinuousEnvironment:
         int
             Obstacle index.
         """
-        return self.obstacles.add(LineObstacle(
-            start=np.asarray(start),
-            end=np.asarray(end),
-            thickness=thickness,
-        ))
+        return self.obstacles.add(
+            LineObstacle(
+                start=np.asarray(start),
+                end=np.asarray(end),
+                thickness=thickness,
+            )
+        )
 
     def add_circular_obstacle(
         self,
@@ -218,10 +221,12 @@ class ContinuousEnvironment:
         int
             Obstacle index.
         """
-        return self.obstacles.add(CircleObstacle(
-            center=np.asarray(center),
-            radius=radius,
-        ))
+        return self.obstacles.add(
+            CircleObstacle(
+                center=np.asarray(center),
+                radius=radius,
+            )
+        )
 
     def add_rectangular_obstacle(
         self,
@@ -242,10 +247,12 @@ class ContinuousEnvironment:
         int
             Obstacle index.
         """
-        return self.obstacles.add(RectangleObstacle(
-            min_corner=np.asarray(min_corner),
-            max_corner=np.asarray(max_corner),
-        ))
+        return self.obstacles.add(
+            RectangleObstacle(
+                min_corner=np.asarray(min_corner),
+                max_corner=np.asarray(max_corner),
+            )
+        )
 
     def add_boundary_walls(self) -> None:
         """Add walls around the world boundaries."""
@@ -319,9 +326,7 @@ class ContinuousEnvironment:
         self._step_count += 1
 
         # Update physics
-        self._agent_states = self.physics.step(
-            self._agent_states, actions, self.config.dt
-        )
+        self._agent_states = self.physics.step(self._agent_states, actions, self.config.dt)
 
         # Record trajectories
         for agent_id, state in self._agent_states.items():
@@ -368,21 +373,21 @@ class ContinuousEnvironment:
                 diff = other_state.position - state.position
                 dist = float(np.linalg.norm(diff))
                 if dist < 10.0:  # Observation radius
-                    nearby_agents.append({
-                        "id": other_id,
-                        "relative_position": diff.copy(),
-                        "velocity": other_state.velocity.copy(),
-                        "distance": dist,
-                        "radius": other_state.radius,
-                    })
+                    nearby_agents.append(
+                        {
+                            "id": other_id,
+                            "relative_position": diff.copy(),
+                            "velocity": other_state.velocity.copy(),
+                            "distance": dist,
+                            "radius": other_state.radius,
+                        }
+                    )
 
             # Sort by distance
             nearby_agents.sort(key=lambda x: x["distance"])
 
             # Lidar-like obstacle sensing
-            lidar = self.obstacles.multi_ray_cast(
-                state.position, num_rays=36, max_distance=10.0
-            )
+            lidar = self.obstacles.multi_ray_cast(state.position, num_rays=36, max_distance=10.0)
 
             observations[agent_id] = {
                 "position": state.position.copy(),
@@ -413,7 +418,7 @@ class ContinuousEnvironment:
             if len(self._trajectories[agent_id]) >= 2:
                 prev_pos = self._trajectories[agent_id][-2]
                 prev_dist = float(np.linalg.norm(goal - prev_pos))
-                reward += (prev_dist - goal_dist)  # Progress reward
+                reward += prev_dist - goal_dist  # Progress reward
 
             # Goal reached bonus
             if goal_dist < self.config.goal_radius:

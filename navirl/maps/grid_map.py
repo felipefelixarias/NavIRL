@@ -24,6 +24,7 @@ UNKNOWN: int = -1
 # GridMap
 # ---------------------------------------------------------------------------
 
+
 class GridMap:
     """2-D occupancy grid map.
 
@@ -58,9 +59,7 @@ class GridMap:
         self.height = height
         self.resolution = resolution
         self.origin = np.array(origin, dtype=np.float64)
-        self.data: np.ndarray = np.full(
-            (height, width), default_value, dtype=np.int8
-        )
+        self.data: np.ndarray = np.full((height, width), default_value, dtype=np.int8)
 
     # ------------------------------------------------------------------
     # Coordinate transforms
@@ -129,9 +128,7 @@ class GridMap:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def bresenham(
-        r0: int, c0: int, r1: int, c1: int
-    ) -> list[tuple[int, int]]:
+    def bresenham(r0: int, c0: int, r1: int, c1: int) -> list[tuple[int, int]]:
         """Bresenham's line algorithm between two grid cells.
 
         Returns list of ``(row, col)`` along the line.
@@ -156,9 +153,7 @@ class GridMap:
                 r += sr
         return cells
 
-    def line_cells(
-        self, x0: float, y0: float, x1: float, y1: float
-    ) -> list[tuple[int, int]]:
+    def line_cells(self, x0: float, y0: float, x1: float, y1: float) -> list[tuple[int, int]]:
         """Return grid cells along a world-coordinate line segment."""
         r0, c0 = self.world_to_grid(x0, y0)
         r1, c1 = self.world_to_grid(x1, y1)
@@ -223,9 +218,7 @@ class GridMap:
     # Flood fill
     # ------------------------------------------------------------------
 
-    def flood_fill(
-        self, row: int, col: int, new_value: int
-    ) -> int:
+    def flood_fill(self, row: int, col: int, new_value: int) -> int:
         """Flood-fill from (row, col) replacing connected cells of the
         same value with *new_value*.
 
@@ -253,9 +246,7 @@ class GridMap:
             queue.append((r, c + 1))
         return filled
 
-    def connected_component(
-        self, row: int, col: int, value: int | None = None
-    ) -> np.ndarray:
+    def connected_component(self, row: int, col: int, value: int | None = None) -> np.ndarray:
         """Return a boolean mask of the connected component at (row, col).
 
         Parameters
@@ -346,7 +337,7 @@ class GridMap:
             c_max = min(self.width, c + cells + 1)
             for rr in range(r_min, r_max):
                 for cc in range(c_min, c_max):
-                    if (rr - r) ** 2 + (cc - c) ** 2 <= cells ** 2:
+                    if (rr - r) ** 2 + (cc - c) ** 2 <= cells**2:
                         new_map.data[rr, cc] = OCCUPIED
         return new_map
 
@@ -409,9 +400,7 @@ class GridMap:
         gm.data = self.data[r0:r1, c0:c1].copy()
         return gm
 
-    def submap_world(
-        self, x_min: float, y_min: float, x_max: float, y_max: float
-    ) -> GridMap:
+    def submap_world(self, x_min: float, y_min: float, x_max: float, y_max: float) -> GridMap:
         """Extract submap by world-coordinate bounds."""
         r0, c0 = self.world_to_grid(x_min, y_min)
         r1, c1 = self.world_to_grid(x_max, y_max)
@@ -423,7 +412,10 @@ class GridMap:
 
     def draw_line(
         self,
-        x0: float, y0: float, x1: float, y1: float,
+        x0: float,
+        y0: float,
+        x1: float,
+        y1: float,
         value: int = OCCUPIED,
     ) -> None:
         """Draw a line on the grid in world coordinates."""
@@ -432,7 +424,10 @@ class GridMap:
 
     def draw_rect(
         self,
-        x: float, y: float, w: float, h: float,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
         value: int = OCCUPIED,
         filled: bool = True,
     ) -> None:
@@ -448,7 +443,9 @@ class GridMap:
 
     def draw_circle(
         self,
-        cx: float, cy: float, radius: float,
+        cx: float,
+        cy: float,
+        radius: float,
         value: int = OCCUPIED,
         filled: bool = True,
     ) -> None:
@@ -500,7 +497,9 @@ class GridMap:
     def copy(self) -> GridMap:
         """Return a deep copy."""
         gm = GridMap(
-            self.width, self.height, self.resolution,
+            self.width,
+            self.height,
+            self.resolution,
             tuple(self.origin),  # type: ignore[arg-type]
         )
         gm.data = self.data.copy()

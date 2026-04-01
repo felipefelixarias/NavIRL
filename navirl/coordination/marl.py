@@ -23,6 +23,7 @@ except ImportError:  # pragma: no cover
 # Configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MARLConfig:
     """Configuration for multi-agent RL training.
@@ -168,9 +169,7 @@ if _TORCH_AVAILABLE:
             hidden = F.elu(torch.bmm(agent_qs, w1) + b1)
 
             # Second layer
-            w2 = torch.abs(
-                self.hyper_w2(state).view(batch_size, self.mixing_embed_dim, 1)
-            )
+            w2 = torch.abs(self.hyper_w2(state).view(batch_size, self.mixing_embed_dim, 1))
             b2 = self.hyper_b2(state).view(batch_size, 1, 1)
             q_total = torch.bmm(hidden, w2) + b2
 
@@ -213,10 +212,7 @@ if _TORCH_AVAILABLE:
                 self.actor = self._build_actor(obs_dim, action_dim, hidden_dim)
             else:
                 self.actors = nn.ModuleList(
-                    [
-                        self._build_actor(obs_dim, action_dim, hidden_dim)
-                        for _ in range(num_agents)
-                    ]
+                    [self._build_actor(obs_dim, action_dim, hidden_dim) for _ in range(num_agents)]
                 )
 
             # Centralized critic (takes joint observation)

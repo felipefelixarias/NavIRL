@@ -170,18 +170,12 @@ class MultiHeadSocialAttention(nn.Module):
         self.output_dim = output_dim
 
         head_dim = hidden_dim // num_heads
-        assert head_dim * num_heads == hidden_dim, (
-            "hidden_dim must be divisible by num_heads"
-        )
+        assert head_dim * num_heads == hidden_dim, "hidden_dim must be divisible by num_heads"
         self.head_dim = head_dim
 
         # Per-head projections
-        self.robot_projs = nn.ModuleList(
-            [nn.Linear(input_dim, head_dim) for _ in range(num_heads)]
-        )
-        self.human_projs = nn.ModuleList(
-            [nn.Linear(input_dim, head_dim) for _ in range(num_heads)]
-        )
+        self.robot_projs = nn.ModuleList([nn.Linear(input_dim, head_dim) for _ in range(num_heads)])
+        self.human_projs = nn.ModuleList([nn.Linear(input_dim, head_dim) for _ in range(num_heads)])
         self.score_nets = nn.ModuleList(
             [
                 nn.Sequential(
@@ -334,7 +328,9 @@ class TransformerEncoderLayer(nn.Module):
         # Pre-norm self-attention
         x = self.norm1(src)
         attn_out, _ = self.self_attn(
-            x, x, x,
+            x,
+            x,
+            x,
             attn_mask=src_mask,
             key_padding_mask=src_key_padding_mask,
         )
@@ -525,7 +521,7 @@ class GraphAttentionLayer(nn.Module):
 
         # Attention coefficients
         # e_ij = LeakyReLU(a_left^T h_i + a_right^T h_j)
-        attn_left = torch.einsum("bhno,hok->bhnk", h, self.a_left).squeeze(-1)   # (B, H, N)
+        attn_left = torch.einsum("bhno,hok->bhnk", h, self.a_left).squeeze(-1)  # (B, H, N)
         attn_right = torch.einsum("bhno,hok->bhnk", h, self.a_right).squeeze(-1)  # (B, H, N)
 
         # Broadcast to (B, H, N, N): e_ij = a_left_i + a_right_j
@@ -690,9 +686,7 @@ class CrossAttention(nn.Module):
 
         # Project queries, keys, values to a common dimension
         # Use output_dim as the internal attention dimension
-        assert output_dim % num_heads == 0, (
-            "output_dim must be divisible by num_heads"
-        )
+        assert output_dim % num_heads == 0, "output_dim must be divisible by num_heads"
         self.head_dim = output_dim // num_heads
 
         self.q_proj = nn.Linear(query_dim, output_dim)
@@ -737,12 +731,12 @@ class CrossAttention(nn.Module):
         B, Sq, _ = query.shape
         Skv = key_value.shape[1]
 
-        q = self.q_proj(self.norm_q(query))    # (B, Sq, output_dim)
+        q = self.q_proj(self.norm_q(query))  # (B, Sq, output_dim)
         k = self.k_proj(self.norm_kv(key_value))  # (B, Skv, output_dim)
         v = self.v_proj(self.norm_kv(key_value))  # (B, Skv, output_dim)
 
         # Reshape for multi-head attention
-        q = q.view(B, Sq, self.num_heads, self.head_dim).transpose(1, 2)   # (B, H, Sq, hd)
+        q = q.view(B, Sq, self.num_heads, self.head_dim).transpose(1, 2)  # (B, H, Sq, hd)
         k = k.view(B, Skv, self.num_heads, self.head_dim).transpose(1, 2)  # (B, H, Skv, hd)
         v = v.view(B, Skv, self.num_heads, self.head_dim).transpose(1, 2)  # (B, H, Skv, hd)
 
@@ -843,7 +837,7 @@ class RelationalReasoning(nn.Module):
         e_j = entities.unsqueeze(1).expand(-1, N, -1, -1)  # (B, N, N, D)
 
         pairs = torch.cat([e_i, e_j], dim=-1)  # (B, N, N, 2D)
-        pairs = pairs.view(B, N * N, 2 * D)    # (B, N*N, 2D)
+        pairs = pairs.view(B, N * N, 2 * D)  # (B, N*N, 2D)
 
         # Process each pair
         relations = self.relation_net(pairs)  # (B, N*N, hidden_dim)
@@ -913,8 +907,7 @@ class TemporalAttention(nn.Module):
         pe = torch.zeros(1, max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float32).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, d_model, 2, dtype=torch.float32)
-            * -(math.log(10000.0) / d_model)
+            torch.arange(0, d_model, 2, dtype=torch.float32) * -(math.log(10000.0) / d_model)
         )
         pe[0, :, 0::2] = torch.sin(position * div_term)
         pe[0, :, 1::2] = torch.cos(position * div_term[: d_model // 2])
@@ -954,7 +947,9 @@ class TemporalAttention(nn.Module):
         # Self-attention with residual
         normed = self.norm1(x)
         attn_out, _ = self.self_attn(
-            normed, normed, normed,
+            normed,
+            normed,
+            normed,
             key_padding_mask=mask,
         )
         x = x + attn_out

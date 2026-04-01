@@ -21,8 +21,10 @@ from navirl.robots.base import EventSink, RobotController
 # Formation definitions
 # -----------------------------------------------------------------------
 
+
 class FormationType(enum.Enum):
     """Built-in formation types."""
+
     LINE = "line"
     CIRCLE = "circle"
     V_SHAPE = "v_shape"
@@ -124,6 +126,7 @@ def rotate_offsets(
 # Collision avoidance (velocity obstacle inspired)
 # -----------------------------------------------------------------------
 
+
 def fleet_collision_avoidance(
     positions: np.ndarray,
     velocities: np.ndarray,
@@ -194,6 +197,7 @@ def fleet_collision_avoidance(
 # Task assignment
 # -----------------------------------------------------------------------
 
+
 def greedy_task_assignment(
     robot_positions: np.ndarray,
     task_positions: np.ndarray,
@@ -263,9 +267,7 @@ def hungarian_task_assignment(
     if n_robots == 0 or n_tasks == 0:
         return [-1] * n_robots
 
-    cost = np.linalg.norm(
-        robot_positions[:, None, :] - task_positions[None, :, :], axis=2
-    )
+    cost = np.linalg.norm(robot_positions[:, None, :] - task_positions[None, :, :], axis=2)
     assigned: list[int] = [-1] * n_robots
     used: set[int] = set()
 
@@ -310,6 +312,7 @@ def hungarian_task_assignment(
 # -----------------------------------------------------------------------
 # Communication model
 # -----------------------------------------------------------------------
+
 
 @dataclass
 class Message:
@@ -404,6 +407,7 @@ class CommunicationModel:
 # Fleet planner
 # -----------------------------------------------------------------------
 
+
 class FleetPlanner:
     """Coordinate fleet-level goals and path planning.
 
@@ -476,7 +480,11 @@ class FleetPlanner:
         Returns adjusted desired velocities.
         """
         return fleet_collision_avoidance(
-            positions, velocities, desired_velocities, radii, dt,
+            positions,
+            velocities,
+            desired_velocities,
+            radii,
+            dt,
             safety_margin=self.safety_margin,
         )
 
@@ -484,6 +492,7 @@ class FleetPlanner:
 # -----------------------------------------------------------------------
 # RobotFleet controller
 # -----------------------------------------------------------------------
+
 
 class RobotFleet:
     """Manage a fleet of robots with formation control and coordination.
@@ -627,7 +636,9 @@ class RobotFleet:
             # Leader heading.
             if self._leader_id is not None and self._leader_id in states:
                 lst = states[self._leader_id]
-                heading = float(np.arctan2(lst.vy, lst.vx)) if (lst.vx ** 2 + lst.vy ** 2) > 1e-4 else 0.0
+                heading = (
+                    float(np.arctan2(lst.vy, lst.vx)) if (lst.vx**2 + lst.vy**2) > 1e-4 else 0.0
+                )
             else:
                 mean_vel = np.mean(velocities, axis=0)
                 heading = float(np.arctan2(mean_vel[1], mean_vel[0]))
@@ -639,9 +650,7 @@ class RobotFleet:
                 desired[idx] += formation_gain * error
 
         # Collision avoidance.
-        adjusted = self._planner.avoid_collisions(
-            positions, velocities, desired, radii, dt
-        )
+        adjusted = self._planner.avoid_collisions(positions, velocities, desired, radii, dt)
 
         # Rebuild actions.
         final_actions: dict[int, Action] = {}

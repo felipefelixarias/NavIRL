@@ -164,7 +164,7 @@ class _SumTree:
     @property
     def max_priority(self) -> float:
         """Return the maximum priority among all leaves."""
-        leaves = self.tree[self.capacity - 1:]
+        leaves = self.tree[self.capacity - 1 :]
         return np.max(leaves) if np.any(leaves > 0) else 1.0
 
 
@@ -233,7 +233,7 @@ class PrioritizedReplayBuffer:
             done: Whether the episode terminated.
         """
         tree_index = self._pos + self._tree.capacity - 1
-        priority = self._max_priority ** self.alpha
+        priority = self._max_priority**self.alpha
 
         self.observations[self._pos] = obs
         self.actions[self._pos] = action
@@ -288,9 +288,7 @@ class PrioritizedReplayBuffer:
         }
         return batch
 
-    def update_priorities(
-        self, tree_indices: np.ndarray, td_errors: np.ndarray
-    ) -> None:
+    def update_priorities(self, tree_indices: np.ndarray, td_errors: np.ndarray) -> None:
         """Update priorities for sampled transitions based on TD-errors.
 
         Args:
@@ -349,7 +347,7 @@ class NStepBuffer:
         """
         reward = 0.0
         for i, (_, _, r, next_obs, done) in enumerate(self._n_step_buffer):
-            reward += (self.gamma ** i) * r
+            reward += (self.gamma**i) * r
             if done:
                 return reward, next_obs, True
         return reward, next_obs, done
@@ -386,9 +384,7 @@ class NStepBuffer:
             while len(self._n_step_buffer) > 0:
                 n_reward, n_next_obs, n_done = self._compute_n_step_return()
                 first_obs, first_action, _, _, _ = self._n_step_buffer[0]
-                self._buffer.add(
-                    first_obs, first_action, n_reward, n_next_obs, n_done
-                )
+                self._buffer.add(first_obs, first_action, n_reward, n_next_obs, n_done)
                 self._n_step_buffer.popleft()
 
     def sample(self, batch_size: int) -> dict[str, np.ndarray]:
@@ -442,9 +438,7 @@ class HindsightReplayBuffer:
         self.strategy = strategy
         self.k = k
 
-        assert strategy in ("future", "final", "episode"), (
-            f"Unknown strategy: {strategy}"
-        )
+        assert strategy in ("future", "final", "episode"), f"Unknown strategy: {strategy}"
 
         self.observations = np.zeros((capacity, *obs_shape), dtype=np.float32)
         self.actions = np.zeros((capacity, *action_shape), dtype=np.float32)
@@ -546,9 +540,7 @@ class HindsightReplayBuffer:
                     continue
 
                 new_goal = episode[future_idx]["achieved_goal"]
-                new_reward = self._compute_reward(
-                    t["achieved_goal"], new_goal
-                )
+                new_reward = self._compute_reward(t["achieved_goal"], new_goal)
                 self._store_transition(
                     t["obs"],
                     t["action"],
@@ -689,16 +681,10 @@ class SequenceBuffer:
             Dictionary with keys 'obs', 'actions', 'rewards', 'next_obs', 'dones',
             each with shape (batch_size, seq_len, ...).
         """
-        batch_obs = np.zeros(
-            (batch_size, self.seq_len, *self.obs_shape), dtype=np.float32
-        )
-        batch_actions = np.zeros(
-            (batch_size, self.seq_len, *self.action_shape), dtype=np.float32
-        )
+        batch_obs = np.zeros((batch_size, self.seq_len, *self.obs_shape), dtype=np.float32)
+        batch_actions = np.zeros((batch_size, self.seq_len, *self.action_shape), dtype=np.float32)
         batch_rewards = np.zeros((batch_size, self.seq_len), dtype=np.float32)
-        batch_next_obs = np.zeros(
-            (batch_size, self.seq_len, *self.obs_shape), dtype=np.float32
-        )
+        batch_next_obs = np.zeros((batch_size, self.seq_len, *self.obs_shape), dtype=np.float32)
         batch_dones = np.zeros((batch_size, self.seq_len), dtype=np.float32)
 
         for i in range(batch_size):
@@ -755,12 +741,8 @@ class RolloutBuffer:
         self.action_shape = action_shape
         self.n_envs = n_envs
 
-        self.observations = np.zeros(
-            (buffer_size, n_envs, *obs_shape), dtype=np.float32
-        )
-        self.actions = np.zeros(
-            (buffer_size, n_envs, *action_shape), dtype=np.float32
-        )
+        self.observations = np.zeros((buffer_size, n_envs, *obs_shape), dtype=np.float32)
+        self.actions = np.zeros((buffer_size, n_envs, *action_shape), dtype=np.float32)
         self.rewards = np.zeros((buffer_size, n_envs), dtype=np.float32)
         self.values = np.zeros((buffer_size, n_envs), dtype=np.float32)
         self.log_probs = np.zeros((buffer_size, n_envs), dtype=np.float32)
@@ -792,9 +774,7 @@ class RolloutBuffer:
             done: Done flags, shape (n_envs,).
         """
         if self._pos >= self.buffer_size:
-            raise BufferError(
-                "Rollout buffer is full. Call reset() before adding more data."
-            )
+            raise BufferError("Rollout buffer is full. Call reset() before adding more data.")
 
         self.observations[self._pos] = obs
         self.actions[self._pos] = action
@@ -835,11 +815,7 @@ class RolloutBuffer:
                 next_values = self.values[step + 1]
 
             next_non_terminal = 1.0 - self.dones[step]
-            delta = (
-                self.rewards[step]
-                + gamma * next_values * next_non_terminal
-                - self.values[step]
-            )
+            delta = self.rewards[step] + gamma * next_values * next_non_terminal - self.values[step]
             last_gae = delta + gamma * gae_lambda * next_non_terminal * last_gae
             self.advantages[step] = last_gae
 
@@ -906,10 +882,7 @@ class MultiAgentBuffer:
     ) -> None:
         self.num_agents = num_agents
         self.capacity = capacity
-        self.buffers = [
-            ReplayBuffer(capacity, obs_shape, action_shape)
-            for _ in range(num_agents)
-        ]
+        self.buffers = [ReplayBuffer(capacity, obs_shape, action_shape) for _ in range(num_agents)]
 
     def add(
         self,
@@ -1097,21 +1070,13 @@ class DemonstrationBuffer:
             online_batch = online_buffer.sample(n_online)
 
             return {
-                "obs": np.concatenate(
-                    [self.observations[demo_indices], online_batch["obs"]]
-                ),
-                "actions": np.concatenate(
-                    [self.actions[demo_indices], online_batch["actions"]]
-                ),
-                "rewards": np.concatenate(
-                    [self.rewards[demo_indices], online_batch["rewards"]]
-                ),
+                "obs": np.concatenate([self.observations[demo_indices], online_batch["obs"]]),
+                "actions": np.concatenate([self.actions[demo_indices], online_batch["actions"]]),
+                "rewards": np.concatenate([self.rewards[demo_indices], online_batch["rewards"]]),
                 "next_obs": np.concatenate(
                     [self.next_observations[demo_indices], online_batch["next_obs"]]
                 ),
-                "dones": np.concatenate(
-                    [self.dones[demo_indices], online_batch["dones"]]
-                ),
+                "dones": np.concatenate([self.dones[demo_indices], online_batch["dones"]]),
             }
 
         indices = np.random.randint(0, self._size, size=batch_size)

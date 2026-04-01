@@ -19,6 +19,7 @@ import numpy as np
 # Axis-Aligned Bounding Box
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AABB:
     """Axis-aligned bounding box used for broad-phase collision queries."""
@@ -54,9 +55,7 @@ class AABB:
     @property
     def center(self) -> np.ndarray:
         """Return center as a 2-element array."""
-        return np.array(
-            [0.5 * (self.x_min + self.x_max), 0.5 * (self.y_min + self.y_max)]
-        )
+        return np.array([0.5 * (self.x_min + self.x_max), 0.5 * (self.y_min + self.y_max)])
 
     @property
     def width(self) -> float:
@@ -74,6 +73,7 @@ class AABB:
 # ---------------------------------------------------------------------------
 # Spatial Grid
 # ---------------------------------------------------------------------------
+
 
 class SpatialGrid:
     """Uniform spatial grid for fast neighbour and range queries.
@@ -163,6 +163,7 @@ class SpatialGrid:
 # Collision helpers
 # ---------------------------------------------------------------------------
 
+
 def _circle_circle(
     p1: np.ndarray, r1: float, p2: np.ndarray, r2: float
 ) -> tuple[np.ndarray, float] | None:
@@ -213,6 +214,7 @@ def _aabb_overlap(a: AABB, b: AABB) -> tuple[np.ndarray, float] | None:
 # Collision Result
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CollisionResult:
     """Record of a single collision between two entities."""
@@ -227,6 +229,7 @@ class CollisionResult:
 # ---------------------------------------------------------------------------
 # World
 # ---------------------------------------------------------------------------
+
 
 class World:
     """Central simulation world managing entities and spatial structure.
@@ -337,8 +340,7 @@ class World:
         """Add a wall segment.  Returns the wall index."""
         idx = len(self._walls)
         self._walls.append(
-            (np.asarray(a, dtype=np.float64)[:2].copy(),
-             np.asarray(b, dtype=np.float64)[:2].copy())
+            (np.asarray(a, dtype=np.float64)[:2].copy(), np.asarray(b, dtype=np.float64)[:2].copy())
         )
         return idx
 
@@ -427,8 +429,10 @@ class World:
                 if not ndata.get("active", True):
                     continue
                 hit = _circle_circle(
-                    edata["position"], edata["radius"],
-                    ndata["position"], ndata["radius"],
+                    edata["position"],
+                    edata["radius"],
+                    ndata["position"],
+                    ndata["radius"],
                 )
                 if hit is not None:
                     normal, pen = hit
@@ -447,9 +451,7 @@ class World:
                 if hit is not None:
                     normal, pen = hit
                     cp = edata["position"] - normal * (edata["radius"] - pen * 0.5)
-                    results.append(
-                        CollisionResult(eid, -(widx + 1), normal, pen, cp)
-                    )
+                    results.append(CollisionResult(eid, -(widx + 1), normal, pen, cp))
         return results
 
     # ------------------------------------------------------------------
@@ -518,9 +520,7 @@ class World:
             d["position"] = d["position"].tolist()
             d["velocity"] = d["velocity"].tolist()
             ents[str(eid)] = d
-        walls_ser = [
-            [a.tolist(), b.tolist()] for a, b in self._walls
-        ]
+        walls_ser = [[a.tolist(), b.tolist()] for a, b in self._walls]
         return {
             "width": self.width,
             "height": self.height,
@@ -550,8 +550,7 @@ class World:
         w._next_id = data.get("next_id", 0)
         for seg in data.get("walls", []):
             w._walls.append(
-                (np.asarray(seg[0], dtype=np.float64),
-                 np.asarray(seg[1], dtype=np.float64))
+                (np.asarray(seg[0], dtype=np.float64), np.asarray(seg[1], dtype=np.float64))
             )
         w._metadata = data.get("metadata", {})
         return w
@@ -609,6 +608,7 @@ class World:
 # ---------------------------------------------------------------------------
 # WorldBuilder (fluent API)
 # ---------------------------------------------------------------------------
+
 
 class WorldBuilder:
     """Fluent builder for constructing :class:`World` instances.
@@ -676,8 +676,14 @@ class WorldBuilder:
     ) -> WorldBuilder:
         """Queue a pedestrian entity."""
         self._entities.append(
-            dict(position=position, velocity=velocity, radius=radius,
-                 kind="pedestrian", mass=mass, **extra)
+            dict(
+                position=position,
+                velocity=velocity,
+                radius=radius,
+                kind="pedestrian",
+                mass=mass,
+                **extra,
+            )
         )
         return self
 
@@ -691,8 +697,14 @@ class WorldBuilder:
     ) -> WorldBuilder:
         """Queue a robot entity."""
         self._entities.append(
-            dict(position=position, velocity=velocity, radius=radius,
-                 kind="robot", mass=mass, **extra)
+            dict(
+                position=position,
+                velocity=velocity,
+                radius=radius,
+                kind="robot",
+                mass=mass,
+                **extra,
+            )
         )
         return self
 
@@ -704,8 +716,9 @@ class WorldBuilder:
     ) -> WorldBuilder:
         """Queue a static obstacle entity."""
         self._entities.append(
-            dict(position=position, velocity=None, radius=radius,
-                 kind="obstacle", mass=1e6, **extra)
+            dict(
+                position=position, velocity=None, radius=radius, kind="obstacle", mass=1e6, **extra
+            )
         )
         return self
 

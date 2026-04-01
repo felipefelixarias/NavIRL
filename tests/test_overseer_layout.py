@@ -8,7 +8,12 @@ def test_suggest_layout_generates_valid_layout():
     scenario = load_scenario("navirl/scenarios/library/hallway_pass.yaml")
     suggestion = suggest_layout(scenario, objective="auto", humans_count=6, seed=13)
 
-    assert suggestion["objective"] in {"cross_flow", "bottleneck_showcase", "comfort_showcase", "comfort"}
+    assert suggestion["objective"] in {
+        "cross_flow",
+        "bottleneck_showcase",
+        "comfort_showcase",
+        "comfort",
+    }
     assert suggestion["humans_count"] == 6
     assert len(suggestion["human_starts"]) == 6
     assert len(suggestion["human_goals"]) == 6

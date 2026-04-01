@@ -158,9 +158,7 @@ class ExperimentGrid:
         """Generate :class:`Experiment` objects for every combination."""
         experiments: list[Experiment] = []
         for index, cfg in enumerate(self.generate_configs()):
-            name = self.name_template.format(
-                index=index, **cfg.get("_grid_params", {})
-            )
+            name = self.name_template.format(index=index, **cfg.get("_grid_params", {}))
             experiments.append(Experiment(name=name, config=cfg))
         return experiments
 
@@ -205,8 +203,10 @@ class ExperimentRandom:
 
     def _sample_param(self, dist: Any) -> Any:
         """Sample a single parameter value from *dist*."""
-        if isinstance(dist, (list, tuple)) and len(dist) == 2 and all(
-            isinstance(v, (int, float)) for v in dist
+        if (
+            isinstance(dist, (list, tuple))
+            and len(dist) == 2
+            and all(isinstance(v, (int, float)) for v in dist)
         ):
             # Uniform float in [low, high)
             low, high = dist

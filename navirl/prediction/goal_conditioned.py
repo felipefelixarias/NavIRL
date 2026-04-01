@@ -277,7 +277,10 @@ class IntentPredictor:
             scores[PedestrianIntent.CROSSING.value] = 0.2
 
         # Straight walking (default).
-        if recent_speed >= self.stop_speed_threshold and abs(mean_curvature) <= self.turn_curvature_threshold:
+        if (
+            recent_speed >= self.stop_speed_threshold
+            and abs(mean_curvature) <= self.turn_curvature_threshold
+        ):
             scores[PedestrianIntent.WALKING_STRAIGHT.value] = 2.0
         else:
             scores[PedestrianIntent.WALKING_STRAIGHT.value] = 0.2

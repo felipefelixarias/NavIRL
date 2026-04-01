@@ -12,6 +12,7 @@ from navirl.planning.base import Path, Planner, PlannerConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _grid_neighbors(node: tuple[int, int], grid_shape: tuple[int, int]) -> list[tuple[int, int]]:
     """8-connected neighbours on a grid."""
     r, c = node
@@ -81,6 +82,7 @@ def _build_path(
 # ---------------------------------------------------------------------------
 # A*
 # ---------------------------------------------------------------------------
+
 
 class AStarPlanner(Planner):
     """A* search on a 2-D occupancy grid with configurable heuristic."""
@@ -153,6 +155,7 @@ class AStarPlanner(Planner):
 # Dijkstra
 # ---------------------------------------------------------------------------
 
+
 class DijkstraPlanner(Planner):
     """Dijkstra's shortest-path algorithm on a grid."""
 
@@ -208,6 +211,7 @@ class DijkstraPlanner(Planner):
 # ---------------------------------------------------------------------------
 # Theta*
 # ---------------------------------------------------------------------------
+
 
 class ThetaStarPlanner(Planner):
     """Theta* (any-angle A*) on a grid."""
@@ -310,6 +314,7 @@ class ThetaStarPlanner(Planner):
 # ---------------------------------------------------------------------------
 # RRT
 # ---------------------------------------------------------------------------
+
 
 class RRTPlanner(Planner):
     """Rapidly-exploring Random Tree (RRT)."""
@@ -430,6 +435,7 @@ class RRTPlanner(Planner):
 # ---------------------------------------------------------------------------
 # RRT*
 # ---------------------------------------------------------------------------
+
 
 class RRTStarPlanner(Planner):
     """Asymptotically optimal RRT*."""
@@ -556,6 +562,7 @@ class RRTStarPlanner(Planner):
 # ---------------------------------------------------------------------------
 # PRM
 # ---------------------------------------------------------------------------
+
 
 class PRMPlanner(Planner):
     """Probabilistic Roadmap (PRM) planner."""
