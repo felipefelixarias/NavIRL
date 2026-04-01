@@ -9,8 +9,8 @@ from __future__ import annotations
 import copy
 import json
 import pathlib
-from typing import Any, Sequence
-
+from collections.abc import Sequence
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Save / load
@@ -35,6 +35,7 @@ def save_config(
     """
     path = pathlib.Path(path)
     fmt = _resolve_format(path, format)
+    path = _normalize_output_path(path, fmt)
 
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -71,7 +72,7 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
     dict
         Parsed configuration.
     """
-    path = pathlib.Path(path)
+    path = _resolve_existing_path(pathlib.Path(path))
     fmt = _resolve_format(path, None)
 
     if fmt == "json":
@@ -209,6 +210,33 @@ def _resolve_format(path: pathlib.Path, explicit: str | None) -> str:
         ".toml": "toml",
     }
     return mapping.get(ext, ext.lstrip("."))
+
+
+def _resolve_existing_path(path: pathlib.Path) -> pathlib.Path:
+    if path.suffix or path.exists():
+        return path
+
+    for suffix in (".json", ".yaml", ".yml", ".toml"):
+        candidate = path.with_suffix(suffix)
+        if candidate.exists():
+            return candidate
+
+    return path
+
+
+def _normalize_output_path(path: pathlib.Path, fmt: str) -> pathlib.Path:
+    if path.suffix:
+        return path
+
+    suffix_map = {
+        "json": ".json",
+        "yaml": ".yaml",
+        "toml": ".toml",
+    }
+    suffix = suffix_map.get(fmt)
+    if suffix is None:
+        return path
+    return path.with_suffix(suffix)
 
 
 def _import_yaml() -> Any:

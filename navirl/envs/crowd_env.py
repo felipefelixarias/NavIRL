@@ -13,14 +13,13 @@ CrowdNavConfig  -- extended configuration dataclass
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import Any, Literal
 
 import numpy as np
 
 try:
-    import gymnasium as gym
-    from gymnasium import spaces
+    __import__("gymnasium")
 except ImportError as _exc:
     raise ImportError(
         "NavIRL Gymnasium environments require the 'gymnasium' package.  "
@@ -28,11 +27,8 @@ except ImportError as _exc:
     ) from _exc
 
 from navirl.core.constants import (
-    EPSILON,
     LOS,
     PROXEMICS,
-    REWARD,
-    SIM,
 )
 from navirl.envs.base_env import NavEnv, NavEnvConfig
 
@@ -68,9 +64,9 @@ class CrowdNavConfig(NavEnvConfig):
         base intimate-zone penalty.
     """
 
-    num_humans_range: Tuple[int, int] = (3, 15)
+    num_humans_range: tuple[int, int] = (3, 15)
     human_policy: Literal["orca", "sfm", "random"] = "orca"
-    crowd_density_target: Optional[float] = None
+    crowd_density_target: float | None = None
 
     # Crowd-specific reward weights
     density_reward_weight: float = 0.5
@@ -110,9 +106,9 @@ class CrowdNavEnv(NavEnv):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Any, Dict[str, Any]]:
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[Any, dict[str, Any]]:
         # Determine number of humans for this episode
         num_humans = self._compute_num_humans(seed)
 
@@ -139,7 +135,7 @@ class CrowdNavEnv(NavEnv):
     #  Reward (extends base)
     # -----------------------------------------------------------------
 
-    def _compute_reward(self) -> Tuple[float, bool, Dict[str, Any]]:
+    def _compute_reward(self) -> tuple[float, bool, dict[str, Any]]:
         reward, terminated, info = super()._compute_reward()
 
         if terminated:
@@ -212,7 +208,7 @@ class CrowdNavEnv(NavEnv):
     #  Helpers
     # -----------------------------------------------------------------
 
-    def _compute_num_humans(self, seed: Optional[int]) -> int:
+    def _compute_num_humans(self, seed: int | None) -> int:
         """Decide how many humans to spawn this episode."""
         rng = np.random.default_rng(seed)
         cfg = self._crowd_config

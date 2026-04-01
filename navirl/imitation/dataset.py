@@ -12,16 +12,14 @@ from __future__ import annotations
 
 import glob
 import logging
-import os
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import numpy as np
 
 try:
     import torch
-    from torch.utils.data import Dataset as TorchDataset
 
     _TORCH_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -89,11 +87,11 @@ class DemonstrationDataset:
 
     def __init__(
         self,
-        observations: Optional[np.ndarray] = None,
-        actions: Optional[np.ndarray] = None,
-        rewards: Optional[np.ndarray] = None,
-        next_observations: Optional[np.ndarray] = None,
-        dones: Optional[np.ndarray] = None,
+        observations: np.ndarray | None = None,
+        actions: np.ndarray | None = None,
+        rewards: np.ndarray | None = None,
+        next_observations: np.ndarray | None = None,
+        dones: np.ndarray | None = None,
     ) -> None:
         self.observations = observations if observations is not None else np.empty((0,))
         self.actions = actions if actions is not None else np.empty((0,))
@@ -103,14 +101,14 @@ class DemonstrationDataset:
         )
         self.dones = dones if dones is not None else np.empty((0,))
 
-        self._stats: Optional[FeatureStatistics] = None
+        self._stats: FeatureStatistics | None = None
 
     # ------------------------------------------------------------------
     # Loading helpers
     # ------------------------------------------------------------------
 
     @classmethod
-    def load_from_npz(cls, path: Union[str, pathlib.Path]) -> "DemonstrationDataset":
+    def load_from_npz(cls, path: str | pathlib.Path) -> DemonstrationDataset:
         """Load demonstrations from a ``.npz`` file.
 
         Expected keys: ``obs``, ``actions``, and optionally ``rewards``,
@@ -139,7 +137,7 @@ class DemonstrationDataset:
         )
 
     @classmethod
-    def load_from_hdf5(cls, path: Union[str, pathlib.Path]) -> "DemonstrationDataset":
+    def load_from_hdf5(cls, path: str | pathlib.Path) -> DemonstrationDataset:
         """Load demonstrations from an HDF5 file.
 
         Expected datasets: ``obs``, ``actions``, and optionally ``rewards``,
@@ -191,8 +189,8 @@ class DemonstrationDataset:
 
     @classmethod
     def load_from_navirl_logs(
-        cls, log_dir: Union[str, pathlib.Path]
-    ) -> "DemonstrationDataset":
+        cls, log_dir: str | pathlib.Path
+    ) -> DemonstrationDataset:
         """Load demonstrations from NavIRL log directory.
 
         Scans *log_dir* for ``.npz`` files named ``episode_*.npz`` and
@@ -215,11 +213,11 @@ class DemonstrationDataset:
                 f"No episode_*.npz files found in {log_dir}"
             )
 
-        all_obs: List[np.ndarray] = []
-        all_act: List[np.ndarray] = []
-        all_rew: List[np.ndarray] = []
-        all_next: List[np.ndarray] = []
-        all_done: List[np.ndarray] = []
+        all_obs: list[np.ndarray] = []
+        all_act: list[np.ndarray] = []
+        all_rew: list[np.ndarray] = []
+        all_next: list[np.ndarray] = []
+        all_done: list[np.ndarray] = []
 
         for f in files:
             data = np.load(f, allow_pickle=False)
@@ -274,7 +272,7 @@ class DemonstrationDataset:
 
     def normalize(
         self,
-        stats: Optional[FeatureStatistics] = None,
+        stats: FeatureStatistics | None = None,
         *,
         normalize_actions: bool = False,
     ) -> None:
@@ -320,7 +318,7 @@ class DemonstrationDataset:
                 0, action_noise_std, size=self.actions.shape
             ).astype(np.float32)
 
-    def filter_by_reward(self, min_return: float) -> "DemonstrationDataset":
+    def filter_by_reward(self, min_return: float) -> DemonstrationDataset:
         """Filter trajectories whose cumulative reward is below a threshold.
 
         Trajectories are identified by episode boundaries in ``self.dones``.
@@ -346,7 +344,7 @@ class DemonstrationDataset:
                 dones=self.dones.copy(),
             )
 
-        keep_indices: List[np.ndarray] = []
+        keep_indices: list[np.ndarray] = []
         start = 0
         for end_idx in done_indices:
             ep_return = self.rewards[start : end_idx + 1].sum()
@@ -382,8 +380,8 @@ class DemonstrationDataset:
         val_ratio: float = 0.1,
         test_ratio: float = 0.0,
         shuffle: bool = True,
-        seed: Optional[int] = None,
-    ) -> Tuple["DemonstrationDataset", "DemonstrationDataset", Optional["DemonstrationDataset"]]:
+        seed: int | None = None,
+    ) -> tuple[DemonstrationDataset, DemonstrationDataset, DemonstrationDataset | None]:
         """Split the dataset into train, validation, and optional test sets.
 
         Parameters
@@ -417,7 +415,7 @@ class DemonstrationDataset:
         val_idx = indices[n_train : n_train + n_val]
         test_idx = indices[n_train + n_val :] if n_test > 0 else None
 
-        def _subset(idx: np.ndarray) -> "DemonstrationDataset":
+        def _subset(idx: np.ndarray) -> DemonstrationDataset:
             return DemonstrationDataset(
                 observations=self.observations[idx],
                 actions=self.actions[idx],
@@ -471,7 +469,7 @@ class DemonstrationDataset:
     # Sampling
     # ------------------------------------------------------------------
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of transitions.
 
         Parameters
@@ -501,7 +499,7 @@ class DemonstrationDataset:
     def __len__(self) -> int:
         return len(self.observations)
 
-    def __getitem__(self, idx: int) -> Dict[str, np.ndarray]:
+    def __getitem__(self, idx: int) -> dict[str, np.ndarray]:
         return {
             "obs": self.observations[idx],
             "actions": self.actions[idx],

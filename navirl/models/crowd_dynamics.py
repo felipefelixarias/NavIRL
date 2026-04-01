@@ -7,16 +7,13 @@ classification based on the Fruin framework.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-
 import numpy as np
 
 from navirl.core.constants import (
-    DENSITY_BINS,
-    DENSITY_LABELS,
-    FUNDAMENTAL_DIAGRAM_V_FREE,
     FUNDAMENTAL_DIAGRAM_RHO_MAX,
+    FUNDAMENTAL_DIAGRAM_V_FREE,
+)
+from navirl.core.constants import (
     LOS as LOS_CONSTANTS,
 )
 
@@ -205,7 +202,7 @@ class CrowdAnalyzer:
             List of ``(row, col)`` indices of congested cells.
         """
         rows, cols = np.where(density_grid >= threshold)
-        return list(zip(rows.tolist(), cols.tolist()))
+        return list(zip(rows.tolist(), cols.tolist(), strict=False))
 
 
 # ---------------------------------------------------------------------------

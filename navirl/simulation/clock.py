@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import heapq
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Scheduled event
@@ -54,7 +54,7 @@ class ClockStats:
     total_paused_time: float = 0.0
     events_fired: int = 0
 
-    def as_dict(self) -> Dict[str, float]:
+    def as_dict(self) -> dict[str, float]:
         """Return a plain dict representation."""
         return {
             "sim_time": self.sim_time,
@@ -129,11 +129,11 @@ class SimulationClock:
         self._accumulator: float = 0.0
 
         # Event scheduling (priority queue)
-        self._events: List[ScheduledEvent] = []
+        self._events: list[ScheduledEvent] = []
         self._event_seq: int = 0
 
         # Per-step wall-time measurements
-        self._step_wall_times: List[float] = []
+        self._step_wall_times: list[float] = []
         self._fired_count: int = 0
 
     # ------------------------------------------------------------------

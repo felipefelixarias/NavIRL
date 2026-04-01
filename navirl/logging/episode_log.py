@@ -8,21 +8,20 @@ episode-level statistics. Supports JSON, CSV, and JSONL export formats.
 from __future__ import annotations
 
 import csv
-import io
 import json
 import math
 import time
 import uuid
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Generator, Iterator, Sequence
+from typing import Any
 
 import numpy as np
 import yaml
 
 from navirl.core.types import AgentState, EventRecord
-
 
 # ---------------------------------------------------------------------------
 # Data classes

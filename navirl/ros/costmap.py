@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -18,8 +19,7 @@ logger = logging.getLogger(__name__)
 # Guarded ROS2 imports
 # ---------------------------------------------------------------------------
 try:
-    from nav_msgs.msg import OccupancyGrid, MapMetaData
-    from std_msgs.msg import Header
+    from nav_msgs.msg import OccupancyGrid
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False
@@ -39,7 +39,7 @@ def _world_to_grid(
     wx: float, wy: float,
     origin_x: float, origin_y: float,
     resolution: float,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Convert world coordinates to grid cell indices."""
     gx = int(round((wx - origin_x) / resolution))
     gy = int(round((wy - origin_y) / resolution))
@@ -50,7 +50,7 @@ def _grid_to_world(
     gx: int, gy: int,
     origin_x: float, origin_y: float,
     resolution: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Convert grid cell indices to world coordinates (cell centre)."""
     wx = origin_x + gx * resolution
     wy = origin_y + gy * resolution
@@ -89,7 +89,7 @@ class CostmapManager:
         width: int = 200,
         height: int = 200,
         resolution: float = 0.05,
-        origin: Tuple[float, float] = (-5.0, -5.0),
+        origin: tuple[float, float] = (-5.0, -5.0),
     ) -> None:
         self.width = width
         self.height = height
@@ -100,11 +100,11 @@ class CostmapManager:
         self._master: np.ndarray = np.zeros((height, width), dtype=np.int8)
 
         # Registered layers: name -> layer object
-        self._layers: Dict[str, _CostmapLayerBase] = {}
+        self._layers: dict[str, _CostmapLayerBase] = {}
 
     # -- Layer management ---------------------------------------------------
 
-    def add_layer(self, name: str, layer: "_CostmapLayerBase") -> None:
+    def add_layer(self, name: str, layer: _CostmapLayerBase) -> None:
         layer.resize(self.width, self.height, self.resolution, self.origin_x, self.origin_y)
         self._layers[name] = layer
         logger.info("CostmapManager: added layer '%s'.", name)
@@ -112,7 +112,7 @@ class CostmapManager:
     def remove_layer(self, name: str) -> None:
         self._layers.pop(name, None)
 
-    def get_layer(self, name: str) -> Optional["_CostmapLayerBase"]:
+    def get_layer(self, name: str) -> _CostmapLayerBase | None:
         return self._layers.get(name)
 
     # -- Update / merge -----------------------------------------------------
@@ -127,7 +127,7 @@ class CostmapManager:
         """
         self._master[:] = FREE_SPACE
 
-        for name, layer in self._layers.items():
+        for _name, layer in self._layers.items():
             layer.update(**kwargs)
             grid = layer.grid
             # Take element-wise maximum (most conservative cost)
@@ -171,7 +171,7 @@ class CostmapManager:
         }
 
     @classmethod
-    def from_occupancy_grid(cls, msg: Any) -> "CostmapManager":
+    def from_occupancy_grid(cls, msg: Any) -> CostmapManager:
         """Construct a CostmapManager from a ``nav_msgs/OccupancyGrid``."""
         width = int(msg.info.width)
         height = int(msg.info.height)
@@ -185,10 +185,10 @@ class CostmapManager:
 
     # -- Convenience --------------------------------------------------------
 
-    def world_to_grid(self, x: float, y: float) -> Tuple[int, int]:
+    def world_to_grid(self, x: float, y: float) -> tuple[int, int]:
         return _world_to_grid(x, y, self.origin_x, self.origin_y, self.resolution)
 
-    def grid_to_world(self, gx: int, gy: int) -> Tuple[float, float]:
+    def grid_to_world(self, gx: int, gy: int) -> tuple[float, float]:
         return _grid_to_world(gx, gy, self.origin_x, self.origin_y, self.resolution)
 
     def in_bounds(self, gx: int, gy: int) -> bool:
@@ -253,7 +253,7 @@ class InflationCostmapLayer(_CostmapLayerBase):
     def __init__(self, inflation_radius: float = 0.3) -> None:
         super().__init__()
         self.inflation_radius = inflation_radius
-        self._source_grid: Optional[np.ndarray] = None
+        self._source_grid: np.ndarray | None = None
 
     def set_source(self, grid: np.ndarray) -> None:
         self._source_grid = grid
@@ -265,7 +265,7 @@ class InflationCostmapLayer(_CostmapLayerBase):
         radius_cells = max(int(round(self.inflation_radius / self._resolution)), 1)
         kernel_size = 2 * radius_cells + 1
         sigma = radius_cells / 2.0
-        kernel = _gaussian_kernel(kernel_size, sigma)
+        _gaussian_kernel(kernel_size, sigma)
 
         from scipy.ndimage import maximum_filter  # type: ignore[import-untyped]
 
@@ -316,7 +316,7 @@ class SocialCostmapLayer(_CostmapLayerBase):
         the format produced by :func:`conversions.person_array_to_social_obs`.
         """
         self.clear()
-        peds: Optional[np.ndarray] = kwargs.get("pedestrians")
+        peds: np.ndarray | None = kwargs.get("pedestrians")
         if peds is None or peds.size == 0:
             return
 
@@ -409,7 +409,7 @@ class PredictiveCostmapLayer(_CostmapLayerBase):
         prediction horizon length and columns are ``[x, y]``.
         """
         self.clear()
-        trajectories: Optional[Sequence[np.ndarray]] = kwargs.get("predicted_trajectories")
+        trajectories: Sequence[np.ndarray] | None = kwargs.get("predicted_trajectories")
         if not trajectories:
             return
 

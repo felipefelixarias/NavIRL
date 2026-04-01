@@ -799,7 +799,7 @@ def validate_deadlock_bounded(
     violations = []
 
     for row in rows:
-        step = int(row["step"])
+        int(row["step"])
         for agent in row["agents"]:
             aid = int(agent["id"])
             kind = str(agent.get("kind", "unknown"))

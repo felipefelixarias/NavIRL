@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class Path:
     cost: float = 0.0
 
     # Optional extra metadata.
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # ------------------------------------------------------------------
     # Convenience helpers
@@ -94,8 +94,8 @@ class Planner(ABC):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         """Plan a path from *start* to *goal*.
 

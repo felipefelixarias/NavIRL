@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import logging
 import pathlib
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 from navirl.agents.base import BaseAgent, HyperParameters
@@ -25,7 +25,6 @@ from navirl.agents.networks import (
     CategoricalPolicyHead,
     GaussianPolicyHead,
     ValueHead,
-    init_weights_orthogonal,
 )
 from navirl.training.buffer import RolloutBuffer
 
@@ -46,7 +45,7 @@ class A2CConfig(HyperParameters):
     value_loss_coeff: float = 0.5
     entropy_coeff: float = 0.01
     max_grad_norm: float = 0.5
-    hidden_dims: Tuple[int, ...] = (64, 64)
+    hidden_dims: tuple[int, ...] = (64, 64)
     activation: str = "tanh"
     normalize_advantages: bool = False
     n_steps: int = 5
@@ -85,8 +84,8 @@ class A2CAgent(BaseAgent):
         config: A2CConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, torch.device] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(config, observation_space, action_space, device, seed, metrics_callback)
@@ -168,7 +167,7 @@ class A2CAgent(BaseAgent):
         self,
         obs_tensor: torch.Tensor,
         actions_tensor: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Re-evaluate actions under the current policy.
 
         Returns
@@ -202,7 +201,7 @@ class A2CAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -255,7 +254,7 @@ class A2CAgent(BaseAgent):
         }
         return action, info
 
-    def update(self, batch: RolloutBuffer) -> Dict[str, float]:
+    def update(self, batch: RolloutBuffer) -> dict[str, float]:
         """Run a single gradient step on the collected rollout data.
 
         Parameters
@@ -332,7 +331,7 @@ class A2CAgent(BaseAgent):
     # Persistence
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Save the agent checkpoint to *path*."""
         state_dicts = {
             "feature_extractor": self._feature_extractor.state_dict(),
@@ -341,7 +340,7 @@ class A2CAgent(BaseAgent):
         }
         self._save_checkpoint(path, state_dicts)
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Load agent state from a checkpoint at *path*."""
         payload = self._load_checkpoint(path)
         model_states = payload.get("model", {})

@@ -2,21 +2,31 @@
 
 from __future__ import annotations
 
-import json
-import math
 from pathlib import Path
-from typing import Any, Dict
 
 import numpy as np
 import pytest
 
 from navirl.training.buffer import PrioritizedReplayBuffer, ReplayBuffer
+from navirl.training.callbacks import (
+    Callback,
+    CallbackList,
+    CheckpointCallback,
+    LoggingCallback,
+)
 from navirl.training.curriculum import (
     CurriculumManager,
     DifficultyDimension,
     LinearCurriculum,
     PerformanceCurriculum,
     StagedCurriculum,
+)
+from navirl.training.experiment import (
+    Experiment,
+    ExperimentGrid,
+    ExperimentRandom,
+    ExperimentStatus,
+    ResultsDB,
 )
 from navirl.training.schedulers import (
     CompositeSchedule,
@@ -31,23 +41,7 @@ from navirl.training.schedulers import (
     StepSchedule,
     WarmupSchedule,
 )
-from navirl.training.callbacks import (
-    Callback,
-    CallbackList,
-    CheckpointCallback,
-    EarlyStoppingCallback,
-    EvalCallback,
-    LoggingCallback,
-)
 from navirl.training.trainer import EvalResult, TrainerConfig, TrainingLogger
-from navirl.training.experiment import (
-    Experiment,
-    ExperimentGrid,
-    ExperimentRandom,
-    ExperimentStatus,
-    ResultsDB,
-)
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -136,7 +130,7 @@ class TestPrioritizedReplayBuffer:
         assert batch["weights"].shape == (8,)
 
     def test_update_priorities(self, prioritized_buffer):
-        for i in range(10):
+        for _i in range(10):
             prioritized_buffer.add(np.zeros(4), np.zeros(2), 0.0, np.zeros(4), False)
         batch = prioritized_buffer.sample(5)
         indices = batch["indices"]
@@ -145,7 +139,7 @@ class TestPrioritizedReplayBuffer:
         # Should not crash; priorities are updated internally
 
     def test_capacity_limit(self, prioritized_buffer):
-        for i in range(100):
+        for _i in range(100):
             prioritized_buffer.add(np.zeros(4), np.zeros(2), 0.0, np.zeros(4), False)
         assert len(prioritized_buffer) == 64
 

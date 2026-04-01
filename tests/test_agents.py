@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple, Union
-import pathlib
-
 import numpy as np
 import pytest
 
 from navirl.agents.base import (
     BaseAgent,
-    CheckpointMeta,
     HyperParameters,
     MetricsLogger,
     RunningMeanStd,
@@ -18,7 +14,6 @@ from navirl.agents.base import (
 
 try:
     import torch
-    import torch.nn as nn
     _TORCH_AVAILABLE = True
 except ImportError:
     _TORCH_AVAILABLE = False
@@ -324,8 +319,9 @@ class TestMLP:
 
 class TestCNN:
     def test_forward(self):
-        from navirl.agents.networks.cnn import CNNExtractor
-        net = CNNExtractor(input_channels=3, output_dim=64)
+        # TODO: CNNExtractor doesn't exist, using NatureDQN as placeholder
+        from navirl.agents.networks.cnn import NatureDQN
+        net = NatureDQN(input_channels=3, input_height=84, input_width=84, output_dim=64)
         # Assume input is (batch, C, H, W)
         x = torch.randn(1, 3, 84, 84)
         out = net(x)
@@ -335,21 +331,23 @@ class TestCNN:
 
 class TestRNN:
     def test_forward(self):
-        from navirl.agents.networks.rnn import RNNEncoder
-        net = RNNEncoder(input_dim=8, hidden_dim=32, num_layers=1, output_dim=16)
+        # TODO: RNNEncoder doesn't exist, using SequenceEncoder as replacement
+        from navirl.agents.networks.rnn import SequenceEncoder
+        net = SequenceEncoder(input_dim=8, hidden_size=16, num_layers=1)
         # (batch, seq_len, input_dim)
         x = torch.randn(2, 5, 8)
         out = net(x)
-        assert out.shape == (2, 16)
+        assert out.shape == (2, 16)  # hidden_size=16, bidirectional=False
 
 
 class TestAttention:
     def test_forward(self):
         from navirl.agents.networks.attention import SocialAttention
-        net = SocialAttention(embed_dim=16, num_heads=2)
-        # (batch, num_agents, embed_dim)
-        x = torch.randn(2, 6, 16)
-        out = net(x)
+        net = SocialAttention(input_dim=16, hidden_dim=32, output_dim=16)
+        # SocialAttention expects (robot_state, human_states) - simplified test
+        robot_state = torch.randn(2, 16)  # (batch, input_dim)
+        human_states = torch.randn(2, 6, 16)  # (batch, num_humans, input_dim)
+        out = net(robot_state, human_states)
         assert out.shape[0] == 2
 
 

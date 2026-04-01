@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -60,15 +60,15 @@ class GoalConditionedPredictor(TrajectoryPredictor):
     def _estimate_goals(
         self,
         observed: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[_CandidateGoal]:
+        context: dict[str, Any] | None = None,
+    ) -> list[_CandidateGoal]:
         """Estimate candidate goal positions and their probabilities.
 
         Uses a combination of velocity extrapolation and scene-provided
         candidate goals.
         """
         context = context or {}
-        goals: List[_CandidateGoal] = []
+        goals: list[_CandidateGoal] = []
 
         # 1. Velocity-based extrapolation at several horizons.
         if observed.shape[0] >= 2:
@@ -155,12 +155,12 @@ class GoalConditionedPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         goals = self._estimate_goals(observed_trajectory, context)
 
-        all_trajs: List[np.ndarray] = []
-        all_probs: List[float] = []
+        all_trajs: list[np.ndarray] = []
+        all_probs: list[float] = []
 
         for goal in goals:
             for _ in range(self.num_samples_per_goal):
@@ -206,8 +206,8 @@ class IntentPredictor:
     def classify(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[PedestrianIntent, Dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> tuple[PedestrianIntent, dict[str, float]]:
         """Classify the pedestrian's current intent.
 
         Args:
@@ -226,7 +226,7 @@ class IntentPredictor:
         recent_speed = float(speeds[-1])
 
         # Curvature approximation via cross product of consecutive velocity vectors.
-        curvatures: List[float] = []
+        curvatures: list[float] = []
         for i in range(1, velocities.shape[0]):
             v0 = velocities[i - 1]
             v1 = velocities[i]
@@ -240,7 +240,7 @@ class IntentPredictor:
         recent_accel = float(accels[-1]) if accels.size > 0 else 0.0
 
         # Build probability distribution over intents.
-        scores: Dict[str, float] = {}
+        scores: dict[str, float] = {}
 
         # Stopping / waiting.
         if recent_speed < self.stop_speed_threshold:

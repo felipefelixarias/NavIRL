@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
-from collections import deque
-
 import numpy as np
 import pytest
 
@@ -22,37 +19,44 @@ pytestmark = pytest.mark.skipif(not _GYM_AVAILABLE, reason="gymnasium not instal
 # Minimal mock environment for wrapper tests
 # ---------------------------------------------------------------------------
 
-class MockNavEnv(gym.Env):
-    """Minimal Gymnasium env for testing wrappers."""
+if _GYM_AVAILABLE:
+    class MockNavEnv(gym.Env):
+        """Minimal Gymnasium env for testing wrappers."""
 
-    def __init__(self, obs_dim: int = 8, continuous: bool = True):
-        super().__init__()
-        self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32,
-        )
-        if continuous:
-            self.action_space = spaces.Box(
-                low=-1.0, high=1.0, shape=(2,), dtype=np.float32,
+        def __init__(self, obs_dim: int = 8, continuous: bool = True):
+            super().__init__()
+            self.observation_space = spaces.Box(
+                low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32,
             )
-        else:
-            self.action_space = spaces.Discrete(5)
-        self._step_count = 0
-        self._max_steps = 50
+            if continuous:
+                self.action_space = spaces.Box(
+                    low=-1.0, high=1.0, shape=(2,), dtype=np.float32,
+                )
+            else:
+                self.action_space = spaces.Discrete(5)
+            self._step_count = 0
+            self._max_steps = 50
 
-    def reset(self, *, seed=None, options=None):
-        super().reset(seed=seed)
-        self._step_count = 0
-        obs = np.zeros(self.observation_space.shape, dtype=np.float32)
-        return obs, {}
+        def reset(self, *, seed=None, options=None):
+            super().reset(seed=seed)
+            self._step_count = 0
+            obs = np.zeros(self.observation_space.shape, dtype=np.float32)
+            return obs, {}
 
-    def step(self, action):
-        self._step_count += 1
-        obs = np.random.randn(*self.observation_space.shape).astype(np.float32)
-        reward = 1.0
-        terminated = self._step_count >= self._max_steps
-        truncated = False
-        info = {"success": terminated}
-        return obs, reward, terminated, truncated, info
+        def step(self, action):
+            self._step_count += 1
+            obs = np.random.randn(*self.observation_space.shape).astype(np.float32)
+            reward = 1.0
+            terminated = self._step_count >= self._max_steps
+            truncated = False
+            info = {"success": terminated}
+            return obs, reward, terminated, truncated, info
+else:
+    class MockNavEnv:
+        """Placeholder to keep module importable when Gymnasium is absent."""
+
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("MockNavEnv requires gymnasium")
 
 
 # ---------------------------------------------------------------------------

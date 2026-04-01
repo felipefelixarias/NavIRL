@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import heapq
 from collections import deque
-from typing import Tuple
 
 import cv2
 import numpy as np
@@ -182,7 +181,7 @@ class GridEnvironment:
         source_world: np.ndarray,
         target_world: np.ndarray,
         entire_path: bool = False,
-    ) -> Tuple[np.ndarray, float]:
+    ) -> tuple[np.ndarray, float]:
         src_rc = tuple(self._world_to_map(np.array(source_world, dtype=float)).tolist())
         dst_rc = tuple(self._world_to_map(np.array(target_world, dtype=float)).tolist())
 

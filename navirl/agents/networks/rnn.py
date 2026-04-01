@@ -23,14 +23,13 @@ AttentionOverMemory
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
 
 # =====================================================================
 # LSTMCore
@@ -81,8 +80,8 @@ class LSTMCore(nn.Module):
     def reset_hidden(
         self,
         batch_size: int = 1,
-        device: Optional[torch.device] = None,
-    ) -> Tuple[Tensor, Tensor]:
+        device: torch.device | None = None,
+    ) -> tuple[Tensor, Tensor]:
         """Return a zero hidden state tuple ``(h_0, c_0)``.
 
         Parameters
@@ -112,8 +111,8 @@ class LSTMCore(nn.Module):
     def forward(
         self,
         x: Tensor,
-        hidden_state: Optional[Tuple[Tensor, Tensor]] = None,
-    ) -> Tuple[Tensor, Tuple[Tensor, Tensor]]:
+        hidden_state: tuple[Tensor, Tensor] | None = None,
+    ) -> tuple[Tensor, tuple[Tensor, Tensor]]:
         """Forward pass through the LSTM.
 
         Parameters
@@ -203,7 +202,7 @@ class GRUCore(nn.Module):
     def reset_hidden(
         self,
         batch_size: int = 1,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> Tensor:
         """Return a zero hidden state tensor ``h_0``.
 
@@ -230,8 +229,8 @@ class GRUCore(nn.Module):
     def forward(
         self,
         x: Tensor,
-        hidden_state: Optional[Tensor] = None,
-    ) -> Tuple[Tensor, Tensor]:
+        hidden_state: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor]:
         """Forward pass through the GRU.
 
         Parameters
@@ -320,7 +319,7 @@ class RecurrentPolicy(nn.Module):
         self.num_layers = num_layers
 
         # --- Feature extractor MLP ---
-        extractor_layers: List[nn.Module] = []
+        extractor_layers: list[nn.Module] = []
         prev_dim = input_dim
         for h_dim in extractor_hidden_dims:
             extractor_layers.append(nn.Linear(prev_dim, h_dim))
@@ -348,7 +347,7 @@ class RecurrentPolicy(nn.Module):
             )
 
         # --- Policy head MLP ---
-        head_layers: List[nn.Module] = []
+        head_layers: list[nn.Module] = []
         prev_dim = hidden_size
         for h_dim in policy_hidden_dims:
             head_layers.append(nn.Linear(prev_dim, h_dim))
@@ -370,7 +369,7 @@ class RecurrentPolicy(nn.Module):
     def reset_hidden(
         self,
         batch_size: int = 1,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         """Reset the internal hidden state cache.
 
@@ -389,8 +388,8 @@ class RecurrentPolicy(nn.Module):
     def forward(
         self,
         x: Tensor,
-        hidden_state: Optional[Union[Tensor, Tuple[Tensor, Tensor]]] = None,
-    ) -> Tuple[Tensor, Union[Tensor, Tuple[Tensor, Tensor]]]:
+        hidden_state: Tensor | tuple[Tensor, Tensor] | None = None,
+    ) -> tuple[Tensor, Tensor | tuple[Tensor, Tensor]]:
         """Forward pass: extract features, run through RNN, apply policy head.
 
         Parameters
@@ -514,7 +513,7 @@ class SequenceEncoder(nn.Module):
     def forward(
         self,
         sequence: Tensor,
-        lengths: Optional[Tensor] = None,
+        lengths: Tensor | None = None,
     ) -> Tensor:
         """Encode a batch of sequences into fixed-size vectors.
 
@@ -654,7 +653,7 @@ class HiddenStateManager(nn.Module):
     # ------------------------------------------------------------------
     def reset(
         self,
-        env_indices: Optional[Union[Tensor, List[int], int]] = None,
+        env_indices: Tensor | list[int] | int | None = None,
     ) -> None:
         """Reset hidden states for the specified environments.
 
@@ -680,7 +679,7 @@ class HiddenStateManager(nn.Module):
             self._c[:, env_indices] = 0.0
 
     # ------------------------------------------------------------------
-    def get(self) -> Union[Tensor, Tuple[Tensor, Tensor]]:
+    def get(self) -> Tensor | tuple[Tensor, Tensor]:
         """Return the current hidden state(s).
 
         Returns
@@ -696,7 +695,7 @@ class HiddenStateManager(nn.Module):
     # ------------------------------------------------------------------
     def set(
         self,
-        hidden_state: Union[Tensor, Tuple[Tensor, Tensor]],
+        hidden_state: Tensor | tuple[Tensor, Tensor],
     ) -> None:
         """Replace the stored hidden state(s).
 
@@ -792,7 +791,7 @@ class AttentionOverMemory(nn.Module):
         self,
         query: Tensor,
         memory_sequence: Tensor,
-        memory_mask: Optional[Tensor] = None,
+        memory_mask: Tensor | None = None,
     ) -> Tensor:
         """Attend over the memory sequence using the query.
 

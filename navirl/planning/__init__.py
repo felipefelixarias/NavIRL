@@ -9,18 +9,20 @@ from navirl.planning.global_planners import (
     RRTStarPlanner,
     ThetaStarPlanner,
 )
-from navirl.planning.local_planners import APFPlanner, DWAPlanner, MPCPlanner, VFHPlanner
-from navirl.planning.social_planners import (
-    CooperativePlanner,
-    CrowdAwarePlanner,
-    SocialAwarePlanner,
-)
-from navirl.planning.trajectory_optimization import (
-    CHOMPOptimizer,
-    StompOptimizer,
-    TrajOptConfig,
-    TrajectoryOptimizer,
-)
+
+# TODO: These modules don't exist yet - commenting out to fix imports
+# from navirl.planning.local_planners import APFPlanner, DWAPlanner, MPCPlanner, VFHPlanner
+# from navirl.planning.social_planners import (
+#     CooperativePlanner,
+#     CrowdAwarePlanner,
+#     SocialAwarePlanner,
+# )
+# from navirl.planning.trajectory_optimization import (
+#     CHOMPOptimizer,
+#     StompOptimizer,
+#     TrajOptConfig,
+#     TrajectoryOptimizer,
+# )
 
 __all__ = [
     "Path",
@@ -33,18 +35,19 @@ __all__ = [
     "RRTPlanner",
     "RRTStarPlanner",
     "ThetaStarPlanner",
-    # Local planners
-    "APFPlanner",
-    "DWAPlanner",
-    "MPCPlanner",
-    "VFHPlanner",
-    # Social planners
-    "CooperativePlanner",
-    "CrowdAwarePlanner",
-    "SocialAwarePlanner",
-    # Trajectory optimization
-    "CHOMPOptimizer",
-    "StompOptimizer",
-    "TrajOptConfig",
-    "TrajectoryOptimizer",
+    # TODO: Add these back when modules are implemented
+    # # Local planners
+    # "APFPlanner",
+    # "DWAPlanner",
+    # "MPCPlanner",
+    # "VFHPlanner",
+    # # Social planners
+    # "CooperativePlanner",
+    # "CrowdAwarePlanner",
+    # "SocialAwarePlanner",
+    # # Trajectory optimization
+    # "CHOMPOptimizer",
+    # "StompOptimizer",
+    # "TrajOptConfig",
+    # "TrajectoryOptimizer",
 ]

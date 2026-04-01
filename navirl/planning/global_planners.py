@@ -2,22 +2,21 @@ from __future__ import annotations
 
 import heapq
 import time
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 
 from navirl.planning.base import Path, Planner, PlannerConfig
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _grid_neighbors(node: Tuple[int, int], grid_shape: Tuple[int, int]) -> List[Tuple[int, int]]:
+def _grid_neighbors(node: tuple[int, int], grid_shape: tuple[int, int]) -> list[tuple[int, int]]:
     """8-connected neighbours on a grid."""
     r, c = node
     rows, cols = grid_shape
-    nbrs: List[Tuple[int, int]] = []
+    nbrs: list[tuple[int, int]] = []
     for dr in (-1, 0, 1):
         for dc in (-1, 0, 1):
             if dr == 0 and dc == 0:
@@ -28,16 +27,16 @@ def _grid_neighbors(node: Tuple[int, int], grid_shape: Tuple[int, int]) -> List[
     return nbrs
 
 
-def _pos_to_grid(pos: np.ndarray, origin: np.ndarray, resolution: float) -> Tuple[int, int]:
+def _pos_to_grid(pos: np.ndarray, origin: np.ndarray, resolution: float) -> tuple[int, int]:
     idx = ((pos - origin) / resolution).astype(int)
     return (int(idx[0]), int(idx[1]))
 
 
-def _grid_to_pos(cell: Tuple[int, int], origin: np.ndarray, resolution: float) -> np.ndarray:
+def _grid_to_pos(cell: tuple[int, int], origin: np.ndarray, resolution: float) -> np.ndarray:
     return origin + np.array(cell, dtype=np.float64) * resolution
 
 
-def _is_free(cell: Tuple[int, int], occ_grid: Optional[np.ndarray]) -> bool:
+def _is_free(cell: tuple[int, int], occ_grid: np.ndarray | None) -> bool:
     if occ_grid is None:
         return True
     r, c = cell
@@ -46,7 +45,7 @@ def _is_free(cell: Tuple[int, int], occ_grid: Optional[np.ndarray]) -> bool:
     return False
 
 
-def _reconstruct(came_from: Dict, current: Any) -> List:
+def _reconstruct(came_from: dict, current: Any) -> list:
     path = [current]
     while current in came_from:
         current = came_from[current]
@@ -56,7 +55,7 @@ def _reconstruct(came_from: Dict, current: Any) -> List:
 
 
 def _build_path(
-    cells: List[Tuple[int, int]],
+    cells: list[tuple[int, int]],
     origin: np.ndarray,
     resolution: float,
     speed: float = 1.0,
@@ -88,7 +87,7 @@ class AStarPlanner(Planner):
 
     def __init__(
         self,
-        config: Optional[PlannerConfig] = None,
+        config: PlannerConfig | None = None,
         heuristic: str = "euclidean",
         speed: float = 1.0,
     ) -> None:
@@ -96,7 +95,7 @@ class AStarPlanner(Planner):
         self.heuristic = heuristic
         self.speed = speed
 
-    def _h(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:
+    def _h(self, a: tuple[int, int], b: tuple[int, int]) -> float:
         if self.heuristic == "manhattan":
             return float(abs(a[0] - b[0]) + abs(a[1] - b[1]))
         if self.heuristic == "chebyshev":
@@ -108,20 +107,20 @@ class AStarPlanner(Planner):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         res = self.config.resolution
         origin = np.zeros(2)
         s = _pos_to_grid(start, origin, res)
         g = _pos_to_grid(goal, origin, res)
 
-        open_set: List[Tuple[float, Tuple[int, int]]] = [(self._h(s, g), s)]
-        came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
-        g_score: Dict[Tuple[int, int], float] = {s: 0.0}
+        open_set: list[tuple[float, tuple[int, int]]] = [(self._h(s, g), s)]
+        came_from: dict[tuple[int, int], tuple[int, int]] = {}
+        g_score: dict[tuple[int, int], float] = {s: 0.0}
 
         grid_shape = (
-            (obstacles.shape if obstacles is not None and obstacles.ndim == 2 else (10000, 10000))
+            obstacles.shape if obstacles is not None and obstacles.ndim == 2 else (10000, 10000)
         )
         t0 = time.monotonic()
         iterations = 0
@@ -157,7 +156,7 @@ class AStarPlanner(Planner):
 class DijkstraPlanner(Planner):
     """Dijkstra's shortest-path algorithm on a grid."""
 
-    def __init__(self, config: Optional[PlannerConfig] = None, speed: float = 1.0) -> None:
+    def __init__(self, config: PlannerConfig | None = None, speed: float = 1.0) -> None:
         self.config = config or PlannerConfig()
         self.speed = speed
 
@@ -165,8 +164,8 @@ class DijkstraPlanner(Planner):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         res = self.config.resolution
         origin = np.zeros(2)
@@ -177,9 +176,9 @@ class DijkstraPlanner(Planner):
             obstacles.shape if obstacles is not None and obstacles.ndim == 2 else (10000, 10000)
         )
 
-        open_set: List[Tuple[float, Tuple[int, int]]] = [(0.0, s)]
-        came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
-        dist: Dict[Tuple[int, int], float] = {s: 0.0}
+        open_set: list[tuple[float, tuple[int, int]]] = [(0.0, s)]
+        came_from: dict[tuple[int, int], tuple[int, int]] = {}
+        dist: dict[tuple[int, int], float] = {s: 0.0}
         t0 = time.monotonic()
         iterations = 0
 
@@ -215,7 +214,7 @@ class ThetaStarPlanner(Planner):
 
     def __init__(
         self,
-        config: Optional[PlannerConfig] = None,
+        config: PlannerConfig | None = None,
         speed: float = 1.0,
     ) -> None:
         self.config = config or PlannerConfig()
@@ -223,9 +222,9 @@ class ThetaStarPlanner(Planner):
 
     @staticmethod
     def _line_of_sight(
-        a: Tuple[int, int],
-        b: Tuple[int, int],
-        occ_grid: Optional[np.ndarray],
+        a: tuple[int, int],
+        b: tuple[int, int],
+        occ_grid: np.ndarray | None,
     ) -> bool:
         """Bresenham-based line-of-sight check."""
         if occ_grid is None:
@@ -255,8 +254,8 @@ class ThetaStarPlanner(Planner):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         res = self.config.resolution
         origin = np.zeros(2)
@@ -267,13 +266,13 @@ class ThetaStarPlanner(Planner):
             obstacles.shape if obstacles is not None and obstacles.ndim == 2 else (10000, 10000)
         )
 
-        open_set: List[Tuple[float, Tuple[int, int]]] = [(0.0, s)]
-        came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
-        g_score: Dict[Tuple[int, int], float] = {s: 0.0}
+        open_set: list[tuple[float, tuple[int, int]]] = [(0.0, s)]
+        came_from: dict[tuple[int, int], tuple[int, int]] = {}
+        g_score: dict[tuple[int, int], float] = {s: 0.0}
         t0 = time.monotonic()
         iterations = 0
 
-        def _h(a: Tuple[int, int]) -> float:
+        def _h(a: tuple[int, int]) -> float:
             return float(np.hypot(a[0] - g[0], a[1] - g[1])) * res
 
         while open_set and iterations < self.config.max_iterations:
@@ -317,11 +316,11 @@ class RRTPlanner(Planner):
 
     def __init__(
         self,
-        config: Optional[PlannerConfig] = None,
+        config: PlannerConfig | None = None,
         step_size: float = 0.5,
         goal_bias: float = 0.1,
         speed: float = 1.0,
-        bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+        bounds: tuple[np.ndarray, np.ndarray] | None = None,
     ) -> None:
         self.config = config or PlannerConfig()
         self.step_size = step_size
@@ -335,7 +334,7 @@ class RRTPlanner(Planner):
         return np.random.uniform(low, high)
 
     @staticmethod
-    def _nearest(tree: List[np.ndarray], point: np.ndarray) -> int:
+    def _nearest(tree: list[np.ndarray], point: np.ndarray) -> int:
         dists = [float(np.linalg.norm(n - point)) for n in tree]
         return int(np.argmin(dists))
 
@@ -350,7 +349,7 @@ class RRTPlanner(Planner):
     def _collision_free(
         a: np.ndarray,
         b: np.ndarray,
-        obstacles: Optional[np.ndarray],
+        obstacles: np.ndarray | None,
         resolution: float = 0.05,
     ) -> bool:
         if obstacles is None:
@@ -372,8 +371,8 @@ class RRTPlanner(Planner):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         if self.bounds is not None:
             low, high = self.bounds
@@ -382,11 +381,11 @@ class RRTPlanner(Planner):
             low = np.min(all_pts, axis=0) - 5.0
             high = np.max(all_pts, axis=0) + 5.0
 
-        tree: List[np.ndarray] = [start.copy()]
-        parent: Dict[int, int] = {}
+        tree: list[np.ndarray] = [start.copy()]
+        parent: dict[int, int] = {}
         t0 = time.monotonic()
 
-        for it in range(self.config.max_iterations):
+        for _it in range(self.config.max_iterations):
             if time.monotonic() - t0 > self.config.time_limit:
                 break
             sample = self._sample(goal, low, high)
@@ -437,12 +436,12 @@ class RRTStarPlanner(Planner):
 
     def __init__(
         self,
-        config: Optional[PlannerConfig] = None,
+        config: PlannerConfig | None = None,
         step_size: float = 0.5,
         goal_bias: float = 0.1,
         rewire_radius: float = 1.5,
         speed: float = 1.0,
-        bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+        bounds: tuple[np.ndarray, np.ndarray] | None = None,
     ) -> None:
         self.config = config or PlannerConfig()
         self.step_size = step_size
@@ -455,8 +454,8 @@ class RRTStarPlanner(Planner):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         if self.bounds is not None:
             low, high = self.bounds
@@ -464,11 +463,11 @@ class RRTStarPlanner(Planner):
             low = np.minimum(start, goal) - 5.0
             high = np.maximum(start, goal) + 5.0
 
-        tree: List[np.ndarray] = [start.copy()]
-        parent: Dict[int, int] = {}
-        cost: Dict[int, float] = {0: 0.0}
+        tree: list[np.ndarray] = [start.copy()]
+        parent: dict[int, int] = {}
+        cost: dict[int, float] = {0: 0.0}
         t0 = time.monotonic()
-        best_goal_idx: Optional[int] = None
+        best_goal_idx: int | None = None
         best_goal_cost = float("inf")
 
         for _ in range(self.config.max_iterations):
@@ -563,11 +562,11 @@ class PRMPlanner(Planner):
 
     def __init__(
         self,
-        config: Optional[PlannerConfig] = None,
+        config: PlannerConfig | None = None,
         num_samples: int = 500,
         k_neighbors: int = 10,
         speed: float = 1.0,
-        bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+        bounds: tuple[np.ndarray, np.ndarray] | None = None,
     ) -> None:
         self.config = config or PlannerConfig()
         self.num_samples = num_samples
@@ -579,8 +578,8 @@ class PRMPlanner(Planner):
         self,
         start: np.ndarray,
         goal: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
-        dynamic_agents: Optional[List[np.ndarray]] = None,
+        obstacles: np.ndarray | None = None,
+        dynamic_agents: list[np.ndarray] | None = None,
     ) -> Path:
         if self.bounds is not None:
             low, high = self.bounds
@@ -597,7 +596,7 @@ class PRMPlanner(Planner):
         M = nodes_arr.shape[0]
 
         # Build adjacency (k-nearest neighbours, collision-checked).
-        adjacency: Dict[int, List[Tuple[int, float]]] = {i: [] for i in range(M)}
+        adjacency: dict[int, list[tuple[int, float]]] = {i: [] for i in range(M)}
         for i in range(M):
             dists = np.linalg.norm(nodes_arr - nodes_arr[i], axis=1)
             neighbours = np.argsort(dists)[1 : self.k_neighbors + 1]
@@ -609,9 +608,9 @@ class PRMPlanner(Planner):
                     adjacency[j].append((i, d))
 
         # Dijkstra from node 0 (start) to node 1 (goal).
-        dist_map: Dict[int, float] = {0: 0.0}
-        came_from: Dict[int, int] = {}
-        pq: List[Tuple[float, int]] = [(0.0, 0)]
+        dist_map: dict[int, float] = {0: 0.0}
+        came_from: dict[int, int] = {}
+        pq: list[tuple[float, int]] = [(0.0, 0)]
         while pq:
             d, u = heapq.heappop(pq)
             if u == 1:

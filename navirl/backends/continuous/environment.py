@@ -16,7 +16,6 @@ from navirl.backends.continuous.obstacles import (
     LineObstacle,
     Obstacle,
     ObstacleCollection,
-    PolygonObstacle,
     RectangleObstacle,
 )
 from navirl.backends.continuous.physics import AgentState, PhysicsConfig, PhysicsEngine

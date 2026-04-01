@@ -7,10 +7,8 @@ numerical helpers.
 from __future__ import annotations
 
 import math
-from typing import Sequence
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Basic scalar operations
@@ -720,7 +718,7 @@ def savitzky_golay(
 
     # Build the Vandermonde-like matrix for the window
     x = np.arange(-half, half + 1, dtype=np.float64)
-    order_matrix = np.vander(x, N=poly_order + 1, increasing=True)
+    np.vander(x, N=poly_order + 1, increasing=True)
 
     for i in range(n):
         lo = max(0, i - half)

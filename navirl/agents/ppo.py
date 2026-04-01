@@ -35,14 +35,14 @@ from __future__ import annotations
 import logging
 import math
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
 try:
     import torch
-    import torch.nn as nn
     import torch.nn.functional as F
 
     _TORCH_AVAILABLE = True
@@ -55,7 +55,6 @@ from navirl.agents.networks import (
     CategoricalPolicyHead,
     GaussianPolicyHead,
     ValueHead,
-    init_weights_orthogonal,
 )
 from navirl.training.buffer import RolloutBuffer
 
@@ -126,7 +125,7 @@ def compute_gae(
     last_values: np.ndarray,
     gamma: float,
     gae_lambda: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Compute Generalized Advantage Estimation (GAE).
 
     Parameters
@@ -266,11 +265,11 @@ class PPOConfig(HyperParameters):
     value_loss_coeff: float = 0.5
     entropy_coeff: float = 0.01
     max_grad_norm: float = 0.5
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    hidden_dims: tuple[int, ...] = (256, 256)
     activation: str = "relu"
     normalize_advantages: bool = True
     clip_value_loss: bool = True
-    target_kl: Optional[float] = None
+    target_kl: float | None = None
     lr_schedule: str = "constant"
     total_timesteps: int = 1_000_000
     normalize_observations: bool = False
@@ -315,8 +314,8 @@ class PPOAgent(BaseAgent):
         config: PPOConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(config, observation_space, action_space, device, seed, metrics_callback)
@@ -333,12 +332,12 @@ class PPOAgent(BaseAgent):
             action_dim = int(action_space.n)  # Discrete
 
         # --- Observation normalization ---
-        self._obs_rms: Optional[RunningMeanStd] = None
+        self._obs_rms: RunningMeanStd | None = None
         if cfg.normalize_observations:
             self._obs_rms = RunningMeanStd(shape=observation_space.shape)
 
         # --- Return normalization ---
-        self._ret_rms: Optional[RunningMeanStd] = None
+        self._ret_rms: RunningMeanStd | None = None
         if cfg.normalize_returns:
             self._ret_rms = RunningMeanStd(shape=())
 
@@ -396,7 +395,7 @@ class PPOAgent(BaseAgent):
             self._modules.append(self._critic_backbone)
 
         # --- Optimizer ---
-        all_params: List[torch.nn.Parameter] = list(self._actor_backbone.parameters()) + list(self._policy_head.parameters())
+        all_params: list[torch.nn.Parameter] = list(self._actor_backbone.parameters()) + list(self._policy_head.parameters())
         if not cfg.shared_backbone:
             all_params += list(self._critic_backbone.parameters())
         all_params += list(self._value_head.parameters())
@@ -475,7 +474,7 @@ class PPOAgent(BaseAgent):
     # Forward helpers
     # ------------------------------------------------------------------
 
-    def _get_value(self, obs_tensor: "torch.Tensor") -> "torch.Tensor":
+    def _get_value(self, obs_tensor: torch.Tensor) -> torch.Tensor:
         """Compute V(s) from an observation tensor.
 
         Parameters
@@ -493,9 +492,9 @@ class PPOAgent(BaseAgent):
 
     def _evaluate_actions(
         self,
-        obs_tensor: "torch.Tensor",
-        actions_tensor: "torch.Tensor",
-    ) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
+        obs_tensor: torch.Tensor,
+        actions_tensor: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Re-evaluate actions under the current policy.
 
         Parameters
@@ -532,8 +531,8 @@ class PPOAgent(BaseAgent):
         return log_probs, entropy, values
 
     def _get_policy_distribution(
-        self, obs_tensor: "torch.Tensor"
-    ) -> "torch.distributions.Distribution":
+        self, obs_tensor: torch.Tensor
+    ) -> torch.distributions.Distribution:
         """Build the policy distribution for a batch of observations.
 
         Parameters
@@ -563,7 +562,7 @@ class PPOAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -620,7 +619,7 @@ class PPOAgent(BaseAgent):
     # Abstract interface: update
     # ------------------------------------------------------------------
 
-    def update(self, batch: RolloutBuffer) -> Dict[str, float]:
+    def update(self, batch: RolloutBuffer) -> dict[str, float]:
         """Run PPO optimisation epochs on collected rollout data.
 
         Performs multiple epochs of mini-batch gradient descent on the
@@ -671,12 +670,12 @@ class PPOAgent(BaseAgent):
         returns_t = self._to_tensor(all_returns, dtype=torch.float32)
 
         # Accumulate metrics across epochs
-        epoch_policy_losses: List[float] = []
-        epoch_value_losses: List[float] = []
-        epoch_entropies: List[float] = []
-        epoch_approx_kls: List[float] = []
-        epoch_clip_fractions: List[float] = []
-        epoch_total_losses: List[float] = []
+        epoch_policy_losses: list[float] = []
+        epoch_value_losses: list[float] = []
+        epoch_entropies: list[float] = []
+        epoch_approx_kls: list[float] = []
+        epoch_clip_fractions: list[float] = []
+        epoch_total_losses: list[float] = []
 
         early_stopped = False
         completed_epochs = 0
@@ -741,7 +740,7 @@ class PPOAgent(BaseAgent):
 
                 self._optimizer.zero_grad()
                 loss.backward()
-                grad_norm = self._clip_grad_norm(
+                self._clip_grad_norm(
                     list(self._actor_backbone.parameters())
                     + list(self._policy_head.parameters())
                     + list(self._critic_backbone.parameters())
@@ -842,7 +841,7 @@ class PPOAgent(BaseAgent):
     # Persistence
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Save the agent checkpoint to *path*.
 
         Persists network weights, optimizer state, normalization
@@ -853,7 +852,7 @@ class PPOAgent(BaseAgent):
         path : str or Path
             Directory or file path for the checkpoint.
         """
-        state_dicts: Dict[str, Any] = {
+        state_dicts: dict[str, Any] = {
             "actor_backbone": self._actor_backbone.state_dict(),
             "policy_head": self._policy_head.state_dict(),
             "critic_backbone": self._critic_backbone.state_dict(),
@@ -866,7 +865,7 @@ class PPOAgent(BaseAgent):
             state_dicts["ret_rms"] = self._ret_rms.state_dict()
         self._save_checkpoint(path, state_dicts)
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Load agent state from a checkpoint at *path*.
 
         Restores network weights, optimizer state, normalization
@@ -894,7 +893,7 @@ class PPOAgent(BaseAgent):
     # Informational helpers
     # ------------------------------------------------------------------
 
-    def get_policy_parameters(self) -> List["torch.nn.Parameter"]:
+    def get_policy_parameters(self) -> list[torch.nn.Parameter]:
         """Return a flat list of all policy (actor) parameters.
 
         Returns
@@ -904,7 +903,7 @@ class PPOAgent(BaseAgent):
         """
         return list(self._actor_backbone.parameters()) + list(self._policy_head.parameters())
 
-    def get_value_parameters(self) -> List["torch.nn.Parameter"]:
+    def get_value_parameters(self) -> list[torch.nn.Parameter]:
         """Return a flat list of all value (critic) parameters.
 
         Returns

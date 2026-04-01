@@ -9,9 +9,9 @@ import random
 import sqlite3
 import time
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 # Exports: Experiment, ExperimentGrid, ExperimentRandom, ResultsDB
 
@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-class ExperimentStatus(str, Enum):
+class ExperimentStatus(StrEnum):
     """Possible states of an experiment."""
 
     PENDING = "pending"
@@ -53,11 +53,11 @@ class Experiment:
     """
 
     name: str
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     status: ExperimentStatus = ExperimentStatus.PENDING
-    results: Dict[str, Any] = field(default_factory=dict)
-    timestamps: Dict[str, float] = field(default_factory=dict)
-    error: Optional[str] = None
+    results: dict[str, Any] = field(default_factory=dict)
+    timestamps: dict[str, float] = field(default_factory=dict)
+    error: str | None = None
 
     # ------------------------------------------------------------------
     # Lifecycle helpers
@@ -68,13 +68,13 @@ class Experiment:
         self.status = ExperimentStatus.RUNNING
         self.timestamps["started"] = time.time()
 
-    def complete(self, results: Dict[str, Any]) -> None:
+    def complete(self, results: dict[str, Any]) -> None:
         """Mark the experiment as completed with *results*."""
         self.status = ExperimentStatus.COMPLETED
         self.results.update(results)
         self.timestamps["completed"] = time.time()
 
-    def fail(self, error: Union[str, Exception]) -> None:
+    def fail(self, error: str | Exception) -> None:
         """Mark the experiment as failed with an *error* message."""
         self.status = ExperimentStatus.FAILED
         self.error = str(error)
@@ -84,7 +84,7 @@ class Experiment:
     # Serialisation
     # ------------------------------------------------------------------
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialise to a JSON-friendly dictionary."""
         return {
             "name": self.name,
@@ -96,7 +96,7 @@ class Experiment:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Experiment":
+    def from_dict(cls, data: dict[str, Any]) -> Experiment:
         """Deserialise from a dictionary."""
         return cls(
             name=data["name"],
@@ -124,15 +124,15 @@ class ExperimentGrid:
 
     def __init__(
         self,
-        param_grid: Dict[str, List[Any]],
-        base_config: Optional[Dict[str, Any]] = None,
+        param_grid: dict[str, list[Any]],
+        base_config: dict[str, Any] | None = None,
         name_template: str = "grid_{index}",
     ) -> None:
         self.param_grid = param_grid
         self.base_config = base_config or {}
         self.name_template = name_template
 
-    def generate_configs(self) -> List[Dict[str, Any]]:
+    def generate_configs(self) -> list[dict[str, Any]]:
         """Return the full Cartesian product of parameter values.
 
         Returns
@@ -142,11 +142,11 @@ class ExperimentGrid:
         """
         keys = list(self.param_grid.keys())
         values = list(self.param_grid.values())
-        configs: List[Dict[str, Any]] = []
+        configs: list[dict[str, Any]] = []
 
         for index, combo in enumerate(itertools.product(*values)):
             cfg = copy.deepcopy(self.base_config)
-            params = dict(zip(keys, combo))
+            params = dict(zip(keys, combo, strict=False))
             cfg.update(params)
             cfg["_grid_index"] = index
             cfg["_grid_params"] = params
@@ -154,9 +154,9 @@ class ExperimentGrid:
 
         return configs
 
-    def generate_experiments(self) -> List[Experiment]:
+    def generate_experiments(self) -> list[Experiment]:
         """Generate :class:`Experiment` objects for every combination."""
-        experiments: List[Experiment] = []
+        experiments: list[Experiment] = []
         for index, cfg in enumerate(self.generate_configs()):
             name = self.name_template.format(
                 index=index, **cfg.get("_grid_params", {})
@@ -193,9 +193,9 @@ class ExperimentRandom:
 
     def __init__(
         self,
-        param_distributions: Dict[str, Any],
-        base_config: Optional[Dict[str, Any]] = None,
-        seed: Optional[int] = None,
+        param_distributions: dict[str, Any],
+        base_config: dict[str, Any] | None = None,
+        seed: int | None = None,
         name_template: str = "random_{index}",
     ) -> None:
         self.param_distributions = param_distributions
@@ -217,7 +217,7 @@ class ExperimentRandom:
             return dist()
         return dist
 
-    def generate_configs(self, n_trials: int) -> List[Dict[str, Any]]:
+    def generate_configs(self, n_trials: int) -> list[dict[str, Any]]:
         """Generate *n_trials* random configurations.
 
         Parameters
@@ -230,10 +230,10 @@ class ExperimentRandom:
         list[dict]
             Sampled configuration dictionaries.
         """
-        configs: List[Dict[str, Any]] = []
+        configs: list[dict[str, Any]] = []
         for index in range(n_trials):
             cfg = copy.deepcopy(self.base_config)
-            params: Dict[str, Any] = {}
+            params: dict[str, Any] = {}
             for name, dist in self.param_distributions.items():
                 params[name] = self._sample_param(dist)
             cfg.update(params)
@@ -242,9 +242,9 @@ class ExperimentRandom:
             configs.append(cfg)
         return configs
 
-    def generate_experiments(self, n_trials: int) -> List[Experiment]:
+    def generate_experiments(self, n_trials: int) -> list[Experiment]:
         """Generate :class:`Experiment` objects for *n_trials* random configs."""
-        experiments: List[Experiment] = []
+        experiments: list[Experiment] = []
         for index, cfg in enumerate(self.generate_configs(n_trials)):
             name = self.name_template.format(index=index)
             experiments.append(Experiment(name=name, config=cfg))
@@ -273,7 +273,7 @@ class ResultsDB:
         )
     """
 
-    def __init__(self, db_path: Union[str, Path]) -> None:
+    def __init__(self, db_path: str | Path) -> None:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(str(self.db_path))
@@ -336,7 +336,7 @@ class ResultsDB:
         metric: str,
         n: int = 1,
         mode: str = "max",
-    ) -> List[Experiment]:
+    ) -> list[Experiment]:
         """Return the top-*n* experiments ranked by *metric*.
 
         Parameters
@@ -357,7 +357,7 @@ class ResultsDB:
             (ExperimentStatus.COMPLETED.value,),
         ).fetchall()
 
-        experiments: List[Tuple[float, Experiment]] = []
+        experiments: list[tuple[float, Experiment]] = []
         for row in rows:
             exp = self._row_to_experiment(row)
             if metric in exp.results:
@@ -367,7 +367,7 @@ class ResultsDB:
         experiments.sort(key=lambda t: t[0], reverse=reverse)
         return [exp for _, exp in experiments[:n]]
 
-    def query(self, filters: Optional[Dict[str, Any]] = None) -> List[Experiment]:
+    def query(self, filters: dict[str, Any] | None = None) -> list[Experiment]:
         """Return experiments matching the given *filters*.
 
         Parameters
@@ -381,9 +381,9 @@ class ResultsDB:
         list[Experiment]
         """
         sql = "SELECT * FROM experiments"
-        params: List[Any] = []
+        params: list[Any] = []
         if filters:
-            clauses: List[str] = []
+            clauses: list[str] = []
             for col, val in filters.items():
                 if col in ("name", "status"):
                     clauses.append(f"{col} = ?")
@@ -403,10 +403,10 @@ class ResultsDB:
         import pandas as pd  # optional dependency
 
         rows = self._conn.execute("SELECT * FROM experiments").fetchall()
-        records: List[Dict[str, Any]] = []
+        records: list[dict[str, Any]] = []
         for row in rows:
             exp = self._row_to_experiment(row)
-            record: Dict[str, Any] = {
+            record: dict[str, Any] = {
                 "id": row["id"],
                 "name": exp.name,
                 "status": exp.status.value,
@@ -441,7 +441,7 @@ class ResultsDB:
         """Close the database connection."""
         self._conn.close()
 
-    def __enter__(self) -> "ResultsDB":
+    def __enter__(self) -> ResultsDB:
         return self
 
     def __exit__(self, *exc: Any) -> None:

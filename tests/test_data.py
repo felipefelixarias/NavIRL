@@ -4,11 +4,28 @@ from __future__ import annotations
 
 import csv
 import json
-from pathlib import Path
 
 import numpy as np
 import pytest
 
+from navirl.data.augmentation import (
+    AugmentationPipeline,
+    add_noise,
+    crop_trajectory,
+    mirror_trajectory,
+    rotate_trajectory,
+    scale_trajectory,
+    time_warp,
+)
+from navirl.data.datasets import ETHUCYDataset, SocialDataset
+from navirl.data.loaders import BatchLoader, GenericCSVLoader, NavIRLLogLoader
+from navirl.data.preprocessing import (
+    build_observation,
+    compute_map_features,
+    compute_social_features,
+    encode_goal,
+    normalize_positions,
+)
 from navirl.data.trajectory import (
     Trajectory,
     TrajectoryCollection,
@@ -20,25 +37,6 @@ from navirl.data.trajectory import (
     resample,
     smooth,
 )
-from navirl.data.augmentation import (
-    AugmentationPipeline,
-    add_noise,
-    crop_trajectory,
-    mirror_trajectory,
-    rotate_trajectory,
-    scale_trajectory,
-    time_warp,
-)
-from navirl.data.preprocessing import (
-    build_observation,
-    compute_map_features,
-    compute_social_features,
-    encode_goal,
-    normalize_positions,
-)
-from navirl.data.datasets import ETHUCYDataset, SocialDataset, TrajectoryDataset
-from navirl.data.loaders import BatchLoader, GenericCSVLoader, NavIRLLogLoader
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

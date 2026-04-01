@@ -9,13 +9,13 @@ and :class:`DynamicModel` (force-driven with mass & inertia).
 from __future__ import annotations
 
 import abc
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
 from navirl.simulation.world import CollisionResult, World
-
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -69,7 +69,7 @@ def _euler_step(
     vel: np.ndarray,
     acc: np.ndarray,
     dt: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Explicit Euler integration.  Returns (new_pos, new_vel)."""
     new_vel = vel + acc * dt
     new_pos = pos + new_vel * dt
@@ -81,7 +81,7 @@ def _rk4_step(
     vel: np.ndarray,
     acc_fn: Callable[[np.ndarray, np.ndarray], np.ndarray],
     dt: float,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """4th-order Runge-Kutta integration.
 
     Parameters
@@ -390,7 +390,7 @@ class WallConstraint:
 
     def apply(
         self, position: np.ndarray, velocity: np.ndarray, radius: float
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Return (corrected_position, corrected_velocity)."""
         ab = self.seg_b - self.seg_a
         ab_len_sq = float(np.dot(ab, ab))
@@ -451,10 +451,10 @@ class SimplePhysics:
         self.positional_correction_factor = positional_correction_factor
 
         # Per-entity force accumulators: entity_id -> list of (force, label)
-        self._forces: Dict[int, List[Tuple[np.ndarray, str]]] = {}
+        self._forces: dict[int, list[tuple[np.ndarray, str]]] = {}
 
         # Per-entity motion model overrides
-        self._models: Dict[int, MotionModel] = {}
+        self._models: dict[int, MotionModel] = {}
 
         # Default models
         self._kinematic = KinematicModel()
@@ -462,10 +462,10 @@ class SimplePhysics:
         self._default_model_name = default_model
 
         # Velocity constraints
-        self._velocity_constraints: Dict[int, VelocityConstraint] = {}
+        self._velocity_constraints: dict[int, VelocityConstraint] = {}
 
         # Wall constraints
-        self._wall_constraints: List[WallConstraint] = []
+        self._wall_constraints: list[WallConstraint] = []
 
         # Statistics
         self.total_collisions: int = 0
@@ -517,9 +517,9 @@ class SimplePhysics:
             return np.zeros(2)
         return sum(f for f, _ in forces)  # type: ignore[return-value]
 
-    def force_records(self) -> List[ForceRecord]:
+    def force_records(self) -> list[ForceRecord]:
         """Return a flat list of all current force records."""
-        records: List[ForceRecord] = []
+        records: list[ForceRecord] = []
         for eid, flist in self._forces.items():
             for f, label in flist:
                 records.append(ForceRecord(eid, f, label))
@@ -566,7 +566,7 @@ class SimplePhysics:
     # Integration step
     # ------------------------------------------------------------------
 
-    def step(self, world: World, dt: float) -> List[CollisionResult]:
+    def step(self, world: World, dt: float) -> list[CollisionResult]:
         """Advance the physics simulation by *dt*.
 
         1. Integrate each entity with accumulated forces.
@@ -598,7 +598,7 @@ class SimplePhysics:
             edata["orientation"] = new_state.orientation
 
         # --- 2. Wall constraints ---
-        for eid, edata in world.entities.items():
+        for _eid, edata in world.entities.items():
             if not edata.get("active", True):
                 continue
             for wc in self._wall_constraints:
@@ -688,7 +688,7 @@ class SimplePhysics:
         self.total_collisions = 0
         self.step_count = 0
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return a summary dict of physics statistics."""
         return {
             "step_count": self.step_count,

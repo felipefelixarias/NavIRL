@@ -9,20 +9,16 @@ Uses pre-computed sin/cos tables from :mod:`navirl.core.constants` for speed.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import (
     EPSILON,
     LIDAR,
-    LIDAR_COS_TABLE,
-    LIDAR_SIN_TABLE,
-    TWO_PI,
 )
 from navirl.sensors.base import GaussianNoise, NoiseModel, SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  Configuration
@@ -216,8 +212,8 @@ class LidarSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[LidarConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: LidarConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         config = config or LidarConfig()
         if noise_model is None and config.noise_std > 0:
@@ -231,7 +227,7 @@ class LidarSensor(SensorBase):
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "shape": (self.config.num_beams,),
             "dtype": np.float64,
@@ -239,7 +235,7 @@ class LidarSensor(SensorBase):
             "high": self.config.max_range,
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> np.ndarray:
+    def _raw_observe(self, world_state: dict[str, Any]) -> np.ndarray:
         pos = np.asarray(world_state["robot_pos"], dtype=np.float64)
         heading = float(world_state.get("robot_heading", 0.0))
 

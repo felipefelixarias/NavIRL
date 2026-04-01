@@ -25,24 +25,37 @@ diffusion
     classifier-free guidance for trajectory generation.
 """
 
-from navirl.networks.transformer import (
-    PositionalEncoding,
-    MultiHeadSelfAttention,
-    TransformerBlock,
-    TrajectoryTransformer,
-    SocialTransformer,
-    MapCrossAttention,
+from navirl.networks.diffusion import (
+    DDPM,
+    ClassifierFreeGuidance,
+    ConditionalDiffusion,
+    DDIMSampler,
+    NoiseSchedule,
+)
+from navirl.networks.flow_models import (
+    AffineCouplingLayer,
+    AutoregressiveFlow,
+    ContinuousNormalizingFlow,
+    RealNVP,
 )
 from navirl.networks.graph_nets import (
-    GraphConvolution,
-    GCN,
-    GraphAttentionLayer,
     GAT,
-    GraphSAGELayer,
-    GraphSAGE,
-    MessagePassingNetwork,
-    HeterogeneousGraphNetwork,
+    GCN,
     EdgeConvolution,
+    GraphAttentionLayer,
+    GraphConvolution,
+    GraphSAGE,
+    GraphSAGELayer,
+    HeterogeneousGraphNetwork,
+    MessagePassingNetwork,
+)
+from navirl.networks.transformer import (
+    MapCrossAttention,
+    MultiHeadSelfAttention,
+    PositionalEncoding,
+    SocialTransformer,
+    TrajectoryTransformer,
+    TransformerBlock,
 )
 from navirl.networks.variational import (
     CVAE,
@@ -50,19 +63,6 @@ from navirl.networks.variational import (
     BetaVAE,
     ConditionalPrior,
     PosteriorCollapseRegularizer,
-)
-from navirl.networks.flow_models import (
-    AffineCouplingLayer,
-    RealNVP,
-    AutoregressiveFlow,
-    ContinuousNormalizingFlow,
-)
-from navirl.networks.diffusion import (
-    DDPM,
-    DDIMSampler,
-    ConditionalDiffusion,
-    ClassifierFreeGuidance,
-    NoiseSchedule,
 )
 
 __all__ = [

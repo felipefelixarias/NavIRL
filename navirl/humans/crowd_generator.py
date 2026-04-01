@@ -12,8 +12,7 @@ from __future__ import annotations
 
 import enum
 import math
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -22,7 +21,6 @@ from navirl.humans.pedestrian_state import (
     PedestrianState,
     PersonalityTag,
 )
-
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -562,7 +560,7 @@ class CrowdGenerator:
         n_arrivals = min(n_arrivals, self.max_pedestrians - self._spawned_count)
 
         peds: list[PedestrianState] = []
-        for i in range(n_arrivals):
+        for _i in range(n_arrivals):
             region_idx = int(self.rng.integers(len(self.spawn_regions)))
             peds.append(self._create_pedestrian(region_idx))
         self._spawned_count += len(peds)

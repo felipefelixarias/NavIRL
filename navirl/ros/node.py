@@ -12,10 +12,11 @@ Usage::
 from __future__ import annotations
 
 import logging
-import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
+
+from . import conversions
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +25,13 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 try:
     import rclpy
-    from rclpy.node import Node
-    from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-
     from geometry_msgs.msg import Twist
-    from sensor_msgs.msg import LaserScan, Image
     from nav_msgs.msg import Odometry
-    from visualization_msgs.msg import MarkerArray, Marker
+    from rclpy.node import Node
+    from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
+    from sensor_msgs.msg import Image, LaserScan
     from std_msgs.msg import String
+    from visualization_msgs.msg import Marker, MarkerArray
 
     _ROS2_AVAILABLE = True
 except ImportError as _exc:  # pragma: no cover
@@ -52,9 +52,6 @@ except ImportError:
     except ImportError:
         _HAS_PERSON_MSG = False
         PersonArray = None  # type: ignore[assignment,misc]
-
-from . import conversions
-
 
 # ---------------------------------------------------------------------------
 # Node
@@ -115,12 +112,12 @@ class NavIRLNode(Node):  # type: ignore[misc]
         )
 
         # -- Internal state ----------------------------------------------------
-        self._latest_scan: Optional[np.ndarray] = None
-        self._latest_odom: Optional[Dict[str, Any]] = None
-        self._latest_image: Optional[np.ndarray] = None
-        self._latest_persons: Optional[np.ndarray] = None
+        self._latest_scan: np.ndarray | None = None
+        self._latest_odom: dict[str, Any] | None = None
+        self._latest_image: np.ndarray | None = None
+        self._latest_persons: np.ndarray | None = None
         self._agent: Any = None  # loaded lazily
-        self._goal: Optional[tuple] = None
+        self._goal: tuple | None = None
         self._step_count: int = 0
 
         # -- QoS profiles ------------------------------------------------------
@@ -221,9 +218,9 @@ class NavIRLNode(Node):  # type: ignore[misc]
         if self._step_count % 100 == 0:
             self._publish_status(f"running step={self._step_count}")
 
-    def _build_observation(self) -> Optional[Dict[str, Any]]:
+    def _build_observation(self) -> dict[str, Any] | None:
         """Assemble a NavIRL-compatible observation dict from cached data."""
-        obs: Dict[str, Any] = {}
+        obs: dict[str, Any] = {}
 
         if self._obs_type in ("lidar", "full"):
             if self._latest_scan is None:
@@ -247,7 +244,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
 
         return obs if obs else None
 
-    def _query_agent(self, observation: Dict[str, Any]) -> np.ndarray:
+    def _query_agent(self, observation: dict[str, Any]) -> np.ndarray:
         """Get an action from the loaded agent, or return zeros."""
         if self._agent is None:
             return np.zeros(2, dtype=np.float64)
@@ -278,7 +275,7 @@ class NavIRLNode(Node):  # type: ignore[misc]
         self._pub_status.publish(msg)
 
     def _publish_debug_markers(
-        self, observation: Dict[str, Any], action: np.ndarray
+        self, observation: dict[str, Any], action: np.ndarray
     ) -> None:
         """Publish visualization markers for debugging in RViz."""
         marker_array = MarkerArray()

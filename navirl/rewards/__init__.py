@@ -23,6 +23,18 @@ from navirl.rewards.base import (
     RewardNormalizer,
     RewardShaper,
 )
+from navirl.rewards.learned import (
+    CuriosityReward,
+    EnsembleReward,
+    GAILReward,
+    IRLReward,
+    NeuralRewardFunction,
+    RNDReward,
+)
+from navirl.rewards.multi_objective import (
+    MultiObjectiveReward,
+    ParetoFront,
+)
 from navirl.rewards.navigation import (
     BoundaryPenalty,
     CollisionPenalty,
@@ -43,18 +55,6 @@ from navirl.rewards.social import (
     RightOfWayReward,
     SocialForceReward,
     YieldingReward,
-)
-from navirl.rewards.learned import (
-    CuriosityReward,
-    EnsembleReward,
-    GAILReward,
-    IRLReward,
-    NeuralRewardFunction,
-    RNDReward,
-)
-from navirl.rewards.multi_objective import (
-    MultiObjectiveReward,
-    ParetoFront,
 )
 
 __all__ = [

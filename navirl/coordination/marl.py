@@ -6,10 +6,8 @@ including a centralized critic, QMIX mixing network, and Multi-Agent PPO.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
-
-import numpy as np
+from dataclasses import dataclass
+from typing import Any
 
 try:
     import torch
@@ -279,7 +277,7 @@ if _TORCH_AVAILABLE:
             obs: torch.Tensor,
             joint_obs: torch.Tensor,
             agent_index: int = 0,
-        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
             """Return sampled action, log-probability, and state value.
 
             Parameters:

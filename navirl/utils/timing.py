@@ -8,9 +8,9 @@ from __future__ import annotations
 import functools
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Callable
-
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Timer context manager

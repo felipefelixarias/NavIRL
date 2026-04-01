@@ -8,14 +8,13 @@ gracefully via try/except.
 
 from __future__ import annotations
 
-import json
 import logging
-import os
 import time
 import warnings
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -912,7 +911,7 @@ class WandbLogger:
         table = wandb.Table(columns=columns, data=rows)
 
         if chart_id in self._custom_charts:
-            spec = self._custom_charts[chart_id]
+            self._custom_charts[chart_id]
             self.log({chart_id: wandb.plot_table(
                 vega_spec_name="",
                 data_table=table,

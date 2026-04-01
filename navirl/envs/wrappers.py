@@ -16,7 +16,8 @@ from __future__ import annotations
 import copy
 import time
 from collections import deque
-from typing import Any, Callable, Dict, List, Optional, Sequence, SupportsFloat, Tuple
+from collections.abc import Callable
+from typing import Any, SupportsFloat
 
 import numpy as np
 
@@ -74,7 +75,7 @@ class FrameStack(gym.ObservationWrapper):
         self._frames.append(observation)
         return np.stack(list(self._frames), axis=0)
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
         for _ in range(self.num_stack):
             self._frames.append(obs)
@@ -154,8 +155,8 @@ class RelativeObservation(gym.ObservationWrapper):
     def __init__(
         self,
         env: gym.Env,
-        robot_pos_indices: Tuple[int, int] = (0, 1),
-        robot_heading_index: Optional[int] = None,
+        robot_pos_indices: tuple[int, int] = (0, 1),
+        robot_heading_index: int | None = None,
     ):
         _require_gym()
         super().__init__(env)
@@ -204,8 +205,8 @@ class GoalConditioned(gym.ObservationWrapper):
     def __init__(
         self,
         env: gym.Env,
-        achieved_goal_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None,
-        desired_goal_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+        achieved_goal_fn: Callable[[np.ndarray], np.ndarray] | None = None,
+        desired_goal_fn: Callable[[np.ndarray], np.ndarray] | None = None,
     ):
         _require_gym()
         super().__init__(env)
@@ -230,7 +231,7 @@ class GoalConditioned(gym.ObservationWrapper):
             }
         )
 
-    def observation(self, observation: np.ndarray) -> Dict[str, np.ndarray]:
+    def observation(self, observation: np.ndarray) -> dict[str, np.ndarray]:
         return {
             "observation": observation,
             "achieved_goal": self._achieved_goal_fn(observation),
@@ -277,7 +278,7 @@ class RewardShaping(gym.RewardWrapper):
     def __init__(
         self,
         env: gym.Env,
-        shaping_fn: Optional[Callable[..., float]] = None,
+        shaping_fn: Callable[..., float] | None = None,
         progress_weight: float = 0.0,
         collision_penalty: float = 0.0,
     ):
@@ -286,9 +287,9 @@ class RewardShaping(gym.RewardWrapper):
         self._shaping_fn = shaping_fn
         self._progress_weight = progress_weight
         self._collision_penalty = collision_penalty
-        self._prev_dist: Optional[float] = None
+        self._prev_dist: float | None = None
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         obs, info = self.env.reset(**kwargs)
         self._prev_dist = info.get("distance_to_goal")
         return obs, info
@@ -297,7 +298,7 @@ class RewardShaping(gym.RewardWrapper):
         r = float(reward)
         return r  # base return; step() post-processes below
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         shaped = float(reward)
 
@@ -358,7 +359,7 @@ class NormalizeReward(gym.RewardWrapper):
         normalised = r / (np.sqrt(self._var) + self.epsilon)
         return float(np.clip(normalised, -self.clip, self.clip))
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         self._return = 0.0
         return self.env.reset(**kwargs)
 
@@ -393,7 +394,7 @@ class ActionRepeat(gym.Wrapper):
         super().__init__(env)
         self.num_repeat = num_repeat
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         total_reward = 0.0
         for _ in range(self.num_repeat):
             obs, reward, terminated, truncated, info = self.env.step(action)
@@ -420,7 +421,7 @@ class TimeLimit(gym.Wrapper):
         self.max_steps = max_steps
         self._elapsed_steps: int = 0
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         self._elapsed_steps += 1
         if self._elapsed_steps >= self.max_steps:
@@ -428,7 +429,7 @@ class TimeLimit(gym.Wrapper):
             info["TimeLimit.truncated"] = True
         return obs, reward, terminated, truncated, info
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         self._elapsed_steps = 0
         return self.env.reset(**kwargs)
 
@@ -449,9 +450,9 @@ class RecordEpisode(gym.Wrapper):
         super().__init__(env)
         self.max_episodes = max_episodes
         self.episodes: deque = deque(maxlen=max_episodes)
-        self._current_episode: Dict[str, List[Any]] = {}
+        self._current_episode: dict[str, list[Any]] = {}
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         if self._current_episode.get("observations"):
             self.episodes.append(copy.deepcopy(self._current_episode))
         self._current_episode = {
@@ -464,7 +465,7 @@ class RecordEpisode(gym.Wrapper):
         self._current_episode["observations"].append(obs)
         return obs, info
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         self._current_episode["actions"].append(action)
         self._current_episode["rewards"].append(reward)
@@ -497,20 +498,20 @@ class MonitorWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env):
         _require_gym()
         super().__init__(env)
-        self.episode_returns: List[float] = []
-        self.episode_lengths: List[int] = []
-        self.episode_times: List[float] = []
+        self.episode_returns: list[float] = []
+        self.episode_lengths: list[int] = []
+        self.episode_times: list[float] = []
         self._episode_return: float = 0.0
         self._episode_length: int = 0
         self._episode_start: float = 0.0
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         self._episode_return = 0.0
         self._episode_length = 0
         self._episode_start = time.monotonic()
         return self.env.reset(**kwargs)
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         obs, reward, terminated, truncated, info = self.env.step(action)
         self._episode_return += float(reward)
         self._episode_length += 1
@@ -547,13 +548,13 @@ class CurriculumWrapper(gym.Wrapper):
         self.scheduler = scheduler
         self._total_steps: int = 0
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         difficulty = self.scheduler(self._total_steps)
         if hasattr(self.env.unwrapped, "difficulty"):
             self.env.unwrapped.difficulty = difficulty  # type: ignore[attr-defined]
         return self.env.reset(**kwargs)
 
-    def step(self, action: Any) -> Tuple[Any, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         result = self.env.step(action)
         self._total_steps += 1
         return result
@@ -577,15 +578,15 @@ class DomainRandomization(gym.Wrapper):
     def __init__(
         self,
         env: gym.Env,
-        randomization_config: Dict[str, Tuple[float, float]],
-        seed: Optional[int] = None,
+        randomization_config: dict[str, tuple[float, float]],
+        seed: int | None = None,
     ):
         _require_gym()
         super().__init__(env)
         self.randomization_config = randomization_config
         self._rng = np.random.default_rng(seed)
 
-    def reset(self, **kwargs: Any) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         for attr, (lo, hi) in self.randomization_config.items():
             value = float(self._rng.uniform(lo, hi))
             if hasattr(self.env.unwrapped, attr):
@@ -607,12 +608,12 @@ class VecEnvWrapper:
         List of zero-argument callables, each returning a ``gym.Env``.
     """
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]]):
         _require_gym()
         self.envs = [fn() for fn in env_fns]
         self.num_envs = len(self.envs)
 
-    def reset(self) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    def reset(self) -> tuple[np.ndarray, list[dict[str, Any]]]:
         results = [env.reset() for env in self.envs]
         obs = np.stack([r[0] for r in results])
         infos = [r[1] for r in results]
@@ -620,8 +621,8 @@ class VecEnvWrapper:
 
     def step(
         self, actions: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[Dict[str, Any]]]:
-        results = [env.step(a) for env, a in zip(self.envs, actions)]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[dict[str, Any]]]:
+        results = [env.step(a) for env, a in zip(self.envs, actions, strict=False)]
         obs = np.stack([r[0] for r in results])
         rewards = np.array([r[1] for r in results], dtype=np.float32)
         terminateds = np.array([r[2] for r in results], dtype=bool)

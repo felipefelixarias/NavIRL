@@ -21,24 +21,14 @@ Key responsibilities handled at this level:
 from __future__ import annotations
 
 import abc
-import copy
 import json
 import logging
-import os
 import pathlib
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from typing import (
     Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
 )
 
 import numpy as np
@@ -68,12 +58,12 @@ class HyperParameters:
     passed around generically.
     """
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Return a plain dict (recursively converting nested dataclasses)."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "HyperParameters":
+    def from_dict(cls, d: dict[str, Any]) -> HyperParameters:
         """Construct from a dict, ignoring unknown keys."""
         valid = {f.name for f in cls.__dataclass_fields__.values()}  # type: ignore[attr-defined]
         filtered = {k: v for k, v in d.items() if k in valid}
@@ -93,7 +83,7 @@ class HyperParameters:
     def get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
 
-    def update(self, d: Dict[str, Any]) -> None:
+    def update(self, d: dict[str, Any]) -> None:
         for k, v in d.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -103,7 +93,7 @@ class HyperParameters:
 # Metric‑logging helpers
 # ---------------------------------------------------------------------------
 
-MetricsCallback = Callable[[Dict[str, float], int], None]
+MetricsCallback = Callable[[dict[str, float], int], None]
 
 
 class MetricsLogger:
@@ -111,9 +101,9 @@ class MetricsLogger:
     an optional callback (e.g. TensorBoard writer, W&B, …).
     """
 
-    def __init__(self, callback: Optional[MetricsCallback] = None) -> None:
+    def __init__(self, callback: MetricsCallback | None = None) -> None:
         self._callback = callback
-        self._buffer: Dict[str, List[float]] = {}
+        self._buffer: dict[str, list[float]] = {}
         self._step: int = 0
 
     @property
@@ -127,14 +117,14 @@ class MetricsLogger:
     def record(self, key: str, value: float) -> None:
         self._buffer.setdefault(key, []).append(value)
 
-    def record_dict(self, d: Dict[str, float]) -> None:
+    def record_dict(self, d: dict[str, float]) -> None:
         for k, v in d.items():
             self.record(k, v)
 
-    def dump(self, step: Optional[int] = None) -> Dict[str, float]:
+    def dump(self, step: int | None = None) -> dict[str, float]:
         """Compute means of buffered values, forward to callback, and clear."""
         step = step if step is not None else self._step
-        summary: Dict[str, float] = {}
+        summary: dict[str, float] = {}
         for key, vals in self._buffer.items():
             summary[key] = float(np.mean(vals))
         if self._callback is not None and summary:
@@ -162,8 +152,8 @@ class CheckpointMeta:
     total_steps: int = 0
     total_episodes: int = 0
     wall_time: float = 0.0
-    hyperparameters: Dict[str, Any] = field(default_factory=dict)
-    extra: Dict[str, Any] = field(default_factory=dict)
+    hyperparameters: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +168,7 @@ class RunningMeanStd:
     Agents that need a Torch‑backed version can wrap this.
     """
 
-    def __init__(self, shape: Tuple[int, ...] = (), epsilon: float = 1e-8) -> None:
+    def __init__(self, shape: tuple[int, ...] = (), epsilon: float = 1e-8) -> None:
         self.mean = np.zeros(shape, dtype=np.float64)
         self.var = np.ones(shape, dtype=np.float64)
         self.count: float = epsilon
@@ -216,10 +206,10 @@ class RunningMeanStd:
     def denormalize(self, x: np.ndarray) -> np.ndarray:
         return x * np.sqrt(self.var + self._epsilon) + self.mean
 
-    def state_dict(self) -> Dict[str, Any]:
+    def state_dict(self) -> dict[str, Any]:
         return {"mean": self.mean.copy(), "var": self.var.copy(), "count": self.count}
 
-    def load_state_dict(self, d: Dict[str, Any]) -> None:
+    def load_state_dict(self, d: dict[str, Any]) -> None:
         self.mean = np.array(d["mean"], dtype=np.float64)
         self.var = np.array(d["var"], dtype=np.float64)
         self.count = float(d["count"])
@@ -252,7 +242,7 @@ class BaseAgent(abc.ABC):
     """
 
     # Registry of concrete subclasses (populated by __init_subclass__).
-    _registry: Dict[str, Type["BaseAgent"]] = {}
+    _registry: dict[str, type[BaseAgent]] = {}
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -268,9 +258,9 @@ class BaseAgent(abc.ABC):
         config: HyperParameters,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
-        metrics_callback: Optional[MetricsCallback] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
+        metrics_callback: MetricsCallback | None = None,
     ) -> None:
         self._config = config
         self._observation_space = observation_space
@@ -302,13 +292,13 @@ class BaseAgent(abc.ABC):
 
         # Modules list – subclasses should append nn.Modules here so that
         # eval()/train() toggles propagate automatically.
-        self._modules: List["nn.Module"] = []
+        self._modules: list[nn.Module] = []
 
         # Optimizers list – for checkpoint serialisation.
-        self._optimizers: Dict[str, "Optimizer"] = {}
+        self._optimizers: dict[str, Optimizer] = {}
 
         # Schedulers list.
-        self._schedulers: Dict[str, "_LRScheduler"] = {}
+        self._schedulers: dict[str, _LRScheduler] = {}
 
         self._logger.info(
             "Initialised %s  |  device=%s  seed=%s",
@@ -334,7 +324,7 @@ class BaseAgent(abc.ABC):
         return self._action_space
 
     @property
-    def device(self) -> "torch.device":
+    def device(self) -> torch.device:
         return self._device
 
     @property
@@ -366,7 +356,7 @@ class BaseAgent(abc.ABC):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -385,7 +375,7 @@ class BaseAgent(abc.ABC):
         """
 
     @abc.abstractmethod
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Run a single optimisation step on the given data.
 
         Parameters
@@ -401,65 +391,77 @@ class BaseAgent(abc.ABC):
         """
 
     @abc.abstractmethod
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Persist the agent to disk."""
 
     @abc.abstractmethod
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Restore the agent from a checkpoint on disk."""
 
     # ------------------------------------------------------------------
     # Training‑loop hooks (no‑op by default; override in subclasses)
     # ------------------------------------------------------------------
 
-    def on_training_start(self) -> None:
+    def on_training_start(self) -> None:  # noqa: B027
         """Called once before the very first environment step."""
+        pass
 
-    def on_training_end(self) -> None:
+    def on_training_end(self) -> None:  # noqa: B027
         """Called after training is complete."""
+        pass
 
-    def on_epoch_start(self, epoch: int) -> None:
+    def on_epoch_start(self, epoch: int) -> None:  # noqa: B027
         """Called at the beginning of each training epoch."""
+        pass
 
-    def on_epoch_end(self, epoch: int, metrics: Dict[str, float]) -> None:
+    def on_epoch_end(self, epoch: int, metrics: dict[str, float]) -> None:  # noqa: B027
         """Called at the end of each training epoch."""
+        pass
 
-    def on_step_start(self, step: int) -> None:
+    def on_step_start(self, step: int) -> None:  # noqa: B027
         """Called before each environment step."""
+        pass
 
-    def on_step_end(self, step: int, reward: float, done: bool, info: Dict[str, Any]) -> None:
+    def on_step_end(self, step: int, reward: float, done: bool, info: dict[str, Any]) -> None:  # noqa: B027
         """Called after each environment step."""
+        pass
 
-    def on_episode_start(self, episode: int) -> None:
+    def on_episode_start(self, episode: int) -> None:  # noqa: B027
         """Called at the start of each episode."""
+        pass
 
-    def on_episode_end(self, episode: int, total_reward: float, length: int) -> None:
+    def on_episode_end(self, episode: int, total_reward: float, length: int) -> None:  # noqa: B027
         """Called at the end of each episode."""
+        pass
 
-    def on_rollout_start(self) -> None:
+    def on_rollout_start(self) -> None:  # noqa: B027
         """Called before a rollout collection phase (on‑policy agents)."""
+        pass
 
-    def on_rollout_end(self) -> None:
+    def on_rollout_end(self) -> None:  # noqa: B027
         """Called after a rollout collection phase."""
+        pass
 
-    def on_update_start(self) -> None:
+    def on_update_start(self) -> None:  # noqa: B027
         """Called before each gradient update."""
+        pass
 
-    def on_update_end(self, metrics: Dict[str, float]) -> None:
+    def on_update_end(self, metrics: dict[str, float]) -> None:  # noqa: B027
         """Called after each gradient update."""
+        pass
 
     # ------------------------------------------------------------------
     # Train / eval toggle
     # ------------------------------------------------------------------
 
-    def train_mode(self) -> "BaseAgent":
+    def train_mode(self) -> BaseAgent:
         """Set the agent (and all owned modules) to training mode."""
         self._training = True
         for mod in self._modules:
             mod.train()
         return self
 
-    def eval_mode(self) -> "BaseAgent":
+    def eval_mode(self) -> BaseAgent:
         """Set the agent (and all owned modules) to evaluation mode."""
         self._training = False
         for mod in self._modules:
@@ -483,9 +485,9 @@ class BaseAgent(abc.ABC):
 
     def _save_checkpoint(
         self,
-        path: Union[str, pathlib.Path],
-        state_dicts: Dict[str, Any],
-        extra: Optional[Dict[str, Any]] = None,
+        path: str | pathlib.Path,
+        state_dicts: dict[str, Any],
+        extra: dict[str, Any] | None = None,
     ) -> pathlib.Path:
         """Write a full checkpoint (model weights + optimizers + meta).
 
@@ -518,7 +520,7 @@ class BaseAgent(abc.ABC):
         optim_states = {name: opt.state_dict() for name, opt in self._optimizers.items()}
         sched_states = {name: sch.state_dict() for name, sch in self._schedulers.items()}
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "meta": asdict(meta),
             "model": state_dicts,
             "optimizers": optim_states,
@@ -540,8 +542,8 @@ class BaseAgent(abc.ABC):
 
     def _load_checkpoint(
         self,
-        path: Union[str, pathlib.Path],
-    ) -> Dict[str, Any]:
+        path: str | pathlib.Path,
+    ) -> dict[str, Any]:
         """Load a checkpoint from disk and return the raw payload dict.
 
         Subclasses should call this and then apply the returned state dicts
@@ -615,7 +617,9 @@ class BaseAgent(abc.ABC):
     # Utilities
     # ------------------------------------------------------------------
 
-    def _to_tensor(self, x: Union[np.ndarray, "torch.Tensor"], dtype: Optional["torch.dtype"] = None) -> "torch.Tensor":
+    def _to_tensor(
+        self, x: np.ndarray | torch.Tensor, dtype: torch.dtype | None = None
+    ) -> torch.Tensor:
         """Convert a numpy array (or keep a tensor) and move to agent device."""
         if isinstance(x, np.ndarray):
             t = torch.from_numpy(x)
@@ -625,26 +629,26 @@ class BaseAgent(abc.ABC):
             t = t.to(dtype)
         return t.to(self._device)
 
-    def _to_numpy(self, x: "torch.Tensor") -> np.ndarray:
+    def _to_numpy(self, x: torch.Tensor) -> np.ndarray:
         return x.detach().cpu().numpy()
 
-    def _soft_update(self, target: "nn.Module", source: "nn.Module", tau: float) -> None:
+    def _soft_update(self, target: nn.Module, source: nn.Module, tau: float) -> None:
         """Polyak averaging: θ_target ← τ·θ_source + (1−τ)·θ_target."""
         with torch.no_grad():
-            for tp, sp in zip(target.parameters(), source.parameters()):
+            for tp, sp in zip(target.parameters(), source.parameters(), strict=False):
                 tp.data.mul_(1.0 - tau).add_(sp.data, alpha=tau)
 
-    def _hard_update(self, target: "nn.Module", source: "nn.Module") -> None:
+    def _hard_update(self, target: nn.Module, source: nn.Module) -> None:
         target.load_state_dict(source.state_dict())
 
     def _clip_grad_norm(self, parameters: Any, max_norm: float) -> float:
         """Clip gradients and return the total norm *before* clipping."""
         return float(torch.nn.utils.clip_grad_norm_(parameters, max_norm))
 
-    def _count_parameters(self, module: "nn.Module") -> int:
+    def _count_parameters(self, module: nn.Module) -> int:
         return sum(p.numel() for p in module.parameters() if p.requires_grad)
 
-    def _log_module_summary(self, name: str, module: "nn.Module") -> None:
+    def _log_module_summary(self, name: str, module: nn.Module) -> None:
         n_params = self._count_parameters(module)
         self._logger.info("  %s: %s trainable parameters", name, f"{n_params:,}")
 
@@ -660,7 +664,7 @@ class BaseAgent(abc.ABC):
         observation_space: Any,
         action_space: Any,
         **kwargs: Any,
-    ) -> "BaseAgent":
+    ) -> BaseAgent:
         """Instantiate a registered agent by name.
 
         >>> agent = BaseAgent.make("PPOAgent", config, obs_space, act_space)
@@ -673,7 +677,7 @@ class BaseAgent(abc.ABC):
         return cls._registry[agent_name](config, observation_space, action_space, **kwargs)
 
     @classmethod
-    def registered_agents(cls) -> List[str]:
+    def registered_agents(cls) -> list[str]:
         return sorted(cls._registry.keys())
 
     # ------------------------------------------------------------------

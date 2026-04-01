@@ -5,9 +5,9 @@ during reinforcement learning training, including uniform, prioritized,
 n-step, hindsight, sequence, rollout, multi-agent, and demonstration buffers.
 """
 
-import numpy as np
 from collections import deque
-from typing import Dict, List, Optional, Tuple, Union
+
+import numpy as np
 
 # Exports: ReplayBuffer, PrioritizedReplayBuffer, NStepBuffer, HindsightReplayBuffer,
 #          SequenceBuffer, RolloutBuffer, MultiAgentBuffer, DemonstrationBuffer
@@ -39,8 +39,8 @@ class ReplayBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
     ) -> None:
         self.capacity = capacity
         self.obs_shape = obs_shape
@@ -81,7 +81,7 @@ class ReplayBuffer:
         self._pos = (self._pos + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of transitions uniformly.
 
         Args:
@@ -129,7 +129,7 @@ class _SumTree:
             tree_index = (tree_index - 1) // 2
             self.tree[tree_index] += change
 
-    def get_leaf(self, value: float) -> Tuple[int, float, int]:
+    def get_leaf(self, value: float) -> tuple[int, float, int]:
         """Retrieve a leaf node by traversing the tree with a cumulative value.
 
         Args:
@@ -189,8 +189,8 @@ class PrioritizedReplayBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         alpha: float = 0.6,
         beta: float = 0.4,
     ) -> None:
@@ -245,9 +245,7 @@ class PrioritizedReplayBuffer:
         self._pos = (self._pos + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
-    def sample(
-        self, batch_size: int
-    ) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a batch of transitions with probability proportional to priority.
 
         The priority range is divided into equal segments, and one transition
@@ -257,9 +255,8 @@ class PrioritizedReplayBuffer:
             batch_size: Number of transitions to sample.
 
         Returns:
-            Tuple of (batch_dict, importance_weights, tree_indices) where
-            batch_dict contains the transition data, importance_weights are
-            for bias correction, and tree_indices are needed for priority updates.
+            Dictionary containing sampled transitions plus ``weights`` and
+            ``indices`` for importance weighting and later priority updates.
         """
         indices = np.zeros(batch_size, dtype=np.int64)
         tree_indices = np.zeros(batch_size, dtype=np.int64)
@@ -286,8 +283,10 @@ class PrioritizedReplayBuffer:
             "rewards": self.rewards[indices],
             "next_obs": self.next_observations[indices],
             "dones": self.dones[indices],
+            "weights": weights.astype(np.float32),
+            "indices": tree_indices,
         }
-        return batch, weights.astype(np.float32), tree_indices
+        return batch
 
     def update_priorities(
         self, tree_indices: np.ndarray, td_errors: np.ndarray
@@ -299,7 +298,7 @@ class PrioritizedReplayBuffer:
             td_errors: Absolute TD-errors for each sampled transition.
         """
         priorities = (np.abs(td_errors) + self._epsilon) ** self.alpha
-        for tree_idx, priority in zip(tree_indices, priorities):
+        for tree_idx, priority in zip(tree_indices, priorities, strict=False):
             self._tree.update(int(tree_idx), priority)
         self._max_priority = max(
             self._max_priority, float(np.max(np.abs(td_errors) + self._epsilon))
@@ -328,8 +327,8 @@ class NStepBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         n_step: int = 3,
         gamma: float = 0.99,
     ) -> None:
@@ -342,7 +341,7 @@ class NStepBuffer:
         self._buffer = ReplayBuffer(capacity, obs_shape, action_shape)
         self._n_step_buffer: deque = deque(maxlen=n_step)
 
-    def _compute_n_step_return(self) -> Tuple[float, np.ndarray, bool]:
+    def _compute_n_step_return(self) -> tuple[float, np.ndarray, bool]:
         """Compute the n-step discounted return from the pending buffer.
 
         Returns:
@@ -392,7 +391,7 @@ class NStepBuffer:
                 )
                 self._n_step_buffer.popleft()
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of n-step transitions.
 
         Args:
@@ -430,9 +429,9 @@ class HindsightReplayBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
-        goal_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
+        goal_shape: tuple[int, ...],
         strategy: str = "future",
         k: int = 4,
     ) -> None:
@@ -458,9 +457,9 @@ class HindsightReplayBuffer:
         self._pos = 0
         self._size = 0
 
-        self._current_episode: List[Dict[str, np.ndarray]] = []
-        self._episode_starts: List[int] = []
-        self._episode_lengths: List[int] = []
+        self._current_episode: list[dict[str, np.ndarray]] = []
+        self._episode_starts: list[int] = []
+        self._episode_lengths: list[int] = []
 
     def add(
         self,
@@ -578,7 +577,7 @@ class HindsightReplayBuffer:
         distance = np.linalg.norm(achieved_goal - desired_goal)
         return 0.0 if distance < threshold else -1.0
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch of goal-conditioned transitions.
 
         Args:
@@ -620,8 +619,8 @@ class SequenceBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         seq_len: int = 20,
     ) -> None:
         self.capacity = capacity
@@ -637,8 +636,8 @@ class SequenceBuffer:
 
         self._pos = 0
         self._size = 0
-        self._episode_starts: List[int] = []
-        self._episode_lengths: List[int] = []
+        self._episode_starts: list[int] = []
+        self._episode_lengths: list[int] = []
         self._current_episode_start: int = 0
         self._current_episode_len: int = 0
 
@@ -678,7 +677,7 @@ class SequenceBuffer:
                 self._episode_lengths.append(self._current_episode_len)
             self._current_episode_len = 0
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a batch of fixed-length sequences.
 
         Each sequence is a contiguous run of transitions from a single episode.
@@ -747,8 +746,8 @@ class RolloutBuffer:
     def __init__(
         self,
         buffer_size: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
         n_envs: int = 1,
     ) -> None:
         self.buffer_size = buffer_size
@@ -846,7 +845,7 @@ class RolloutBuffer:
 
         self.returns = self.advantages + self.values
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """Sample a random batch from the flattened rollout data.
 
         Args:
@@ -902,8 +901,8 @@ class MultiAgentBuffer:
         self,
         num_agents: int,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
     ) -> None:
         self.num_agents = num_agents
         self.capacity = capacity
@@ -954,8 +953,8 @@ class MultiAgentBuffer:
             self.buffers[i].add(obs[i], actions[i], float(rewards[i]), next_obs[i], bool(dones[i]))
 
     def sample(
-        self, batch_size: int, agent_id: Optional[int] = None
-    ) -> Union[Dict[str, np.ndarray], List[Dict[str, np.ndarray]]]:
+        self, batch_size: int, agent_id: int | None = None
+    ) -> dict[str, np.ndarray] | list[dict[str, np.ndarray]]:
         """Sample a batch of transitions.
 
         Args:
@@ -992,8 +991,8 @@ class DemonstrationBuffer:
     def __init__(
         self,
         capacity: int,
-        obs_shape: Tuple[int, ...],
-        action_shape: Tuple[int, ...],
+        obs_shape: tuple[int, ...],
+        action_shape: tuple[int, ...],
     ) -> None:
         self.capacity = capacity
         self.obs_shape = obs_shape
@@ -1071,9 +1070,9 @@ class DemonstrationBuffer:
     def sample(
         self,
         batch_size: int,
-        online_buffer: Optional[ReplayBuffer] = None,
+        online_buffer: ReplayBuffer | None = None,
         demo_ratio: float = 0.25,
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """Sample a batch, optionally mixing with online experience data.
 
         When an online buffer is provided, the batch is composed of

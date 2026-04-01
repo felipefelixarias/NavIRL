@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Protocol, Sequence
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -61,7 +61,7 @@ class BenchmarkResults:
         metric_names = sorted(self.metrics.keys())
         col_widths = [max(12, len(n) + 2) for n in metric_names]
         header = "Metric".ljust(20) + "".join(
-            n.ljust(w) for n, w in zip(metric_names, col_widths)
+            n.ljust(w) for n, w in zip(metric_names, col_widths, strict=False)
         )
         sep = "-" * len(header)
         rows: list[str] = [header, sep]
@@ -69,7 +69,7 @@ class BenchmarkResults:
         # Per-scenario rows
         for s_idx, s_name in enumerate(self.scenario_names):
             row = s_name[:18].ljust(20)
-            for m_name, w in zip(metric_names, col_widths):
+            for m_name, w in zip(metric_names, col_widths, strict=False):
                 vals = self.metrics.get(m_name, [])
                 val = vals[s_idx] if s_idx < len(vals) else float("nan")
                 row += f"{val:.{precision}f}".ljust(w)
@@ -78,7 +78,7 @@ class BenchmarkResults:
         # Summary row
         rows.append(sep)
         summary = "MEAN".ljust(20)
-        for m_name, w in zip(metric_names, col_widths):
+        for m_name, w in zip(metric_names, col_widths, strict=False):
             vals = self.metrics.get(m_name, [])
             mean_val = float(np.mean(vals)) if vals else float("nan")
             summary += f"{mean_val:.{precision}f}".ljust(w)
@@ -97,7 +97,7 @@ class BenchmarkResults:
         if not self.metrics:
             return "% No results"
         metric_names = sorted(self.metrics.keys())
-        n_cols = len(metric_names) + 1
+        len(metric_names) + 1
         lines = [
             r"\begin{tabular}{" + "l" + "r" * len(metric_names) + "}",
             r"\toprule",
@@ -244,7 +244,6 @@ class BenchmarkSuite:
         Returns:
             Aggregated :class:`BenchmarkResults`.
         """
-        from navirl.evaluation.metrics_extended import path_length as _path_length
 
         results = BenchmarkResults(suite_name="custom")
         all_metrics: dict[str, list[float]] = {

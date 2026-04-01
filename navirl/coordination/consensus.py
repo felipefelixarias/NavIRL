@@ -7,7 +7,7 @@ distributed optimizer that combines consensus with local gradient steps.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -131,13 +131,13 @@ class WeightedConsensus(ConsensusProtocol):
         self.neighbor_degrees = list(neighbor_degrees)
 
         # Pre-compute Metropolis weights
-        self._weights: List[float] = []
+        self._weights: list[float] = []
         for nd in self.neighbor_degrees:
             self._weights.append(1.0 / (1.0 + max(degree, nd)))
         self._self_weight = 1.0 - sum(self._weights)
 
     @property
-    def weights(self) -> List[float]:
+    def weights(self) -> list[float]:
         """Metropolis weights for each neighbour."""
         return list(self._weights)
 
@@ -173,7 +173,7 @@ class WeightedConsensus(ConsensusProtocol):
             )
 
         result = self._self_weight * local_value
-        for w, v in zip(self._weights, neighbor_values):
+        for w, v in zip(self._weights, neighbor_values, strict=False):
             result = result + w * np.asarray(v, dtype=np.float64)
         return result
 

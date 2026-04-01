@@ -9,22 +9,11 @@ from __future__ import annotations
 import enum
 import time
 from collections import defaultdict
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
 )
-
-import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Event types
@@ -80,9 +69,9 @@ class EventRecord:
     wall_time: float = 0.0
     source_id: int = -1
     target_id: int = -1
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict."""
         return {
             "event_type": self.event_type.value,
@@ -94,7 +83,7 @@ class EventRecord:
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> EventRecord:
+    def from_dict(cls, d: dict[str, Any]) -> EventRecord:
         """Reconstruct from dict."""
         return cls(
             event_type=EventType(d["event_type"]),
@@ -135,9 +124,9 @@ class EventFilter:
 
     def __init__(
         self,
-        event_types: Set[EventType] | None = None,
-        source_ids: Set[int] | None = None,
-        target_ids: Set[int] | None = None,
+        event_types: set[EventType] | None = None,
+        source_ids: set[int] | None = None,
+        target_ids: set[int] | None = None,
         min_sim_time: float | None = None,
         max_sim_time: float | None = None,
         data_key: str | None = None,
@@ -181,7 +170,7 @@ class EventFilter:
 class _CombinedFilter(EventFilter):
     """Logical combination of multiple filters."""
 
-    def __init__(self, filters: List[EventFilter], mode: str = "and") -> None:
+    def __init__(self, filters: list[EventFilter], mode: str = "and") -> None:
         super().__init__()
         self._filters = filters
         self._mode = mode
@@ -208,15 +197,15 @@ class EventBus:
     """
 
     def __init__(self, recording: bool = True) -> None:
-        self._subs: List[_Subscription] = []
-        self._sub_index: Dict[EventType | None, List[_Subscription]] = defaultdict(list)
+        self._subs: list[_Subscription] = []
+        self._sub_index: dict[EventType | None, list[_Subscription]] = defaultdict(list)
         self._next_sub_id: int = 0
         self._recording = recording
-        self._history: List[EventRecord] = []
+        self._history: list[EventRecord] = []
         self._paused: bool = False
-        self._muted_types: Set[EventType] = set()
+        self._muted_types: set[EventType] = set()
         self._publish_count: int = 0
-        self._replay_callbacks: List[Callable[[EventRecord], None]] = []
+        self._replay_callbacks: list[Callable[[EventRecord], None]] = []
 
     # ------------------------------------------------------------------
     # Subscribe
@@ -287,7 +276,7 @@ class EventBus:
         sim_time: float = 0.0,
         source_id: int = -1,
         target_id: int = -1,
-        data: Dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
     ) -> EventRecord:
         """Publish an event and deliver to matching subscribers.
 
@@ -321,7 +310,7 @@ class EventBus:
         candidates = list(self._sub_index.get(None, []))
         candidates.extend(self._sub_index.get(record.event_type, []))
 
-        to_remove: List[_Subscription] = []
+        to_remove: list[_Subscription] = []
         for sub in candidates:
             if not sub.active:
                 continue
@@ -362,7 +351,7 @@ class EventBus:
         normal: Sequence[float] | None = None,
     ) -> EventRecord:
         """Emit a collision event."""
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "penetration": penetration,
         }
         if normal is not None:
@@ -437,7 +426,7 @@ class EventBus:
     # ------------------------------------------------------------------
 
     @property
-    def history(self) -> List[EventRecord]:
+    def history(self) -> list[EventRecord]:
         """Full event history."""
         return self._history
 
@@ -449,33 +438,33 @@ class EventBus:
         """Enable or disable event recording."""
         self._recording = enabled
 
-    def filter_history(self, filt: EventFilter) -> List[EventRecord]:
+    def filter_history(self, filt: EventFilter) -> list[EventRecord]:
         """Return history records matching *filt*."""
         return [r for r in self._history if filt.matches(r)]
 
-    def history_by_type(self, event_type: EventType) -> List[EventRecord]:
+    def history_by_type(self, event_type: EventType) -> list[EventRecord]:
         """Return history records of a given type."""
         return [r for r in self._history if r.event_type == event_type]
 
     def history_in_range(
         self, t_start: float, t_end: float
-    ) -> List[EventRecord]:
+    ) -> list[EventRecord]:
         """Return history records within a sim-time range."""
         return [
             r for r in self._history
             if t_start <= r.sim_time <= t_end
         ]
 
-    def history_for_entity(self, entity_id: int) -> List[EventRecord]:
+    def history_for_entity(self, entity_id: int) -> list[EventRecord]:
         """Return history records involving *entity_id*."""
         return [
             r for r in self._history
             if r.source_id == entity_id or r.target_id == entity_id
         ]
 
-    def event_counts(self) -> Dict[str, int]:
+    def event_counts(self) -> dict[str, int]:
         """Return a dict mapping event type names to counts."""
-        counts: Dict[str, int] = {}
+        counts: dict[str, int] = {}
         for r in self._history:
             key = r.event_type.value
             counts[key] = counts.get(key, 0) + 1
@@ -493,7 +482,7 @@ class EventBus:
 
     def replay(
         self,
-        records: List[EventRecord] | None = None,
+        records: list[EventRecord] | None = None,
         speed: float = 1.0,
         deliver: bool = True,
     ) -> None:
@@ -532,11 +521,11 @@ class EventBus:
             for cb in self._replay_callbacks:
                 cb(rec)
 
-    def serialize_history(self) -> List[Dict[str, Any]]:
+    def serialize_history(self) -> list[dict[str, Any]]:
         """Serialize event history to a list of dicts."""
         return [r.to_dict() for r in self._history]
 
-    def load_history(self, data: List[Dict[str, Any]]) -> None:
+    def load_history(self, data: list[dict[str, Any]]) -> None:
         """Load event history from serialized data."""
         self._history = [EventRecord.from_dict(d) for d in data]
 
@@ -552,7 +541,7 @@ class EventBus:
     def subscriber_count(self) -> int:
         return sum(1 for s in self._subs if s.active)
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return summary statistics."""
         return {
             "publish_count": self._publish_count,

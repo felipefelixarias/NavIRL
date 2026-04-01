@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
-from navirl.core.constants import COMFORT, EPSILON, PROXEMICS
+from navirl.core.constants import COMFORT, EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
 
@@ -68,9 +68,10 @@ class Node(ABC):
         """Execute one tick and return the resulting status."""
         ...
 
+    @abstractmethod
     def reset_state(self) -> None:
         """Reset any internal running state (called between episodes)."""
-        pass
+        ...
 
 
 # ---------------------------------------------------------------------------
@@ -274,7 +275,7 @@ class AvoidCollision(ActionNode):
             dx = n.x - agent.x
             dy = n.y - agent.y
             dist = math.hypot(dx, dy)
-            min_dist = agent.radius + n.radius + 0.1
+            agent.radius + n.radius + 0.1
             if dist < closest_dist and dist < self.time_horizon * agent.max_speed:
                 closest_dist = dist
                 if dist < EPSILON:
@@ -471,7 +472,7 @@ class BehaviorTree:
     # -- factory for a sensible default pedestrian tree -----------------
 
     @classmethod
-    def default_pedestrian_tree(cls) -> "BehaviorTree":
+    def default_pedestrian_tree(cls) -> BehaviorTree:
         """Create a general-purpose pedestrian behavior tree.
 
         Priority (highest first):

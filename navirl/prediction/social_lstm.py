@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -114,7 +114,7 @@ class SocialLSTM(nn.Module):
         self.output_layer = nn.Linear(hidden_dim, 5)  # mu_x, mu_y, sigma_x, sigma_y, rho
         self.dropout = nn.Dropout(dropout)
 
-    def init_hidden(self, batch_size: int, device: torch.device) -> Tuple[torch.Tensor, torch.Tensor]:
+    def init_hidden(self, batch_size: int, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
         h = torch.zeros(batch_size, self.hidden_dim, device=device)
         c = torch.zeros(batch_size, self.hidden_dim, device=device)
         return h, c
@@ -123,7 +123,7 @@ class SocialLSTM(nn.Module):
         self,
         obs_trajectories: torch.Tensor,
         pred_horizon: int = 12,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass.
 
         Args:
@@ -145,7 +145,7 @@ class SocialLSTM(nn.Module):
             embedded = self.dropout(torch.relu(self.input_embedding(positions)))  # (N, emb)
 
             # Social pooling for each agent.
-            social_tensors: List[torch.Tensor] = []
+            social_tensors: list[torch.Tensor] = []
             for i in range(N):
                 pooled = self.social_pooling(h, positions, i)
                 social_tensors.append(pooled)
@@ -251,7 +251,7 @@ class SocialLSTMPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         """Predict future trajectories.
 
@@ -275,7 +275,7 @@ class SocialLSTMPredictor(TrajectoryPredictor):
             obs = torch.cat([obs, neighbors], dim=1)  # (T_obs, 1+N_neigh, 2)
 
         # Sample by running forward multiple times (Gaussian sampling).
-        all_trajs: List[np.ndarray] = []
+        all_trajs: list[np.ndarray] = []
         for _ in range(self.num_samples):
             means, params = self.model(obs, pred_horizon=self.horizon)
             # Sample from the predicted Gaussian.

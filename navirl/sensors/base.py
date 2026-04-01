@@ -10,11 +10,10 @@ All numeric operations use **numpy** for vectorised performance.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 #  Sensor base
@@ -31,14 +30,14 @@ class SensorBase(ABC):
         Optional noise model applied to every observation.
     """
 
-    def __init__(self, config: Any, noise_model: Optional[NoiseModel] = None) -> None:
+    def __init__(self, config: Any, noise_model: NoiseModel | None = None) -> None:
         self.config = config
         self.noise_model = noise_model
         self._rng: np.random.Generator = np.random.default_rng()
 
     # -- public API ----------------------------------------------------------
 
-    def observe(self, world_state: Dict[str, Any]) -> Any:
+    def observe(self, world_state: dict[str, Any]) -> Any:
         """Return a (possibly noisy) observation of *world_state*.
 
         Subclasses implement :meth:`_raw_observe` which returns the clean
@@ -54,7 +53,7 @@ class SensorBase(ABC):
 
         Override in subclasses that maintain state across steps.
         """
-        pass
+        return None
 
     def seed(self, seed: int) -> None:
         """Seed the sensor's random number generator."""
@@ -63,7 +62,7 @@ class SensorBase(ABC):
             self.noise_model.seed(seed)
 
     @abstractmethod
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         """Return a gymnasium.spaces.Space-like dictionary describing the
         observation shape, dtype, and bounds.
 
@@ -77,7 +76,7 @@ class SensorBase(ABC):
     # -- private -------------------------------------------------------------
 
     @abstractmethod
-    def _raw_observe(self, world_state: Dict[str, Any]) -> Any:
+    def _raw_observe(self, world_state: dict[str, Any]) -> Any:
         """Produce a clean (noise-free) observation of *world_state*."""
         ...
 
@@ -93,7 +92,7 @@ class NoiseModel(ABC):
     of the same shape and dtype.
     """
 
-    def __init__(self, seed: Optional[int] = None) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         self._rng: np.random.Generator = np.random.default_rng(seed)
 
     def seed(self, seed: int) -> None:
@@ -126,7 +125,7 @@ class GaussianNoise(NoiseModel):
     mean: float = 0.0
 
     def __init__(self, std: float = 0.01, mean: float = 0.0,
-                 seed: Optional[int] = None) -> None:
+                 seed: int | None = None) -> None:
         super().__init__(seed=seed)
         self.std = std
         self.mean = mean
@@ -159,7 +158,7 @@ class SaltPepperNoise(NoiseModel):
     high: float = 1.0
 
     def __init__(self, prob: float = 0.01, low: float = 0.0,
-                 high: float = 1.0, seed: Optional[int] = None) -> None:
+                 high: float = 1.0, seed: int | None = None) -> None:
         super().__init__(seed=seed)
         self.prob = prob
         self.low = low
@@ -193,7 +192,7 @@ class DropoutNoise(NoiseModel):
     fill_value: float = float("nan")
 
     def __init__(self, prob: float = 0.02, fill_value: float = float("nan"),
-                 seed: Optional[int] = None) -> None:
+                 seed: int | None = None) -> None:
         super().__init__(seed=seed)
         self.prob = prob
         self.fill_value = fill_value
@@ -220,7 +219,7 @@ class QuantizationNoise(NoiseModel):
     step: float = 0.01
 
     def __init__(self, step: float = 0.01,
-                 seed: Optional[int] = None) -> None:
+                 seed: int | None = None) -> None:
         super().__init__(seed=seed)
         self.step = step
 

@@ -6,11 +6,9 @@ constraints during policy learning (e.g., CPO, PID-Lagrangian).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Learnable Lagrange multiplier
@@ -194,7 +192,7 @@ class CPOUpdate:
         cost_proj = float(cost_grad @ step_dir)
         if current_cost > self.cost_limit and cost_proj > 0:
             # Reduce step along cost gradient direction.
-            cost_dir = self._conjugate_gradient(
+            self._conjugate_gradient(
                 damped_mvp, cost_grad, self.cg_iters
             )
             max_step *= max(0.0, 1.0 - (current_cost - self.cost_limit) / max(abs(cost_proj), 1e-8))

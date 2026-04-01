@@ -22,8 +22,9 @@ from __future__ import annotations
 import abc
 import copy
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class DifficultyDimension:
     name: str
     min_value: float
     max_value: float
-    current_value: Optional[float] = None
+    current_value: float | None = None
 
     def __post_init__(self) -> None:
         if self.current_value is None:
@@ -83,7 +84,7 @@ class CurriculumScheduler(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_difficulty(self, step: int, metrics: Optional[Dict[str, float]] = None) -> float:
+    def get_difficulty(self, step: int, metrics: dict[str, float] | None = None) -> float:
         """Return the current difficulty level in ``[0, 1]``.
 
         Parameters
@@ -95,7 +96,7 @@ class CurriculumScheduler(abc.ABC):
         """
 
     @abc.abstractmethod
-    def update(self, step: int, metrics: Optional[Dict[str, float]] = None) -> None:
+    def update(self, step: int, metrics: dict[str, float] | None = None) -> None:
         """Update internal state after a training step or evaluation.
 
         Parameters
@@ -135,13 +136,13 @@ class LinearCurriculum(CurriculumScheduler):
         self.end_difficulty = float(end_difficulty)
         self.total_steps = int(total_steps)
 
-    def get_difficulty(self, step: int, metrics: Optional[Dict[str, float]] = None) -> float:
+    def get_difficulty(self, step: int, metrics: dict[str, float] | None = None) -> float:
         progress = min(step / max(self.total_steps, 1), 1.0)
         return self.start_difficulty + progress * (
             self.end_difficulty - self.start_difficulty
         )
 
-    def update(self, step: int, metrics: Optional[Dict[str, float]] = None) -> None:
+    def update(self, step: int, metrics: dict[str, float] | None = None) -> None:
         # Linear curriculum is purely step-based; nothing to update.
         pass
 
@@ -182,10 +183,10 @@ class PerformanceCurriculum(CurriculumScheduler):
         self.metric_key = metric_key
         self._difficulty: float = 0.0
 
-    def get_difficulty(self, step: int, metrics: Optional[Dict[str, float]] = None) -> float:
+    def get_difficulty(self, step: int, metrics: dict[str, float] | None = None) -> float:
         return self._difficulty
 
-    def update(self, step: int, metrics: Optional[Dict[str, float]] = None) -> None:
+    def update(self, step: int, metrics: dict[str, float] | None = None) -> None:
         if metrics is None or self.metric_key not in metrics:
             return
 
@@ -251,10 +252,10 @@ class StagedCurriculum(CurriculumScheduler):
         ]
     """
 
-    def __init__(self, stages: Sequence[Dict[str, Any]]) -> None:
+    def __init__(self, stages: Sequence[dict[str, Any]]) -> None:
         if not stages:
             raise ValueError("At least one stage must be provided.")
-        self._stages: List[_StageConfig] = [
+        self._stages: list[_StageConfig] = [
             _StageConfig(
                 name=s["name"],
                 difficulty=float(s["difficulty"]),
@@ -275,10 +276,10 @@ class StagedCurriculum(CurriculumScheduler):
         """Name of the active stage."""
         return self._stages[self._current_stage].name
 
-    def get_difficulty(self, step: int, metrics: Optional[Dict[str, float]] = None) -> float:
+    def get_difficulty(self, step: int, metrics: dict[str, float] | None = None) -> float:
         return self._stages[self._current_stage].difficulty
 
-    def update(self, step: int, metrics: Optional[Dict[str, float]] = None) -> None:
+    def update(self, step: int, metrics: dict[str, float] | None = None) -> None:
         if metrics is None:
             return
 
@@ -325,23 +326,23 @@ class CurriculumManager:
         dimensions: Sequence[DifficultyDimension],
         scheduler: CurriculumScheduler,
     ) -> None:
-        self.dimensions: List[DifficultyDimension] = [
+        self.dimensions: list[DifficultyDimension] = [
             copy.deepcopy(d) for d in dimensions
         ]
         self.scheduler = scheduler
 
-    def update(self, step: int, metrics: Optional[Dict[str, float]] = None) -> None:
+    def update(self, step: int, metrics: dict[str, float] | None = None) -> None:
         """Update the scheduler and propagate difficulty to all dimensions."""
         self.scheduler.update(step, metrics)
         difficulty = self.scheduler.get_difficulty(step, metrics)
         for dim in self.dimensions:
             dim.set_from_difficulty(difficulty)
 
-    def get_difficulty(self, step: int, metrics: Optional[Dict[str, float]] = None) -> float:
+    def get_difficulty(self, step: int, metrics: dict[str, float] | None = None) -> float:
         """Return the current normalised difficulty from the scheduler."""
         return self.scheduler.get_difficulty(step, metrics)
 
-    def get_env_config(self) -> Dict[str, float]:
+    def get_env_config(self) -> dict[str, float]:
         """Return a dict mapping dimension names to their current values.
 
         This dict can be passed directly to an environment constructor or

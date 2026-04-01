@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class PredictionResult:
     timestamps: np.ndarray  # (T,)
 
     # Optional extra metadata produced by the predictor.
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # ------------------------------------------------------------------
     # Convenience helpers
@@ -64,7 +64,7 @@ class TrajectoryPredictor(ABC):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         """Predict future trajectories from observations.
 
