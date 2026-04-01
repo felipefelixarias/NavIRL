@@ -1,0 +1,72 @@
+id: living_room_social
+description: Living room social gathering with people moving between conversation groups while robot serves refreshments.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: apartment_micro
+seed: 128
+horizon:
+  steps: 420
+  dt: 0.1
+humans:
+  controller:
+    type: orca
+    params:
+      goal_tolerance: 0.2
+      neighbor_dist: 1.8
+      time_horizon: 2.5
+  count: 6
+  starts:
+    - [1.5, 0.8]    # Near couch
+    - [1.2, 0.5]    # On couch
+    - [-0.8, 1.0]   # By window
+    - [-1.5, 0.2]   # Kitchen entrance
+    - [0.3, -1.2]   # Coffee table area
+    - [-0.2, -0.8]  # Center of room
+  goals:
+    - [-0.5, 0.8]   # Move to window group
+    - [0.3, -1.0]   # Move to coffee table
+    - [1.3, 0.6]    # Join couch conversation
+    - [0.0, -0.5]   # Center mingling
+    - [1.4, 0.9]    # Move to couch area
+    - [-1.2, 0.4]   # Move toward kitchen
+  radius: 0.16
+  max_speed: 0.55
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 20
+      goal_tolerance: 0.2
+      velocity_smoothing: 0.8
+      social_comfort_distance: 0.6
+  start: [-1.8, 0.0]  # Kitchen/service area
+  goal: [0.2, -1.0]   # Coffee table (central serving location)
+  radius: 0.18
+  max_speed: 0.7
+routine:
+  name: serve_refreshments
+  steps:
+    - collect_refreshments
+    - navigate_social_space
+    - serve_guests
+    - return_to_kitchen
+evaluation:
+  intrusion_delta: 0.45
+  max_speed: 0.9
+  max_accel: 3.8
+  teleport_thresh: 0.95
+  deadlock_seconds: 6.0
+  deadlock_resample_attempts: 10
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.2
+  expected_high_interaction: true
+  max_agent_stop_seconds: 8.0
+  social_comfort_violations_threshold: 3
+render:
+  enabled: true
+  fps: 12
+  video: true
+  playback_speed: 1.8

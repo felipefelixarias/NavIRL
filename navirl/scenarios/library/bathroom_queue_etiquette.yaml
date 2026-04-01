@@ -1,0 +1,89 @@
+id: bathroom_queue_etiquette
+description: Bathroom queue scenario testing polite waiting behavior and turn-taking etiquette.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: hallway
+seed: 93
+horizon:
+  steps: 480
+  dt: 0.1
+humans:
+  controller:
+    type: scripted
+    params:
+      max_speed: 0.4
+      waypoints:
+        "0":  # First person in queue
+          - [0.5, -0.3]
+          - [0.8, -0.1]
+          - [1.2, 0.0]
+          - [1.5, 0.0]
+        "1":  # Second in queue
+          - [0.0, -0.3]
+          - [0.5, -0.3]
+          - [0.8, -0.1]
+          - [1.2, 0.0]
+        "2":  # Third arrives later
+          - [-1.0, 0.2]
+          - [-0.2, 0.0]
+          - [0.0, -0.3]
+          - [0.5, -0.3]
+        "3":  # Person leaving bathroom
+          - [1.8, 0.0]
+          - [1.2, 0.0]
+          - [0.5, -0.5]
+          - [-1.5, -0.8]
+  count: 4
+  starts:
+    - [0.5, -0.3]   # Already waiting
+    - [0.0, -0.3]   # Second in line
+    - [-1.0, 0.2]   # Approaching from hallway
+    - [1.8, 0.0]    # Exiting bathroom
+  goals:
+    - [1.5, 0.0]    # Bathroom door
+    - [1.5, 0.0]    # Bathroom door
+    - [1.5, 0.0]    # Bathroom door
+    - [-1.5, -0.8]  # Leave area
+  radius: 0.16
+  max_speed: 0.45
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 25
+      goal_tolerance: 0.25
+      respect_queues: true
+      queue_detection_radius: 0.8
+  start: [-0.8, -0.8]  # Approaching from side corridor
+  goal: [1.5, 0.0]     # Bathroom (but should join queue properly)
+  radius: 0.18
+  max_speed: 0.5
+routine:
+  name: respectful_bathroom_visit
+  steps:
+    - approach_area
+    - detect_queue
+    - join_queue_end
+    - wait_turn
+    - use_facility
+evaluation:
+  intrusion_delta: 0.25
+  max_speed: 0.8
+  max_accel: 3.0
+  teleport_thresh: 0.95
+  deadlock_seconds: 10.0
+  deadlock_resample_attempts: 12
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.15
+  expected_high_interaction: true
+  max_agent_stop_seconds: 15.0
+  queue_cutting_violations_threshold: 1
+  personal_space_violations_threshold: 2
+render:
+  enabled: true
+  fps: 8
+  video: true
+  playback_speed: 3.0

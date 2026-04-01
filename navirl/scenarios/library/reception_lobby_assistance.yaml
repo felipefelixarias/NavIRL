@@ -1,0 +1,72 @@
+id: reception_lobby_assistance
+description: Office lobby with visitors seeking directions while reception robot provides wayfinding assistance.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: apartment_micro
+seed: 314
+horizon:
+  steps: 450
+  dt: 0.1
+humans:
+  controller:
+    type: orca
+    params:
+      goal_tolerance: 0.22
+      neighbor_dist: 2.0
+      time_horizon: 3.0
+  count: 5
+  starts:
+    - [-2.0, 0.0]   # Visitor 1 - main entrance
+    - [-1.8, -0.5]  # Visitor 2 - also from entrance
+    - [0.5, 1.5]    # Employee coming from elevator
+    - [1.8, 0.8]    # Employee from office wing
+    - [-1.5, 1.2]   # Visitor from parking entrance
+  goals:
+    - [1.5, -1.0]   # Conference room A
+    - [0.0, 0.2]    # Reception desk (asking directions)
+    - [-1.5, -0.8]  # Cafeteria
+    - [2.0, 0.0]    # Exit (going to lunch)
+    - [1.2, 1.3]    # Office suite B
+  radius: 0.16
+  max_speed: 0.6
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 18
+      goal_tolerance: 0.25
+      interaction_awareness: true
+      help_seeking_detection_radius: 1.2
+  start: [0.0, 0.0]   # Reception desk area
+  goal: [0.0, 0.0]    # Mobile assistance (dynamic goalssetting)
+  radius: 0.18
+  max_speed: 0.7
+routine:
+  name: lobby_assistance
+  steps:
+    - monitor_lobby_activity
+    - detect_lost_visitors
+    - provide_directions
+    - escort_if_needed
+    - return_to_station
+evaluation:
+  intrusion_delta: 0.4
+  max_speed: 1.0
+  max_accel: 4.0
+  teleport_thresh: 0.95
+  deadlock_seconds: 6.0
+  deadlock_resample_attempts: 10
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.18
+  expected_high_interaction: true
+  max_agent_stop_seconds: 10.0
+  visitor_confusion_threshold: 2
+  assistance_response_time_max: 8.0
+render:
+  enabled: true
+  fps: 12
+  video: true
+  playback_speed: 2.5

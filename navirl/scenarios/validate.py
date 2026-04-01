@@ -58,7 +58,7 @@ def _validate_humans(h: dict, errors: list[str]) -> None:
 
 
 def _validate_robot(r: dict, errors: list[str]) -> None:
-    allowed_ctrl = {"baseline_astar", "user"}
+    allowed_ctrl = {"baseline_astar", "user", "social_astar", "prm", "potential_fields"}
     _require(isinstance(r, dict), "robot must be an object", errors)
     if not isinstance(r, dict):
         return

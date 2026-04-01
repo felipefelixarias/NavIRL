@@ -16,6 +16,9 @@ def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
 class ORCAHumanController(HumanController):
     """Baseline human controller with map-aware waypoint following for ORCA."""
 
+    # Plugin metadata for validation
+    __plugin_metadata__ = None
+
     def __init__(self, cfg: dict | None = None):
         cfg = cfg or {}
         self.cfg = cfg
