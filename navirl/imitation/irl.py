@@ -85,12 +85,12 @@ class MaxEntIRL:
     def __init__(
         self,
         config: MaxEntIRLConfig,
-        feature_fn: Callable[[np.ndarray], np.ndarray],
+        feature_fn: Callable[[np.ndarray], np.ndarray] | None = None,
         forward_rl_fn: Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]]
         | None = None,
     ) -> None:
         self._config = config
-        self._feature_fn = feature_fn
+        self._feature_fn = feature_fn or self._identity_feature_fn
         self._forward_rl_fn = forward_rl_fn
 
         # Linear reward parameters
@@ -105,6 +105,15 @@ class MaxEntIRL:
             config.lr,
             config.num_iterations,
         )
+
+    def _identity_feature_fn(self, observation: np.ndarray) -> np.ndarray:
+        features = np.asarray(observation, dtype=np.float64).reshape(-1)
+        if features.shape[0] != self._config.feature_dim:
+            raise ValueError(
+                f"Expected feature vector of length {self._config.feature_dim}, "
+                f"got {features.shape[0]}."
+            )
+        return features
 
     # ------------------------------------------------------------------
     # Properties
@@ -155,6 +164,10 @@ class MaxEntIRL:
         """
         features = np.array([self._feature_fn(obs) for obs in observations], dtype=np.float64)
         return features @ self._theta
+
+    def compute_reward(self, features: np.ndarray) -> float:
+        """Compute a reward directly from a feature vector."""
+        return float(self._theta @ self._identity_feature_fn(features))
 
     # ------------------------------------------------------------------
     # Feature expectations
@@ -261,6 +274,14 @@ class MaxEntIRL:
         }
         self._history.append(metrics)
         return metrics
+
+    def update(
+        self,
+        expert_features: np.ndarray,
+        policy_features: np.ndarray,
+    ) -> dict[str, float]:
+        """Backward-compatible alias for :meth:`update_step`."""
+        return self.update_step(expert_features, policy_features)
 
     # ------------------------------------------------------------------
     # Full training loop
