@@ -1,3 +1,5 @@
+"""Public planning exports."""
+
 from __future__ import annotations
 
 from navirl.planning.base import Path, Planner, PlannerConfig
@@ -18,7 +20,6 @@ __all__ = [
     "Path",
     "Planner",
     "PlannerConfig",
-    # Global planners
     "AStarPlanner",
     "DijkstraPlanner",
     "PRMPlanner",

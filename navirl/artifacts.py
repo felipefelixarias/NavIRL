@@ -26,10 +26,12 @@ def resolve_retention_hours(
     try:
         hours = float(raw)
     except ValueError as exc:
-        raise ValueError(f"{env_var} must be a number of hours, got {raw!r}") from exc
+        msg = f"{env_var} must be a number of hours, got {raw!r}"
+        raise ValueError(msg) from exc
 
     if hours < 0:
-        raise ValueError(f"{env_var} must be >= 0")
+        msg = f"{env_var} must be >= 0"
+        raise ValueError(msg)
     return hours
 
 

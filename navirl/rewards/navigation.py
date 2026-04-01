@@ -102,7 +102,8 @@ class GoalReward(RewardFunction):
         name: str | None = None,
     ) -> None:
         if mode not in self.VALID_MODES:
-            raise ValueError(f"mode must be one of {self.VALID_MODES}, got {mode!r}")
+            msg = f"mode must be one of {self.VALID_MODES}, got {mode!r}"
+            raise ValueError(msg)
         super().__init__(name=name or "GoalReward")
         self._mode = mode
         self._threshold = threshold
@@ -707,7 +708,8 @@ class VelocityReward(RewardFunction):
         name: str | None = None,
     ) -> None:
         if mode not in self.VALID_MODES:
-            raise ValueError(f"mode must be one of {self.VALID_MODES}")
+            msg = f"mode must be one of {self.VALID_MODES}"
+            raise ValueError(msg)
         super().__init__(name=name or "VelocityReward")
         self._target_speed = target_speed
         self._tolerance = tolerance
@@ -922,7 +924,8 @@ class BoundaryPenalty(RewardFunction):
         name: str | None = None,
     ) -> None:
         if mode not in self.VALID_MODES:
-            raise ValueError(f"mode must be one of {self.VALID_MODES}")
+            msg = f"mode must be one of {self.VALID_MODES}"
+            raise ValueError(msg)
         super().__init__(name=name or "BoundaryPenalty")
         self._x_min = x_min
         self._x_max = x_max

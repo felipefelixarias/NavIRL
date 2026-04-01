@@ -336,7 +336,8 @@ class RecurrentPolicy(nn.Module):
                 num_layers=num_layers,
             )
         else:
-            raise ValueError(f"Unknown rnn_type '{rnn_type}'. Choose 'lstm' or 'gru'.")
+            msg = f"Unknown rnn_type '{rnn_type}'. Choose 'lstm' or 'gru'."
+            raise ValueError(msg)
 
         # --- Policy head MLP ---
         head_layers: list[nn.Module] = []
@@ -565,7 +566,8 @@ class SequenceEncoder(nn.Module):
             else:
                 encoded = rnn_out.mean(dim=1)
         else:
-            raise ValueError(f"Unknown pooling '{self.pooling}'. Choose 'last' or 'mean'.")
+            msg = f"Unknown pooling '{self.pooling}'. Choose 'last' or 'mean'."
+            raise ValueError(msg)
 
         return encoded
 

@@ -609,7 +609,8 @@ class RecurrentExtractor(nn.Module):
 
         rnn_cls = {"lstm": nn.LSTM, "gru": nn.GRU}
         if self.rnn_type not in rnn_cls:
-            raise ValueError(f"Unknown rnn_type '{rnn_type}'. Choose from {list(rnn_cls.keys())}")
+            msg = f"Unknown rnn_type '{rnn_type}'. Choose from {list(rnn_cls.keys())}"
+            raise ValueError(msg)
 
         self.rnn = rnn_cls[self.rnn_type](
             input_size=base_extractor.feature_dim,

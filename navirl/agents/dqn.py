@@ -71,9 +71,11 @@ class EpsilonSchedule:
 
     def __init__(self, start: float = 1.0, end: float = 0.05, decay_steps: int = 100_000) -> None:
         if not (0.0 <= end <= start <= 1.0):
-            raise ValueError(f"Require 0 <= end <= start <= 1, got start={start}, end={end}")
+            msg = f"Require 0 <= end <= start <= 1, got start={start}, end={end}"
+            raise ValueError(msg)
         if decay_steps <= 0:
-            raise ValueError(f"decay_steps must be positive, got {decay_steps}")
+            msg = f"decay_steps must be positive, got {decay_steps}"
+            raise ValueError(msg)
         self.start = start
         self.end = end
         self.decay_steps = decay_steps
