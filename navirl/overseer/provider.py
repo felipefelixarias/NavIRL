@@ -12,6 +12,10 @@ from urllib import error, request
 
 import cv2
 
+# Security constants
+MAX_JSON_SIZE = 10 * 1024 * 1024  # 10MB limit for JSON parsing
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB limit for image files
+
 
 class ProviderUnavailableError(RuntimeError):
     pass
@@ -19,6 +23,36 @@ class ProviderUnavailableError(RuntimeError):
 
 class ProviderCallError(RuntimeError):
     pass
+
+
+def _validate_file_path(path: str | Path) -> Path:
+    """Validate and resolve file path safely.
+
+    Args:
+        path: File path to validate
+
+    Returns:
+        Path: Resolved absolute path
+
+    Raises:
+        ProviderCallError: If path is unsafe or file doesn't exist
+    """
+    try:
+        resolved_path = Path(path).resolve()
+
+        # Check if file exists and is a regular file
+        if not resolved_path.exists():
+            raise ProviderCallError(f"File not found: {path}")
+        if not resolved_path.is_file():
+            raise ProviderCallError(f"Path is not a regular file: {path}")
+
+        # Check file size
+        if resolved_path.stat().st_size > MAX_FILE_SIZE:
+            raise ProviderCallError(f"File too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {path}")
+
+        return resolved_path
+    except OSError as e:
+        raise ProviderCallError(f"Error accessing file {path}: {e}") from e
 
 
 @dataclass(slots=True)
@@ -61,7 +95,13 @@ def _extract_json_text(raw: str) -> str:
 
 def _parse_json_object(raw: str) -> dict:
     try:
-        return json.loads(_extract_json_text(raw))
+        json_text = _extract_json_text(raw)
+
+        # Check JSON size before parsing to prevent DoS
+        if len(json_text.encode('utf-8')) > MAX_JSON_SIZE:
+            raise ProviderCallError(f"JSON response too large (>{MAX_JSON_SIZE/1024/1024:.1f}MB)")
+
+        return json.loads(json_text)
     except json.JSONDecodeError as exc:
         msg = f"Invalid JSON from VLM response: {exc}"
         raise ProviderCallError(msg) from exc
@@ -70,8 +110,14 @@ def _parse_json_object(raw: str) -> dict:
 def _encode_images_as_data_urls(image_paths: list[str], max_images: int) -> list[str]:
     out: list[str] = []
     for p in image_paths[:max_images]:
-        img = cv2.imread(str(p), cv2.IMREAD_COLOR)
-        if img is None:
+        try:
+            # Validate file path for security
+            safe_path = _validate_file_path(p)
+            img = cv2.imread(str(safe_path), cv2.IMREAD_COLOR)
+            if img is None:
+                continue
+        except ProviderCallError:
+            # Skip invalid/unsafe files silently
             continue
 
         h, w = img.shape[:2]
@@ -129,14 +175,30 @@ def _strict_json_schema_for_codex(schema: dict) -> dict:
 
 def _resolve_native_command(config: ProviderConfig) -> str:
     if config.native_cmd:
-        return str(config.native_cmd)
+        cmd = str(config.native_cmd).strip()
+    else:
+        provider = config.normalized_provider()
+        if provider == "codex":
+            cmd = os.getenv("NAVIRL_CODEX_CMD", "").strip()
+        elif provider == "claude":
+            cmd = os.getenv("NAVIRL_CLAUDE_CMD", "").strip()
+        else:
+            cmd = os.getenv("NAVIRL_VLM_NATIVE_CMD", "").strip()
 
-    provider = config.normalized_provider()
-    if provider == "codex":
-        return os.getenv("NAVIRL_CODEX_CMD", "").strip()
-    if provider == "claude":
-        return os.getenv("NAVIRL_CLAUDE_CMD", "").strip()
-    return os.getenv("NAVIRL_VLM_NATIVE_CMD", "").strip()
+    # Basic validation of command template
+    if not cmd:
+        return cmd
+
+    # Check for obviously dangerous patterns (basic security check)
+    dangerous_patterns = [';', '&&', '||', '|', '>', '<', '$', '`', '$(']
+    for pattern in dangerous_patterns:
+        if pattern in cmd and not (pattern == '>' and 'output_file' in cmd):
+            # Allow > only in output redirection context
+            raise ProviderCallError(
+                f"Potentially unsafe command template contains '{pattern}': {cmd}"
+            )
+
+    return cmd
 
 
 def _run_native_json(
