@@ -343,9 +343,7 @@ def run_tuning(
         keep_latest=3,
     )
 
-    run_tag = (
-        f"tune_{suite}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
-    )
+    run_tag = f"tune_{suite}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
     run_dir = out_root / run_tag
     run_dir.mkdir(parents=True, exist_ok=True)
 
