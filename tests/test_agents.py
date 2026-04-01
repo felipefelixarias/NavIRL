@@ -352,7 +352,7 @@ class TestMLP:
 
 class TestCNN:
     def test_forward(self):
-        # TODO: CNNExtractor doesn't exist, using NatureDQN as placeholder
+        # Test NatureDQN CNN architecture
         from navirl.agents.networks.cnn import NatureDQN
 
         net = NatureDQN(input_channels=3, input_height=84, input_width=84, output_dim=64)
@@ -365,7 +365,7 @@ class TestCNN:
 
 class TestRNN:
     def test_forward(self):
-        # TODO: RNNEncoder doesn't exist, using SequenceEncoder as replacement
+        # Test SequenceEncoder RNN architecture
         from navirl.agents.networks.rnn import SequenceEncoder
 
         net = SequenceEncoder(input_dim=8, hidden_size=16, num_layers=1)

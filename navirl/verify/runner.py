@@ -65,25 +65,45 @@ def _write_report(
 ) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Calculate summary statistics
+    total_scenarios = len(rows)
+    passed_scenarios = sum(1 for r in rows if r.overall_pass)
+    failed_scenarios = total_scenarios - passed_scenarios
+    success_rate = (passed_scenarios / total_scenarios * 100) if total_scenarios > 0 else 0
+
     lines = [
-        f"# NavIRL Verify Report ({suite})",
+        f"# 🔍 NavIRL Verification Report: {suite.title()} Suite",
         "",
-        f"- Pytest pass: `{pytest_ok}`",
-        "- Thresholds:",
-        f"  - judge_confidence_min: `{thresholds['judge_confidence_min']}`",
-        "  - teleport_thresh: scenario-specific (`evaluation.teleport_thresh`)",
-        "  - max_speed: scenario-specific (`evaluation.max_speed`)",
-        "  - max_accel: scenario-specific (`evaluation.max_accel`)",
+        f"## 📊 Summary",
         "",
-        "## Scenario Results",
+        f"- **Overall Status:** {'✅ PASS' if failed_scenarios == 0 and pytest_ok else '❌ FAIL'}",
+        f"- **Success Rate:** {success_rate:.1f}% ({passed_scenarios}/{total_scenarios} scenarios)",
+        f"- **Test Suite:** {'✅ Pass' if pytest_ok else '❌ Fail'}",
         "",
-        "| Scenario | Invariants | Judge | Confidence | Video | Overall | Notes | Bundle |",
+        f"## ⚙️ Configuration",
+        "",
+        f"- **Judge confidence threshold:** {thresholds['judge_confidence_min']}",
+        f"- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
+        f"- **Max speed:** scenario-specific (`evaluation.max_speed`)",
+        f"- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
+        "",
+        "## 📋 Scenario Results",
+        "",
+        "| Scenario | 📊 Invariants | 👁️ Judge | 🎯 Confidence | 🎥 Video | ✅ Overall | 📝 Notes | 📁 Bundle |",
         "|---|---:|---:|---:|---:|---:|---|---|",
     ]
 
     for row in rows:
+        # Format status with visual indicators
+        invariants_status = "✅ Pass" if row.invariants_pass else "❌ Fail"
+        judge_status_icon = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}.get(row.judge_status, "❓")
+        judge_status_text = f"{judge_status_icon} {row.judge_status.replace('_', ' ').title()}"
+        video_status = ("✅ Pass" if row.video_check_pass else "❌ Fail") if row.video_check_pass is not None else "➖"
+        overall_status = "✅ Pass" if row.overall_pass else "❌ Fail"
+        notes_display = (row.notes[:60] + "..." if len(row.notes) > 60 else row.notes) if row.notes else "➖"
+
         lines.append(
-            f"| {row.scenario_id} | {row.invariants_pass} | {row.judge_status} | {row.judge_confidence:.2f} | {row.video_check_pass} | {row.overall_pass} | {row.notes or '-'} | `{row.bundle_dir}` |"
+            f"| {row.scenario_id} | {invariants_status} | {judge_status_text} | {row.judge_confidence:.2f} | {video_status} | {overall_status} | {notes_display} | `{Path(row.bundle_dir).name}` |"
         )
 
     lines.extend(["", "## Failing Details", ""])
