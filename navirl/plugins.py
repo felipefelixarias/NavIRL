@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from navirl.backends.grid2d import Grid2DBackend
 from navirl.core.plugin_validation import PluginMetadata
 from navirl.core.registry import (
@@ -40,8 +42,8 @@ def register_default_plugins() -> None:
         param_schema={
             "scene_cfg": dict,
             "horizon_cfg": dict,
-            "base_dir": str,
-        }
+            "base_dir": (str, Path),
+        },
     )
     register_backend(
         "grid2d",
@@ -61,8 +63,15 @@ def register_default_plugins() -> None:
         description="ORCA (Optimal Reciprocal Collision Avoidance) human behavior controller",
         api_version="1.0.0",
         required_params=[],
-        optional_params=["goal_tolerance", "waypoint_tolerance", "lookahead", "min_speed",
-                        "slowdown_dist", "velocity_smoothing", "stop_speed"],
+        optional_params=[
+            "goal_tolerance",
+            "waypoint_tolerance",
+            "lookahead",
+            "min_speed",
+            "slowdown_dist",
+            "velocity_smoothing",
+            "stop_speed",
+        ],
         param_schema={
             "goal_tolerance": float,
             "waypoint_tolerance": float,
@@ -71,7 +80,7 @@ def register_default_plugins() -> None:
             "slowdown_dist": float,
             "velocity_smoothing": float,
             "stop_speed": float,
-        }
+        },
     )
     register_human_controller(
         "orca",
@@ -88,13 +97,48 @@ def register_default_plugins() -> None:
         description="Enhanced ORCA with additional social behaviors and randomization",
         api_version="1.0.0",
         required_params=[],
-        optional_params=["goal_tolerance", "social_force_strength", "noise_level", "seed"],
+        optional_params=[
+            "goal_tolerance",
+            "waypoint_tolerance",
+            "lookahead",
+            "min_speed",
+            "slowdown_dist",
+            "velocity_smoothing",
+            "stop_speed",
+            "doorway_token",
+            "anisotropic_space",
+            "speed_profile",
+            "group_cohesion",
+            "personal_space",
+            "accel_limit",
+            "hesitation_prob",
+            "hesitation_scale",
+            "group_weight",
+            "doorway",
+            "groups",
+            "seed",
+        ],
         param_schema={
             "goal_tolerance": float,
-            "social_force_strength": float,
-            "noise_level": float,
+            "waypoint_tolerance": float,
+            "lookahead": int,
+            "min_speed": float,
+            "slowdown_dist": float,
+            "velocity_smoothing": float,
+            "stop_speed": float,
+            "doorway_token": bool,
+            "anisotropic_space": bool,
+            "speed_profile": bool,
+            "group_cohesion": bool,
+            "personal_space": float,
+            "accel_limit": float,
+            "hesitation_prob": float,
+            "hesitation_scale": float,
+            "group_weight": float,
+            "doorway": dict,
+            "groups": list,
             "seed": int,
-        }
+        },
     )
     register_human_controller(
         "orca_plus",
@@ -116,7 +160,7 @@ def register_default_plugins() -> None:
             "max_speed": float,
             "waypoints": dict,
             "loop_behavior": bool,
-        }
+        },
     )
     register_human_controller(
         "scripted",
@@ -138,7 +182,7 @@ def register_default_plugins() -> None:
             "trajectory_file": str,
             "time_offset": float,
             "interpolation_method": str,
-        }
+        },
     )
     register_human_controller(
         "replay",
@@ -163,15 +207,24 @@ def register_default_plugins() -> None:
         description="A* pathfinding robot controller with dynamic replanning",
         api_version="1.0.0",
         required_params=[],
-        optional_params=["replan_interval", "goal_tolerance", "velocity_smoothing",
-                        "max_speed", "social_comfort_distance"],
+        optional_params=[
+            "replan_interval",
+            "goal_tolerance",
+            "velocity_smoothing",
+            "max_speed",
+            "slowdown_dist",
+            "target_lookahead",
+            "stop_speed",
+        ],
         param_schema={
             "replan_interval": int,
             "goal_tolerance": float,
             "velocity_smoothing": float,
             "max_speed": float,
-            "social_comfort_distance": float,
-        }
+            "slowdown_dist": float,
+            "target_lookahead": int,
+            "stop_speed": float,
+        },
     )
     register_robot_controller(
         "baseline_astar",
@@ -188,10 +241,19 @@ def register_default_plugins() -> None:
         api_version="1.0.0",
         required_params=[],
         optional_params=[
-            "goal_tolerance", "replan_interval", "max_speed", "slowdown_dist",
-            "target_lookahead", "velocity_smoothing", "social_comfort_distance",
-            "personal_space_distance", "social_cost_weight", "group_detection_radius",
-            "avoidance_strength", "prediction_horizon", "velocity_history_size"
+            "goal_tolerance",
+            "replan_interval",
+            "max_speed",
+            "slowdown_dist",
+            "target_lookahead",
+            "velocity_smoothing",
+            "social_comfort_distance",
+            "personal_space_distance",
+            "social_cost_weight",
+            "group_detection_radius",
+            "avoidance_strength",
+            "prediction_horizon",
+            "velocity_history_size",
         ],
         param_schema={
             "goal_tolerance": float,
@@ -207,7 +269,7 @@ def register_default_plugins() -> None:
             "avoidance_strength": float,
             "prediction_horizon": float,
             "velocity_history_size": int,
-        }
+        },
     )
     register_robot_controller(
         "social_astar",
@@ -224,10 +286,18 @@ def register_default_plugins() -> None:
         api_version="1.0.0",
         required_params=[],
         optional_params=[
-            "goal_tolerance", "replan_interval", "max_speed", "slowdown_dist",
-            "velocity_smoothing", "num_samples", "connection_radius",
-            "max_connections", "roadmap_bounds", "dynamic_resampling",
-            "obstacle_clearance", "roadmap_rebuild_interval"
+            "goal_tolerance",
+            "replan_interval",
+            "max_speed",
+            "slowdown_dist",
+            "velocity_smoothing",
+            "num_samples",
+            "connection_radius",
+            "max_connections",
+            "roadmap_bounds",
+            "dynamic_resampling",
+            "obstacle_clearance",
+            "roadmap_rebuild_interval",
         ],
         param_schema={
             "goal_tolerance": float,
@@ -242,7 +312,7 @@ def register_default_plugins() -> None:
             "dynamic_resampling": bool,
             "obstacle_clearance": float,
             "roadmap_rebuild_interval": int,
-        }
+        },
     )
     register_robot_controller(
         "prm",
@@ -259,11 +329,20 @@ def register_default_plugins() -> None:
         api_version="1.0.0",
         required_params=[],
         optional_params=[
-            "goal_tolerance", "max_speed", "velocity_smoothing", "attractive_gain",
-            "repulsive_gain", "repulsive_range", "human_repulsive_gain",
-            "human_repulsive_range", "social_comfort_gain", "velocity_obstacle_gain",
-            "prediction_horizon", "field_saturation_distance", "oscillation_damping",
-            "force_limit"
+            "goal_tolerance",
+            "max_speed",
+            "velocity_smoothing",
+            "attractive_gain",
+            "repulsive_gain",
+            "repulsive_range",
+            "human_repulsive_gain",
+            "human_repulsive_range",
+            "social_comfort_gain",
+            "velocity_obstacle_gain",
+            "prediction_horizon",
+            "field_saturation_distance",
+            "oscillation_damping",
+            "force_limit",
         ],
         param_schema={
             "goal_tolerance": float,
@@ -280,7 +359,7 @@ def register_default_plugins() -> None:
             "field_saturation_distance": float,
             "oscillation_damping": float,
             "force_limit": float,
-        }
+        },
     )
     register_robot_controller(
         "potential_fields",

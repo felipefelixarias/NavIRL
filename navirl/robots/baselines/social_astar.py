@@ -65,13 +65,13 @@ class SocialAwareAStarController(RobotController):
         self._social_plan(start)
 
     def _predict_human_position(
-        self,
-        human_id: int,
-        current_pos: tuple[float, float],
-        dt: float
+        self, human_id: int, current_pos: tuple[float, float], dt: float
     ) -> tuple[float, float]:
         """Predict where a human will be based on velocity history."""
-        if human_id not in self.human_velocity_history or len(self.human_velocity_history[human_id]) == 0:
+        if (
+            human_id not in self.human_velocity_history
+            or len(self.human_velocity_history[human_id]) == 0
+        ):
             return current_pos
 
         # Average recent velocities for prediction
@@ -86,9 +86,7 @@ class SocialAwareAStarController(RobotController):
         return (pred_x, pred_y)
 
     def _calculate_social_cost(
-        self,
-        position: tuple[float, float],
-        states: dict[int, AgentState]
+        self, position: tuple[float, float], states: dict[int, AgentState]
     ) -> float:
         """Calculate social cost for a position considering all humans."""
         total_cost = 0.0
@@ -102,24 +100,30 @@ class SocialAwareAStarController(RobotController):
 
             # Personal space violation cost
             if distance < self.personal_space_distance:
-                personal_cost = (self.personal_space_distance - distance) / self.personal_space_distance
+                personal_cost = (
+                    self.personal_space_distance - distance
+                ) / self.personal_space_distance
                 total_cost += personal_cost * 10.0  # High penalty for personal space
 
             # Social comfort cost
             elif distance < self.social_comfort_distance:
-                comfort_cost = (self.social_comfort_distance - distance) / self.social_comfort_distance
+                comfort_cost = (
+                    self.social_comfort_distance - distance
+                ) / self.social_comfort_distance
                 total_cost += comfort_cost * self.social_cost_weight
 
             # Predictive cost - consider where human will be
             predicted_pos = self._predict_human_position(
-                human_id,
-                human_pos,
-                self.prediction_horizon
+                human_id, human_pos, self.prediction_horizon
             )
-            pred_distance = math.hypot(position[0] - predicted_pos[0], position[1] - predicted_pos[1])
+            pred_distance = math.hypot(
+                position[0] - predicted_pos[0], position[1] - predicted_pos[1]
+            )
 
             if pred_distance < self.social_comfort_distance:
-                pred_cost = (self.social_comfort_distance - pred_distance) / self.social_comfort_distance
+                pred_cost = (
+                    self.social_comfort_distance - pred_distance
+                ) / self.social_comfort_distance
                 total_cost += pred_cost * self.social_cost_weight * 0.5  # Future avoidance
 
         return total_cost
@@ -170,9 +174,7 @@ class SocialAwareAStarController(RobotController):
         self.path_idx = 0
 
     def _calculate_social_force(
-        self,
-        robot_pos: tuple[float, float],
-        states: dict[int, AgentState]
+        self, robot_pos: tuple[float, float], states: dict[int, AgentState]
     ) -> tuple[float, float]:
         """Calculate social forces affecting the robot."""
         total_fx, total_fy = 0.0, 0.0
@@ -191,9 +193,11 @@ class SocialAwareAStarController(RobotController):
 
             # Repulsive force that increases as we get closer
             if distance < self.social_comfort_distance:
-                force_magnitude = self.avoidance_strength * (
-                    self.social_comfort_distance - distance
-                ) / self.social_comfort_distance
+                force_magnitude = (
+                    self.avoidance_strength
+                    * (self.social_comfort_distance - distance)
+                    / self.social_comfort_distance
+                )
 
                 # Normalize direction
                 unit_dx = dx / distance
@@ -244,11 +248,15 @@ class SocialAwareAStarController(RobotController):
         if step % max(1, self.replan_interval) == 0:
             self._social_plan(robot_pos)
             groups = self._detect_human_groups(states)
-            emit_event("robot_replan", self.robot_id, {
-                "path_len": len(self.path),
-                "human_groups_detected": len(groups),
-                "social_cost": self._calculate_social_cost(robot_pos, states)
-            })
+            emit_event(
+                "robot_replan",
+                self.robot_id,
+                {
+                    "path_len": len(self.path),
+                    "human_groups_detected": len(groups),
+                    "social_cost": self._calculate_social_cost(robot_pos, states),
+                },
+            )
 
         # Get navigation target
         target = self._current_target()

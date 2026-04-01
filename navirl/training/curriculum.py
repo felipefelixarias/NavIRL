@@ -340,10 +340,7 @@ class CurriculumManager:
         This dict can be passed directly to an environment constructor or
         ``set_difficulty`` method to configure the next episode.
         """
-        return {
-            dim.name: dim.current_value  # type: ignore[dict-item]
-            for dim in self.dimensions
-        }
+        return {dim.name: dim.current_value for dim in self.dimensions}  # type: ignore[dict-item]
 
 
 __all__ = [

@@ -87,7 +87,7 @@ class PotentialFieldsController(RobotController):
         robot_pos: tuple[float, float],
         obstacle_pos: tuple[float, float],
         gain: float,
-        range_limit: float
+        range_limit: float,
     ) -> tuple[float, float]:
         """Calculate repulsive force from a static obstacle."""
         dx = robot_pos[0] - obstacle_pos[0]
@@ -105,9 +105,7 @@ class PotentialFieldsController(RobotController):
         return (fx, fy)
 
     def _calculate_human_repulsive_force(
-        self,
-        robot_pos: tuple[float, float],
-        human_state: AgentState
+        self, robot_pos: tuple[float, float], human_state: AgentState
     ) -> tuple[float, float]:
         """Calculate enhanced repulsive force from humans considering velocity."""
         human_pos = (human_state.x, human_state.y)
@@ -115,10 +113,7 @@ class PotentialFieldsController(RobotController):
 
         # Static repulsive force
         static_force = self._calculate_repulsive_force_static(
-            robot_pos,
-            human_pos,
-            self.human_repulsive_gain,
-            self.human_repulsive_range
+            robot_pos, human_pos, self.human_repulsive_gain, self.human_repulsive_range
         )
 
         # Predict future human position
@@ -128,18 +123,12 @@ class PotentialFieldsController(RobotController):
 
         # Velocity-based repulsive force from predicted position
         velocity_force = self._calculate_repulsive_force_static(
-            robot_pos,
-            predicted_pos,
-            self.velocity_obstacle_gain,
-            self.human_repulsive_range * 1.5
+            robot_pos, predicted_pos, self.velocity_obstacle_gain, self.human_repulsive_range * 1.5
         )
 
         # Social comfort force (gentler, longer range)
         social_force = self._calculate_repulsive_force_static(
-            robot_pos,
-            human_pos,
-            self.social_comfort_gain,
-            self.human_repulsive_range * 2.0
+            robot_pos, human_pos, self.social_comfort_gain, self.human_repulsive_range * 2.0
         )
 
         # Combine forces
@@ -166,11 +155,11 @@ class PotentialFieldsController(RobotController):
 
             # Check if this position is an obstacle
             try:
-                if hasattr(self.backend, 'is_valid_position'):
+                if hasattr(self.backend, "is_valid_position"):
                     if not self.backend.is_valid_position(check_x, check_y):
                         obstacles.append((check_x, check_y))
-                elif hasattr(self.backend, 'environment'):
-                    if hasattr(self.backend.environment, 'is_valid'):
+                elif hasattr(self.backend, "environment"):
+                    if hasattr(self.backend.environment, "is_valid"):
                         if not self.backend.environment.is_valid(check_x, check_y):
                             obstacles.append((check_x, check_y))
             except Exception:
@@ -199,8 +188,8 @@ class PotentialFieldsController(RobotController):
         # Check for alternating directions
         oscillating = True
         for i in range(1, len(directions) - 1):
-            prev_diff = abs(directions[i] - directions[i-1])
-            next_diff = abs(directions[i+1] - directions[i])
+            prev_diff = abs(directions[i] - directions[i - 1])
+            next_diff = abs(directions[i + 1] - directions[i])
 
             # Allow for some tolerance in angle changes
             if prev_diff < math.pi / 4 and next_diff < math.pi / 4:
@@ -221,6 +210,7 @@ class PotentialFieldsController(RobotController):
 
             # Add small random perturbation to break deadlock
             import random
+
             perturbation_strength = 0.1
             fx += (random.random() - 0.5) * perturbation_strength
             fy += (random.random() - 0.5) * perturbation_strength
@@ -254,14 +244,11 @@ class PotentialFieldsController(RobotController):
 
         for obstacle_pos in nearby_obstacles:
             obs_force = self._calculate_repulsive_force_static(
-                robot_pos,
-                obstacle_pos,
-                self.repulsive_gain,
-                self.repulsive_range
+                robot_pos, obstacle_pos, self.repulsive_gain, self.repulsive_range
             )
             static_repulsive_force = (
                 static_repulsive_force[0] + obs_force[0],
-                static_repulsive_force[1] + obs_force[1]
+                static_repulsive_force[1] + obs_force[1],
             )
 
         # Calculate repulsive forces from humans
@@ -273,7 +260,7 @@ class PotentialFieldsController(RobotController):
             human_force = self._calculate_human_repulsive_force(robot_pos, human_state)
             human_repulsive_force = (
                 human_repulsive_force[0] + human_force[0],
-                human_repulsive_force[1] + human_force[1]
+                human_repulsive_force[1] + human_force[1],
             )
 
         # Combine all forces
@@ -323,14 +310,18 @@ class PotentialFieldsController(RobotController):
             behavior = "AVOID_HUMANS"
 
         # Emit debugging info
-        emit_event("potential_fields_debug", self.robot_id, {
-            "attractive_force": attractive_force,
-            "static_repulsive": static_repulsive_force,
-            "human_repulsive": human_repulsive_force,
-            "total_force": (total_fx, total_fy),
-            "nearby_obstacles": len(nearby_obstacles),
-            "oscillating": self._detect_oscillation()
-        })
+        emit_event(
+            "potential_fields_debug",
+            self.robot_id,
+            {
+                "attractive_force": attractive_force,
+                "static_repulsive": static_repulsive_force,
+                "human_repulsive": human_repulsive_force,
+                "total_force": (total_fx, total_fy),
+                "nearby_obstacles": len(nearby_obstacles),
+                "oscillating": self._detect_oscillation(),
+            },
+        )
 
         return Action(
             pref_vx=final_vx,

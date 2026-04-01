@@ -1,168 +1,174 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://navirl.dev/schema/scenario-v1.json",
-  "title": "NavIRL ScenarioSpec v1",
-  "type": "object",
-  "required": ["id", "scene", "seed", "horizon", "humans", "robot"],
-  "properties": {
-    "id": {"type": "string", "minLength": 1},
-    "description": {"type": "string"},
-    "scene": {
-      "type": "object",
-      "required": ["backend", "map"],
-      "properties": {
-        "backend": {"type": "string", "enum": ["grid2d"]},
-        "id": {"type": "string"},
-        "map": {
-          "type": "object",
-          "required": ["source"],
-          "properties": {
-            "source": {"type": "string", "enum": ["builtin", "path"]},
-            "id": {"type": "string"},
-            "path": {"type": "string"},
-            "pixels_per_meter": {"type": "number", "exclusiveMinimum": 0},
-            "meters_per_pixel": {"type": "number", "exclusiveMinimum": 0},
-            "downsample": {"type": "number", "exclusiveMinimum": 0}
-          },
-          "additionalProperties": true
-        },
-        "orca": {"type": "object"}
-      },
-      "additionalProperties": true
-    },
-    "seed": {"type": "integer"},
-    "horizon": {
-      "type": "object",
-      "required": ["steps", "dt"],
-      "properties": {
-        "steps": {"type": "integer", "minimum": 1},
-        "dt": {"type": "number", "exclusiveMinimum": 0}
-      },
-      "additionalProperties": true
-    },
-    "humans": {
-      "type": "object",
-      "required": ["controller", "count"],
-      "properties": {
-        "controller": {
-          "type": "object",
-          "required": ["type"],
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": ["orca", "orca_plus", "scripted", "replay", "policy"]
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://navirl.dev/schema/scenario-v1.json",
+    "title": "NavIRL ScenarioSpec v1",
+    "type": "object",
+    "required": ["id", "scene", "seed", "horizon", "humans", "robot"],
+    "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "scene": {
+            "type": "object",
+            "required": ["backend", "map"],
+            "properties": {
+                "backend": {"type": "string", "enum": ["grid2d"]},
+                "id": {"type": "string"},
+                "map": {
+                    "type": "object",
+                    "required": ["source"],
+                    "properties": {
+                        "source": {"type": "string", "enum": ["builtin", "path"]},
+                        "id": {"type": "string"},
+                        "path": {"type": "string"},
+                        "pixels_per_meter": {"type": "number", "exclusiveMinimum": 0},
+                        "meters_per_pixel": {"type": "number", "exclusiveMinimum": 0},
+                        "downsample": {"type": "number", "exclusiveMinimum": 0},
+                    },
+                    "additionalProperties": true,
+                },
+                "orca": {"type": "object"},
             },
-            "params": {"type": "object"}
-          },
-          "additionalProperties": true
+            "additionalProperties": true,
         },
-        "count": {"type": "integer", "minimum": 0},
-        "starts": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "prefixItems": [{"type": "number"}, {"type": "number"}],
-            "minItems": 2,
-            "maxItems": 2
-          }
+        "seed": {"type": "integer"},
+        "horizon": {
+            "type": "object",
+            "required": ["steps", "dt"],
+            "properties": {
+                "steps": {"type": "integer", "minimum": 1},
+                "dt": {"type": "number", "exclusiveMinimum": 0},
+            },
+            "additionalProperties": true,
         },
-        "goals": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "prefixItems": [{"type": "number"}, {"type": "number"}],
-            "minItems": 2,
-            "maxItems": 2
-          }
+        "humans": {
+            "type": "object",
+            "required": ["controller", "count"],
+            "properties": {
+                "controller": {
+                    "type": "object",
+                    "required": ["type"],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": ["orca", "orca_plus", "scripted", "replay", "policy"],
+                        },
+                        "params": {"type": "object"},
+                    },
+                    "additionalProperties": true,
+                },
+                "count": {"type": "integer", "minimum": 0},
+                "starts": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "prefixItems": [{"type": "number"}, {"type": "number"}],
+                        "minItems": 2,
+                        "maxItems": 2,
+                    },
+                },
+                "goals": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "prefixItems": [{"type": "number"}, {"type": "number"}],
+                        "minItems": 2,
+                        "maxItems": 2,
+                    },
+                },
+                "radius": {"type": "number", "exclusiveMinimum": 0},
+                "max_speed": {"type": "number", "exclusiveMinimum": 0},
+                "groups": {
+                    "type": "array",
+                    "items": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+                },
+            },
+            "additionalProperties": true,
         },
-        "radius": {"type": "number", "exclusiveMinimum": 0},
-        "max_speed": {"type": "number", "exclusiveMinimum": 0},
-        "groups": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "items": {"type": "integer", "minimum": 0}
-          }
-        }
-      },
-      "additionalProperties": true
+        "robot": {
+            "type": "object",
+            "required": ["controller", "start", "goal"],
+            "properties": {
+                "controller": {
+                    "type": "object",
+                    "required": ["type"],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "baseline_astar",
+                                "user",
+                                "social_astar",
+                                "prm",
+                                "potential_fields",
+                            ],
+                        },
+                        "params": {"type": "object"},
+                    },
+                    "additionalProperties": true,
+                },
+                "start": {
+                    "type": "array",
+                    "prefixItems": [{"type": "number"}, {"type": "number"}],
+                    "minItems": 2,
+                    "maxItems": 2,
+                },
+                "goal": {
+                    "type": "array",
+                    "prefixItems": [{"type": "number"}, {"type": "number"}],
+                    "minItems": 2,
+                    "maxItems": 2,
+                },
+                "radius": {"type": "number", "exclusiveMinimum": 0},
+                "max_speed": {"type": "number", "exclusiveMinimum": 0},
+            },
+            "additionalProperties": true,
+        },
+        "routine": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "steps": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": true,
+        },
+        "evaluation": {
+            "type": "object",
+            "properties": {
+                "intrusion_delta": {"type": "number", "exclusiveMinimum": 0},
+                "max_speed": {"type": "number", "exclusiveMinimum": 0},
+                "max_accel": {"type": "number", "exclusiveMinimum": 0},
+                "teleport_thresh": {"type": "number", "exclusiveMinimum": 0},
+                "deadlock_seconds": {"type": "number", "exclusiveMinimum": 0},
+                "deadlock_speed_thresh": {"type": "number", "exclusiveMinimum": 0},
+                "min_robot_progress": {"type": "number", "minimum": 0},
+                "wall_clearance_buffer": {"type": "number", "minimum": 0},
+                "enforce_wall_clearance_buffer": {"type": "boolean"},
+                "near_wall_buffer": {"type": "number", "minimum": 0},
+                "max_wall_proximity_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+                "max_heading_flip_rate": {"type": "number", "minimum": 0, "maximum": 1},
+                "jitter_speed_thresh": {"type": "number", "exclusiveMinimum": 0},
+                "max_agent_stop_seconds": {"type": "number", "exclusiveMinimum": 0},
+                "stop_speed_thresh": {"type": "number", "exclusiveMinimum": 0},
+                "resample_on_deadlock": {"type": "boolean"},
+                "deadlock_resample_attempts": {"type": "integer", "minimum": 0},
+                "fail_on_deadlock": {"type": "boolean"},
+                "auto_tune_traversability_offset": {"type": "boolean"},
+                "traversability_offset_step": {"type": "number", "minimum": 0},
+                "traversability_offset_max": {"type": "number", "minimum": 0},
+                "expected_high_interaction": {"type": "boolean"},
+                "expected_wall_penetration": {"type": "boolean"},
+            },
+            "additionalProperties": true,
+        },
+        "render": {
+            "type": "object",
+            "properties": {
+                "enabled": {"type": "boolean"},
+                "fps": {"type": "integer", "minimum": 1},
+                "video": {"type": "boolean"},
+            },
+            "additionalProperties": true,
+        },
     },
-    "robot": {
-      "type": "object",
-      "required": ["controller", "start", "goal"],
-      "properties": {
-        "controller": {
-          "type": "object",
-          "required": ["type"],
-          "properties": {
-            "type": {"type": "string", "enum": ["baseline_astar", "user"]},
-            "params": {"type": "object"}
-          },
-          "additionalProperties": true
-        },
-        "start": {
-          "type": "array",
-          "prefixItems": [{"type": "number"}, {"type": "number"}],
-          "minItems": 2,
-          "maxItems": 2
-        },
-        "goal": {
-          "type": "array",
-          "prefixItems": [{"type": "number"}, {"type": "number"}],
-          "minItems": 2,
-          "maxItems": 2
-        },
-        "radius": {"type": "number", "exclusiveMinimum": 0},
-        "max_speed": {"type": "number", "exclusiveMinimum": 0}
-      },
-      "additionalProperties": true
-    },
-    "routine": {
-      "type": "object",
-      "properties": {
-        "name": {"type": "string"},
-        "steps": {"type": "array", "items": {"type": "string"}}
-      },
-      "additionalProperties": true
-    },
-    "evaluation": {
-      "type": "object",
-      "properties": {
-        "intrusion_delta": {"type": "number", "exclusiveMinimum": 0},
-        "max_speed": {"type": "number", "exclusiveMinimum": 0},
-        "max_accel": {"type": "number", "exclusiveMinimum": 0},
-        "teleport_thresh": {"type": "number", "exclusiveMinimum": 0},
-        "deadlock_seconds": {"type": "number", "exclusiveMinimum": 0},
-        "deadlock_speed_thresh": {"type": "number", "exclusiveMinimum": 0},
-        "min_robot_progress": {"type": "number", "minimum": 0},
-        "wall_clearance_buffer": {"type": "number", "minimum": 0},
-        "enforce_wall_clearance_buffer": {"type": "boolean"},
-        "near_wall_buffer": {"type": "number", "minimum": 0},
-        "max_wall_proximity_fraction": {"type": "number", "minimum": 0, "maximum": 1},
-        "max_heading_flip_rate": {"type": "number", "minimum": 0, "maximum": 1},
-        "jitter_speed_thresh": {"type": "number", "exclusiveMinimum": 0},
-        "max_agent_stop_seconds": {"type": "number", "exclusiveMinimum": 0},
-        "stop_speed_thresh": {"type": "number", "exclusiveMinimum": 0},
-        "resample_on_deadlock": {"type": "boolean"},
-        "deadlock_resample_attempts": {"type": "integer", "minimum": 0},
-        "fail_on_deadlock": {"type": "boolean"},
-        "auto_tune_traversability_offset": {"type": "boolean"},
-        "traversability_offset_step": {"type": "number", "minimum": 0},
-        "traversability_offset_max": {"type": "number", "minimum": 0},
-        "expected_high_interaction": {"type": "boolean"},
-        "expected_wall_penetration": {"type": "boolean"}
-      },
-      "additionalProperties": true
-    },
-    "render": {
-      "type": "object",
-      "properties": {
-        "enabled": {"type": "boolean"},
-        "fps": {"type": "integer", "minimum": 1},
-        "video": {"type": "boolean"}
-      },
-      "additionalProperties": true
-    }
-  },
-  "additionalProperties": true
+    "additionalProperties": true,
 }

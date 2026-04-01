@@ -25,7 +25,7 @@ def register_backend(
     name: str,
     factory: Callable[..., Any],
     metadata: PluginMetadata | None = None,
-    validate_security: bool = True
+    validate_security: bool = True,
 ) -> None:
     """
     Register a backend plugin with enhanced validation.
@@ -42,7 +42,7 @@ def register_backend(
         _PLUGIN_METADATA[f"backend:{name}"] = metadata
 
         # Security check if enabled
-        if validate_security and hasattr(factory, '__code__'):
+        if validate_security and hasattr(factory, "__code__"):
             warnings = check_plugin_security(factory)
             if warnings:
                 _SECURITY_WARNINGS[f"backend:{name}"] = warnings
@@ -71,9 +71,7 @@ def get_backend(name: str, show_warnings: bool = True) -> Callable[..., Any]:
         suggestion = _suggest_similar_name(name, available)
         suggestion_text = f" (Did you mean '{suggestion}'?)" if suggestion else ""
         raise KeyError(
-            f"Unknown backend '{name}'. "
-            f"Available backends: {available}"
-            f"{suggestion_text}"
+            f"Unknown backend '{name}'. " f"Available backends: {available}" f"{suggestion_text}"
         )
 
     # Show security warnings if any
@@ -89,7 +87,7 @@ def register_human_controller(
     factory: Callable[..., Any],
     metadata: PluginMetadata | None = None,
     interface_class: type | None = None,
-    validate_security: bool = True
+    validate_security: bool = True,
 ) -> None:
     """
     Register a human controller plugin with enhanced validation.
@@ -149,7 +147,9 @@ def get_human_controller(name: str, show_warnings: bool = True) -> Callable[...,
     # Show security warnings if any
     warning_key = f"human_controller:{name}"
     if show_warnings and warning_key in _SECURITY_WARNINGS:
-        logger.warning(f"Human controller '{name}' security warnings: {_SECURITY_WARNINGS[warning_key]}")
+        logger.warning(
+            f"Human controller '{name}' security warnings: {_SECURITY_WARNINGS[warning_key]}"
+        )
 
     return _HUMAN_CONTROLLERS[name]
 
@@ -159,7 +159,7 @@ def register_robot_controller(
     factory: Callable[..., Any],
     metadata: PluginMetadata | None = None,
     interface_class: type | None = None,
-    validate_security: bool = True
+    validate_security: bool = True,
 ) -> None:
     """
     Register a robot controller plugin with enhanced validation.
@@ -218,7 +218,9 @@ def get_robot_controller(name: str, show_warnings: bool = True) -> Callable[...,
     # Show security warnings if any
     warning_key = f"robot_controller:{name}"
     if show_warnings and warning_key in _SECURITY_WARNINGS:
-        logger.warning(f"Robot controller '{name}' security warnings: {_SECURITY_WARNINGS[warning_key]}")
+        logger.warning(
+            f"Robot controller '{name}' security warnings: {_SECURITY_WARNINGS[warning_key]}"
+        )
 
     return _ROBOT_CONTROLLERS[name]
 

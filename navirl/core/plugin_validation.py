@@ -35,11 +35,13 @@ class PluginMetadata:
 
 class PluginValidationError(Exception):
     """Exception raised when plugin validation fails."""
+
     pass
 
 
 class PluginSecurityError(Exception):
     """Exception raised when plugin poses security risks."""
+
     pass
 
 
@@ -56,7 +58,7 @@ class ValidatedPlugin(Protocol):
 def validate_plugin_config(
     cfg: dict[str, Any],
     metadata: PluginMetadata,
-    strict: bool = True
+    strict: bool = True,
 ) -> dict[str, Any]:
     """
     Validate plugin configuration against metadata schema.
@@ -75,7 +77,7 @@ def validate_plugin_config(
     if cfg is None:
         cfg = {}
 
-    validated_cfg = {}
+    validated_cfg = dict(cfg)
 
     # Check required parameters
     for param in metadata.required_params:
@@ -83,22 +85,17 @@ def validate_plugin_config(
             raise PluginValidationError(
                 f"Plugin '{metadata.name}' missing required parameter: '{param}'"
             )
-        validated_cfg[param] = cfg[param]
-
-    # Process optional parameters
-    for param in metadata.optional_params:
-        if param in cfg:
-            validated_cfg[param] = cfg[param]
-
     # Validate parameter types if schema provided
-    for param, value in validated_cfg.items():
-        if param in metadata.param_schema:
-            expected_type = metadata.param_schema[param]
-            if not _validate_type(value, expected_type):
-                raise PluginValidationError(
-                    f"Plugin '{metadata.name}' parameter '{param}' has invalid type. "
-                    f"Expected: {expected_type}, got: {type(value)}"
-                )
+    for param in metadata.required_params + metadata.optional_params:
+        if param not in cfg or param not in metadata.param_schema:
+            continue
+        value = cfg[param]
+        expected_type = metadata.param_schema[param]
+        if not _validate_type(value, expected_type):
+            raise PluginValidationError(
+                f"Plugin '{metadata.name}' parameter '{param}' has invalid type. "
+                f"Expected: {expected_type}, got: {type(value)}"
+            )
 
     # Check for unknown parameters in strict mode
     if strict:
@@ -118,21 +115,21 @@ def _validate_type(value: Any, expected_type: type) -> bool:
     if expected_type == Any:
         return True
 
-    if hasattr(expected_type, '__origin__'):
+    if hasattr(expected_type, "__origin__"):
         # Handle generic types like Union, Optional, etc.
         if expected_type.__origin__ is Union:
             return any(_validate_type(value, arg) for arg in expected_type.__args__)
         if expected_type.__origin__ is list:
             return isinstance(value, list) and (
-                not expected_type.__args__ or
-                all(_validate_type(item, expected_type.__args__[0]) for item in value)
+                not expected_type.__args__
+                or all(_validate_type(item, expected_type.__args__[0]) for item in value)
             )
         if expected_type.__origin__ is dict:
             return isinstance(value, dict) and (
-                not expected_type.__args__ or
-                all(
-                    _validate_type(k, expected_type.__args__[0]) and
-                    _validate_type(v, expected_type.__args__[1])
+                not expected_type.__args__
+                or all(
+                    _validate_type(k, expected_type.__args__[0])
+                    and _validate_type(v, expected_type.__args__[1])
                     for k, v in value.items()
                 )
             )
@@ -151,17 +148,15 @@ def validate_plugin_interface(plugin_class: type, expected_interface: type) -> N
     Raises:
         PluginValidationError: If interface validation fails
     """
-    if not hasattr(plugin_class, '__plugin_metadata__'):
-        raise PluginValidationError(
-            f"Plugin {plugin_class.__name__} missing __plugin_metadata__"
-        )
+    if not hasattr(plugin_class, "__plugin_metadata__"):
+        raise PluginValidationError(f"Plugin {plugin_class.__name__} missing __plugin_metadata__")
 
     # Check for required methods
     required_methods = [
-        name for name, method in inspect.getmembers(expected_interface)
-        if inspect.isabstract(method) or (
-            hasattr(method, '__isabstractmethod__') and method.__isabstractmethod__
-        )
+        name
+        for name, method in inspect.getmembers(expected_interface)
+        if inspect.isabstract(method)
+        or (hasattr(method, "__isabstractmethod__") and method.__isabstractmethod__)
     ]
 
     missing_methods = []
@@ -180,7 +175,7 @@ def validate_plugin_interface(plugin_class: type, expected_interface: type) -> N
 def sanitize_plugin_factory(
     factory: Callable,
     metadata: PluginMetadata,
-    interface_class: type = None
+    interface_class: type = None,
 ) -> Callable:
     """
     Create a sanitized wrapper around plugin factory with validation.
@@ -193,36 +188,55 @@ def sanitize_plugin_factory(
     Returns:
         Wrapped factory with validation
     """
+    signature = inspect.signature(factory)
+    first_param_name = next(iter(signature.parameters), None)
+
+    def _validate_factory_arguments(args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
+        """Validate non-controller factory arguments against metadata."""
+        try:
+            bound = signature.bind_partial(*args, **kwargs)
+        except TypeError:
+            return
+
+        call_cfg = {
+            name: value
+            for name, value in bound.arguments.items()
+            if name in metadata.required_params or name in metadata.optional_params
+        }
+        if call_cfg:
+            validate_plugin_config(call_cfg, metadata)
+
     def validated_factory(*args, **kwargs) -> Any:
         """Validated factory wrapper."""
         try:
             # Handle different factory call patterns
-            if args and isinstance(args[0], dict):
+            if args and first_param_name == "cfg" and isinstance(args[0], dict):
                 # Controller-style: factory(cfg, **kwargs)
                 cfg = args[0]
                 validated_cfg = validate_plugin_config(cfg, metadata)
                 instance = factory(validated_cfg, *args[1:], **kwargs)
-            elif 'cfg' in kwargs:
+            elif "cfg" in kwargs:
                 # Named cfg parameter: factory(cfg=cfg, **other_kwargs)
-                cfg = kwargs.pop('cfg')
+                cfg = kwargs.pop("cfg")
                 validated_cfg = validate_plugin_config(cfg, metadata)
                 instance = factory(cfg=validated_cfg, **kwargs)
             else:
-                # Backend-style or other: factory(arg1, arg2, ..., **kwargs)
-                # Skip validation for non-controller factories
+                # Backend-style or other factories validate call arguments
+                # without mutating the original argument payload.
+                _validate_factory_arguments(args, kwargs)
                 instance = factory(*args, **kwargs)
 
             # Validate interface if provided and instance is a class instance
-            if interface_class and hasattr(instance, '__class__') and not inspect.isclass(instance):
+            if interface_class and hasattr(instance, "__class__") and not inspect.isclass(instance):
                 try:
                     validate_plugin_interface(instance.__class__, interface_class)
                 except Exception as e:
                     logger.debug(f"Interface validation skipped for {metadata.name}: {e}")
 
             # Attach metadata to instance if possible
-            if hasattr(instance, '__dict__'):
+            if hasattr(instance, "__dict__"):
                 instance.__plugin_metadata__ = metadata
-            elif hasattr(instance, '__setattr__'):
+            elif hasattr(instance, "__setattr__"):
                 try:
                     instance.__plugin_metadata__ = metadata
                 except Exception:
@@ -257,22 +271,22 @@ def check_plugin_security(plugin_class: type) -> list[str]:
 
     # Check for dangerous imports or methods
     dangerous_patterns = [
-        ('subprocess', 'subprocess usage'),
-        ('os.system', 'system command execution'),
-        ('eval', 'code evaluation'),
-        ('exec', 'code execution'),
-        ('__import__', 'dynamic imports'),
-        ('open', 'file system access'),
+        ("subprocess", "subprocess usage"),
+        ("os.system", "system command execution"),
+        ("eval", "code evaluation"),
+        ("exec", "code execution"),
+        ("__import__", "dynamic imports"),
+        ("open", "file system access"),
     ]
 
-    source_code = inspect.getsource(plugin_class) if hasattr(plugin_class, '__module__') else ""
+    source_code = inspect.getsource(plugin_class) if hasattr(plugin_class, "__module__") else ""
 
     for pattern, description in dangerous_patterns:
         if pattern in source_code:
             warnings.append(f"Potentially unsafe: {description}")
 
     # Check for network-related imports
-    network_patterns = ['socket', 'urllib', 'requests', 'http']
+    network_patterns = ["socket", "urllib", "requests", "http"]
     for pattern in network_patterns:
         if pattern in source_code:
             warnings.append(f"Network access detected: {pattern}")

@@ -270,9 +270,9 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
                 float(spec["goal"][0] - spec["start"][0]),
                 float(spec["goal"][1] - spec["start"][1]),
             ),
-            "min_path_clearance_m": float(min_clearance_m)
-            if math.isfinite(min_clearance_m)
-            else None,
+            "min_path_clearance_m": (
+                float(min_clearance_m) if math.isfinite(min_clearance_m) else None
+            ),
         }
 
     # Bidirectional bottleneck risk detection (warning-level).

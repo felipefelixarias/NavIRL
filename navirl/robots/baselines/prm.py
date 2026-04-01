@@ -16,7 +16,7 @@ class Node:
         self.x = x
         self.y = y
         self.neighbors: list[int] = []
-        self.g_cost = float('inf')
+        self.g_cost = float("inf")
         self.parent = -1
 
     def distance_to(self, other: Node) -> float:
@@ -41,7 +41,9 @@ class PRMController(RobotController):
         self.num_samples = int(cfg.get("num_samples", 500))
         self.connection_radius = float(cfg.get("connection_radius", 2.0))
         self.max_connections = int(cfg.get("max_connections", 10))
-        self.roadmap_bounds = cfg.get("roadmap_bounds", {"x_min": -5, "x_max": 5, "y_min": -5, "y_max": 5})
+        self.roadmap_bounds = cfg.get(
+            "roadmap_bounds", {"x_min": -5, "x_max": 5, "y_min": -5, "y_max": 5}
+        )
 
         # Dynamic parameters
         self.dynamic_resampling = bool(cfg.get("dynamic_resampling", True))
@@ -87,9 +89,11 @@ class PRMController(RobotController):
         try:
             # Check if position is in obstacle space
             x, y = pos
-            if hasattr(self.backend, 'is_valid_position'):
+            if hasattr(self.backend, "is_valid_position"):
                 return self.backend.is_valid_position(x, y)
-            elif hasattr(self.backend, 'environment') and hasattr(self.backend.environment, 'is_valid'):
+            elif hasattr(self.backend, "environment") and hasattr(
+                self.backend.environment, "is_valid"
+            ):
                 return self.backend.environment.is_valid(x, y)
             else:
                 # Fallback: assume valid if no collision checking available
@@ -127,10 +131,7 @@ class PRMController(RobotController):
                 return (x, y)
 
         # Fallback to bounds center if no free space found
-        return (
-            (bounds["x_min"] + bounds["x_max"]) / 2,
-            (bounds["y_min"] + bounds["y_max"]) / 2
-        )
+        return ((bounds["x_min"] + bounds["x_max"]) / 2, (bounds["y_min"] + bounds["y_max"]) / 2)
 
     def _build_initial_roadmap(self) -> None:
         """Build the initial PRM roadmap."""
@@ -205,7 +206,7 @@ class PRMController(RobotController):
 
         # Reset all nodes
         for node in self.roadmap:
-            node.g_cost = float('inf')
+            node.g_cost = float("inf")
             node.parent = -1
 
         # Initialize start node
@@ -307,23 +308,29 @@ class PRMController(RobotController):
         # Check if goal reached
         dist_goal = math.hypot(self.goal[0] - robot_state.x, self.goal[1] - robot_state.y)
         if dist_goal <= self.goal_tolerance:
-            emit_event("robot_goal_reached", self.robot_id, {"planner": "PRM", "roadmap_size": len(self.roadmap)})
+            emit_event(
+                "robot_goal_reached",
+                self.robot_id,
+                {"planner": "PRM", "roadmap_size": len(self.roadmap)},
+            )
             return Action(pref_vx=0.0, pref_vy=0.0, behavior="DONE")
 
         # Rebuild roadmap periodically if dynamic resampling is enabled
-        if (self.dynamic_resampling and
-                step - self.last_roadmap_build_step > self.roadmap_rebuild_interval):
+        if (
+            self.dynamic_resampling
+            and step - self.last_roadmap_build_step > self.roadmap_rebuild_interval
+        ):
             self._build_initial_roadmap()
             self.last_roadmap_build_step = step
 
         # Replan periodically
         if step % max(1, self.replan_interval) == 0:
             self._prm_plan(robot_pos, self.goal)
-            emit_event("robot_replan", self.robot_id, {
-                "path_len": len(self.path),
-                "roadmap_size": len(self.roadmap),
-                "planner": "PRM"
-            })
+            emit_event(
+                "robot_replan",
+                self.robot_id,
+                {"path_len": len(self.path), "roadmap_size": len(self.roadmap), "planner": "PRM"},
+            )
 
         # Get current target
         target = self._current_target()
