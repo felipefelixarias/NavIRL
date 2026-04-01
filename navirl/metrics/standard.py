@@ -217,9 +217,11 @@ class StandardMetrics(MetricsCollector):
             "oscillation_score": float(np.mean(oscillation_scores)) if oscillation_scores else 0.0,
             "jerk_proxy": float(np.mean(jerk_values)) if jerk_values else 0.0,
             "path_length_robot": float(path_len.get(robot_id, 0.0)),
-            "time_to_goal_robot": float(robot_goal_reached_step * dt)
-            if robot_goal_reached_step is not None
-            else float("inf"),
+            "time_to_goal_robot": (
+                float(robot_goal_reached_step * dt)
+                if robot_goal_reached_step is not None
+                else float("inf")
+            ),
             "success_rate": success,
             "horizon_steps": int(horizon_steps),
             "dt": float(dt),

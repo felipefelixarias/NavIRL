@@ -29,6 +29,12 @@ CANONICAL_SCENARIOS = [
     "group_cohesion.yaml",
     "robot_comfort_avoidance.yaml",
     "routine_cook_dinner_micro.yaml",
+    # New daily-life scenarios
+    "office_meeting_room.yaml",
+    "living_room_social.yaml",
+    "bathroom_queue_etiquette.yaml",
+    "library_quiet_study.yaml",
+    "reception_lobby_assistance.yaml",
 ]
 
 
@@ -65,17 +71,27 @@ def _write_report(
 ) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Calculate summary statistics
+    total_scenarios = len(rows)
+    passed_scenarios = sum(1 for r in rows if r.overall_pass)
+    pass_rate = (passed_scenarios / total_scenarios * 100) if total_scenarios > 0 else 0
+
+    status_emoji = "✅" if pytest_ok and passed_scenarios == total_scenarios else "⚠️" if passed_scenarios > 0 else "❌"
+
     lines = [
-        f"# NavIRL Verify Report ({suite})",
+        f"# {status_emoji} NavIRL Verify Report ({suite})",
         "",
-        f"- Pytest pass: `{pytest_ok}`",
-        "- Thresholds:",
-        f"  - judge_confidence_min: `{thresholds['judge_confidence_min']}`",
-        "  - teleport_thresh: scenario-specific (`evaluation.teleport_thresh`)",
-        "  - max_speed: scenario-specific (`evaluation.max_speed`)",
-        "  - max_accel: scenario-specific (`evaluation.max_accel`)",
+        "## 📊 Summary",
+        f"- **Overall Status**: {status_emoji} {'PASS' if pytest_ok and passed_scenarios == total_scenarios else 'FAIL'}",
+        f"- **Scenarios**: {passed_scenarios}/{total_scenarios} passed ({pass_rate:.1f}%)",
+        f"- **Unit Tests**: {'✅ PASS' if pytest_ok else '❌ FAIL'}",
         "",
-        "## Scenario Results",
+        "## ⚙️ Configuration",
+        f"- **Judge Confidence Threshold**: {thresholds['judge_confidence_min']:.1%}",
+        "- **Teleport Threshold**: scenario-specific (`evaluation.teleport_thresh`)",
+        "- **Speed/Accel Limits**: scenario-specific (`evaluation.max_speed`, `evaluation.max_accel`)",
+        "",
+        "## 📋 Scenario Results",
         "",
         "| Scenario | Invariants | Judge | Confidence | Video | Overall | Notes | Bundle |",
         "|---|---:|---:|---:|---:|---:|---|---|",
@@ -86,36 +102,81 @@ def _write_report(
             f"| {row.scenario_id} | {row.invariants_pass} | {row.judge_status} | {row.judge_confidence:.2f} | {row.video_check_pass} | {row.overall_pass} | {row.notes or '-'} | `{row.bundle_dir}` |"
         )
 
-    lines.extend(["", "## Failing Details", ""])
+    lines.extend(["", "## 🔍 Failure Analysis", ""])
     failing = [r for r in rows if not r.overall_pass]
     if not failing:
-        lines.append("- None")
+        lines.append("✅ **All scenarios passed!**")
     else:
-        for row in failing:
-            lines.append(f"### {row.scenario_id}")
+        lines.append("The following scenarios require attention:")
+        lines.append("")
+        for i, row in enumerate(failing, 1):
+            lines.append(f"### {i}. {row.scenario_id}")
+            lines.append("")
+
+            # Summary status
+            status_icons = {
+                "pass": "✅",
+                "fail": "❌",
+                "needs_human_review": "🔍"
+            }
+            lines.append(f"**Status**: {status_icons.get(row.judge_status, '❓')} {row.judge_status}")
+            lines.append(f"**Confidence**: {row.judge_confidence:.1%}")
+            if row.notes:
+                lines.append(f"**Notes**: {row.notes}")
+            lines.append("")
+
+            # Invariant failures
             inv_path = Path(row.bundle_dir) / "invariants.json"
             if inv_path.exists():
                 with inv_path.open("r", encoding="utf-8") as f:
                     inv = json.load(f)
                 failed_checks = [c for c in inv.get("checks", []) if not c.get("pass", False)]
-                if not failed_checks:
-                    lines.append("- Invariants: none failed.")
-                else:
+                if failed_checks:
+                    lines.append("#### 📊 Invariant Violations")
                     for check in failed_checks:
-                        lines.append(f"- Failed check: `{check.get('name', 'unknown')}`")
+                        check_name = check.get('name', 'unknown')
+                        lines.append(f"- **{check_name.replace('_', ' ').title()}**")
                         if check.get("name") == "scenario_feasibility":
-                            for sug in check.get("suggestions", [])[:6]:
-                                lines.append(f"- Suggested fix: {sug}")
+                            lines.append("  - **Suggestions:**")
+                            for sug in check.get("suggestions", [])[:3]:
+                                lines.append(f"    - {sug}")
                         elif "num_violations" in check:
-                            lines.append(f"- Violations: `{check.get('num_violations')}`")
+                            lines.append(f"  - **Count:** {check.get('num_violations')} violations")
+                    lines.append("")
+
+            # Judge violations with enhanced formatting
             judge_path = Path(row.bundle_dir) / "judge.json"
             if judge_path.exists():
                 with judge_path.open("r", encoding="utf-8") as f:
                     judge = json.load(f)
-                for viol in judge.get("violations", [])[:6]:
-                    lines.append(
-                        f"- Judge: `{viol.get('type', 'unknown')}` ({viol.get('severity', 'n/a')}) - {viol.get('evidence', '')}"
-                    )
+                violations = judge.get("violations", [])
+                if violations:
+                    lines.append("#### 🤖 Judge Analysis")
+                    for viol in violations[:4]:  # Show top 4 violations
+                        if 'title' in viol and 'suggestion' in viol:
+                            lines.append(f"- **{viol.get('title', 'Issue')}**")
+                            lines.append(f"  - **Problem:** {viol.get('description', 'Unknown issue')}")
+                            lines.append(f"  - **Action:** {viol.get('suggestion', 'See documentation')}")
+                            if viol.get('technical_details'):
+                                lines.append(f"  - **Details:** `{viol.get('technical_details')}`")
+                        else:
+                            # Legacy format
+                            severity_emoji = {"blocker": "🚫", "warning": "⚠️", "info": "ℹ️"}
+                            emoji = severity_emoji.get(viol.get('severity', ''), '❓')
+                            lines.append(f"- {emoji} **{viol.get('type', 'unknown').replace('_', ' ').title()}**")
+                            lines.append(f"  - {viol.get('evidence', 'No details available')}")
+                    if len(violations) > 4:
+                        lines.append(f"  - *... and {len(violations) - 4} more issues*")
+                    lines.append("")
+
+            # Reproduction instructions
+            lines.append("#### 🔄 Reproduce This Failure")
+            lines.append("```bash")
+            lines.append("# Run specific scenario")
+            lines.append(f"python -m navirl verify --scenario {row.scenario_id}")
+            lines.append("# View bundle details")
+            lines.append(f"ls -la {row.bundle_dir}")
+            lines.append("```")
             lines.append("")
 
     lines.extend(

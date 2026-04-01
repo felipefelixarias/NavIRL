@@ -1,0 +1,88 @@
+id: library_quiet_study
+description: Library quiet study area with students working and robot librarian managing resources discreetly.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: library_study
+seed: 217
+horizon:
+  steps: 600
+  dt: 0.1
+humans:
+  controller:
+    type: scripted
+    params:
+      max_speed: 0.3
+      quiet_mode: true
+      waypoints:
+        "0":  # Student finding a study spot
+          - [-1.2, 0.8]
+          - [-0.5, 0.5]
+          - [0.2, 0.6]
+        "1":  # Student already studying (minimal movement)
+          - [1.0, -0.2]
+          - [1.1, -0.1]
+          - [1.0, -0.2]
+        "2":  # Student going to bookshelf
+          - [0.8, 0.9]
+          - [0.2, 0.2]
+          - [-1.5, 0.0]
+          - [0.2, 0.2]
+        "3":  # Student leaving quietly
+          - [0.3, -0.8]
+          - [0.0, -0.5]
+          - [-0.8, 0.0]
+          - [-2.0, 0.5]
+  count: 4
+  starts:
+    - [-1.2, 0.8]   # Library entrance
+    - [1.0, -0.2]   # Study desk (settled)
+    - [0.8, 0.9]    # Another study spot
+    - [0.3, -0.8]   # Computer area
+  goals:
+    - [0.2, 0.6]    # Available study desk
+    - [1.0, -0.2]   # Stay at current desk
+    - [0.2, 0.2]    # Return to desk after browsing
+    - [-2.0, 0.5]   # Library exit
+  radius: 0.15
+  max_speed: 0.35
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 30
+      goal_tolerance: 0.2
+      velocity_smoothing: 0.9
+      quiet_operation: true
+      min_distance_to_studiers: 0.8
+  start: [-1.8, -0.5]  # Librarian's station
+  goal: [1.3, 0.8]     # Book return area
+  radius: 0.17
+  max_speed: 0.4
+routine:
+  name: quiet_library_maintenance
+  steps:
+    - collect_returned_books
+    - navigate_quietly_around_studiers
+    - reshelve_books
+    - return_to_station
+evaluation:
+  intrusion_delta: 0.3
+  max_speed: 0.6
+  max_accel: 2.5
+  teleport_thresh: 0.95
+  deadlock_seconds: 8.0
+  deadlock_resample_attempts: 15
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.12
+  expected_high_interaction: false
+  max_agent_stop_seconds: 12.0
+  noise_level_violations_threshold: 2
+  study_disruption_threshold: 1
+render:
+  enabled: true
+  fps: 10
+  video: true
+  playback_speed: 4.0

@@ -86,8 +86,9 @@ class MaxEntIRL:
         self,
         config: MaxEntIRLConfig,
         feature_fn: Callable[[np.ndarray], np.ndarray],
-        forward_rl_fn: Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]]
-        | None = None,
+        forward_rl_fn: (
+            Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]] | None
+        ) = None,
     ) -> None:
         self._config = config
         self._feature_fn = feature_fn

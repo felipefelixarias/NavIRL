@@ -702,9 +702,11 @@ def goal_achievement_rate(
     assert len(trajectories) == len(goals)
     reached = np.array(
         [
-            float(np.linalg.norm(t.positions[-1] - np.asarray(g)) <= threshold)
-            if len(t) > 0
-            else 0.0
+            (
+                float(np.linalg.norm(t.positions[-1] - np.asarray(g)) <= threshold)
+                if len(t) > 0
+                else 0.0
+            )
             for t, g in zip(trajectories, goals, strict=False)
         ]
     )

@@ -1,0 +1,80 @@
+id: office_meeting_room
+description: Office meeting room scenario with people gathering for a meeting while robot delivers supplies.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: office_layout
+seed: 42
+horizon:
+  steps: 300
+  dt: 0.1
+humans:
+  controller:
+    type: scripted
+    params:
+      max_speed: 0.6
+      waypoints:
+        "0":  # Manager walking to meeting room
+          - [-1.5, 0.0]
+          - [0.0, 0.8]
+          - [1.2, 0.8]
+        "1":  # Employee coming from desk
+          - [1.8, -1.0]
+          - [0.5, -0.2]
+          - [1.2, 0.8]
+        "2":  # Employee from printer area
+          - [-1.0, -1.2]
+          - [-0.2, -0.5]
+          - [1.2, 0.8]
+        "3":  # Late arrival from hallway
+          - [-2.0, 0.5]
+          - [-0.5, 0.5]
+          - [1.2, 0.8]
+  count: 4
+  starts:
+    - [-1.5, 0.0]   # Manager's office
+    - [1.8, -1.0]   # Desk area
+    - [-1.0, -1.2]  # Printer/supply area
+    - [-2.0, 0.5]   # Hallway entrance
+  goals:
+    - [1.2, 0.8]    # Meeting room
+    - [1.2, 0.8]    # Meeting room
+    - [1.2, 0.8]    # Meeting room
+    - [1.2, 0.8]    # Meeting room
+  radius: 0.16
+  max_speed: 0.65
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 15
+      goal_tolerance: 0.18
+      velocity_smoothing: 0.7
+  start: [-1.8, -0.8]  # Supply closet
+  goal: [1.4, 0.6]     # Meeting room entrance
+  radius: 0.18
+  max_speed: 0.8
+routine:
+  name: meeting_preparation
+  steps:
+    - gather_supplies
+    - navigate_to_meeting
+    - deliver_materials
+evaluation:
+  intrusion_delta: 0.35
+  max_speed: 1.1
+  max_accel: 4.2
+  teleport_thresh: 0.95
+  deadlock_seconds: 5.0
+  deadlock_resample_attempts: 8
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.15
+  expected_high_interaction: true
+  max_agent_stop_seconds: 6.0
+render:
+  enabled: true
+  fps: 12
+  video: true
+  playback_speed: 2.2

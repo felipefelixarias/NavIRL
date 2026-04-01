@@ -9,6 +9,72 @@ import numpy as np
 from navirl.overseer.provider import ProviderConfig
 from navirl.overseer.review import AEGIS_NAME, run_aegis_review
 
+
+def _create_readable_violation(violation_type: str, evidence_data: dict, severity: str = "blocker") -> dict:
+    """Create human-readable violation messages with actionable guidance."""
+
+    violation_messages = {
+        "insufficient_frames": {
+            "title": "🎬 Insufficient Video Frames",
+            "description": "Simulation produced too few frames for reliable analysis",
+            "suggestion": "Increase simulation duration or reduce time steps for better video quality",
+            "technical_info": "frame_count"
+        },
+        "missing_video": {
+            "title": "📹 Missing Video Artifact",
+            "description": "Required video output was not generated during simulation",
+            "suggestion": "Ensure video recording is enabled in simulation configuration",
+            "technical_info": "has_video"
+        },
+        "missing_map_units": {
+            "title": "🗺️ Missing Map Scale Information",
+            "description": "Map lacks essential scale metadata for metric calculations",
+            "suggestion": "Add pixels_per_meter or meters_per_pixel to map configuration",
+            "technical_info": "map.pixels_per_meter, map.meters_per_pixel"
+        },
+        "invalid_map_units": {
+            "title": "⚠️ Invalid Map Scale Values",
+            "description": "Map scale values must be positive numbers",
+            "suggestion": "Verify pixels_per_meter and meters_per_pixel are positive values",
+            "technical_info": "pixels_per_meter, meters_per_pixel"
+        },
+        "obstacle_collisions": {
+            "title": "💥 Agent Collided with Obstacles",
+            "description": "Agent(s) collided with environmental obstacles during simulation",
+            "suggestion": "Check navigation algorithms and obstacle detection settings",
+            "technical_info": "collisions_agent_obstacle"
+        },
+        "deadlock_detected": {
+            "title": "🔒 Navigation Deadlock Detected",
+            "description": "Agent(s) became stuck and unable to make progress",
+            "suggestion": "Review crowd density, path planning parameters, or scenario feasibility",
+            "technical_info": "deadlock_count"
+        }
+    }
+
+    template = violation_messages.get(violation_type, {
+        "title": f"⚠️ {violation_type.replace('_', ' ').title()}",
+        "description": f"Validation check '{violation_type}' failed",
+        "suggestion": "Review scenario configuration and simulation parameters",
+        "technical_info": "check details"
+    })
+
+    # Format evidence with technical details
+    tech_value = evidence_data.get('value', 'unknown')
+    evidence = f"{template['title']}: {template['description']}. {template['suggestion']}"
+    if tech_value != 'unknown':
+        evidence += f" (Technical: {template['technical_info']}={tech_value})"
+
+    return {
+        "type": violation_type,
+        "evidence": evidence,
+        "severity": severity,
+        "title": template['title'],
+        "description": template['description'],
+        "suggestion": template['suggestion'],
+        "technical_details": f"{template['technical_info']}={tech_value}"
+    }
+
 JUDGE_OUTPUT_SCHEMA = {
     "type": "object",
     "required": ["overall_pass", "confidence", "violations", "status", "judge_type"],
@@ -85,74 +151,61 @@ def _heuristic_judge(
     violations = []
 
     for check in failed_checks:
-        violations.append(
-            {
-                "type": check.get("name", "unknown"),
-                "evidence": f"check_failed: {check.get('name')} in {summary.get('bundle_dir')}",
-                "severity": "blocker",
-            }
-        )
+        check_name = check.get("name", "unknown")
+        violations.append(_create_readable_violation(
+            check_name,
+            {"value": f"failed in {summary.get('bundle_dir', 'unknown_location')}"},
+            "blocker"
+        ))
 
     frame_count = int(summary.get("frame_count", 0))
     if frame_count < 20:
-        violations.append(
-            {
-                "type": "insufficient_frames",
-                "evidence": f"frame_count={frame_count} (<20)",
-                "severity": "blocker",
-            }
-        )
+        violations.append(_create_readable_violation(
+            "insufficient_frames",
+            {"value": f"{frame_count} (minimum: 20)"},
+            "blocker"
+        ))
 
     if require_video and not bool(summary.get("has_video", False)):
-        violations.append(
-            {
-                "type": "missing_video",
-                "evidence": "full-suite visual judge requires video artifact",
-                "severity": "blocker",
-            }
-        )
+        violations.append(_create_readable_violation(
+            "missing_video",
+            {"value": "required for visual judge"},
+            "blocker"
+        ))
 
     metrics = summary.get("metrics", {})
     map_meta = summary.get("map", {})
     ppm = map_meta.get("pixels_per_meter")
     mpp = map_meta.get("meters_per_pixel")
     if ppm is None or mpp is None:
-        violations.append(
-            {
-                "type": "missing_map_units",
-                "evidence": "summary.map.{pixels_per_meter,meters_per_pixel} missing",
-                "severity": "blocker",
-            }
-        )
+        violations.append(_create_readable_violation(
+            "missing_map_units",
+            {"value": f"ppm={ppm}, mpp={mpp}"},
+            "blocker"
+        ))
     else:
         if float(ppm) <= 0.0 or float(mpp) <= 0.0:
-            violations.append(
-                {
-                    "type": "invalid_map_units",
-                    "evidence": f"pixels_per_meter={ppm}, meters_per_pixel={mpp}",
-                    "severity": "blocker",
-                }
-            )
+            violations.append(_create_readable_violation(
+                "invalid_map_units",
+                {"value": f"ppm={ppm}, mpp={mpp}"},
+                "blocker"
+            ))
 
     obstacle_collisions = int(metrics.get("collisions_agent_obstacle", 0))
     if obstacle_collisions > 0:
-        violations.append(
-            {
-                "type": "obstacle_collisions",
-                "evidence": f"collisions_agent_obstacle={obstacle_collisions}",
-                "severity": "blocker",
-            }
-        )
+        violations.append(_create_readable_violation(
+            "obstacle_collisions",
+            {"value": f"{obstacle_collisions} collisions"},
+            "blocker"
+        ))
 
     deadlock_count = int(metrics.get("deadlock_count", 0))
     if deadlock_count > 0:
-        violations.append(
-            {
-                "type": "deadlock_detected",
-                "evidence": f"deadlock_count={deadlock_count}",
-                "severity": "blocker",
-            }
-        )
+        violations.append(_create_readable_violation(
+            "deadlock_detected",
+            {"value": f"{deadlock_count} instances"},
+            "blocker"
+        ))
 
     stop_check = checks_by_name.get("agent_stop_duration", {})
     if isinstance(stop_check, dict):
