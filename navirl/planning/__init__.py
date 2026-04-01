@@ -12,7 +12,11 @@ from navirl.planning.global_planners import (
     ThetaStarPlanner,
 )
 
+# Note: Additional planner modules (local planners, social planners, trajectory optimization)
+# are planned for future releases. Check the roadmap for implementation timeline.
+
 __all__ = [
+    # Base classes
     "Path",
     "Planner",
     "PlannerConfig",

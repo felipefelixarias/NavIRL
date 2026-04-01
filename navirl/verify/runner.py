@@ -95,11 +95,19 @@ def _write_report(
     for row in rows:
         # Format status with visual indicators
         invariants_status = "✅ Pass" if row.invariants_pass else "❌ Fail"
-        judge_status_icon = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}.get(row.judge_status, "❓")
+        judge_status_icon = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}.get(
+            row.judge_status, "❓"
+        )
         judge_status_text = f"{judge_status_icon} {row.judge_status.replace('_', ' ').title()}"
-        video_status = ("✅ Pass" if row.video_check_pass else "❌ Fail") if row.video_check_pass is not None else "➖"
+        video_status = (
+            ("✅ Pass" if row.video_check_pass else "❌ Fail")
+            if row.video_check_pass is not None
+            else "➖"
+        )
         overall_status = "✅ Pass" if row.overall_pass else "❌ Fail"
-        notes_display = (row.notes[:60] + "..." if len(row.notes) > 60 else row.notes) if row.notes else "➖"
+        notes_display = (
+            (row.notes[:60] + "..." if len(row.notes) > 60 else row.notes) if row.notes else "➖"
+        )
 
         lines.append(
             f"| {row.scenario_id} | {invariants_status} | {judge_status_text} | {row.judge_confidence:.2f} | {video_status} | {overall_status} | {notes_display} | `{Path(row.bundle_dir).name}` |"
