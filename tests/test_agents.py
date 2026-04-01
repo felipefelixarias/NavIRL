@@ -354,17 +354,22 @@ class TestAttention:
 class TestPolicyHeads:
     def test_gaussian_head(self):
         from navirl.agents.networks.policy_heads import GaussianPolicyHead
+        from torch.distributions import Normal
         head = GaussianPolicyHead(input_dim=32, action_dim=2)
         x = torch.randn(1, 32)
-        dist = head(x)
+        mean, log_std = head(x)
+        std = log_std.exp()
+        dist = Normal(mean, std)
         sample = dist.sample()
         assert sample.shape == (1, 2)
 
     def test_categorical_head(self):
         from navirl.agents.networks.policy_heads import CategoricalPolicyHead
-        head = CategoricalPolicyHead(input_dim=32, n_actions=5)
+        from torch.distributions import Categorical
+        head = CategoricalPolicyHead(input_dim=32, num_actions=5)
         x = torch.randn(1, 32)
-        dist = head(x)
+        logits = head(x)
+        dist = Categorical(logits=logits)
         sample = dist.sample()
         assert sample.shape == (1,)
 

@@ -188,14 +188,16 @@ class TestNormalizeObservation:
 class TestRewardShaping:
     def test_reward_shaping(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda r, obs, act, info: r * 2.0)
+        # Shaping function returns additional reward (original + additional = 2.0, so additional = 1.0)
+        wrapped = RewardShaping(mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: 1.0)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
         assert reward == pytest.approx(2.0)
 
     def test_reward_shaping_penalty(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
-        wrapped = RewardShaping(mock_env, shaping_fn=lambda r, obs, act, info: r - 0.5)
+        # Shaping function returns penalty (original + penalty = 0.5, so penalty = -0.5)
+        wrapped = RewardShaping(mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: -0.5)
         wrapped.reset()
         _, reward, _, _, _ = wrapped.step(mock_env.action_space.sample())
         assert reward == pytest.approx(0.5)
@@ -208,7 +210,7 @@ class TestRewardShaping:
 class TestActionRepeat:
     def test_action_repeat(self, mock_env):
         from navirl.envs.wrappers import ActionRepeat
-        wrapped = ActionRepeat(mock_env, repeat=4)
+        wrapped = ActionRepeat(mock_env, num_repeat=4)
         wrapped.reset()
         action = mock_env.action_space.sample()
         obs, reward, terminated, truncated, info = wrapped.step(action)
@@ -219,7 +221,7 @@ class TestActionRepeat:
         env = MockNavEnv(obs_dim=4)
         env._max_steps = 2
         from navirl.envs.wrappers import ActionRepeat
-        wrapped = ActionRepeat(env, repeat=10)
+        wrapped = ActionRepeat(env, num_repeat=10)
         wrapped.reset()
         _, reward, terminated, truncated, _ = wrapped.step(env.action_space.sample())
         # Should terminate after 2 steps, not 10
