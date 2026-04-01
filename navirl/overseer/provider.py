@@ -63,7 +63,8 @@ def _parse_json_object(raw: str) -> dict:
     try:
         return json.loads(_extract_json_text(raw))
     except json.JSONDecodeError as exc:
-        raise ProviderCallError(f"Invalid JSON from VLM response: {exc}") from exc
+        msg = f"Invalid JSON from VLM response: {exc}"
+        raise ProviderCallError(msg) from exc
 
 
 def _encode_images_as_data_urls(image_paths: list[str], max_images: int) -> list[str]:
@@ -269,9 +270,11 @@ def _run_openai_compatible_json(
             raw = json.loads(resp.read().decode("utf-8"))
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="ignore")
-        raise ProviderCallError(f"Provider HTTP {exc.code}: {body[:240]}") from exc
+        msg = f"Provider HTTP {exc.code}: {body[:240]}"
+        raise ProviderCallError(msg) from exc
     except error.URLError as exc:
-        raise ProviderCallError(f"Provider network error: {exc}") from exc
+        msg = f"Provider network error: {exc}"
+        raise ProviderCallError(msg) from exc
 
     choices = raw.get("choices", [])
     if not choices:

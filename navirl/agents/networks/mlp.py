@@ -62,7 +62,8 @@ def _get_activation(name: str) -> nn.Module:
     """Return an activation module by name (case-insensitive)."""
     key = name.lower().strip()
     if key not in _ACTIVATIONS:
-        raise ValueError(f"Unknown activation '{name}'. Choose from {list(_ACTIVATIONS.keys())}")
+        msg = f"Unknown activation '{name}'. Choose from {list(_ACTIVATIONS.keys())}"
+        raise ValueError(msg)
     return _ACTIVATIONS[key]()
 
 
@@ -229,7 +230,8 @@ class MLP(nn.Module):
         elif strategy == "uniform":
             init_weights_uniform(self)
         else:
-            raise ValueError(f"Unknown init strategy: {strategy}")
+            msg = f"Unknown init strategy: {strategy}"
+            raise ValueError(msg)
 
     # ------------------------------------------------------------------
     def forward(self, x: Tensor) -> Tensor:
