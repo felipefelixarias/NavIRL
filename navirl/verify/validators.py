@@ -9,13 +9,13 @@ import cv2
 import numpy as np
 import yaml
 
-# Security constants
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB limit for configuration files
-MAX_LINE_SIZE = 1024 * 1024  # 1MB limit per JSON line
-
 from navirl.backends.grid2d.constants import OBSTACLE_SPACE
 from navirl.backends.grid2d.environment import GridEnvironment
 from navirl.backends.grid2d.maps import load_map_info
+
+# Security constants
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB limit for configuration files
+MAX_LINE_SIZE = 1024 * 1024  # 1MB limit per JSON line
 
 
 def load_state_rows(state_path: Path) -> list[dict]:
