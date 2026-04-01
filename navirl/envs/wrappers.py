@@ -302,9 +302,13 @@ class RewardShaping(gym.RewardWrapper):
         params = [
             param
             for param in signature.parameters.values()
-            if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+            if param.kind
+            in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
         ]
-        if any(param.kind == inspect.Parameter.VAR_POSITIONAL for param in signature.parameters.values()):
+        if any(
+            param.kind == inspect.Parameter.VAR_POSITIONAL
+            for param in signature.parameters.values()
+        ):
             return 6
         return len(params)
 
