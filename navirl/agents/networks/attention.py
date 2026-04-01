@@ -62,14 +62,22 @@ class SocialAttention(nn.Module):
 
     def __init__(
         self,
-        input_dim: int,
+        input_dim: int | None = None,
         hidden_dim: int = 128,
         output_dim: int = 128,
+        *,
+        embed_dim: int | None = None,
+        num_heads: int | None = None,
     ) -> None:
         super().__init__()
+        if embed_dim is not None and input_dim is None:
+            input_dim = embed_dim
+        if input_dim is None:
+            raise ValueError("input_dim or embed_dim must be provided")
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
+        self.num_heads = num_heads
 
         # Embed robot and human states into a shared space
         self.robot_embed = nn.Linear(input_dim, hidden_dim)
@@ -97,7 +105,7 @@ class SocialAttention(nn.Module):
     def forward(
         self,
         robot_state: Tensor,
-        human_states: Tensor,
+        human_states: Tensor | None = None,
     ) -> Tensor:
         """Compute attended social feature.
 
@@ -113,6 +121,10 @@ class SocialAttention(nn.Module):
         Tensor ``(B, output_dim)``
             Attention-weighted social feature.
         """
+        if human_states is None:
+            human_states = robot_state
+            robot_state = human_states.mean(dim=1)
+
         B, N, _ = human_states.shape
 
         # Embed both

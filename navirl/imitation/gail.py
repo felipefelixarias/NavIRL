@@ -106,11 +106,17 @@ class Discriminator(nn.Module):
 
     def __init__(
         self,
-        obs_dim: int,
-        action_dim: int,
+        obs_dim: int | None = None,
+        action_dim: int | None = None,
         hidden_dims: Sequence[int] = (256, 256),
+        *,
+        state_dim: int | None = None,
     ) -> None:
         super().__init__()
+        if obs_dim is None:
+            obs_dim = state_dim
+        if obs_dim is None or action_dim is None:
+            raise ValueError("obs_dim/state_dim and action_dim must be provided")
         layers: list[nn.Module] = []
         prev_dim = obs_dim + action_dim
         for h in hidden_dims:
@@ -136,6 +142,10 @@ class Discriminator(nn.Module):
             Logits of shape ``(B, 1)``.
         """
         sa = torch.cat([obs, actions], dim=-1)
+        return torch.sigmoid(self.net(sa))
+
+    def logits(self, obs: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        sa = torch.cat([obs, actions], dim=-1)
         return self.net(sa)
 
     def predict_reward(
@@ -156,7 +166,7 @@ class Discriminator(nn.Module):
             Reward of shape ``(B, 1)``.
         """
         with torch.no_grad():
-            logits = self.forward(obs, actions)
+            logits = self.logits(obs, actions)
             # Reward = -log(1 - sigmoid(logit)) to encourage fooling the disc.
             reward = -F.logsigmoid(-logits)
         return reward
@@ -377,8 +387,8 @@ class GAILAgent(BaseAgent):
         self._discriminator.train()
         for _ in range(cfg.disc_epochs):
             # Expert: label = 1, Policy: label = 0
-            expert_logits = self._discriminator(expert_obs, expert_act)
-            policy_logits = self._discriminator(policy_obs, policy_act)
+            expert_logits = self._discriminator.logits(expert_obs, expert_act)
+            policy_logits = self._discriminator.logits(policy_obs, policy_act)
 
             expert_loss = F.binary_cross_entropy_with_logits(
                 expert_logits, torch.ones_like(expert_logits)
@@ -406,8 +416,8 @@ class GAILAgent(BaseAgent):
 
         # Accuracy
         with torch.no_grad():
-            expert_pred = torch.sigmoid(self._discriminator(expert_obs, expert_act))
-            policy_pred = torch.sigmoid(self._discriminator(policy_obs, policy_act))
+            expert_pred = self._discriminator(expert_obs, expert_act)
+            policy_pred = self._discriminator(policy_obs, policy_act)
             acc = 0.5 * (
                 (expert_pred > 0.5).float().mean()
                 + (policy_pred <= 0.5).float().mean()
@@ -452,7 +462,7 @@ class GAILAgent(BaseAgent):
             alpha * expert_act[:batch_size] + (1 - alpha) * policy_act[:batch_size]
         ).requires_grad_(True)
 
-        interp_logits = self._discriminator(interp_obs, interp_act)
+        interp_logits = self._discriminator.logits(interp_obs, interp_act)
         grad = torch.autograd.grad(
             outputs=interp_logits,
             inputs=[interp_obs, interp_act],

@@ -14,6 +14,7 @@ GoalConditioned
 from __future__ import annotations
 
 import copy
+import inspect
 import time
 from collections import deque
 from collections.abc import Callable
@@ -315,7 +316,13 @@ class RewardShaping(gym.RewardWrapper):
 
         # Custom shaping function
         if self._shaping_fn is not None:
-            shaped += self._shaping_fn(obs, action, reward, terminated, truncated, info)
+            arg_count = len(inspect.signature(self._shaping_fn).parameters)
+            if arg_count <= 4:
+                shaped = float(self._shaping_fn(reward, obs, action, info))
+            else:
+                shaped += float(
+                    self._shaping_fn(obs, action, reward, terminated, truncated, info)
+                )
 
         return obs, shaped, terminated, truncated, info
 
@@ -389,10 +396,15 @@ class ActionRepeat(gym.Wrapper):
         Number of times to repeat each action.
     """
 
-    def __init__(self, env: gym.Env, num_repeat: int = 4):
+    def __init__(
+        self,
+        env: gym.Env,
+        num_repeat: int = 4,
+        repeat: int | None = None,
+    ):
         _require_gym()
         super().__init__(env)
-        self.num_repeat = num_repeat
+        self.num_repeat = repeat if repeat is not None else num_repeat
 
     def step(self, action: Any) -> tuple[Any, float, bool, bool, dict[str, Any]]:
         total_reward = 0.0
@@ -451,6 +463,10 @@ class RecordEpisode(gym.Wrapper):
         self.max_episodes = max_episodes
         self.episodes: deque = deque(maxlen=max_episodes)
         self._current_episode: dict[str, list[Any]] = {}
+
+    @property
+    def episode_rewards(self) -> list[Any]:
+        return self._current_episode.get("rewards", [])
 
     def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
         if self._current_episode.get("observations"):
@@ -542,15 +558,26 @@ class CurriculumWrapper(gym.Wrapper):
         ``env.unwrapped.difficulty`` before each reset.
     """
 
-    def __init__(self, env: gym.Env, scheduler: Callable[[int], float]):
+    def __init__(
+        self,
+        env: gym.Env,
+        scheduler: Callable[[int], float] | None = None,
+        curriculum_manager: Any = None,
+    ):
         _require_gym()
         super().__init__(env)
         self.scheduler = scheduler
+        self.curriculum_manager = curriculum_manager
         self._total_steps: int = 0
 
     def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
-        difficulty = self.scheduler(self._total_steps)
-        if hasattr(self.env.unwrapped, "difficulty"):
+        if self.curriculum_manager is not None:
+            config = self.curriculum_manager.get_env_config()
+            for key, value in config.items():
+                if hasattr(self.env.unwrapped, key):
+                    setattr(self.env.unwrapped, key, value)
+        elif self.scheduler is not None and hasattr(self.env.unwrapped, "difficulty"):
+            difficulty = self.scheduler(self._total_steps)
             self.env.unwrapped.difficulty = difficulty  # type: ignore[attr-defined]
         return self.env.reset(**kwargs)
 

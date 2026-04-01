@@ -34,6 +34,7 @@ from navirl.agents.networks.attention import (
     TransformerEncoderLayer,
 )
 from navirl.agents.networks.cnn import (
+    CNNExtractor,
     EgoCentricCNN,
     ImpalaCNN,
     LidarEncoder,
@@ -82,6 +83,7 @@ from navirl.agents.networks.rnn import (
     HiddenStateManager,
     LSTMCore,
     RecurrentPolicy,
+    RNNEncoder,
     SequenceEncoder,
 )
 
@@ -99,6 +101,7 @@ __all__ = [
     "init_weights_uniform",
     # CNN
     "NatureDQN",
+    "CNNExtractor",
     "ImpalaCNN",
     "OccupancyGridEncoder",
     "LidarEncoder",
@@ -141,6 +144,7 @@ __all__ = [
     "GRUCore",
     "RecurrentPolicy",
     "SequenceEncoder",
+    "RNNEncoder",
     "HiddenStateManager",
     "AttentionOverMemory",
 ]

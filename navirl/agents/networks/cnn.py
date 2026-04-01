@@ -609,6 +609,10 @@ class EgoCentricCNN(nn.Module):
         )
 
 
+class CNNExtractor(NatureDQN):
+    """Backward-compatible alias for the default CNN encoder."""
+
+
 # =====================================================================
 # SpatialAttentionModule
 # =====================================================================

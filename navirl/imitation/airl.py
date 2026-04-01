@@ -114,13 +114,19 @@ class RewardNetwork(nn.Module):
 
     def __init__(
         self,
-        obs_dim: int,
-        action_dim: int,
+        obs_dim: int | None = None,
+        action_dim: int | None = None,
         hidden_dims: Sequence[int] = (256, 256),
         gamma: float = 0.99,
         state_only: bool = False,
+        *,
+        state_dim: int | None = None,
     ) -> None:
         super().__init__()
+        if obs_dim is None:
+            obs_dim = state_dim
+        if obs_dim is None or action_dim is None:
+            raise ValueError("obs_dim/state_dim and action_dim must be provided")
         self.gamma = gamma
         self.state_only = state_only
 
@@ -187,8 +193,8 @@ class RewardNetwork(nn.Module):
         obs: torch.Tensor,
         actions: torch.Tensor,
         next_obs: torch.Tensor,
-        dones: torch.Tensor,
-    ) -> torch.Tensor:
+        dones: torch.Tensor | None = None,
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Compute f(s, a, s') = g(s, a) + gamma * h(s') - h(s).
 
         Parameters
@@ -210,6 +216,9 @@ class RewardNetwork(nn.Module):
         reward = self.g(obs, actions)
         h_s = self.h(obs)
         h_sp = self.h(next_obs)
+        if dones is None:
+            shaping = self.gamma * h_sp - h_s
+            return reward, shaping
         dones = dones.reshape(-1, 1).float()
         shaping = self.gamma * h_sp * (1.0 - dones) - h_s
         return reward + shaping

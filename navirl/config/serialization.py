@@ -74,6 +74,9 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
     path = pathlib.Path(path)
     fmt = _resolve_format(path, None)
 
+    if fmt == "" and path.exists():
+        return _load_config_without_extension(path)
+
     if fmt == "json":
         with open(path) as fh:
             return json.load(fh)
@@ -260,6 +263,37 @@ def _import_toml_read() -> Any:
             "tomllib (3.11+), tomli, or toml is required for TOML reading: "
             "pip install tomli"
         ) from exc
+
+
+def _load_config_without_extension(path: pathlib.Path) -> dict[str, Any]:
+    with open(path) as fh:
+        text = fh.read()
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        yaml = _import_yaml()
+        loaded = yaml.safe_load(text)
+        if isinstance(loaded, dict):
+            return loaded
+    except Exception:
+        pass
+
+    try:
+        toml_mod = _import_toml_read()
+        with open(path, "rb") as fh:
+            loaded = toml_mod(fh)
+        if isinstance(loaded, dict):
+            return loaded
+    except Exception:
+        pass
+
+    raise ValueError(
+        f"Cannot infer format from extension: '{path.suffix}' and content parsing failed"
+    )
 
 
 def _flatten_to_args(

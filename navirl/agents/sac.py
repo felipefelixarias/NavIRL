@@ -446,7 +446,7 @@ class SACAgent(BaseAgent):
             features = self.actor_trunk(obs_t)
 
             if deterministic:
-                mean, _ = self.actor_head(features)
+                mean, _ = self.actor_head.distribution_params(features)
                 action = torch.tanh(mean)
                 return self._to_numpy(action.squeeze(0)), {}
             else:

@@ -855,3 +855,7 @@ class AttentionOverMemory(nn.Module):
             f"query_dim={self.query_dim}, memory_dim={self.memory_dim}, "
             f"num_heads={self.num_heads}"
         )
+
+
+class RNNEncoder(SequenceEncoder):
+    """Backward-compatible alias for the sequence encoder."""

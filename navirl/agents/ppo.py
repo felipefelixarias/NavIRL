@@ -43,7 +43,6 @@ import numpy as np
 
 try:
     import torch
-    import torch.nn as nn
     import torch.nn.functional as F
 
     _TORCH_AVAILABLE = True
@@ -396,7 +395,8 @@ class PPOAgent(BaseAgent):
             self._modules.append(self._critic_backbone)
 
         # --- Optimizer ---
-        all_params: list[torch.nn.Parameter] = list(self._actor_backbone.parameters()) + list(self._policy_head.parameters())
+        all_params: list[torch.nn.Parameter] = list(self._actor_backbone.parameters())
+        all_params += list(self._policy_head.parameters())
         if not cfg.shared_backbone:
             all_params += list(self._critic_backbone.parameters())
         all_params += list(self._value_head.parameters())
@@ -518,13 +518,13 @@ class PPOAgent(BaseAgent):
         values = self._get_value(obs_tensor)
 
         if self._continuous:
-            mean, log_std = self._policy_head(actor_features)
+            mean, log_std = self._policy_head.distribution_params(actor_features)
             std = log_std.exp()
             dist = torch.distributions.Normal(mean, std)
             log_probs = dist.log_prob(actions_tensor).sum(dim=-1)
             entropy = dist.entropy().sum(dim=-1)
         else:
-            logits = self._policy_head(actor_features)
+            logits = self._policy_head.logits(actor_features)
             dist = torch.distributions.Categorical(logits=logits)
             log_probs = dist.log_prob(actions_tensor.squeeze(-1))
             entropy = dist.entropy()
@@ -548,11 +548,11 @@ class PPOAgent(BaseAgent):
         """
         actor_features = self._actor_backbone(obs_tensor)
         if self._continuous:
-            mean, log_std = self._policy_head(actor_features)
+            mean, log_std = self._policy_head.distribution_params(actor_features)
             std = log_std.exp()
             return torch.distributions.Normal(mean, std)
         else:
-            logits = self._policy_head(actor_features)
+            logits = self._policy_head.logits(actor_features)
             return torch.distributions.Categorical(logits=logits)
 
     # ------------------------------------------------------------------
@@ -592,7 +592,7 @@ class PPOAgent(BaseAgent):
             value = self._get_value(obs_tensor)
 
             if self._continuous:
-                mean, log_std = self._policy_head(actor_features)
+                mean, log_std = self._policy_head.distribution_params(actor_features)
                 std = log_std.exp()
                 dist = torch.distributions.Normal(mean, std)
                 if deterministic:
@@ -601,7 +601,7 @@ class PPOAgent(BaseAgent):
                     action_tensor = dist.sample()
                 log_prob = dist.log_prob(action_tensor).sum(dim=-1)
             else:
-                logits = self._policy_head(actor_features)
+                logits = self._policy_head.logits(actor_features)
                 dist = torch.distributions.Categorical(logits=logits)
                 if deterministic:
                     action_tensor = logits.argmax(dim=-1)

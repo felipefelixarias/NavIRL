@@ -20,7 +20,6 @@ import numpy as np
 
 try:
     import torch
-    from torch.utils.data import Dataset as TorchDataset
 
     _TORCH_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -94,13 +93,16 @@ class DemonstrationDataset:
         next_observations: np.ndarray | None = None,
         dones: np.ndarray | None = None,
     ) -> None:
-        self.observations = observations if observations is not None else np.empty((0,))
-        self.actions = actions if actions is not None else np.empty((0,))
-        self.rewards = rewards if rewards is not None else np.empty((0,))
-        self.next_observations = (
-            next_observations if next_observations is not None else np.empty((0,))
+        self.observations = (
+            observations if observations is not None else np.empty((0,), dtype=np.float32)
         )
-        self.dones = dones if dones is not None else np.empty((0,))
+        self.actions = actions if actions is not None else np.empty((0,), dtype=np.float32)
+        n = len(self.observations)
+        self.rewards = rewards if rewards is not None else np.zeros(n, dtype=np.float32)
+        self.next_observations = (
+            next_observations if next_observations is not None else np.zeros_like(self.observations)
+        )
+        self.dones = dones if dones is not None else np.zeros(n, dtype=np.float32)
 
         self._stats: FeatureStatistics | None = None
 
@@ -378,6 +380,7 @@ class DemonstrationDataset:
 
     def split(
         self,
+        train_ratio: float | None = None,
         val_ratio: float = 0.1,
         test_ratio: float = 0.0,
         shuffle: bool = True,
@@ -403,6 +406,8 @@ class DemonstrationDataset:
             when ``test_ratio == 0``.
         """
         n = len(self)
+        if train_ratio is not None:
+            val_ratio = max(0.0, 1.0 - train_ratio - test_ratio)
         indices = np.arange(n)
         if shuffle:
             rng = np.random.RandomState(seed)
@@ -435,6 +440,8 @@ class DemonstrationDataset:
             len(val_ds),
             len(test_ds) if test_ds is not None else "N/A",
         )
+        if train_ratio is not None and test_ratio == 0.0:
+            return train_ds, val_ds
         return train_ds, val_ds, test_ds
 
     # ------------------------------------------------------------------
@@ -516,3 +523,22 @@ class DemonstrationDataset:
             f"DemonstrationDataset(n={len(self)}, "
             f"obs_shape={obs_shape}, action_shape={act_shape})"
         )
+
+    def save(self, path: str | pathlib.Path) -> None:
+        np.savez(
+            path,
+            obs=self.observations,
+            actions=self.actions,
+            rewards=self.rewards,
+            next_obs=self.next_observations,
+            dones=self.dones,
+        )
+
+    @classmethod
+    def load(cls, path: str | pathlib.Path) -> DemonstrationDataset:
+        path = pathlib.Path(path)
+        if path.suffix == ".npz":
+            return cls.load_from_npz(path)
+        if path.suffix in {".h5", ".hdf5"}:
+            return cls.load_from_hdf5(path)
+        raise ValueError(f"Unsupported demonstration dataset format: {path.suffix}")

@@ -27,13 +27,6 @@ import numpy as np
 
 from navirl.agents.base import HyperParameters
 
-try:
-    import torch
-
-    _TORCH_AVAILABLE = True
-except ImportError:  # pragma: no cover
-    _TORCH_AVAILABLE = False
-
 logger = logging.getLogger(__name__)
 
 __all__ = ["MaxEntIRLConfig", "MaxEntIRL"]
@@ -92,11 +85,13 @@ class MaxEntIRL:
     def __init__(
         self,
         config: MaxEntIRLConfig,
-        feature_fn: Callable[[np.ndarray], np.ndarray],
-        forward_rl_fn: Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]] | None = None,
+        feature_fn: Callable[[np.ndarray], np.ndarray] | None = None,
+        forward_rl_fn: (
+            Callable[[Callable[[np.ndarray], float], int], list[list[np.ndarray]]] | None
+        ) = None,
     ) -> None:
         self._config = config
-        self._feature_fn = feature_fn
+        self._feature_fn = feature_fn or self._default_feature_fn
         self._forward_rl_fn = forward_rl_fn
 
         # Linear reward parameters
@@ -145,6 +140,12 @@ class MaxEntIRL:
         """
         phi = self._feature_fn(observation)
         return float(self._theta @ phi)
+
+    def compute_reward(self, features_or_observation: np.ndarray) -> float:
+        array = np.asarray(features_or_observation, dtype=np.float64).reshape(-1)
+        if array.size == self._config.feature_dim:
+            return float(self._theta @ array)
+        return self.reward(array)
 
     def reward_batch(self, observations: np.ndarray) -> np.ndarray:
         """Compute the learned reward for a batch of observations.
@@ -270,6 +271,19 @@ class MaxEntIRL:
         self._history.append(metrics)
         return metrics
 
+    def update(
+        self, expert_features: np.ndarray, policy_features: np.ndarray
+    ) -> dict[str, float]:
+        return self.update_step(expert_features, policy_features)
+
+    def _default_feature_fn(self, observation: np.ndarray) -> np.ndarray:
+        obs = np.asarray(observation, dtype=np.float64).reshape(-1)
+        if obs.size >= self._config.feature_dim:
+            return obs[: self._config.feature_dim]
+        padded = np.zeros(self._config.feature_dim, dtype=np.float64)
+        padded[: obs.size] = obs
+        return padded
+
     # ------------------------------------------------------------------
     # Full training loop
     # ------------------------------------------------------------------
@@ -325,7 +339,10 @@ class MaxEntIRL:
             metrics = self.update_step(expert_fe, policy_fe)
             all_metrics.append(metrics)
 
-            if verbose and (it % max(1, cfg.num_iterations // 20) == 0 or it == cfg.num_iterations - 1):
+            if verbose and (
+                it % max(1, cfg.num_iterations // 20) == 0
+                or it == cfg.num_iterations - 1
+            ):
                 logger.info(
                     "MaxEntIRL iter %3d/%d  grad_norm=%.6f  theta_norm=%.6f",
                     it + 1,

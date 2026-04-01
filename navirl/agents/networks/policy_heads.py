@@ -43,6 +43,21 @@ from torch.distributions import Categorical, Normal
 
 from navirl.agents.networks.mlp import MLP
 
+
+class GaussianPolicyOutput:
+    """Tuple-like Gaussian parameters with a convenience sampler."""
+
+    def __init__(self, mean: Tensor, log_std: Tensor) -> None:
+        self.mean = mean
+        self.log_std = log_std
+
+    def __iter__(self):
+        yield self.mean
+        yield self.log_std
+
+    def sample(self) -> Tensor:
+        return Normal(self.mean, self.log_std.exp()).sample()
+
 # =====================================================================
 # Gaussian Policy Head
 # =====================================================================
@@ -85,7 +100,7 @@ class GaussianPolicyHead(nn.Module):
         nn.init.uniform_(self.log_std_head.bias, -3e-3, 3e-3)
 
     # ------------------------------------------------------------------
-    def forward(self, features: Tensor) -> tuple[Tensor, Tensor]:
+    def distribution_params(self, features: Tensor) -> tuple[Tensor, Tensor]:
         """Compute mean and log_std.
 
         Parameters
@@ -102,6 +117,10 @@ class GaussianPolicyHead(nn.Module):
         log_std = log_std.clamp(self.log_std_min, self.log_std_max)
         return mean, log_std
 
+    def forward(self, features: Tensor) -> GaussianPolicyOutput:
+        mean, log_std = self.distribution_params(features)
+        return GaussianPolicyOutput(mean, log_std)
+
     # ------------------------------------------------------------------
     def sample(self, features: Tensor) -> tuple[Tensor, Tensor]:
         """Sample an action and compute its log-probability.
@@ -115,7 +134,7 @@ class GaussianPolicyHead(nn.Module):
         action : Tensor ``(B, action_dim)``
         log_prob : Tensor ``(B,)``
         """
-        mean, log_std = self.forward(features)
+        mean, log_std = self.distribution_params(features)
         std = log_std.exp()
         dist = Normal(mean, std)
         action = dist.rsample()
@@ -218,14 +237,23 @@ class CategoricalPolicyHead(nn.Module):
         Number of discrete actions.
     """
 
-    def __init__(self, input_dim: int, num_actions: int) -> None:
+    def __init__(
+        self,
+        input_dim: int,
+        num_actions: int | None = None,
+        n_actions: int | None = None,
+    ) -> None:
         super().__init__()
+        if num_actions is None:
+            num_actions = n_actions
+        if num_actions is None:
+            raise ValueError("num_actions or n_actions must be provided")
         self.input_dim = input_dim
         self.num_actions = num_actions
         self.logits_head = nn.Linear(input_dim, num_actions)
 
     # ------------------------------------------------------------------
-    def forward(self, features: Tensor) -> Tensor:
+    def logits(self, features: Tensor) -> Tensor:
         """Return raw logits.
 
         Parameters
@@ -237,6 +265,9 @@ class CategoricalPolicyHead(nn.Module):
         logits : Tensor ``(B, num_actions)``
         """
         return self.logits_head(features)
+
+    def forward(self, features: Tensor) -> Categorical:
+        return Categorical(logits=self.logits(features))
 
     # ------------------------------------------------------------------
     def sample(self, features: Tensor) -> tuple[Tensor, Tensor, Tensor]:
@@ -252,8 +283,7 @@ class CategoricalPolicyHead(nn.Module):
         log_prob : Tensor ``(B,)``
         entropy : Tensor ``(B,)``
         """
-        logits = self.forward(features)
-        dist = Categorical(logits=logits)
+        dist = self.forward(features)
         action = dist.sample()
         return action, dist.log_prob(action), dist.entropy()
 

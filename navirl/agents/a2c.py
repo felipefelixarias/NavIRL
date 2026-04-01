@@ -180,13 +180,13 @@ class A2CAgent(BaseAgent):
         values = self._value_head(features).squeeze(-1)
 
         if self._continuous:
-            mean, log_std = self._policy_head(features)
+            mean, log_std = self._policy_head.distribution_params(features)
             std = log_std.exp()
             dist = torch.distributions.Normal(mean, std)
             log_probs = dist.log_prob(actions_tensor).sum(dim=-1)
             entropy = dist.entropy().sum(dim=-1)
         else:
-            logits = self._policy_head(features)
+            logits = self._policy_head.logits(features)
             dist = torch.distributions.Categorical(logits=logits)
             log_probs = dist.log_prob(actions_tensor.squeeze(-1))
             entropy = dist.entropy()
@@ -227,7 +227,7 @@ class A2CAgent(BaseAgent):
             value = self._value_head(features).squeeze(-1)
 
             if self._continuous:
-                mean, log_std = self._policy_head(features)
+                mean, log_std = self._policy_head.distribution_params(features)
                 if deterministic:
                     action_tensor = mean
                     std = log_std.exp()
@@ -239,7 +239,7 @@ class A2CAgent(BaseAgent):
                     action_tensor = dist.sample()
                     log_prob = dist.log_prob(action_tensor).sum(dim=-1)
             else:
-                logits = self._policy_head(features)
+                logits = self._policy_head.logits(features)
                 dist = torch.distributions.Categorical(logits=logits)
                 if deterministic:
                     action_tensor = logits.argmax(dim=-1)
