@@ -286,7 +286,8 @@ class CompositeReward(RewardFunction):
         """
         comp = self.get_component(name)
         if comp is None:
-            raise KeyError(f"No component named {name!r}")
+            msg = f"No component named {name!r}"
+            raise KeyError(msg)
         comp.weight = weight
 
     def enable(self, name: str) -> None:
@@ -580,7 +581,8 @@ class RewardClipper(RewardFunction):
         name: str | None = None,
     ) -> None:
         if low >= high:
-            raise ValueError(f"low ({low}) must be < high ({high})")
+            msg = f"low ({low}) must be < high ({high})"
+            raise ValueError(msg)
         super().__init__(name=name or f"Clipped({reward_fn.name})")
         self._fn = reward_fn
         self._low = low
@@ -691,7 +693,8 @@ class RewardShaper(RewardFunction):
         scale: float = 1.0,
     ) -> None:
         if not 0.0 <= gamma <= 1.0:
-            raise ValueError(f"gamma must be in [0, 1], got {gamma}")
+            msg = f"gamma must be in [0, 1], got {gamma}"
+            raise ValueError(msg)
         super().__init__(name=name or f"Shaped({reward_fn.name})")
         self._fn = reward_fn
         self._potential_fn = potential_fn

@@ -64,7 +64,8 @@ __all__ = list(_EXPORTS)
 def __getattr__(name: str) -> object:
     module_name = _EXPORTS.get(name)
     if module_name is None:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+        msg = f"module {__name__!r} has no attribute {name!r}"
+        raise AttributeError(msg)
     module = import_module(module_name)
     value = getattr(module, name)
     globals()[name] = value

@@ -74,7 +74,8 @@ class HyperParameters:
 
     def __setitem__(self, key: str, value: Any) -> None:
         if not hasattr(self, key):
-            raise KeyError(f"{key!r} is not a valid hyperparameter for {type(self).__name__}")
+            msg = f"{key!r} is not a valid hyperparameter for {type(self).__name__}"
+            raise KeyError(msg)
         setattr(self, key, value)
 
     def __contains__(self, key: str) -> bool:
@@ -551,7 +552,8 @@ class BaseAgent(abc.ABC):
         """
         path = pathlib.Path(path)
         if not path.exists():
-            raise FileNotFoundError(f"Checkpoint not found: {path}")
+            msg = f"Checkpoint not found: {path}"
+            raise FileNotFoundError(msg)
 
         if _TORCH_AVAILABLE:
             payload = torch.load(path, map_location=self._device, weights_only=False)
@@ -670,7 +672,8 @@ class BaseAgent(abc.ABC):
         """
         if agent_name not in cls._registry:
             available = ", ".join(sorted(cls._registry.keys()))
-            raise ValueError(f"Unknown agent {agent_name!r}. Registered agents: {available}")
+            msg = f"Unknown agent {agent_name!r}. Registered agents: {available}"
+            raise ValueError(msg)
         return cls._registry[agent_name](config, observation_space, action_space, **kwargs)
 
     @classmethod

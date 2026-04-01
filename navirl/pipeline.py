@@ -682,7 +682,8 @@ def run_batch(args: argparse.Namespace) -> list[EpisodeLog]:
     scenario_dir = Path(args.scenarios)
     scenario_files = sorted(scenario_dir.rglob("*.yaml"))
     if not scenario_files:
-        raise FileNotFoundError(f"No scenario YAML files found under {scenario_dir}")
+        msg = f"No scenario YAML files found under {scenario_dir}"
+        raise FileNotFoundError(msg)
 
     seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()]
     logs: list[EpisodeLog] = []
