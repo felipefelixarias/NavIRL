@@ -33,10 +33,6 @@ def _world_to_rc(
     return row, col
 
 
-def _agent_speed(agent: dict) -> float:
-    return float(math.hypot(agent["vx"], agent["vy"]))
-
-
 def _pair_dist(a: dict, b: dict) -> float:
     return float(math.hypot(a["x"] - b["x"], a["y"] - b["y"]))
 

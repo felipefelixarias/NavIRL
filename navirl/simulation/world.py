@@ -197,19 +197,6 @@ def _circle_segment(
     return normal, overlap
 
 
-def _aabb_overlap(a: AABB, b: AABB) -> tuple[np.ndarray, float] | None:
-    """Compute AABB overlap, return (mtv_direction, penetration) or None."""
-    dx = min(a.x_max, b.x_max) - max(a.x_min, b.x_min)
-    dy = min(a.y_max, b.y_max) - max(a.y_min, b.y_min)
-    if dx <= 0 or dy <= 0:
-        return None
-    if dx < dy:
-        sign = 1.0 if a.center[0] < b.center[0] else -1.0
-        return np.array([sign, 0.0]), dx
-    sign = 1.0 if a.center[1] < b.center[1] else -1.0
-    return np.array([0.0, sign]), dy
-
-
 # ---------------------------------------------------------------------------
 # Collision Result
 # ---------------------------------------------------------------------------
