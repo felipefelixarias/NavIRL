@@ -17,6 +17,13 @@ import numpy as np
 from navirl.humans.pedestrian_state import PedestrianState, PersonalityTag
 
 # ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Field of view angles (in radians)
+DEFAULT_FIELD_OF_VIEW = math.pi * 2.0 / 3.0  # 120 degrees - typical human peripheral vision
+
+# ---------------------------------------------------------------------------
 # Attention model
 # ---------------------------------------------------------------------------
 
@@ -40,7 +47,7 @@ class AttentionModel:
     """
 
     awareness_radius: float = 10.0
-    field_of_view: float = math.pi * 2.0 / 3.0  # 120 deg
+    field_of_view: float = DEFAULT_FIELD_OF_VIEW
     distraction_probability: float = 0.0
     distraction_duration_mean: float = 2.0
     reaction_time: float = 0.2

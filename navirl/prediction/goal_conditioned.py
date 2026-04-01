@@ -8,6 +8,19 @@ import numpy as np
 
 from navirl.prediction.base import PredictionResult, TrajectoryPredictor
 
+# ---------------------------------------------------------------------------
+# Intent Classification Constants
+# ---------------------------------------------------------------------------
+
+# Probability scores for intent classification
+HIGH_CONFIDENCE_SCORE = 3.0  # High confidence in predicted intent
+MODERATE_CONFIDENCE_SCORE = 2.0  # Moderate confidence in predicted intent
+MEDIUM_CONFIDENCE_SCORE = 0.2  # Medium confidence/default score
+LOW_CONFIDENCE_SCORE = 0.1   # Low confidence/baseline score
+
+# Behavior thresholds
+DECELERATION_THRESHOLD = -0.1  # m/s² threshold for detecting deceleration
+
 
 class PedestrianIntent(Enum):
     """Discrete pedestrian intent categories."""
@@ -244,23 +257,23 @@ class IntentPredictor:
 
         # Stopping / waiting.
         if recent_speed < self.stop_speed_threshold:
-            if recent_accel < -0.1:
-                scores[PedestrianIntent.STOPPING.value] = 3.0
+            if recent_accel < DECELERATION_THRESHOLD:
+                scores[PedestrianIntent.STOPPING.value] = HIGH_CONFIDENCE_SCORE
             else:
-                scores[PedestrianIntent.WAITING.value] = 3.0
+                scores[PedestrianIntent.WAITING.value] = HIGH_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.STOPPING.value] = 0.1
-            scores[PedestrianIntent.WAITING.value] = 0.1
+            scores[PedestrianIntent.STOPPING.value] = LOW_CONFIDENCE_SCORE
+            scores[PedestrianIntent.WAITING.value] = LOW_CONFIDENCE_SCORE
 
         # Turning.
         if abs(mean_curvature) > self.turn_curvature_threshold:
             if mean_curvature > 0:
-                scores[PedestrianIntent.TURNING_LEFT.value] = 3.0
+                scores[PedestrianIntent.TURNING_LEFT.value] = HIGH_CONFIDENCE_SCORE
             else:
-                scores[PedestrianIntent.TURNING_RIGHT.value] = 3.0
+                scores[PedestrianIntent.TURNING_RIGHT.value] = HIGH_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.TURNING_LEFT.value] = 0.1
-            scores[PedestrianIntent.TURNING_RIGHT.value] = 0.1
+            scores[PedestrianIntent.TURNING_LEFT.value] = LOW_CONFIDENCE_SCORE
+            scores[PedestrianIntent.TURNING_RIGHT.value] = LOW_CONFIDENCE_SCORE
 
         # Crossing (lateral motion relative to dominant direction).
         context = context or {}
@@ -272,18 +285,18 @@ class IntentPredictor:
         lateral = np.array([-road_direction[1], road_direction[0]])
         lateral_speed = abs(np.dot(velocities[-1], lateral))  # np.dot already returns float
         if lateral_speed > self.crossing_lateral_threshold:
-            scores[PedestrianIntent.CROSSING.value] = 3.0
+            scores[PedestrianIntent.CROSSING.value] = HIGH_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.CROSSING.value] = 0.2
+            scores[PedestrianIntent.CROSSING.value] = MEDIUM_CONFIDENCE_SCORE
 
         # Straight walking (default).
         if (
             recent_speed >= self.stop_speed_threshold
             and abs(mean_curvature) <= self.turn_curvature_threshold
         ):
-            scores[PedestrianIntent.WALKING_STRAIGHT.value] = 2.0
+            scores[PedestrianIntent.WALKING_STRAIGHT.value] = MODERATE_CONFIDENCE_SCORE
         else:
-            scores[PedestrianIntent.WALKING_STRAIGHT.value] = 0.2
+            scores[PedestrianIntent.WALKING_STRAIGHT.value] = MEDIUM_CONFIDENCE_SCORE
 
         # Normalise to probabilities.
         total = sum(scores.values())
