@@ -19,8 +19,9 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -73,8 +74,8 @@ class AIRLConfig(HyperParameters):
     lr_policy: float = 3e-4
     gamma: float = 0.99
     gae_lambda: float = 0.95
-    disc_hidden_dims: Tuple[int, ...] = (256, 256)
-    policy_hidden_dims: Tuple[int, ...] = (256, 256)
+    disc_hidden_dims: tuple[int, ...] = (256, 256)
+    policy_hidden_dims: tuple[int, ...] = (256, 256)
     disc_epochs: int = 5
     policy_epochs: int = 10
     batch_size: int = 64
@@ -145,8 +146,8 @@ class RewardNetwork(nn.Module):
         self.h_net = nn.Sequential(*h_layers)
 
     def g(
-        self, obs: "torch.Tensor", actions: Optional["torch.Tensor"] = None
-    ) -> "torch.Tensor":
+        self, obs: torch.Tensor, actions: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """Compute the reward component g(s, a) (or g(s) if state_only).
 
         Parameters
@@ -166,7 +167,7 @@ class RewardNetwork(nn.Module):
         assert actions is not None
         return self.g_net(torch.cat([obs, actions], dim=-1))
 
-    def h(self, obs: "torch.Tensor") -> "torch.Tensor":
+    def h(self, obs: torch.Tensor) -> torch.Tensor:
         """Compute the shaping potential h(s).
 
         Parameters
@@ -183,11 +184,11 @@ class RewardNetwork(nn.Module):
 
     def forward(
         self,
-        obs: "torch.Tensor",
-        actions: "torch.Tensor",
-        next_obs: "torch.Tensor",
-        dones: "torch.Tensor",
-    ) -> "torch.Tensor":
+        obs: torch.Tensor,
+        actions: torch.Tensor,
+        next_obs: torch.Tensor,
+        dones: torch.Tensor,
+    ) -> torch.Tensor:
         """Compute f(s, a, s') = g(s, a) + gamma * h(s') - h(s).
 
         Parameters
@@ -215,9 +216,9 @@ class RewardNetwork(nn.Module):
 
     def predict_reward(
         self,
-        obs: "torch.Tensor",
-        actions: Optional["torch.Tensor"] = None,
-    ) -> "torch.Tensor":
+        obs: torch.Tensor,
+        actions: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         """Extract the learned reward g(s, a) for use in downstream tasks.
 
         Parameters
@@ -270,8 +271,8 @@ class _AIRLPolicyValue(nn.Module):
         self.action_type = action_type
 
     def forward(
-        self, obs: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor"]:
+        self, obs: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         feat = self.features(obs)
         value = self.value_head(feat)
         if self.action_type == "continuous":
@@ -279,8 +280,8 @@ class _AIRLPolicyValue(nn.Module):
         return self.action_logits(feat), value
 
     def evaluate_actions(
-        self, obs: "torch.Tensor", actions: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
+        self, obs: torch.Tensor, actions: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Return log-probs, values, and entropy for the given actions."""
         feat = self.features(obs)
         value = self.value_head(feat).squeeze(-1)
@@ -300,8 +301,8 @@ class _AIRLPolicyValue(nn.Module):
         return log_probs, value, entropy
 
     def get_log_prob(
-        self, obs: "torch.Tensor", actions: "torch.Tensor"
-    ) -> "torch.Tensor":
+        self, obs: torch.Tensor, actions: torch.Tensor
+    ) -> torch.Tensor:
         """Return log pi(a|s) for AIRL discriminator."""
         feat = self.features(obs)
         if self.action_type == "continuous":
@@ -348,8 +349,8 @@ class AIRLAgent(BaseAgent):
         config: AIRLConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(
@@ -407,9 +408,9 @@ class AIRLAgent(BaseAgent):
 
     def update_discriminator(
         self,
-        expert_batch: Dict[str, np.ndarray],
-        policy_batch: Dict[str, np.ndarray],
-    ) -> Dict[str, float]:
+        expert_batch: dict[str, np.ndarray],
+        policy_batch: dict[str, np.ndarray],
+    ) -> dict[str, float]:
         """Update the AIRL discriminator (reward network).
 
         The AIRL discriminator is:
@@ -432,7 +433,7 @@ class AIRLAgent(BaseAgent):
         """
         cfg: AIRLConfig = self._config  # type: ignore[assignment]
 
-        def _prep(batch: Dict[str, np.ndarray]) -> Tuple:
+        def _prep(batch: dict[str, np.ndarray]) -> tuple:
             o = self._to_tensor(batch["obs"], torch.float32).reshape(-1, self._obs_dim)
             a = self._to_tensor(batch["actions"], torch.float32)
             no = self._to_tensor(batch["next_obs"], torch.float32).reshape(
@@ -502,7 +503,7 @@ class AIRLAgent(BaseAgent):
     # Policy update (PPO)
     # ------------------------------------------------------------------
 
-    def update_policy(self, rollout_buffer: Any) -> Dict[str, float]:
+    def update_policy(self, rollout_buffer: Any) -> dict[str, float]:
         """Update the policy via PPO using the AIRL-learned reward.
 
         Parameters
@@ -590,7 +591,7 @@ class AIRLAgent(BaseAgent):
     # BaseAgent interface
     # ------------------------------------------------------------------
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Combined discriminator + policy update.
 
         Parameters
@@ -636,7 +637,7 @@ class AIRLAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -692,7 +693,7 @@ class AIRLAgent(BaseAgent):
     def compute_reward(
         self,
         obs: np.ndarray,
-        actions: Optional[np.ndarray] = None,
+        actions: np.ndarray | None = None,
     ) -> np.ndarray:
         """Compute the learned reward g(s, a) for a batch.
 
@@ -715,7 +716,7 @@ class AIRLAgent(BaseAgent):
         reward_t = self._reward_net.predict_reward(obs_t, act_t)
         return self._to_numpy(reward_t).flatten()
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Persist the AIRL agent to disk."""
         self._save_checkpoint(
             path,
@@ -725,7 +726,7 @@ class AIRLAgent(BaseAgent):
             },
         )
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Restore the AIRL agent from a checkpoint."""
         payload = self._load_checkpoint(path)
         self._reward_net.load_state_dict(payload["model"]["reward_net"])

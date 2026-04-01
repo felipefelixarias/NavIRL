@@ -13,7 +13,6 @@ from navirl.overseer.provider import (
     run_structured_vlm,
 )
 
-
 AEGIS_NAME = "Aegis Overseer"
 
 AEGIS_REVIEW_SCHEMA = {

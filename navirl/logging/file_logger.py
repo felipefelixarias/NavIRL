@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import csv
 import gzip
-import io
 import json
 import logging
 import os
@@ -25,14 +24,14 @@ import shutil
 import tempfile
 import threading
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Generator, Sequence, TextIO
+from typing import Any, TextIO
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Log levels

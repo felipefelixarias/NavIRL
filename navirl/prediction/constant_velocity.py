@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -30,7 +30,7 @@ class ConstantVelocityPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         if observed_trajectory.shape[0] < 2:
             raise ValueError("Need at least 2 observed positions for constant velocity.")
@@ -83,7 +83,7 @@ class LinearPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         obs = observed_trajectory[-self.fit_window :]
         T_obs = obs.shape[0]
@@ -196,7 +196,7 @@ class KalmanPredictor(TrajectoryPredictor):
     def predict(
         self,
         observed_trajectory: np.ndarray,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> PredictionResult:
         if observed_trajectory.shape[0] < 2:
             raise ValueError("Need at least 2 observed positions for Kalman prediction.")

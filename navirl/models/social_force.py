@@ -17,15 +17,12 @@ Reference:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import Sequence
-
-import numpy as np
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 from navirl.core.constants import EPSILON, SFM
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
-
 
 __all__ = [
     "SocialForceConfig",
@@ -416,7 +413,7 @@ class SocialForceHumanController(HumanController):
         all_states = list(states.values())
 
         # Build the list of human states for force computation
-        human_states = [states[hid] for hid in self.human_ids if hid in states]
+        [states[hid] for hid in self.human_ids if hid in states]
 
         actions: dict[int, Action] = {}
 

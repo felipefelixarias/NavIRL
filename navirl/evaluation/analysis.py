@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Protocol
 
 import numpy as np
 
-from navirl.data.trajectory import Trajectory, TrajectoryCollection
+from navirl.data.trajectory import Trajectory
 
 
 class AnalyzableAgent(Protocol):

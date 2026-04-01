@@ -39,8 +39,9 @@ from __future__ import annotations
 import copy
 import logging
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -109,8 +110,8 @@ class DistributionalTwinQ(nn.Module):
         self.delta_z = (v_max - v_min) / (n_atoms - 1)
 
         input_dim = state_dim + action_dim
-        layers1: List[nn.Module] = []
-        layers2: List[nn.Module] = []
+        layers1: list[nn.Module] = []
+        layers2: list[nn.Module] = []
         prev = input_dim
         for h in hidden_dims:
             layers1.extend([nn.Linear(prev, h), nn.ReLU()])
@@ -123,8 +124,8 @@ class DistributionalTwinQ(nn.Module):
         self.net2 = nn.Sequential(*layers2)
 
     def forward(
-        self, state: "torch.Tensor", action: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor"]:
+        self, state: torch.Tensor, action: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute Q-value distributions for both networks.
 
         Parameters
@@ -141,8 +142,8 @@ class DistributionalTwinQ(nn.Module):
         return self.net1(sa), self.net2(sa)
 
     def q_values(
-        self, state: "torch.Tensor", action: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor"]:
+        self, state: torch.Tensor, action: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Compute scalar Q-values as expectations over the distributions.
 
         Parameters
@@ -228,11 +229,11 @@ class SACConfig(HyperParameters):
     tau: float = 0.005
     alpha: float = 0.2
     auto_alpha: bool = True
-    target_entropy: Optional[float] = None
-    hidden_dims: Tuple[int, ...] = (256, 256)
+    target_entropy: float | None = None
+    hidden_dims: tuple[int, ...] = (256, 256)
     activation: str = "relu"
     batch_size: int = 256
-    max_grad_norm: Optional[float] = None
+    max_grad_norm: float | None = None
     reward_scale: float = 1.0
     normalize_observations: bool = False
     observation_clip: float = 10.0
@@ -278,8 +279,8 @@ class SACAgent(BaseAgent):
         config: SACConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(config, observation_space, action_space, device, seed, metrics_callback)
@@ -288,7 +289,7 @@ class SACAgent(BaseAgent):
         action_dim = int(np.prod(action_space.shape))
 
         # ---- Observation normalization ----
-        self._obs_rms: Optional[RunningMeanStd] = None
+        self._obs_rms: RunningMeanStd | None = None
         if config.normalize_observations:
             self._obs_rms = RunningMeanStd(shape=observation_space.shape)
 
@@ -418,7 +419,7 @@ class SACAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given an observation.
 
         Parameters
@@ -461,13 +462,13 @@ class SACAgent(BaseAgent):
 
     def _compute_distributional_critic_loss(
         self,
-        obs: "torch.Tensor",
-        action: "torch.Tensor",
-        reward: "torch.Tensor",
-        next_obs: "torch.Tensor",
-        done: "torch.Tensor",
-        current_alpha: "torch.Tensor",
-    ) -> "torch.Tensor":
+        obs: torch.Tensor,
+        action: torch.Tensor,
+        reward: torch.Tensor,
+        next_obs: torch.Tensor,
+        done: torch.Tensor,
+        current_alpha: torch.Tensor,
+    ) -> torch.Tensor:
         """Compute categorical cross-entropy loss for distributional critics.
 
         Uses the projected Bellman update to compute target distributions
@@ -544,7 +545,7 @@ class SACAgent(BaseAgent):
     # Update
     # ------------------------------------------------------------------
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Perform a single SAC gradient step on a batch of transitions.
 
         Sequentially updates: (1) critic, (2) actor (every
@@ -669,7 +670,7 @@ class SACAgent(BaseAgent):
     # Batch update for higher UTD ratios
     # ------------------------------------------------------------------
 
-    def update_multi(self, replay_buffer: Any, batch_size: Optional[int] = None) -> Dict[str, float]:
+    def update_multi(self, replay_buffer: Any, batch_size: int | None = None) -> dict[str, float]:
         """Perform multiple gradient updates per environment step.
 
         Useful for high Update-To-Data (UTD) ratio training, where the
@@ -691,7 +692,7 @@ class SACAgent(BaseAgent):
         """
         cfg: SACConfig = self._config  # type: ignore[assignment]
         bs = batch_size or cfg.batch_size
-        all_metrics: List[Dict[str, float]] = []
+        all_metrics: list[dict[str, float]] = []
 
         for _ in range(cfg.updates_per_step):
             batch = replay_buffer.sample(bs)
@@ -699,7 +700,7 @@ class SACAgent(BaseAgent):
             all_metrics.append(m)
 
         # Average metrics
-        avg: Dict[str, float] = {}
+        avg: dict[str, float] = {}
         if all_metrics:
             for key in all_metrics[0]:
                 avg[key] = float(np.mean([m[key] for m in all_metrics]))
@@ -709,7 +710,7 @@ class SACAgent(BaseAgent):
     # Save / Load
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Save agent checkpoint to disk.
 
         Persists actor, critic, target critic, entropy temperature,
@@ -720,7 +721,7 @@ class SACAgent(BaseAgent):
         path : str or Path
             Directory or file path for the checkpoint.
         """
-        state_dicts: Dict[str, Any] = {
+        state_dicts: dict[str, Any] = {
             "actor_trunk": self.actor_trunk.state_dict(),
             "actor_head": self.actor_head.state_dict(),
             "critic": self.critic.state_dict(),
@@ -732,7 +733,7 @@ class SACAgent(BaseAgent):
             state_dicts["obs_rms"] = self._obs_rms.state_dict()
         self._save_checkpoint(path, state_dicts)
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Load agent checkpoint from disk.
 
         Restores actor, critic, target critic, entropy temperature,
@@ -762,7 +763,7 @@ class SACAgent(BaseAgent):
     # Informational helpers
     # ------------------------------------------------------------------
 
-    def get_diagnostics(self, batch: Any) -> Dict[str, float]:
+    def get_diagnostics(self, batch: Any) -> dict[str, float]:
         """Compute diagnostic statistics on a batch without updating.
 
         Parameters

@@ -8,14 +8,13 @@ estimate).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from navirl.core.constants import EPSILON, SIM
+from navirl.core.constants import SIM
 from navirl.sensors.base import SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  SensorFusion
@@ -39,15 +38,15 @@ class SensorFusion:
 
     def __init__(
         self,
-        sensors: Dict[str, SensorBase],
+        sensors: dict[str, SensorBase],
         dt: float = SIM.dt,
-        rates: Optional[Dict[str, float]] = None,
+        rates: dict[str, float] | None = None,
     ) -> None:
         self.sensors = sensors
         self.dt = dt
         self.rates = rates or {}
         self._tick: int = 0
-        self._last_obs: Dict[str, Any] = {}
+        self._last_obs: dict[str, Any] = {}
 
     def reset(self) -> None:
         """Reset all sensors and the tick counter."""
@@ -56,7 +55,7 @@ class SensorFusion:
         for sensor in self.sensors.values():
             sensor.reset()
 
-    def observe(self, world_state: Dict[str, Any]) -> Dict[str, Any]:
+    def observe(self, world_state: dict[str, Any]) -> dict[str, Any]:
         """Query all sensors and return a combined observation dictionary.
 
         Sensors that are not scheduled to fire on the current tick return
@@ -68,7 +67,7 @@ class SensorFusion:
             Keys are sensor names; values are the corresponding observations.
             An additional key ``"_tick"`` records the current step counter.
         """
-        obs: Dict[str, Any] = {"_tick": self._tick}
+        obs: dict[str, Any] = {"_tick": self._tick}
 
         for name, sensor in self.sensors.items():
             if self._should_fire(name):
@@ -87,7 +86,7 @@ class SensorFusion:
         for i, sensor in enumerate(self.sensors.values()):
             sensor.seed(seed + i)
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         """Return the combined observation space as a nested dict."""
         return {
             name: sensor.get_observation_space()
@@ -128,7 +127,7 @@ class EKFConfig:
     """
 
     state_dim: int = 6
-    process_noise: Optional[np.ndarray] = None
+    process_noise: np.ndarray | None = None
     initial_covariance: float = 1.0
     dt: float = SIM.dt
 
@@ -146,7 +145,7 @@ class KalmanStateEstimator:
     Both updates can be called independently at any rate.
     """
 
-    def __init__(self, config: Optional[EKFConfig] = None) -> None:
+    def __init__(self, config: EKFConfig | None = None) -> None:
         cfg = config or EKFConfig()
         self.dt = cfg.dt
         n = cfg.state_dim
@@ -161,7 +160,7 @@ class KalmanStateEstimator:
                 np.float64
             )
 
-    def reset(self, state: Optional[np.ndarray] = None) -> None:
+    def reset(self, state: np.ndarray | None = None) -> None:
         """Reset the filter state and covariance."""
         n = self.state.shape[0]
         self.state = state.copy() if state is not None else np.zeros(n, dtype=np.float64)
@@ -169,7 +168,7 @@ class KalmanStateEstimator:
 
     # -- Predict -------------------------------------------------------------
 
-    def predict(self, dt: Optional[float] = None) -> np.ndarray:
+    def predict(self, dt: float | None = None) -> np.ndarray:
         """Constant-velocity prediction step.
 
         Parameters
@@ -207,7 +206,7 @@ class KalmanStateEstimator:
     def update_position(
         self,
         z: np.ndarray,
-        R: Optional[np.ndarray] = None,
+        R: np.ndarray | None = None,
     ) -> np.ndarray:
         """Update with a position measurement ``[x, y, heading]``.
 
@@ -249,7 +248,7 @@ class KalmanStateEstimator:
     def update_velocity(
         self,
         z: np.ndarray,
-        R: Optional[np.ndarray] = None,
+        R: np.ndarray | None = None,
     ) -> np.ndarray:
         """Update with a velocity measurement ``[vx, vy, omega]``.
 

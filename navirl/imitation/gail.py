@@ -14,8 +14,9 @@ from __future__ import annotations
 
 import logging
 import pathlib
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -68,8 +69,8 @@ class GAILConfig(HyperParameters):
     lr_policy: float = 3e-4
     gamma: float = 0.99
     gae_lambda: float = 0.95
-    disc_hidden_dims: Tuple[int, ...] = (256, 256)
-    policy_hidden_dims: Tuple[int, ...] = (256, 256)
+    disc_hidden_dims: tuple[int, ...] = (256, 256)
+    policy_hidden_dims: tuple[int, ...] = (256, 256)
     disc_epochs: int = 5
     policy_epochs: int = 10
     batch_size: int = 64
@@ -119,7 +120,7 @@ class Discriminator(nn.Module):
         layers.append(nn.Linear(prev_dim, 1))
         self.net = nn.Sequential(*layers)
 
-    def forward(self, obs: "torch.Tensor", actions: "torch.Tensor") -> "torch.Tensor":
+    def forward(self, obs: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Compute discriminator logits.
 
         Parameters
@@ -138,8 +139,8 @@ class Discriminator(nn.Module):
         return self.net(sa)
 
     def predict_reward(
-        self, obs: "torch.Tensor", actions: "torch.Tensor"
-    ) -> "torch.Tensor":
+        self, obs: torch.Tensor, actions: torch.Tensor
+    ) -> torch.Tensor:
         """Compute GAIL reward: -log(1 - D(s, a)).
 
         Parameters
@@ -199,8 +200,8 @@ class _PolicyValueNet(nn.Module):
         self.action_type = action_type
 
     def forward(
-        self, obs: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor"]:
+        self, obs: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Return policy distribution parameters and value estimate."""
         feat = self.features(obs)
         value = self.value_head(feat)
@@ -212,8 +213,8 @@ class _PolicyValueNet(nn.Module):
             return logits, value
 
     def evaluate_actions(
-        self, obs: "torch.Tensor", actions: "torch.Tensor"
-    ) -> Tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
+        self, obs: torch.Tensor, actions: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Evaluate actions: return log-probs, values, and entropy.
 
         Parameters
@@ -280,8 +281,8 @@ class GAILAgent(BaseAgent):
         config: GAILConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, "torch.device"] = "cpu",
-        seed: Optional[int] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
         metrics_callback: Any = None,
     ) -> None:
         super().__init__(
@@ -337,9 +338,9 @@ class GAILAgent(BaseAgent):
 
     def update_discriminator(
         self,
-        expert_batch: Dict[str, np.ndarray],
-        policy_batch: Dict[str, np.ndarray],
-    ) -> Dict[str, float]:
+        expert_batch: dict[str, np.ndarray],
+        policy_batch: dict[str, np.ndarray],
+    ) -> dict[str, float]:
         """Update the discriminator on expert and policy data.
 
         Parameters
@@ -422,11 +423,11 @@ class GAILAgent(BaseAgent):
 
     def _gradient_penalty(
         self,
-        expert_obs: "torch.Tensor",
-        expert_act: "torch.Tensor",
-        policy_obs: "torch.Tensor",
-        policy_act: "torch.Tensor",
-    ) -> "torch.Tensor":
+        expert_obs: torch.Tensor,
+        expert_act: torch.Tensor,
+        policy_obs: torch.Tensor,
+        policy_act: torch.Tensor,
+    ) -> torch.Tensor:
         """Compute WGAN-GP style gradient penalty.
 
         Parameters
@@ -468,7 +469,7 @@ class GAILAgent(BaseAgent):
     # Policy update (PPO with discriminator reward)
     # ------------------------------------------------------------------
 
-    def update_policy(self, rollout_buffer: Any) -> Dict[str, float]:
+    def update_policy(self, rollout_buffer: Any) -> dict[str, float]:
         """Update the policy using PPO with the discriminator reward.
 
         Parameters
@@ -579,7 +580,7 @@ class GAILAgent(BaseAgent):
     # Convenience: combined update
     # ------------------------------------------------------------------
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Run a combined discriminator + policy update.
 
         Parameters
@@ -626,7 +627,7 @@ class GAILAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action given the current observation.
 
         Parameters
@@ -713,7 +714,7 @@ class GAILAgent(BaseAgent):
     # Save / load
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Persist the GAIL agent to disk."""
         self._save_checkpoint(
             path,
@@ -723,7 +724,7 @@ class GAILAgent(BaseAgent):
             },
         )
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Restore the GAIL agent from a checkpoint."""
         payload = self._load_checkpoint(path)
         self._discriminator.load_state_dict(payload["model"]["discriminator"])

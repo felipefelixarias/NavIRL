@@ -9,7 +9,6 @@ import numpy as np
 from navirl.overseer.provider import ProviderConfig
 from navirl.overseer.review import AEGIS_NAME, run_aegis_review
 
-
 JUDGE_OUTPUT_SCHEMA = {
     "type": "object",
     "required": ["overall_pass", "confidence", "violations", "status", "judge_type"],

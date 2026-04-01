@@ -32,11 +32,10 @@ DQNAgent
 
 from __future__ import annotations
 
-import copy
 import logging
 import pathlib
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -44,7 +43,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from navirl.agents.base import BaseAgent, HyperParameters, MetricsCallback
-from navirl.agents.networks import DuelingMLP, MLP, NoisyMLP
+from navirl.agents.networks import MLP, DuelingMLP, NoisyMLP
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +155,7 @@ class DQNConfig(HyperParameters):
     eps_start: float = 1.0
     eps_end: float = 0.05
     eps_decay_steps: int = 100_000
-    hidden_dims: Tuple[int, ...] = (128, 128)
+    hidden_dims: tuple[int, ...] = (128, 128)
     activation: str = "relu"
     double_dqn: bool = True
     dueling: bool = False
@@ -199,9 +198,9 @@ class DQNAgent(BaseAgent):
         config: DQNConfig,
         observation_space: Any,
         action_space: Any,
-        device: Union[str, torch.device] = "cpu",
-        seed: Optional[int] = None,
-        metrics_callback: Optional[MetricsCallback] = None,
+        device: str | torch.device = "cpu",
+        seed: int | None = None,
+        metrics_callback: MetricsCallback | None = None,
     ) -> None:
         super().__init__(config, observation_space, action_space, device, seed, metrics_callback)
 
@@ -290,7 +289,7 @@ class DQNAgent(BaseAgent):
         self,
         observation: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Select an action using epsilon-greedy (or NoisyNet) exploration.
 
         Parameters
@@ -334,7 +333,7 @@ class DQNAgent(BaseAgent):
     # Learning update
     # ------------------------------------------------------------------
 
-    def update(self, batch: Any) -> Dict[str, float]:
+    def update(self, batch: Any) -> dict[str, float]:
         """Perform a single gradient step on a batch of transitions.
 
         Parameters
@@ -434,7 +433,7 @@ class DQNAgent(BaseAgent):
 
         # Build metrics ----------------------------------------------------
         epsilon = self._epsilon_schedule.value(self._total_steps)
-        metrics: Dict[str, float] = {
+        metrics: dict[str, float] = {
             "q_loss": float(loss.item()),
             "q_mean": float(q_values.mean().item()),
             "epsilon": epsilon,
@@ -456,7 +455,7 @@ class DQNAgent(BaseAgent):
     # Checkpointing
     # ------------------------------------------------------------------
 
-    def save(self, path: Union[str, pathlib.Path]) -> None:
+    def save(self, path: str | pathlib.Path) -> None:
         """Save the agent to disk.
 
         Parameters
@@ -473,7 +472,7 @@ class DQNAgent(BaseAgent):
         }
         self._save_checkpoint(path, state_dicts, extra=extra)
 
-    def load(self, path: Union[str, pathlib.Path]) -> None:
+    def load(self, path: str | pathlib.Path) -> None:
         """Restore the agent from a checkpoint.
 
         Parameters

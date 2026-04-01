@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple, Union
-import pathlib
-
 import numpy as np
 import pytest
 
 from navirl.agents.base import (
     BaseAgent,
-    CheckpointMeta,
     HyperParameters,
     MetricsLogger,
     RunningMeanStd,

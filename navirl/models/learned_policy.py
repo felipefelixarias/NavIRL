@@ -15,7 +15,7 @@ from typing import Any
 
 import numpy as np
 
-from navirl.core.constants import COMFORT, EPSILON
+from navirl.core.constants import EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
 

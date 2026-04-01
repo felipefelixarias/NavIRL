@@ -7,12 +7,14 @@ and episode monitoring.
 """
 
 import multiprocessing as mp
-import numpy as np
 from abc import ABC, abstractmethod
 from collections import deque
-from multiprocessing import Process, Pipe
+from collections.abc import Callable
+from multiprocessing import Process
 from multiprocessing.connection import Connection
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any
+
+import numpy as np
 
 # Exports: SubprocVecEnv, DummyVecEnv, VecEnvWrapper, VecNormalize,
 #          VecFrameStack, VecMonitor, AsyncVecEnv
@@ -46,7 +48,7 @@ class BaseVecEnv(ABC):
         self.action_space = action_space
 
     @abstractmethod
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Take a step in all environments simultaneously.
 
         Args:
@@ -72,7 +74,7 @@ class BaseVecEnv(ABC):
         """Begin stepping asynchronously. Default implementation is synchronous."""
         self._pending_actions = actions
 
-    def step_wait(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step_wait(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Wait for async step to complete. Default calls step()."""
         return self.step(self._pending_actions)
 
@@ -87,7 +89,7 @@ class DummyVecEnv(BaseVecEnv):
         env_fns: List of callables, each returning an environment instance.
     """
 
-    def __init__(self, env_fns: List[Callable]) -> None:
+    def __init__(self, env_fns: list[Callable]) -> None:
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
         super().__init__(
@@ -95,9 +97,9 @@ class DummyVecEnv(BaseVecEnv):
             observation_space=getattr(env, "observation_space", None),
             action_space=getattr(env, "action_space", None),
         )
-        self._observations: Optional[List[np.ndarray]] = None
+        self._observations: list[np.ndarray] | None = None
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step all environments sequentially.
 
         Automatically resets environments that return done=True.
@@ -113,7 +115,7 @@ class DummyVecEnv(BaseVecEnv):
         dones = []
         infos = []
 
-        for i, (env, action) in enumerate(zip(self.envs, actions)):
+        for _i, (env, action) in enumerate(zip(self.envs, actions, strict=False)):
             obs, reward, done, info = env.step(action)
             if done:
                 terminal_obs = obs
@@ -146,7 +148,7 @@ class DummyVecEnv(BaseVecEnv):
             if hasattr(env, "close"):
                 env.close()
 
-    def get_attr(self, attr_name: str) -> List[Any]:
+    def get_attr(self, attr_name: str) -> list[Any]:
         """Get an attribute from each environment.
 
         Args:
@@ -157,7 +159,7 @@ class DummyVecEnv(BaseVecEnv):
         """
         return [getattr(env, attr_name) for env in self.envs]
 
-    def env_method(self, method_name: str, *args: Any, **kwargs: Any) -> List[Any]:
+    def env_method(self, method_name: str, *args: Any, **kwargs: Any) -> list[Any]:
         """Call a method on each environment.
 
         Args:
@@ -235,8 +237,8 @@ class SubprocVecEnv(BaseVecEnv):
 
     def __init__(
         self,
-        env_fns: List[Callable],
-        start_method: Optional[str] = None,
+        env_fns: list[Callable],
+        start_method: str | None = None,
     ) -> None:
         self.waiting = False
         self.closed = False
@@ -248,9 +250,9 @@ class SubprocVecEnv(BaseVecEnv):
 
         ctx = mp.get_context(start_method)
 
-        self.remotes: List[Connection] = []
-        self.work_remotes: List[Connection] = []
-        self.processes: List[Process] = []
+        self.remotes: list[Connection] = []
+        self.work_remotes: list[Connection] = []
+        self.processes: list[Process] = []
 
         for env_fn in env_fns:
             parent_remote, work_remote = ctx.Pipe()
@@ -274,7 +276,7 @@ class SubprocVecEnv(BaseVecEnv):
             action_space=action_space,
         )
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step all environments in parallel via subprocesses.
 
         Args:
@@ -292,11 +294,11 @@ class SubprocVecEnv(BaseVecEnv):
         Args:
             actions: Array of actions, one per environment.
         """
-        for remote, action in zip(self.remotes, actions):
+        for remote, action in zip(self.remotes, actions, strict=False):
             remote.send(("step", action))
         self.waiting = True
 
-    def step_wait(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step_wait(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Wait for all subprocesses to complete their step.
 
         Returns:
@@ -305,7 +307,7 @@ class SubprocVecEnv(BaseVecEnv):
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
 
-        observations, rewards, dones, infos = zip(*results)
+        observations, rewards, dones, infos = zip(*results, strict=False)
         return (
             np.stack(observations),
             np.array(rewards, dtype=np.float32),
@@ -337,7 +339,7 @@ class SubprocVecEnv(BaseVecEnv):
             process.join()
         self.closed = True
 
-    def get_attr(self, attr_name: str) -> List[Any]:
+    def get_attr(self, attr_name: str) -> list[Any]:
         """Get an attribute from each subprocess environment.
 
         Args:
@@ -350,7 +352,7 @@ class SubprocVecEnv(BaseVecEnv):
             remote.send(("get_attr", attr_name))
         return [remote.recv() for remote in self.remotes]
 
-    def env_method(self, method_name: str, *args: Any, **kwargs: Any) -> List[Any]:
+    def env_method(self, method_name: str, *args: Any, **kwargs: Any) -> list[Any]:
         """Call a method on each subprocess environment.
 
         Args:
@@ -380,8 +382,8 @@ class AsyncVecEnv(BaseVecEnv):
 
     def __init__(
         self,
-        env_fns: List[Callable],
-        start_method: Optional[str] = None,
+        env_fns: list[Callable],
+        start_method: str | None = None,
     ) -> None:
         self.closed = False
         n_envs = len(env_fns)
@@ -392,9 +394,9 @@ class AsyncVecEnv(BaseVecEnv):
 
         ctx = mp.get_context(start_method)
 
-        self.remotes: List[Connection] = []
-        self.work_remotes: List[Connection] = []
-        self.processes: List[Process] = []
+        self.remotes: list[Connection] = []
+        self.work_remotes: list[Connection] = []
+        self.processes: list[Process] = []
 
         for env_fn in env_fns:
             parent_remote, work_remote = ctx.Pipe()
@@ -418,8 +420,8 @@ class AsyncVecEnv(BaseVecEnv):
             action_space=action_space,
         )
 
-        self._pending: List[bool] = [False] * n_envs
-        self._last_results: List[Optional[Tuple]] = [None] * n_envs
+        self._pending: list[bool] = [False] * n_envs
+        self._last_results: list[tuple | None] = [None] * n_envs
 
     def step_async(self, actions: np.ndarray) -> None:
         """Send step commands to all environments without blocking.
@@ -427,11 +429,11 @@ class AsyncVecEnv(BaseVecEnv):
         Args:
             actions: Array of actions, one per environment.
         """
-        for i, (remote, action) in enumerate(zip(self.remotes, actions)):
+        for i, (remote, action) in enumerate(zip(self.remotes, actions, strict=False)):
             remote.send(("step", action))
             self._pending[i] = True
 
-    def step_wait(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step_wait(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Wait for all pending environments to finish stepping.
 
         Returns:
@@ -473,7 +475,7 @@ class AsyncVecEnv(BaseVecEnv):
         self.remotes[env_idx].send(("step", action))
         self._pending[env_idx] = True
 
-    def poll(self) -> List[int]:
+    def poll(self) -> list[int]:
         """Check which environments have completed their steps.
 
         Returns:
@@ -485,7 +487,7 @@ class AsyncVecEnv(BaseVecEnv):
                 ready.append(i)
         return ready
 
-    def recv_env(self, env_idx: int) -> Tuple[np.ndarray, float, bool, Dict]:
+    def recv_env(self, env_idx: int) -> tuple[np.ndarray, float, bool, dict]:
         """Receive the result from a specific environment.
 
         Args:
@@ -499,7 +501,7 @@ class AsyncVecEnv(BaseVecEnv):
         self._last_results[env_idx] = result
         return result
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Synchronous step for interface compatibility.
 
         Args:
@@ -554,7 +556,7 @@ class VecEnvWrapper(BaseVecEnv):
             action_space=venv.action_space,
         )
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step the wrapped environment.
 
         Args:
@@ -581,7 +583,7 @@ class VecEnvWrapper(BaseVecEnv):
         """Async step on the wrapped environment."""
         self.venv.step_async(actions)
 
-    def step_wait(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step_wait(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Wait for async step on the wrapped environment."""
         return self.venv.step_wait()
 
@@ -597,7 +599,7 @@ class RunningMeanStd:
         epsilon: Small constant for numerical stability.
     """
 
-    def __init__(self, shape: Tuple[int, ...] = (), epsilon: float = 1e-4) -> None:
+    def __init__(self, shape: tuple[int, ...] = (), epsilon: float = 1e-4) -> None:
         self.mean = np.zeros(shape, dtype=np.float64)
         self.var = np.ones(shape, dtype=np.float64)
         self.count = epsilon
@@ -670,7 +672,7 @@ class VecNormalize(VecEnvWrapper):
 
         self.training = True
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step and normalize observations and rewards.
 
         Args:
@@ -769,7 +771,7 @@ class VecFrameStack(VecEnvWrapper):
             (venv.num_envs, n_stack, *obs_shape), dtype=np.float32
         )
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step and update the frame stack.
 
         Environments that terminate have their stacked frames cleared.
@@ -817,7 +819,7 @@ class VecMonitor(VecEnvWrapper):
     def __init__(
         self,
         venv: BaseVecEnv,
-        info_keywords: Tuple[str, ...] = (),
+        info_keywords: tuple[str, ...] = (),
     ) -> None:
         super().__init__(venv)
         self.info_keywords = info_keywords
@@ -829,7 +831,7 @@ class VecMonitor(VecEnvWrapper):
         self._episode_reward_history: deque = deque(maxlen=100)
         self._episode_length_history: deque = deque(maxlen=100)
 
-    def step(self, actions: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict]]:
+    def step(self, actions: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict]]:
         """Step and accumulate episode statistics.
 
         When an episode ends, the total reward and length are recorded in
@@ -881,7 +883,7 @@ class VecMonitor(VecEnvWrapper):
         self.episode_lengths[:] = 0
         return obs
 
-    def get_episode_rewards(self) -> List[float]:
+    def get_episode_rewards(self) -> list[float]:
         """Get recent episode total rewards.
 
         Returns:
@@ -889,7 +891,7 @@ class VecMonitor(VecEnvWrapper):
         """
         return list(self._episode_reward_history)
 
-    def get_episode_lengths(self) -> List[int]:
+    def get_episode_lengths(self) -> list[int]:
         """Get recent episode lengths.
 
         Returns:

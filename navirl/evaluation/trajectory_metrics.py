@@ -11,14 +11,12 @@ metric can be reported with proper uncertainty quantification.
 
 from __future__ import annotations
 
-import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from navirl.data.trajectory import Trajectory
-
 
 # ---------------------------------------------------------------------------
 # Result containers
@@ -65,7 +63,7 @@ class MetricSummary:
         dataset_name: Optional dataset identifier.
     """
 
-    results: Dict[str, MetricResult] = field(default_factory=dict)
+    results: dict[str, MetricResult] = field(default_factory=dict)
     model_name: str = ""
     dataset_name: str = ""
 
@@ -73,7 +71,7 @@ class MetricSummary:
         """Register a :class:`MetricResult`."""
         self.results[result.name] = result
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """Return a flat ``{metric_name: value}`` dictionary."""
         return {k: v.value for k, v in self.results.items()}
 
@@ -95,7 +93,7 @@ def _bootstrap_ci(
     confidence: float = 0.95,
     n_bootstrap: int = 1000,
     rng: np.random.Generator | None = None,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Compute bootstrap confidence interval for a statistic.
 
     Parameters:
@@ -220,7 +218,7 @@ def ade_fde_batch(
     ground_truth_list: Sequence[Trajectory],
     confidence: float = 0.95,
     n_bootstrap: int = 1000,
-) -> Tuple[MetricResult, MetricResult]:
+) -> tuple[MetricResult, MetricResult]:
     """Compute ADE and FDE over a batch with bootstrap confidence intervals.
 
     Parameters:
@@ -234,10 +232,10 @@ def ade_fde_batch(
     """
     assert len(predicted_list) == len(ground_truth_list)
     ade_vals = np.array(
-        [average_displacement_error(p, g) for p, g in zip(predicted_list, ground_truth_list)]
+        [average_displacement_error(p, g) for p, g in zip(predicted_list, ground_truth_list, strict=False)]
     )
     fde_vals = np.array(
-        [final_displacement_error(p, g) for p, g in zip(predicted_list, ground_truth_list)]
+        [final_displacement_error(p, g) for p, g in zip(predicted_list, ground_truth_list, strict=False)]
     )
 
     ade_pt, ade_lo, ade_hi = _bootstrap_ci(ade_vals, confidence=confidence, n_bootstrap=n_bootstrap)
@@ -253,7 +251,7 @@ def displacement_error_at_horizon(
     predicted: Trajectory,
     ground_truth: Trajectory,
     horizons: Sequence[float] = (1.0, 2.0, 3.0, 4.0),
-) -> Dict[float, float]:
+) -> dict[float, float]:
     """Displacement error evaluated at specific prediction horizons (seconds).
 
     Parameters:
@@ -264,7 +262,7 @@ def displacement_error_at_horizon(
     Returns:
         Mapping from horizon (s) to displacement error (m).
     """
-    results: Dict[float, float] = {}
+    results: dict[float, float] = {}
     t0 = ground_truth.timestamps[0]
     for h in horizons:
         t_target = t0 + h
@@ -703,7 +701,7 @@ def goal_achievement_rate(
     reached = np.array([
         float(np.linalg.norm(t.positions[-1] - np.asarray(g)) <= threshold)
         if len(t) > 0 else 0.0
-        for t, g in zip(trajectories, goals)
+        for t, g in zip(trajectories, goals, strict=False)
     ])
     pt, lo, hi = _bootstrap_ci(reached, statistic="mean")
     return MetricResult("goal_achievement_rate", pt, "", lo, hi, 0.95, len(reached), reached)
@@ -816,7 +814,7 @@ class TrajectoryEvaluator:
         ground_truth: Trajectory,
         neighbours: Sequence[Trajectory] | None = None,
         goal: np.ndarray | None = None,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Evaluate a single predicted trajectory against ground truth.
 
         Parameters:
@@ -828,7 +826,7 @@ class TrajectoryEvaluator:
         Returns:
             Dictionary of metric name to value.
         """
-        results: Dict[str, float] = {}
+        results: dict[str, float] = {}
         results["ADE"] = average_displacement_error(predicted, ground_truth)
         results["FDE"] = final_displacement_error(predicted, ground_truth)
         results["path_efficiency"] = path_efficiency_ratio(predicted, goal)
@@ -886,7 +884,7 @@ class TrajectoryEvaluator:
         assert n == len(ground_truth_list)
 
         # Collect per-sample metrics
-        all_metrics: Dict[str, List[float]] = {}
+        all_metrics: dict[str, list[float]] = {}
         for i in range(n):
             nbrs = neighbours_list[i] if neighbours_list is not None else None
             g = goals[i] if goals is not None else None
@@ -916,7 +914,7 @@ class TrajectoryEvaluator:
         summary_a: MetricSummary,
         summary_b: MetricSummary,
         n_permutations: int = 10000,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Run paired permutation tests between two model summaries.
 
         Parameters:
@@ -927,7 +925,7 @@ class TrajectoryEvaluator:
         Returns:
             Dictionary mapping metric name to p-value.
         """
-        p_values: Dict[str, float] = {}
+        p_values: dict[str, float] = {}
         common_metrics = set(summary_a.results.keys()) & set(summary_b.results.keys())
         for metric in common_metrics:
             raw_a = summary_a.results[metric].raw_values

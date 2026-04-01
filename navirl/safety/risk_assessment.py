@@ -6,11 +6,9 @@ collision models, and trajectory-prediction-based risk scoring.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Sequence
+from collections.abc import Callable
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # RiskEstimator

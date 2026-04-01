@@ -16,14 +16,7 @@ from navirl.backends.continuous.environment import (
     ContinuousEnvironment,
     EnvironmentConfig,
 )
-from navirl.backends.continuous.obstacles import (
-    CircleObstacle,
-    LineObstacle,
-    ObstacleCollection,
-    PolygonObstacle,
-    RectangleObstacle,
-)
-from navirl.backends.continuous.physics import AgentState, PhysicsConfig
+from navirl.backends.continuous.physics import AgentState
 
 
 @dataclass

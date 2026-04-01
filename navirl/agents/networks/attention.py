@@ -32,13 +32,11 @@ SpatialTransformer
 from __future__ import annotations
 
 import math
-from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
 
 # =====================================================================
 # SocialAttention (Chen et al., SARL)
@@ -315,8 +313,8 @@ class TransformerEncoderLayer(nn.Module):
     def forward(
         self,
         src: Tensor,
-        src_mask: Optional[Tensor] = None,
-        src_key_padding_mask: Optional[Tensor] = None,
+        src_mask: Tensor | None = None,
+        src_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
         """Forward pass.
 
@@ -409,8 +407,8 @@ class TransformerEncoder(nn.Module):
     def forward(
         self,
         src: Tensor,
-        src_mask: Optional[Tensor] = None,
-        src_key_padding_mask: Optional[Tensor] = None,
+        src_mask: Tensor | None = None,
+        src_key_padding_mask: Tensor | None = None,
     ) -> Tensor:
         """Forward pass through all encoder layers.
 
@@ -503,7 +501,7 @@ class GraphAttentionLayer(nn.Module):
     def forward(
         self,
         x: Tensor,
-        adj: Optional[Tensor] = None,
+        adj: Tensor | None = None,
     ) -> Tensor:
         """Forward pass.
 
@@ -595,7 +593,7 @@ class GraphAttentionNetwork(nn.Module):
         layers = []
         in_dim = input_dim
 
-        for i in range(num_layers - 1):
+        for _i in range(num_layers - 1):
             layer = GraphAttentionLayer(
                 in_features=in_dim,
                 out_features=hidden_dim,
@@ -630,7 +628,7 @@ class GraphAttentionNetwork(nn.Module):
     def forward(
         self,
         x: Tensor,
-        adj: Optional[Tensor] = None,
+        adj: Tensor | None = None,
     ) -> Tensor:
         """Forward pass through all GAT layers.
 
@@ -719,7 +717,7 @@ class CrossAttention(nn.Module):
         self,
         query: Tensor,
         key_value: Tensor,
-        mask: Optional[Tensor] = None,
+        mask: Tensor | None = None,
     ) -> Tensor:
         """Compute cross-attention.
 
@@ -932,7 +930,7 @@ class TemporalAttention(nn.Module):
     def forward(
         self,
         x: Tensor,
-        mask: Optional[Tensor] = None,
+        mask: Tensor | None = None,
     ) -> Tensor:
         """Attend over the temporal dimension.
 
@@ -1030,7 +1028,7 @@ class SpatialTransformer(nn.Module):
     def forward(
         self,
         x: Tensor,
-        mask: Optional[Tensor] = None,
+        mask: Tensor | None = None,
     ) -> Tensor:
         """Process spatial entities through the transformer.
 

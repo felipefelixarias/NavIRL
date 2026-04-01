@@ -8,10 +8,8 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-
 
 # -----------------------------------------------------------------------
 # Sensor types
@@ -43,7 +41,7 @@ class GaussianNoise:
     """
     std_dev: float = 0.01
 
-    def sample(self, shape: Tuple[int, ...] = ()) -> np.ndarray:
+    def sample(self, shape: tuple[int, ...] = ()) -> np.ndarray:
         """Draw a noise sample.
 
         Args:
@@ -64,7 +62,7 @@ class UniformNoise:
     """
     half_range: float = 0.01
 
-    def sample(self, shape: Tuple[int, ...] = ()) -> np.ndarray:
+    def sample(self, shape: tuple[int, ...] = ()) -> np.ndarray:
         """Draw a noise sample."""
         return np.random.uniform(-self.half_range, self.half_range, size=shape)
 
@@ -185,7 +183,7 @@ def sensor_world_pose_2d(
     robot_y: float,
     robot_theta: float,
     mount: SensorMount,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Transform a 2-D sensor mount into world coordinates.
 
     Args:
@@ -213,7 +211,7 @@ def sensor_world_pose_3d(
     robot_pitch: float,
     robot_yaw: float,
     mount: SensorMount,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Transform a 3-D sensor mount into world coordinates.
 
     Args:
@@ -394,7 +392,7 @@ def compute_visible_points(
     sensor_yaw: float,
     mount: SensorMount,
     points: np.ndarray,
-    obstacles: Optional[np.ndarray] = None,
+    obstacles: np.ndarray | None = None,
     obstacle_radius: float = 0.3,
 ) -> np.ndarray:
     """Filter a set of points to those visible from the sensor.
@@ -436,9 +434,9 @@ def simulate_range_scan(
     mount: SensorMount,
     obstacles: np.ndarray,
     obstacle_radius: float = 0.3,
-    noise: Optional[GaussianNoise | RangeProportionalNoise] = None,
-    salt_pepper: Optional[SaltPepperNoise] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+    noise: GaussianNoise | RangeProportionalNoise | None = None,
+    salt_pepper: SaltPepperNoise | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """Simulate a 2-D LiDAR range scan.
 
     Casts rays from the sensor and returns the nearest intersection
@@ -507,8 +505,8 @@ class SensorSuite:
         mounts: List of sensor mounts.
     """
 
-    def __init__(self, mounts: List[SensorMount] | None = None) -> None:
-        self._mounts: List[SensorMount] = list(mounts) if mounts else []
+    def __init__(self, mounts: list[SensorMount] | None = None) -> None:
+        self._mounts: list[SensorMount] = list(mounts) if mounts else []
 
     # ----- Management ---------------------------------------------------
 
@@ -520,7 +518,7 @@ class SensorSuite:
         """Remove a sensor by name."""
         self._mounts = [m for m in self._mounts if m.name != name]
 
-    def get(self, name: str) -> Optional[SensorMount]:
+    def get(self, name: str) -> SensorMount | None:
         """Retrieve a sensor by name."""
         for m in self._mounts:
             if m.name == name:
@@ -528,7 +526,7 @@ class SensorSuite:
         return None
 
     @property
-    def mounts(self) -> List[SensorMount]:
+    def mounts(self) -> list[SensorMount]:
         """All sensor mounts."""
         return list(self._mounts)
 
@@ -537,7 +535,7 @@ class SensorSuite:
         """Number of sensors."""
         return len(self._mounts)
 
-    def enabled_mounts(self) -> List[SensorMount]:
+    def enabled_mounts(self) -> list[SensorMount]:
         """Return only enabled sensors."""
         return [m for m in self._mounts if m.enabled]
 
@@ -548,7 +546,7 @@ class SensorSuite:
         robot_x: float,
         robot_y: float,
         robot_theta: float,
-    ) -> List[Tuple[str, float, float, float]]:
+    ) -> list[tuple[str, float, float, float]]:
         """Compute world-frame 2-D poses of all enabled sensors.
 
         Args:
@@ -574,7 +572,7 @@ class SensorSuite:
         robot_y: float,
         robot_theta: float,
         num_points: int = 64,
-    ) -> List[np.ndarray]:
+    ) -> list[np.ndarray]:
         """Compute FOV polygons for all enabled sensors.
 
         Args:
@@ -625,7 +623,7 @@ class SensorSuite:
         robot_y: float,
         robot_theta: float,
         points: np.ndarray,
-        obstacles: Optional[np.ndarray] = None,
+        obstacles: np.ndarray | None = None,
         obstacle_radius: float = 0.3,
     ) -> np.ndarray:
         """Compute a combined visibility mask across all enabled sensors.
@@ -662,9 +660,9 @@ class SensorSuite:
         robot_theta: float,
         obstacles: np.ndarray,
         obstacle_radius: float = 0.3,
-        noise: Optional[GaussianNoise | RangeProportionalNoise] = None,
-        salt_pepper: Optional[SaltPepperNoise] = None,
-    ) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
+        noise: GaussianNoise | RangeProportionalNoise | None = None,
+        salt_pepper: SaltPepperNoise | None = None,
+    ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
         """Run a range scan for every enabled range sensor.
 
         Args:
@@ -677,7 +675,7 @@ class SensorSuite:
         Returns:
             Dict mapping sensor name to ``(ranges, angles)``.
         """
-        results: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
+        results: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         range_types = {SensorType.LIDAR_2D, SensorType.LIDAR_3D, SensorType.ULTRASONIC}
         for m in self._mounts:
             if not m.enabled or m.sensor_type not in range_types:
@@ -719,14 +717,14 @@ class SensorFusionConfig:
         outlier_rejection: If ``True`` apply outlier filtering.
         outlier_threshold: Mahalanobis-distance threshold for outliers.
     """
-    weights: List[FusionWeight] = field(default_factory=list)
+    weights: list[FusionWeight] = field(default_factory=list)
     fusion_method: str = "weighted_average"
     outlier_rejection: bool = False
     outlier_threshold: float = 3.0
 
 
 def fuse_position_estimates(
-    estimates: Dict[str, np.ndarray],
+    estimates: dict[str, np.ndarray],
     config: SensorFusionConfig,
 ) -> np.ndarray:
     """Fuse multiple position estimates using weighted average.
@@ -742,7 +740,7 @@ def fuse_position_estimates(
     if not estimates:
         return np.zeros(2)
 
-    weight_map: Dict[str, float] = {w.sensor_name: w.weight for w in config.weights}
+    weight_map: dict[str, float] = {w.sensor_name: w.weight for w in config.weights}
     total_weight = 0.0
     dim = None
     fused = None
@@ -761,9 +759,9 @@ def fuse_position_estimates(
 
 
 def fuse_with_covariance(
-    estimates: Dict[str, np.ndarray],
-    covariances: Dict[str, np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray]:
+    estimates: dict[str, np.ndarray],
+    covariances: dict[str, np.ndarray],
+) -> tuple[np.ndarray, np.ndarray]:
     """Fuse position estimates using inverse-covariance weighting.
 
     Each estimate is weighted by the inverse of its covariance matrix

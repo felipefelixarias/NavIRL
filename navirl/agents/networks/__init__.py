@@ -21,73 +21,68 @@ rnn
     Recurrent architectures for temporal reasoning.
 """
 
+from navirl.agents.networks.attention import (
+    CrossAttention,
+    GraphAttentionLayer,
+    GraphAttentionNetwork,
+    MultiHeadSocialAttention,
+    RelationalReasoning,
+    SocialAttention,
+    SpatialTransformer,
+    TemporalAttention,
+    TransformerEncoder,
+    TransformerEncoderLayer,
+)
+from navirl.agents.networks.cnn import (
+    EgoCentricCNN,
+    ImpalaCNN,
+    LidarEncoder,
+    MultiScaleFeatureExtractor,
+    NatureDQN,
+    OccupancyGridEncoder,
+    SpatialAttentionModule,
+)
+from navirl.agents.networks.extractors import (
+    CombinedExtractor,
+    HierarchicalExtractor,
+    LidarExtractor,
+    OccupancyExtractor,
+    RecurrentExtractor,
+    RunningNormalizer,
+    SocialExtractor,
+    StateExtractor,
+)
 from navirl.agents.networks.mlp import (
     MLP,
     DuelingMLP,
-    NoisyMLP,
-    NoisyLinear,
-    ResidualMLP,
     GatedMLP,
-    init_weights_xavier,
-    init_weights_orthogonal,
+    NoisyLinear,
+    NoisyMLP,
+    ResidualMLP,
     init_weights_kaiming,
+    init_weights_orthogonal,
     init_weights_uniform,
+    init_weights_xavier,
 )
-
-from navirl.agents.networks.cnn import (
-    NatureDQN,
-    ImpalaCNN,
-    OccupancyGridEncoder,
-    LidarEncoder,
-    EgoCentricCNN,
-    SpatialAttentionModule,
-    MultiScaleFeatureExtractor,
-)
-
-from navirl.agents.networks.attention import (
-    SocialAttention,
-    MultiHeadSocialAttention,
-    TransformerEncoder,
-    TransformerEncoderLayer,
-    GraphAttentionNetwork,
-    GraphAttentionLayer,
-    CrossAttention,
-    RelationalReasoning,
-    TemporalAttention,
-    SpatialTransformer,
-)
-
-from navirl.agents.networks.extractors import (
-    StateExtractor,
-    LidarExtractor,
-    OccupancyExtractor,
-    SocialExtractor,
-    CombinedExtractor,
-    HierarchicalExtractor,
-    RecurrentExtractor,
-    RunningNormalizer,
-)
-
 from navirl.agents.networks.policy_heads import (
-    GaussianPolicyHead,
-    SquashedGaussianHead,
     CategoricalPolicyHead,
-    MultiDiscreteHead,
     DeterministicPolicyHead,
-    ValueHead,
-    QValueHead,
     DuelingQHead,
+    GaussianPolicyHead,
+    MultiDiscreteHead,
     QuantileHead,
+    QValueHead,
+    SquashedGaussianHead,
     TwinQHead,
+    ValueHead,
 )
-
 from navirl.agents.networks.rnn import (
-    LSTMCore,
+    AttentionOverMemory,
     GRUCore,
+    HiddenStateManager,
+    LSTMCore,
     RecurrentPolicy,
     SequenceEncoder,
-    HiddenStateManager,
-    AttentionOverMemory,
 )
 
 __all__ = [

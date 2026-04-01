@@ -16,7 +16,6 @@ import numpy as np
 
 from navirl.humans.pedestrian_state import PedestrianState, PersonalityTag
 
-
 # ---------------------------------------------------------------------------
 # Attention model
 # ---------------------------------------------------------------------------

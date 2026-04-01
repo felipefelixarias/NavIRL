@@ -9,7 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import os
-from dataclasses import asdict, dataclass, field, fields, is_dataclass
+from dataclasses import dataclass, fields, is_dataclass
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -126,7 +126,7 @@ def load_json_config(path: str | Path) -> dict[str, Any]:
     dict
         Parsed configuration.
     """
-    with open(path, "r") as f:
+    with open(path) as f:
         return json.load(f)
 
 
@@ -169,8 +169,8 @@ def load_simple_config(path: str | Path) -> dict[str, Any]:
     """
     flat: dict[str, Any] = {}
 
-    with open(path, "r") as f:
-        for line_num, line in enumerate(f, 1):
+    with open(path) as f:
+        for _line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -278,7 +278,7 @@ def dict_to_dataclass(cls: type[T], data: dict[str, Any]) -> T:
     if not is_dataclass(cls):
         return data  # type: ignore[return-value]
 
-    field_types = {f.name: f.type for f in fields(cls)}
+    {f.name: f.type for f in fields(cls)}
     kwargs: dict[str, Any] = {}
 
     for f in fields(cls):

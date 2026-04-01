@@ -8,10 +8,8 @@ operations.
 from __future__ import annotations
 
 import math
-from typing import Sequence, Tuple
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Angle utilities

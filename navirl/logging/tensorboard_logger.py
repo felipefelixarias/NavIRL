@@ -7,14 +7,14 @@ optional ``tensorboard`` dependency gracefully via try/except.
 
 from __future__ import annotations
 
-import io
 import json
 import logging
 import time
 import warnings
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -622,7 +622,7 @@ class TBLogger:
             (128, 0, 128), (0, 128, 128), (255, 20, 147), (139, 69, 19),
         ]
 
-        for idx, (aid, pts) in enumerate(sorted(positions.items())):
+        for idx, (_aid, pts) in enumerate(sorted(positions.items())):
             colour = colours[idx % len(colours)]
             for i in range(len(pts) - 1):
                 px0 = int((pts[i, 0] - x_min) / x_range * (w - 1))

@@ -6,12 +6,10 @@ Includes market-based (auction), optimal (Hungarian), and heuristic
 
 from __future__ import annotations
 
-import copy
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -32,8 +30,8 @@ class Task:
     id: str
     location: np.ndarray
     priority: float = 1.0
-    requirements: List[str] = field(default_factory=list)
-    deadline: Optional[float] = None
+    requirements: list[str] = field(default_factory=list)
+    deadline: float | None = None
 
     def __post_init__(self) -> None:
         self.location = np.asarray(self.location, dtype=np.float64)
@@ -49,9 +47,9 @@ class AllocationResult:
         unassigned: Tasks that could not be assigned.
     """
 
-    assignments: Dict[str, List[Task]]
+    assignments: dict[str, list[Task]]
     total_cost: float
-    unassigned: List[Task] = field(default_factory=list)
+    unassigned: list[Task] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -77,13 +75,13 @@ class AuctionAllocator:
 
     def __init__(
         self,
-        cost_fn: Optional[Callable[[np.ndarray, Task], float]] = None,
+        cost_fn: Callable[[np.ndarray, Task], float] | None = None,
     ) -> None:
         self.cost_fn = cost_fn or _euclidean_cost
 
     def sequential_auction(
         self,
-        agent_positions: Dict[str, np.ndarray],
+        agent_positions: dict[str, np.ndarray],
         tasks: Sequence[Task],
     ) -> AllocationResult:
         """Run a sequential single-item auction.
@@ -100,12 +98,12 @@ class AuctionAllocator:
             :class:`AllocationResult` with assignments and total cost.
         """
         sorted_tasks = sorted(tasks, key=lambda t: -t.priority)
-        assignments: Dict[str, List[Task]] = {aid: [] for aid in agent_positions}
+        assignments: dict[str, list[Task]] = {aid: [] for aid in agent_positions}
         total_cost = 0.0
-        unassigned: List[Task] = []
+        unassigned: list[Task] = []
 
         for task in sorted_tasks:
-            best_agent: Optional[str] = None
+            best_agent: str | None = None
             best_cost = float("inf")
             for aid, pos in agent_positions.items():
                 cost = self.cost_fn(np.asarray(pos), task)
@@ -124,7 +122,7 @@ class AuctionAllocator:
 
     def bundle_auction(
         self,
-        agent_positions: Dict[str, np.ndarray],
+        agent_positions: dict[str, np.ndarray],
         tasks: Sequence[Task],
         max_bundle_size: int = 3,
     ) -> AllocationResult:
@@ -142,12 +140,12 @@ class AuctionAllocator:
             :class:`AllocationResult`.
         """
         remaining = list(tasks)
-        assignments: Dict[str, List[Task]] = {aid: [] for aid in agent_positions}
+        assignments: dict[str, list[Task]] = {aid: [] for aid in agent_positions}
         total_cost = 0.0
 
         while remaining:
-            best_agent: Optional[str] = None
-            best_bundle: List[Task] = []
+            best_agent: str | None = None
+            best_bundle: list[Task] = []
             best_cost = float("inf")
 
             for aid, pos in agent_positions.items():
@@ -189,13 +187,13 @@ class HungarianAllocator:
 
     def __init__(
         self,
-        cost_fn: Optional[Callable[[np.ndarray, Task], float]] = None,
+        cost_fn: Callable[[np.ndarray, Task], float] | None = None,
     ) -> None:
         self.cost_fn = cost_fn or _euclidean_cost
 
     def allocate(
         self,
-        agent_positions: Dict[str, np.ndarray],
+        agent_positions: dict[str, np.ndarray],
         tasks: Sequence[Task],
     ) -> AllocationResult:
         """Compute optimal one-to-one assignment.
@@ -225,11 +223,11 @@ class HungarianAllocator:
 
         row_ind, col_ind = self._solve(cost_matrix)
 
-        assignments: Dict[str, List[Task]] = {aid: [] for aid in agent_ids}
+        assignments: dict[str, list[Task]] = {aid: [] for aid in agent_ids}
         total_cost = 0.0
         assigned_tasks: set[int] = set()
 
-        for r, c in zip(row_ind, col_ind):
+        for r, c in zip(row_ind, col_ind, strict=False):
             if r < n_agents and c < n_tasks and cost_matrix[r, c] < large:
                 assignments[agent_ids[r]].append(tasks[c])
                 total_cost += cost_matrix[r, c]
@@ -241,7 +239,7 @@ class HungarianAllocator:
         )
 
     @staticmethod
-    def _solve(cost_matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _solve(cost_matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Solve the assignment problem, preferring scipy when available."""
         try:
             from scipy.optimize import linear_sum_assignment
@@ -250,8 +248,8 @@ class HungarianAllocator:
         except ImportError:
             # Greedy fallback for small matrices
             n = cost_matrix.shape[0]
-            rows: List[int] = []
-            cols: List[int] = []
+            rows: list[int] = []
+            cols: list[int] = []
             used_rows: set[int] = set()
             used_cols: set[int] = set()
             flat = np.argsort(cost_matrix, axis=None)
@@ -279,13 +277,13 @@ class GreedyAllocator:
 
     def __init__(
         self,
-        cost_fn: Optional[Callable[[np.ndarray, Task], float]] = None,
+        cost_fn: Callable[[np.ndarray, Task], float] | None = None,
     ) -> None:
         self.cost_fn = cost_fn or _euclidean_cost
 
     def allocate(
         self,
-        agent_positions: Dict[str, np.ndarray],
+        agent_positions: dict[str, np.ndarray],
         tasks: Sequence[Task],
     ) -> AllocationResult:
         """Greedily assign tasks to agents by increasing cost.
@@ -298,11 +296,11 @@ class GreedyAllocator:
             :class:`AllocationResult`.
         """
         remaining = list(tasks)
-        assignments: Dict[str, List[Task]] = {aid: [] for aid in agent_positions}
+        assignments: dict[str, list[Task]] = {aid: [] for aid in agent_positions}
         total_cost = 0.0
 
         # Build all (agent, task) pairs sorted by cost
-        pairs: List[Tuple[float, str, int]] = []
+        pairs: list[tuple[float, str, int]] = []
         for aid, pos in agent_positions.items():
             for j, task in enumerate(remaining):
                 cost = self.cost_fn(np.asarray(pos), task)

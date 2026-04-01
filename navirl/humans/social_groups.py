@@ -17,7 +17,6 @@ import numpy as np
 
 from navirl.humans.pedestrian_state import PedestrianState
 
-
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
@@ -148,7 +147,7 @@ class FFormation:
             ``True`` if all members are within tolerance.
         """
         ideal_angles = self.compute_facing_angles(centre, member_positions)
-        for heading, ideal in zip(member_headings, ideal_angles):
+        for heading, ideal in zip(member_headings, ideal_angles, strict=False):
             delta = math.atan2(
                 math.sin(heading - ideal), math.cos(heading - ideal)
             )
@@ -298,7 +297,7 @@ class SocialGroup:
 
         if self.formation == FormationType.F_FORMATION:
             positions = self._f_formation.compute_positions(centroid, n, heading)
-            return {mid: pos for mid, pos in zip(self.member_ids[:n], positions)}
+            return {mid: pos for mid, pos in zip(self.member_ids[:n], positions, strict=False)}
 
         if self.formation == FormationType.LINE:
             return self._line_positions(centroid, heading, n)

@@ -30,7 +30,7 @@ init_weights_uniform
 from __future__ import annotations
 
 import math
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
@@ -173,7 +173,7 @@ class MLP(nn.Module):
         layer_norm: bool = False,
         batch_norm: bool = False,
         dropout: float = 0.0,
-        init: Optional[str] = None,
+        init: str | None = None,
     ) -> None:
         super().__init__()
         if layer_norm and batch_norm:
@@ -183,7 +183,7 @@ class MLP(nn.Module):
         self.output_dim = output_dim
         self._hidden_dims = list(hidden_dims)
 
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
         prev_dim = input_dim
 
         for h_dim in hidden_dims:
@@ -302,7 +302,7 @@ class DuelingMLP(nn.Module):
         activation: str = "relu",
         layer_norm: bool = False,
         aggregation: str = "mean",
-        init: Optional[str] = None,
+        init: str | None = None,
     ) -> None:
         super().__init__()
         assert aggregation in ("mean", "max"), f"Invalid aggregation: {aggregation}"
@@ -511,9 +511,9 @@ class NoisyMLP(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
         prev = input_dim
-        self._noisy_layers: List[NoisyLinear] = []
+        self._noisy_layers: list[NoisyLinear] = []
 
         for h in hidden_dims:
             noisy = NoisyLinear(prev, h, sigma_init=sigma_init, factorised=factorised)
@@ -570,7 +570,7 @@ class _ResidualBlock(nn.Module):
         dropout: float = 0.0,
     ) -> None:
         super().__init__()
-        modules: List[nn.Module] = []
+        modules: list[nn.Module] = []
         modules.append(nn.Linear(dim, dim))
         if layer_norm:
             modules.append(nn.LayerNorm(dim))
@@ -619,7 +619,7 @@ class ResidualMLP(nn.Module):
         output_activation: str = "none",
         layer_norm: bool = False,
         dropout: float = 0.0,
-        init: Optional[str] = None,
+        init: str | None = None,
     ) -> None:
         super().__init__()
         self.input_dim = input_dim
@@ -718,13 +718,13 @@ class GatedMLP(nn.Module):
         layer_norm: bool = False,
         dropout: float = 0.0,
         output_activation: str = "none",
-        init: Optional[str] = None,
+        init: str | None = None,
     ) -> None:
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-        blocks: List[nn.Module] = []
+        blocks: list[nn.Module] = []
         prev = input_dim
         for h in hidden_dims:
             blocks.append(_GatedBlock(prev, h, layer_norm=layer_norm))

@@ -7,11 +7,10 @@ proposed action is safe and, if not, project it onto the nearest safe action.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Sequence
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Abstract base

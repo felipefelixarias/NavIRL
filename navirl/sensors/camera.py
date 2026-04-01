@@ -8,13 +8,12 @@ a world state dictionary and return numpy arrays.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import CAMERA, DEPTH_SENSOR, EPSILON
 from navirl.sensors.base import GaussianNoise, NoiseModel, SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  Configuration dataclasses
@@ -76,15 +75,15 @@ class CameraSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[CameraConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: CameraConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         self._config = config or CameraConfig()
         super().__init__(config=self._config, noise_model=noise_model)
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "shape": (self.config.resolution_y, self.config.resolution_x, 3),
             "dtype": np.uint8,
@@ -92,14 +91,14 @@ class CameraSensor(SensorBase):
             "high": 255,
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> np.ndarray:
+    def _raw_observe(self, world_state: dict[str, Any]) -> np.ndarray:
         if self.config.render_mode == "top_down":
             return self._render_top_down(world_state)
         return self._render_perspective(world_state)
 
     # -- Rendering helpers ---------------------------------------------------
 
-    def _render_top_down(self, ws: Dict[str, Any]) -> np.ndarray:
+    def _render_top_down(self, ws: dict[str, Any]) -> np.ndarray:
         """Render a simple birds-eye RGB image centred on the robot."""
         H, W = self.config.resolution_y, self.config.resolution_x
         img = np.full((H, W, 3), 245, dtype=np.uint8)  # light background
@@ -162,7 +161,7 @@ class CameraSensor(SensorBase):
 
         return img
 
-    def _render_perspective(self, ws: Dict[str, Any]) -> np.ndarray:
+    def _render_perspective(self, ws: dict[str, Any]) -> np.ndarray:
         """Simplified perspective projection onto image plane."""
         H, W = self.config.resolution_y, self.config.resolution_x
         img = np.full((H, W, 3), 200, dtype=np.uint8)
@@ -242,8 +241,8 @@ class DepthSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[DepthSensorConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: DepthSensorConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         config = config or DepthSensorConfig()
         if noise_model is None and config.noise_std > 0:
@@ -256,7 +255,7 @@ class DepthSensor(SensorBase):
         self._cos = np.cos(self._angles)
         self._sin = np.sin(self._angles)
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "shape": (self.config.resolution,),
             "dtype": np.float64,
@@ -264,7 +263,7 @@ class DepthSensor(SensorBase):
             "high": self.config.max_range,
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> np.ndarray:
+    def _raw_observe(self, world_state: dict[str, Any]) -> np.ndarray:
         # Reuse LiDAR ray-casting logic with depth sensor parameters
         from navirl.sensors.lidar import (
             _ray_circle_intersection,

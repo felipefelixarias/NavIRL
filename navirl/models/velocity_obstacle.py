@@ -24,15 +24,16 @@ References:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 
-from navirl.core.constants import EPSILON, ORCA as ORCA_DEFAULTS
+from navirl.core.constants import EPSILON
+from navirl.core.constants import ORCA as ORCA_DEFAULTS
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
-
 
 __all__ = [
     "VOConfig",
@@ -394,7 +395,7 @@ class ORCAPurePython:
                     u_y = (combined_radius * inv_tau - w_len) * unit_w_y
                 else:
                     # Project on legs
-                    dist = math.sqrt(dist_sq) if dist_sq > EPSILON else EPSILON
+                    math.sqrt(dist_sq) if dist_sq > EPSILON else EPSILON
                     leg = math.sqrt(
                         max(0.0, dist_sq - combined_radius_sq)
                     )

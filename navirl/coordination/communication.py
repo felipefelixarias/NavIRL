@@ -6,12 +6,10 @@ memory) and differentiable neural communication modules (CommNet, TarMAC).
 
 from __future__ import annotations
 
-import time
 import threading
+import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
-
-import numpy as np
+from typing import Any
 
 try:
     import torch
@@ -40,10 +38,10 @@ class MessageProtocol:
     """
 
     sender: str
-    receiver: Optional[str]
+    receiver: str | None
     content: Any
     timestamp: float = field(default_factory=time.time)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +56,7 @@ class BroadcastChannel:
     """
 
     def __init__(self, max_buffer_size: int = 1000) -> None:
-        self._buffer: List[MessageProtocol] = []
+        self._buffer: list[MessageProtocol] = []
         self._max_buffer_size = max_buffer_size
         self._lock = threading.Lock()
 
@@ -71,7 +69,7 @@ class BroadcastChannel:
             if len(self._buffer) > self._max_buffer_size:
                 self._buffer = self._buffer[-self._max_buffer_size :]
 
-    def receive(self, agent_id: Optional[str] = None) -> List[MessageProtocol]:
+    def receive(self, agent_id: str | None = None) -> list[MessageProtocol]:
         """Return all messages in the buffer.
 
         Parameters:
@@ -99,7 +97,7 @@ class DirectChannel:
     """
 
     def __init__(self) -> None:
-        self._mailboxes: Dict[str, List[MessageProtocol]] = {}
+        self._mailboxes: dict[str, list[MessageProtocol]] = {}
         self._lock = threading.Lock()
 
     def send(self, message: MessageProtocol) -> None:
@@ -113,13 +111,13 @@ class DirectChannel:
         with self._lock:
             self._mailboxes.setdefault(message.receiver, []).append(message)
 
-    def receive(self, agent_id: str) -> List[MessageProtocol]:
+    def receive(self, agent_id: str) -> list[MessageProtocol]:
         """Return and clear all messages addressed to *agent_id*."""
         with self._lock:
             messages = self._mailboxes.pop(agent_id, [])
         return messages
 
-    def peek(self, agent_id: str) -> List[MessageProtocol]:
+    def peek(self, agent_id: str) -> list[MessageProtocol]:
         """Return messages for *agent_id* without removing them."""
         with self._lock:
             return list(self._mailboxes.get(agent_id, []))
@@ -133,7 +131,7 @@ class SharedMemory:
     """
 
     def __init__(self) -> None:
-        self._store: Dict[str, Any] = {}
+        self._store: dict[str, Any] = {}
         self._lock = threading.Lock()
 
     def write(self, key: str, value: Any) -> None:
@@ -146,7 +144,7 @@ class SharedMemory:
         with self._lock:
             return self._store.get(key, default)
 
-    def read_all(self) -> Dict[str, Any]:
+    def read_all(self) -> dict[str, Any]:
         """Return a shallow copy of the entire shared state."""
         with self._lock:
             return dict(self._store)
@@ -157,7 +155,7 @@ class SharedMemory:
             self._store.clear()
 
     @property
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         """All keys currently in shared memory."""
         return list(self._store.keys())
 

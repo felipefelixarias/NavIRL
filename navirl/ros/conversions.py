@@ -10,7 +10,7 @@ numpy-level helpers will not need rclpy at all.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -19,8 +19,8 @@ import numpy as np
 # ---------------------------------------------------------------------------
 try:
     from geometry_msgs.msg import Twist
-    from sensor_msgs.msg import LaserScan, Image
     from nav_msgs.msg import Odometry
+    from sensor_msgs.msg import Image, LaserScan
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False
@@ -71,7 +71,7 @@ def laser_scan_to_lidar_obs(msg: Any) -> np.ndarray:
     return ranges
 
 
-def odometry_to_state(msg: Any) -> Dict[str, Any]:
+def odometry_to_state(msg: Any) -> dict[str, Any]:
     """Convert a ``nav_msgs/Odometry`` to a state dictionary.
 
     Returns
@@ -144,7 +144,7 @@ def person_array_to_social_obs(msg: Any) -> np.ndarray:
 def action_to_twist(
     action: np.ndarray,
     action_type: str = "continuous",
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Convert a NavIRL action array to a Twist-like dictionary.
 
     Parameters
@@ -190,7 +190,7 @@ def action_to_twist(
     }
 
 
-def pose_to_goal(msg: Any) -> Tuple[float, float]:
+def pose_to_goal(msg: Any) -> tuple[float, float]:
     """Extract an ``(x, y)`` goal from a Pose/PoseStamped message.
 
     Also accepts plain objects with ``position.x`` / ``position.y`` or

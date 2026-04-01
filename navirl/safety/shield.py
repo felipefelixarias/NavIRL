@@ -6,13 +6,12 @@ safe alternatives when a constraint violation is detected.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Protocol, Sequence
+from collections.abc import Callable, Sequence
+from typing import Protocol
 
 import numpy as np
 
 from navirl.safety.constraints import ConstraintSet, SafetyConstraint
-
 
 # ---------------------------------------------------------------------------
 # Minimal agent protocol (avoids hard dependency on a concrete agent class)

@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 import pytest
 
 from navirl.data.trajectory import Trajectory
+from navirl.evaluation.analysis import failure_analysis, trajectory_clustering
+from navirl.evaluation.benchmark import (
+    BenchmarkResults,
+    BenchmarkSuite,
+)
+from navirl.evaluation.comparisons import AgentComparison
 from navirl.evaluation.metrics_extended import (
     collision_rate,
     comfort_score,
@@ -24,13 +28,6 @@ from navirl.evaluation.metrics_extended import (
     topological_complexity,
     velocity_smoothness,
 )
-from navirl.evaluation.benchmark import (
-    BenchmarkResults,
-    BenchmarkSuite,
-)
-from navirl.evaluation.comparisons import AgentComparison
-from navirl.evaluation.analysis import failure_analysis, trajectory_clustering
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

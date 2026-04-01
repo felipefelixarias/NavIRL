@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
-from collections import deque
-
 import numpy as np
 import pytest
 

@@ -8,14 +8,13 @@ and Kalman filtering).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import EPSILON
 from navirl.sensors.base import NoiseModel, SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  Configuration
@@ -81,15 +80,15 @@ class PedestrianDetector(SensorBase):
 
     def __init__(
         self,
-        config: Optional[PedestrianDetectorConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: PedestrianDetectorConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         self._cfg = config or PedestrianDetectorConfig()
         super().__init__(config=self._cfg, noise_model=noise_model)
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "shape": ("variable", 5),
             "dtype": np.float64,
@@ -101,7 +100,7 @@ class PedestrianDetector(SensorBase):
                               10.0, 10.0, 1.0]),
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> List[np.ndarray]:
+    def _raw_observe(self, world_state: dict[str, Any]) -> list[np.ndarray]:
         cfg = self._cfg
         pos = np.asarray(world_state["robot_pos"], dtype=np.float64)
         vel = np.asarray(world_state.get("robot_vel", [0.0, 0.0]),
@@ -147,7 +146,7 @@ class PedestrianDetector(SensorBase):
         # Occlusion filtering
         if cfg.occlusion_enabled and len(sorted_idx) > 1:
             unoccluded = []
-            shadow_cones: List[Tuple[float, float]] = []  # (angle, half_angle)
+            shadow_cones: list[tuple[float, float]] = []  # (angle, half_angle)
             for idx in sorted_idx:
                 ang = np.arctan2(rel_pos[idx, 1], rel_pos[idx, 0]) - heading
                 ang = (ang + np.pi) % (2 * np.pi) - np.pi
@@ -166,7 +165,7 @@ class PedestrianDetector(SensorBase):
             sorted_idx = np.array(unoccluded, dtype=int)
 
         # Build detections
-        detections: List[np.ndarray] = []
+        detections: list[np.ndarray] = []
         cos_h, sin_h = np.cos(-heading), np.sin(-heading)
 
         for idx in sorted_idx:
@@ -196,13 +195,13 @@ class PedestrianDetector(SensorBase):
 
         return self._maybe_add_false_positives(detections)
 
-    def observe(self, world_state: Dict[str, Any]) -> List[np.ndarray]:
+    def observe(self, world_state: dict[str, Any]) -> list[np.ndarray]:
         """Override base to skip generic noise (noise applied internally)."""
         return self._raw_observe(world_state)
 
     def _maybe_add_false_positives(
-        self, detections: List[np.ndarray]
-    ) -> List[np.ndarray]:
+        self, detections: list[np.ndarray]
+    ) -> list[np.ndarray]:
         """Randomly inject false-positive detections."""
         cfg = self._cfg
         n_fp = 0
@@ -261,7 +260,7 @@ class PedestrianTracker:
         self.dt = dt
 
         self._next_id: int = 0
-        self._tracks: Dict[int, _Track] = {}
+        self._tracks: dict[int, _Track] = {}
 
     def reset(self) -> None:
         """Clear all tracks."""
@@ -269,8 +268,8 @@ class PedestrianTracker:
         self._tracks.clear()
 
     def update(
-        self, detections: List[np.ndarray]
-    ) -> List[Dict[str, Any]]:
+        self, detections: list[np.ndarray]
+    ) -> list[dict[str, Any]]:
         """Process a new frame of detections and return active tracks.
 
         Parameters
@@ -310,7 +309,7 @@ class PedestrianTracker:
             matched_tracks = set()
             matched_dets = set()
 
-            for r, c in zip(row_ind, col_ind):
+            for r, c in zip(row_ind, col_ind, strict=False):
                 if cost[r, c] < self.distance_threshold:
                     tid = track_ids[r]
                     self._tracks[tid].update_with_detection(detections[c])
@@ -352,7 +351,7 @@ class PedestrianTracker:
             radius=detection[4],
         )
 
-    def _get_confirmed_tracks(self) -> List[Dict[str, Any]]:
+    def _get_confirmed_tracks(self) -> list[dict[str, Any]]:
         results = []
         for tid, t in self._tracks.items():
             if t.hits >= self.min_hits or t.time_since_update == 0:
@@ -367,7 +366,7 @@ class PedestrianTracker:
         return results
 
     @staticmethod
-    def _hungarian(cost: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _hungarian(cost: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Solve the linear assignment problem (Hungarian algorithm).
 
         Uses a simple greedy fallback if scipy is unavailable.

@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import dataclasses
 from dataclasses import fields as dc_fields
-from typing import Any, Type, get_type_hints
-
+from typing import Any, get_type_hints
 
 # ---------------------------------------------------------------------------
 # Schema types
@@ -125,7 +124,7 @@ class SchemaBuilder:
     }
 
     @classmethod
-    def from_dataclass(cls, dc_cls: Type[Any]) -> dict[str, dict[str, Any]]:
+    def from_dataclass(cls, dc_cls: type[Any]) -> dict[str, dict[str, Any]]:
         """Generate a validation schema from a dataclass.
 
         Parameters

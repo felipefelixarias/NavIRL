@@ -7,7 +7,8 @@ uncertainty envelopes, social distance timeseries, and trajectory animations.
 from __future__ import annotations
 
 import math
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
@@ -17,14 +18,13 @@ try:
 except Exception:
     pass
 
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import matplotlib.cm as cm
-from matplotlib.collections import LineCollection
-from matplotlib.patches import FancyArrowPatch, Ellipse
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 – registers 3-D projection
 import matplotlib.animation as animation
-
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.patches import Ellipse
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 – registers 3-D projection
 
 # ---------------------------------------------------------------------------
 # Helpers

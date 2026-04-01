@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from navirl.safety.constrained_optimization import (
+    CPOUpdate,
+    LagrangianMultiplier,
+    PIDLagrangian,
+)
 from navirl.safety.constraints import (
     AccelerationConstraint,
     BoundaryConstraint,
@@ -11,14 +16,9 @@ from navirl.safety.constraints import (
     SafetyConstraint,
     SpeedConstraint,
 )
-from navirl.safety.shield import CBFShield, ReachabilityShield, SafetyShield
 from navirl.safety.monitoring import SafetyAlert, SafetyLogger, SafetyMonitor
 from navirl.safety.risk_assessment import PredictiveRiskModel, RiskEstimator
-from navirl.safety.constrained_optimization import (
-    CPOUpdate,
-    LagrangianMultiplier,
-    PIDLagrangian,
-)
+from navirl.safety.shield import CBFShield, ReachabilityShield, SafetyShield
 
 __all__ = [
     "SafetyConstraint",

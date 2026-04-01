@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
-from navirl.data.trajectory import Trajectory, compute_velocities
+from navirl.data.trajectory import Trajectory
 
 
 def time_to_goal(trajectory: Trajectory, goal: np.ndarray, threshold: float = 0.5) -> float:

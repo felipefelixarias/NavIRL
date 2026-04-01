@@ -9,13 +9,12 @@ orientation integration.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import GRAVITY, SIM
 from navirl.sensors.base import NoiseModel, SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  Configuration
@@ -78,8 +77,8 @@ class IMUSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[IMUConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: IMUConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         self._cfg = config or IMUConfig()
         super().__init__(config=self._cfg, noise_model=noise_model)
@@ -88,7 +87,7 @@ class IMUSensor(SensorBase):
         self._accel_bias = np.zeros(3, dtype=np.float64)
         self._gyro_bias = np.zeros(3, dtype=np.float64)
         self._orientation = np.zeros(3, dtype=np.float64)  # roll, pitch, yaw
-        self._prev_vel: Optional[np.ndarray] = None
+        self._prev_vel: np.ndarray | None = None
 
     def reset(self) -> None:
         """Reset biases, orientation estimate, and velocity cache."""
@@ -99,7 +98,7 @@ class IMUSensor(SensorBase):
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         return {
             "linear_acceleration": {
                 "shape": (3,),
@@ -121,7 +120,7 @@ class IMUSensor(SensorBase):
             },
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> Dict[str, np.ndarray]:
+    def _raw_observe(self, world_state: dict[str, Any]) -> dict[str, np.ndarray]:
         dt = self._cfg.dt
 
         # --- Linear acceleration ---
@@ -175,6 +174,6 @@ class IMUSensor(SensorBase):
             "orientation": self._orientation.copy(),
         }
 
-    def observe(self, world_state: Dict[str, Any]) -> Dict[str, np.ndarray]:
+    def observe(self, world_state: dict[str, Any]) -> dict[str, np.ndarray]:
         """Override to skip the generic noise model (noise is applied internally)."""
         return self._raw_observe(world_state)

@@ -14,15 +14,14 @@ Reference:
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 
 from navirl.core.constants import BODY, EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
-
 
 __all__ = [
     "PowerLawConfig",

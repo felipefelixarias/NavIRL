@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
 
 # Exports: Schedule, LinearSchedule, CosineAnnealingSchedule, StepSchedule,
 #          ExponentialSchedule, CyclicSchedule, WarmupSchedule,
@@ -293,7 +293,7 @@ class ReduceOnPlateauSchedule(Schedule):
         self.mode = mode
 
         self._current_value = initial_value
-        self._best_metric: Optional[float] = None
+        self._best_metric: float | None = None
         self._no_improvement_count: int = 0
 
     def report(self, metric: float) -> None:
@@ -385,8 +385,8 @@ class OneCycleSchedule(Schedule):
         self,
         max_value: float,
         total_steps: int,
-        initial_value: Optional[float] = None,
-        final_value: Optional[float] = None,
+        initial_value: float | None = None,
+        final_value: float | None = None,
         pct_start: float = 0.3,
     ) -> None:
         self.max_value = max_value
@@ -425,8 +425,8 @@ class CompositeSchedule(Schedule):
         Sequence of ``(Schedule, n_steps)`` pairs.
     """
 
-    def __init__(self, phases: Sequence[Tuple[Schedule, int]]) -> None:
-        self.phases: List[Tuple[Schedule, int]] = list(phases)
+    def __init__(self, phases: Sequence[tuple[Schedule, int]]) -> None:
+        self.phases: list[tuple[Schedule, int]] = list(phases)
 
     def value(self, step: int) -> float:
         remaining = step

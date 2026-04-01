@@ -8,14 +8,13 @@ with cubic spline interpolation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from navirl.robots.base import RobotController, EventSink
 from navirl.core.types import Action, AgentState
-
+from navirl.robots.base import EventSink, RobotController
 
 # -----------------------------------------------------------------------
 # Configuration
@@ -73,7 +72,7 @@ class InertiaFilter:
         self._vx = vx
         self._vy = vy
 
-    def filter(self, vx_cmd: float, vy_cmd: float, dt: float) -> Tuple[float, float]:
+    def filter(self, vx_cmd: float, vy_cmd: float, dt: float) -> tuple[float, float]:
         """Apply the inertia filter and return smoothed velocities.
 
         Args:
@@ -94,7 +93,7 @@ class InertiaFilter:
         return (self._vx, self._vy)
 
     @property
-    def velocity(self) -> Tuple[float, float]:
+    def velocity(self) -> tuple[float, float]:
         """Current filtered velocity."""
         return (self._vx, self._vy)
 
@@ -110,7 +109,7 @@ def clamp_acceleration(
     vy_prev: float,
     dt: float,
     config: HolonomicConfig,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Clamp the acceleration so that the change in velocity does not
     exceed the configured maximum.
 
@@ -329,7 +328,7 @@ class WaypointFollower:
         y: float,
         dt: float,
         lookahead: float = 0.3,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Compute desired velocity to track the spline path.
 
         Uses a pure-pursuit-style lookahead on the dense path.
@@ -382,7 +381,7 @@ def generate_smooth_trajectory(
     goal: np.ndarray,
     config: HolonomicConfig,
     dt: float = 0.05,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate a smooth straight-line trajectory between two points.
 
     The trajectory follows a trapezoidal velocity profile along the
@@ -428,7 +427,7 @@ def generate_waypoint_trajectory(
     config: HolonomicConfig,
     dt: float = 0.05,
     num_interp: int = 300,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate a smooth trajectory through multiple waypoints.
 
     First interpolates with cubic splines, then re-parameterises by arc
@@ -509,10 +508,10 @@ class HolonomicRobot(RobotController):
         self._theta: float = 0.0
         self._omega: float = 0.0
         self._robot_id: int = -1
-        self._goal: Tuple[float, float] = (0.0, 0.0)
+        self._goal: tuple[float, float] = (0.0, 0.0)
         self._backend: Any = None
         self._desired_speed = desired_speed
-        self._follower: Optional[WaypointFollower] = None
+        self._follower: WaypointFollower | None = None
         if waypoints is not None:
             self._follower = WaypointFollower(
                 waypoints, desired_speed=desired_speed

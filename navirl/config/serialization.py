@@ -9,8 +9,8 @@ from __future__ import annotations
 import copy
 import json
 import pathlib
-from typing import Any, Sequence
-
+from collections.abc import Sequence
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Save / load

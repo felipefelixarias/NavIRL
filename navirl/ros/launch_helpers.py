@@ -10,23 +10,22 @@ from __future__ import annotations
 import os
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml  # PyYAML -- already a NavIRL dependency
-
 
 # ---------------------------------------------------------------------------
 # Launch description generator
 # ---------------------------------------------------------------------------
 
 def generate_launch_description(
-    agent_config: Dict[str, Any],
+    agent_config: dict[str, Any],
     *,
     executable: str = "navirl_node",
     package: str = "navirl",
     namespace: str = "",
     output: str = "screen",
-    extra_remappings: Optional[Dict[str, str]] = None,
+    extra_remappings: dict[str, str] | None = None,
 ) -> str:
     """Return a complete ROS2 Python launch-file string.
 
@@ -101,7 +100,7 @@ def generate_launch_description(
 # ---------------------------------------------------------------------------
 
 def create_param_file(
-    config: Dict[str, Any],
+    config: dict[str, Any],
     path: str | Path | None = None,
     node_name: str = "navirl_node",
 ) -> str:
@@ -258,7 +257,7 @@ def setup_workspace(
 
     # Python package __init__
     (pkg_py / "__init__.py").write_text(
-        f'"""ROS2 package wrapper for NavIRL."""\n'
+        '"""ROS2 package wrapper for NavIRL."""\n'
     )
 
     return ws

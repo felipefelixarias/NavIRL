@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-
 _BACKENDS: dict[str, Callable[..., Any]] = {}
 _HUMAN_CONTROLLERS: dict[str, Callable[..., Any]] = {}
 _ROBOT_CONTROLLERS: dict[str, Callable[..., Any]] = {}

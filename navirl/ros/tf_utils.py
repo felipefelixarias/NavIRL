@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import math
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 try:
     import rclpy
+    import tf2_ros
+    from geometry_msgs.msg import TransformStamped
     from rclpy.node import Node
     from rclpy.time import Time as RosTime
-    import tf2_ros
     from tf2_ros import TransformException
-    from geometry_msgs.msg import TransformStamped
     _TF2_AVAILABLE = True
 except ImportError:
     _TF2_AVAILABLE = False
@@ -43,8 +43,8 @@ def _yaw_to_rotation_matrix(yaw: float) -> np.ndarray:
 
 
 def world_to_robot(
-    pos: np.ndarray | Tuple[float, float],
-    robot_pose: Dict[str, float] | Tuple[float, float, float],
+    pos: np.ndarray | tuple[float, float],
+    robot_pose: dict[str, float] | tuple[float, float, float],
 ) -> np.ndarray:
     """Transform a world-frame position into the robot's local frame.
 
@@ -74,8 +74,8 @@ def world_to_robot(
 
 
 def robot_to_world(
-    pos: np.ndarray | Tuple[float, float],
-    robot_pose: Dict[str, float] | Tuple[float, float, float],
+    pos: np.ndarray | tuple[float, float],
+    robot_pose: dict[str, float] | tuple[float, float, float],
 ) -> np.ndarray:
     """Transform a robot-local position into the world frame.
 
@@ -135,7 +135,7 @@ class TransformManager:
         self._tf_listener: Any = None
 
         # Fallback manual cache: (parent, child) -> (x, y, yaw, timestamp)
-        self._manual_cache: Dict[Tuple[str, str], Tuple[float, float, float, float]] = {}
+        self._manual_cache: dict[tuple[str, str], tuple[float, float, float, float]] = {}
 
         if _TF2_AVAILABLE:
             self._init_tf2()
@@ -179,7 +179,7 @@ class TransformManager:
         target_frame: str,
         source_frame: str,
         timeout_sec: float = 0.5,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Look up the ``(x, y, yaw)`` of *source_frame* in *target_frame*.
 
         Raises ``TransformException`` if the transform is unavailable.
@@ -228,13 +228,12 @@ class TransformManager:
 
     def transform_point(
         self,
-        point: np.ndarray | Tuple[float, float],
+        point: np.ndarray | tuple[float, float],
         source_frame: str,
         target_frame: str,
     ) -> np.ndarray:
         """Transform a 2-D point from *source_frame* to *target_frame*."""
         x, y, yaw = self.lookup(target_frame, source_frame)
-        pose = (x, y, yaw)
         # The lookup gives source in target -> we apply the inverse
         # to transform a point expressed in source into target.
         p = np.asarray(point, dtype=np.float64).ravel()[:2]
@@ -257,7 +256,7 @@ def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
     return math.atan2(siny_cosp, cosy_cosp)
 
 
-def _invert_2d(x: float, y: float, yaw: float) -> Tuple[float, float]:
+def _invert_2d(x: float, y: float, yaw: float) -> tuple[float, float]:
     """Invert a 2-D rigid transform ``(x, y, yaw)``."""
     c, s = math.cos(yaw), math.sin(yaw)
     inv_x = -(c * x + s * y)

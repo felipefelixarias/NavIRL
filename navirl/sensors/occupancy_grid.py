@@ -7,14 +7,13 @@ dynamic agents, velocity fields, and social-zone information.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
 from navirl.core.constants import EPSILON, PROXEMICS
 from navirl.sensors.base import NoiseModel, SensorBase
-
 
 # ---------------------------------------------------------------------------
 #  Configuration
@@ -46,7 +45,7 @@ class OccupancyGridConfig:
 
     grid_size: int = 64
     resolution: float = 0.25  # metres per cell
-    layers: Tuple[str, ...] = ("static", "dynamic", "velocity_x",
+    layers: tuple[str, ...] = ("static", "dynamic", "velocity_x",
                                 "velocity_y", "social")
     decay: float = 0.0
 
@@ -78,8 +77,8 @@ class OccupancyGridSensor(SensorBase):
 
     def __init__(
         self,
-        config: Optional[OccupancyGridConfig] = None,
-        noise_model: Optional[NoiseModel] = None,
+        config: OccupancyGridConfig | None = None,
+        noise_model: NoiseModel | None = None,
     ) -> None:
         config = config or OccupancyGridConfig()
         super().__init__(config=config, noise_model=noise_model)
@@ -98,7 +97,7 @@ class OccupancyGridSensor(SensorBase):
 
     # -- SensorBase interface ------------------------------------------------
 
-    def get_observation_space(self) -> Dict[str, Any]:
+    def get_observation_space(self) -> dict[str, Any]:
         gs = self.config.grid_size
         n_layers = len(self._layer_names)
         return {
@@ -109,7 +108,7 @@ class OccupancyGridSensor(SensorBase):
             "layer_names": self._layer_names,
         }
 
-    def _raw_observe(self, world_state: Dict[str, Any]) -> np.ndarray:
+    def _raw_observe(self, world_state: dict[str, Any]) -> np.ndarray:
         gs = self.config.grid_size
         res = self.config.resolution
         n_layers = len(self._layer_names)
@@ -149,7 +148,7 @@ class OccupancyGridSensor(SensorBase):
     # -- Layer renderers -----------------------------------------------------
 
     def _render_static(
-        self, ws: Dict[str, Any],
+        self, ws: dict[str, Any],
         wx: np.ndarray, wy: np.ndarray,
         gs: int, res: float,
     ) -> np.ndarray:
@@ -188,7 +187,7 @@ class OccupancyGridSensor(SensorBase):
         return layer.reshape(gs, gs)
 
     def _render_dynamic(
-        self, ws: Dict[str, Any],
+        self, ws: dict[str, Any],
         wx: np.ndarray, wy: np.ndarray,
         gs: int, res: float,
     ) -> np.ndarray:
@@ -209,7 +208,7 @@ class OccupancyGridSensor(SensorBase):
         return layer.reshape(gs, gs)
 
     def _render_velocity(
-        self, ws: Dict[str, Any],
+        self, ws: dict[str, Any],
         wx: np.ndarray, wy: np.ndarray,
         gs: int, res: float,
         component: int, heading: float,
@@ -244,7 +243,7 @@ class OccupancyGridSensor(SensorBase):
         return layer.reshape(gs, gs)
 
     def _render_social(
-        self, ws: Dict[str, Any],
+        self, ws: dict[str, Any],
         wx: np.ndarray, wy: np.ndarray,
         gs: int, res: float,
     ) -> np.ndarray:

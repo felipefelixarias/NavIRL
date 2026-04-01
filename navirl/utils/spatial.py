@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Iterator, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Spatial hash grid
@@ -125,7 +124,7 @@ class SpatialHashGrid:
             Positions, shape (N, 2).
         """
         positions = np.asarray(positions, dtype=np.float64)
-        for eid, pos in zip(entity_ids, positions):
+        for eid, pos in zip(entity_ids, positions, strict=False):
             self.insert(eid, pos)
 
     def rebuild(

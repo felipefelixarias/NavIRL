@@ -6,8 +6,9 @@ Provides a generic, type-safe registry that maps string names to classes
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Type, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 

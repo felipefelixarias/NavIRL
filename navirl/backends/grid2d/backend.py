@@ -6,9 +6,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from navirl.backends.grid2d.maps import MapInfo, load_map_info
 from navirl.backends.grid2d.constants import FREE_SPACE, OBSTACLE_SPACE, RADIUS_METERS
 from navirl.backends.grid2d.environment import GridEnvironment
+from navirl.backends.grid2d.maps import MapInfo, load_map_info
 from navirl.backends.grid2d.orca import IndoorORCASim, IndoorORCASimConfig
 from navirl.core.env import SceneBackend
 

@@ -8,13 +8,12 @@ Provides serialization / deserialization helpers and a fluent
 
 from __future__ import annotations
 
-import copy
 import json
-from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Tuple, Type
+from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Axis-Aligned Bounding Box
@@ -93,12 +92,12 @@ class SpatialGrid:
         self.cols = max(1, int(np.ceil(bounds.width / self.cell_size)))
         self.rows = max(1, int(np.ceil(bounds.height / self.cell_size)))
         # Map (row, col) -> set of entity ids
-        self._cells: Dict[Tuple[int, int], Set[int]] = {}
+        self._cells: dict[tuple[int, int], set[int]] = {}
         # Reverse map entity_id -> set of (row, col)
-        self._entity_cells: Dict[int, Set[Tuple[int, int]]] = {}
+        self._entity_cells: dict[int, set[tuple[int, int]]] = {}
 
     # ------------------------------------------------------------------
-    def _cell_index(self, x: float, y: float) -> Tuple[int, int]:
+    def _cell_index(self, x: float, y: float) -> tuple[int, int]:
         """Return (row, col) cell index for a world coordinate."""
         col = int((x - self.bounds.x_min) / self.cell_size)
         row = int((y - self.bounds.y_min) / self.cell_size)
@@ -106,7 +105,7 @@ class SpatialGrid:
         row = max(0, min(row, self.rows - 1))
         return row, col
 
-    def _cells_for_aabb(self, aabb: AABB) -> Iterator[Tuple[int, int]]:
+    def _cells_for_aabb(self, aabb: AABB) -> Iterator[tuple[int, int]]:
         """Yield all cell indices that intersect *aabb*."""
         r_min, c_min = self._cell_index(aabb.x_min, aabb.y_min)
         r_max, c_max = self._cell_index(aabb.x_max, aabb.y_max)
@@ -117,7 +116,7 @@ class SpatialGrid:
     # ------------------------------------------------------------------
     def insert(self, entity_id: int, aabb: AABB) -> None:
         """Insert *entity_id* into all cells covered by *aabb*."""
-        cells: Set[Tuple[int, int]] = set()
+        cells: set[tuple[int, int]] = set()
         for rc in self._cells_for_aabb(aabb):
             self._cells.setdefault(rc, set()).add(entity_id)
             cells.add(rc)
@@ -137,19 +136,19 @@ class SpatialGrid:
         self.remove(entity_id)
         self.insert(entity_id, aabb)
 
-    def query_point(self, x: float, y: float) -> Set[int]:
+    def query_point(self, x: float, y: float) -> set[int]:
         """Return entity ids whose cells contain point (x, y)."""
         rc = self._cell_index(x, y)
         return set(self._cells.get(rc, set()))
 
-    def query_aabb(self, aabb: AABB) -> Set[int]:
+    def query_aabb(self, aabb: AABB) -> set[int]:
         """Return entity ids in any cell overlapping *aabb*."""
-        result: Set[int] = set()
+        result: set[int] = set()
         for rc in self._cells_for_aabb(aabb):
             result.update(self._cells.get(rc, set()))
         return result
 
-    def query_radius(self, x: float, y: float, radius: float) -> Set[int]:
+    def query_radius(self, x: float, y: float, radius: float) -> set[int]:
         """Return entity ids in cells overlapping a circle."""
         aabb = AABB(x - radius, y - radius, x + radius, y + radius)
         return self.query_aabb(aabb)
@@ -166,7 +165,7 @@ class SpatialGrid:
 
 def _circle_circle(
     p1: np.ndarray, r1: float, p2: np.ndarray, r2: float
-) -> Optional[Tuple[np.ndarray, float]]:
+) -> tuple[np.ndarray, float] | None:
     """Return (normal, penetration) if circles overlap, else ``None``."""
     diff = p2 - p1
     dist = float(np.linalg.norm(diff))
@@ -179,7 +178,7 @@ def _circle_circle(
 
 def _circle_segment(
     center: np.ndarray, radius: float, seg_a: np.ndarray, seg_b: np.ndarray
-) -> Optional[Tuple[np.ndarray, float]]:
+) -> tuple[np.ndarray, float] | None:
     """Return (normal, penetration) if circle overlaps a line segment."""
     ab = seg_b - seg_a
     ab_len_sq = float(np.dot(ab, ab))
@@ -197,7 +196,7 @@ def _circle_segment(
     return normal, overlap
 
 
-def _aabb_overlap(a: AABB, b: AABB) -> Optional[Tuple[np.ndarray, float]]:
+def _aabb_overlap(a: AABB, b: AABB) -> tuple[np.ndarray, float] | None:
     """Compute AABB overlap, return (mtv_direction, penetration) or None."""
     dx = min(a.x_max, b.x_max) - max(a.x_min, b.x_min)
     dy = min(a.y_max, b.y_max) - max(a.y_min, b.y_min)
@@ -259,14 +258,14 @@ class World:
         self._grid = SpatialGrid(self.bounds, cell_size=cell_size)
 
         # entity_id -> dict with keys: position, velocity, radius, kind, data
-        self._entities: Dict[int, Dict[str, Any]] = {}
+        self._entities: dict[int, dict[str, Any]] = {}
         self._next_id: int = 0
 
         # Wall segments stored as (a, b) pairs of 2-vectors
-        self._walls: List[Tuple[np.ndarray, np.ndarray]] = []
+        self._walls: list[tuple[np.ndarray, np.ndarray]] = []
 
         # Metadata
-        self._metadata: Dict[str, Any] = {}
+        self._metadata: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     # Entity management
@@ -288,7 +287,7 @@ class World:
         vel = np.zeros(2, dtype=np.float64)
         if velocity is not None:
             vel = np.asarray(velocity, dtype=np.float64)[:2].copy()
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "position": pos,
             "velocity": vel,
             "radius": float(radius),
@@ -308,14 +307,14 @@ class World:
             self._grid.remove(entity_id)
             del self._entities[entity_id]
 
-    def get_entity(self, entity_id: int) -> Dict[str, Any]:
+    def get_entity(self, entity_id: int) -> dict[str, Any]:
         """Return the mutable entity dict for *entity_id*.
 
         Raises ``KeyError`` if not found.
         """
         return self._entities[entity_id]
 
-    def entity_ids(self, kind: str | None = None) -> List[int]:
+    def entity_ids(self, kind: str | None = None) -> list[int]:
         """Return list of entity ids, optionally filtered by *kind*."""
         if kind is None:
             return list(self._entities)
@@ -326,7 +325,7 @@ class World:
         return len(self._entities)
 
     @property
-    def entities(self) -> Dict[int, Dict[str, Any]]:
+    def entities(self) -> dict[int, dict[str, Any]]:
         """Direct (mutable) access to the entity store."""
         return self._entities
 
@@ -355,7 +354,7 @@ class World:
             self.add_wall(corners[i], corners[(i + 1) % 4])
 
     @property
-    def walls(self) -> List[Tuple[np.ndarray, np.ndarray]]:
+    def walls(self) -> list[tuple[np.ndarray, np.ndarray]]:
         return self._walls
 
     # ------------------------------------------------------------------
@@ -368,13 +367,13 @@ class World:
         r = e["radius"]
         return AABB(p[0] - r, p[1] - r, p[0] + r, p[1] + r)
 
-    def query_radius(self, x: float, y: float, radius: float) -> List[int]:
+    def query_radius(self, x: float, y: float, radius: float) -> list[int]:
         """Return entity ids whose *cells* intersect the query circle.
 
         For exact distance filtering, post-filter by Euclidean distance.
         """
         candidates = self._grid.query_radius(x, y, radius)
-        result: List[int] = []
+        result: list[int] = []
         centre = np.array([x, y])
         for eid in candidates:
             e = self._entities[eid]
@@ -383,13 +382,13 @@ class World:
                 result.append(eid)
         return result
 
-    def query_aabb(self, aabb: AABB) -> List[int]:
+    def query_aabb(self, aabb: AABB) -> list[int]:
         """Return entity ids overlapping *aabb*."""
         return list(self._grid.query_aabb(aabb))
 
     def nearest_entities(
         self, x: float, y: float, k: int = 5, max_radius: float = 10.0
-    ) -> List[Tuple[int, float]]:
+    ) -> list[tuple[int, float]]:
         """Return up to *k* nearest entities within *max_radius*.
 
         Returns list of (entity_id, distance) sorted by distance.
@@ -407,10 +406,10 @@ class World:
     # Collision detection
     # ------------------------------------------------------------------
 
-    def detect_entity_collisions(self) -> List[CollisionResult]:
+    def detect_entity_collisions(self) -> list[CollisionResult]:
         """Broad + narrow phase entity-entity collision detection."""
-        checked: Set[Tuple[int, int]] = set()
-        results: List[CollisionResult] = []
+        checked: set[tuple[int, int]] = set()
+        results: list[CollisionResult] = []
         for eid, edata in self._entities.items():
             if not edata.get("active", True):
                 continue
@@ -437,9 +436,9 @@ class World:
                     results.append(CollisionResult(eid, nid, normal, pen, cp))
         return results
 
-    def detect_wall_collisions(self) -> List[CollisionResult]:
+    def detect_wall_collisions(self) -> list[CollisionResult]:
         """Check every entity against every wall segment."""
-        results: List[CollisionResult] = []
+        results: list[CollisionResult] = []
         for eid, edata in self._entities.items():
             if not edata.get("active", True):
                 continue
@@ -459,7 +458,7 @@ class World:
 
     def enforce_boundaries(self) -> None:
         """Clamp or wrap entity positions to stay inside the world bounds."""
-        for eid, edata in self._entities.items():
+        for _eid, edata in self._entities.items():
             pos = edata["position"]
             r = edata["radius"]
             if self.wrap:
@@ -511,7 +510,7 @@ class World:
     # Serialization / deserialization
     # ------------------------------------------------------------------
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize the world to a JSON-compatible dict."""
         ents = {}
         for eid, edata in self._entities.items():
@@ -533,7 +532,7 @@ class World:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], cell_size: float = 2.0) -> World:
+    def from_dict(cls, data: dict[str, Any], cell_size: float = 2.0) -> World:
         """Reconstruct a world from a dict produced by ``to_dict``."""
         w = cls(
             width=data["width"],
@@ -570,9 +569,9 @@ class World:
     # Snapshot / restore
     # ------------------------------------------------------------------
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         """Create a deep-copy snapshot of entity state (fast restore)."""
-        snap: Dict[str, Any] = {}
+        snap: dict[str, Any] = {}
         for eid, edata in self._entities.items():
             snap[eid] = {
                 "position": edata["position"].copy(),
@@ -581,7 +580,7 @@ class World:
             }
         return snap
 
-    def restore(self, snap: Dict[str, Any]) -> None:
+    def restore(self, snap: dict[str, Any]) -> None:
         """Restore entity positions/velocities from a snapshot."""
         for eid, sdata in snap.items():
             if eid in self._entities:
@@ -635,9 +634,9 @@ class WorldBuilder:
         self._cell_size: float = 2.0
         self._wrap: bool = False
         self._boundary_walls: bool = False
-        self._entities: List[Dict[str, Any]] = []
-        self._walls: List[Tuple[Sequence[float], Sequence[float]]] = []
-        self._metadata: Dict[str, Any] = {}
+        self._entities: list[dict[str, Any]] = []
+        self._walls: list[tuple[Sequence[float], Sequence[float]]] = []
+        self._metadata: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
 

@@ -8,11 +8,8 @@ submap extraction, and world-to-grid coordinate transforms.
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -54,7 +51,7 @@ class GridMap:
         width: int = 100,
         height: int = 100,
         resolution: float = 0.1,
-        origin: Tuple[float, float] = (0.0, 0.0),
+        origin: tuple[float, float] = (0.0, 0.0),
         default_value: int = FREE,
     ) -> None:
         self.width = width
@@ -69,7 +66,7 @@ class GridMap:
     # Coordinate transforms
     # ------------------------------------------------------------------
 
-    def world_to_grid(self, x: float, y: float) -> Tuple[int, int]:
+    def world_to_grid(self, x: float, y: float) -> tuple[int, int]:
         """Convert world coords to grid (row, col).
 
         Returns clipped indices that are always valid.
@@ -80,13 +77,13 @@ class GridMap:
         row = max(0, min(row, self.height - 1))
         return row, col
 
-    def grid_to_world(self, row: int, col: int) -> Tuple[float, float]:
+    def grid_to_world(self, row: int, col: int) -> tuple[float, float]:
         """Convert grid (row, col) to world coords (centre of cell)."""
         x = self.origin[0] + (col + 0.5) * self.resolution
         y = self.origin[1] + (row + 0.5) * self.resolution
         return x, y
 
-    def world_to_grid_float(self, x: float, y: float) -> Tuple[float, float]:
+    def world_to_grid_float(self, x: float, y: float) -> tuple[float, float]:
         """Convert world coords to continuous grid coordinates."""
         col = (x - self.origin[0]) / self.resolution
         row = (y - self.origin[1]) / self.resolution
@@ -134,12 +131,12 @@ class GridMap:
     @staticmethod
     def bresenham(
         r0: int, c0: int, r1: int, c1: int
-    ) -> List[Tuple[int, int]]:
+    ) -> list[tuple[int, int]]:
         """Bresenham's line algorithm between two grid cells.
 
         Returns list of ``(row, col)`` along the line.
         """
-        cells: List[Tuple[int, int]] = []
+        cells: list[tuple[int, int]] = []
         dr = abs(r1 - r0)
         dc = abs(c1 - c0)
         sr = 1 if r0 < r1 else -1
@@ -161,7 +158,7 @@ class GridMap:
 
     def line_cells(
         self, x0: float, y0: float, x1: float, y1: float
-    ) -> List[Tuple[int, int]]:
+    ) -> list[tuple[int, int]]:
         """Return grid cells along a world-coordinate line segment."""
         r0, c0 = self.world_to_grid(x0, y0)
         r1, c1 = self.world_to_grid(x1, y1)
@@ -177,7 +174,7 @@ class GridMap:
         y: float,
         angle: float,
         max_range: float = 50.0,
-    ) -> Tuple[float, Tuple[int, int]]:
+    ) -> tuple[float, tuple[int, int]]:
         """Cast a ray from (x, y) at *angle* (radians).
 
         Returns ``(distance, (hit_row, hit_col))`` of the first occupied
@@ -206,7 +203,7 @@ class GridMap:
         end_angle: float,
         n_rays: int = 36,
         max_range: float = 50.0,
-    ) -> List[Tuple[float, float, float]]:
+    ) -> list[tuple[float, float, float]]:
         """Cast multiple rays in a fan.
 
         Returns list of ``(angle, distance, hit_x, hit_y)`` tuples.
@@ -214,11 +211,11 @@ class GridMap:
         ``(angle, distance, endpoint_x)``.  Full form below.
         """
         angles = np.linspace(start_angle, end_angle, n_rays)
-        results: List[Tuple[float, float, float]] = []
+        results: list[tuple[float, float, float]] = []
         for a in angles:
             dist, _ = self.ray_cast(x, y, a, max_range)
             hit_x = x + dist * np.cos(a)
-            hit_y = y + dist * np.sin(a)
+            y + dist * np.sin(a)
             results.append((float(a), dist, float(hit_x)))
         return results
 
@@ -239,7 +236,7 @@ class GridMap:
         old_value = int(self.data[row, col])
         if old_value == new_value:
             return 0
-        queue: deque[Tuple[int, int]] = deque()
+        queue: deque[tuple[int, int]] = deque()
         queue.append((row, col))
         filled = 0
         while queue:
@@ -271,7 +268,7 @@ class GridMap:
             return mask
         if value is None:
             value = int(self.data[row, col])
-        queue: deque[Tuple[int, int]] = deque()
+        queue: deque[tuple[int, int]] = deque()
         queue.append((row, col))
         while queue:
             r, c = queue.popleft()
@@ -300,7 +297,7 @@ class GridMap:
         cell.
         """
         dist = np.full((self.height, self.width), np.inf, dtype=np.float64)
-        queue: deque[Tuple[int, int]] = deque()
+        queue: deque[tuple[int, int]] = deque()
         for r in range(self.height):
             for c in range(self.width):
                 if self.data[r, c] == OCCUPIED:
@@ -532,7 +529,7 @@ class GridMap:
         cls,
         arr: np.ndarray,
         resolution: float = 0.1,
-        origin: Tuple[float, float] = (0.0, 0.0),
+        origin: tuple[float, float] = (0.0, 0.0),
         threshold: float = 0.5,
     ) -> GridMap:
         """Create a GridMap from a 2-D numpy array.

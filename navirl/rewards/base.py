@@ -26,11 +26,11 @@ RewardShaper
 from __future__ import annotations
 
 import abc
-import copy
 import logging
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # Type aliases
 # ---------------------------------------------------------------------------
 
-State = Dict[str, Any]
+State = dict[str, Any]
 """A generic agent / environment state dictionary.
 
 Expected keys (not all are mandatory for every reward):
@@ -94,7 +94,7 @@ class RewardFunction(abc.ABC):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Return the scalar reward for a single transition.
 
@@ -124,7 +124,7 @@ class RewardFunction(abc.ABC):
         The default implementation is a no-op.
         """
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return diagnostic information about the last :meth:`compute` call.
 
         Useful for TensorBoard / Weights & Biases logging of individual
@@ -143,7 +143,7 @@ class RewardFunction(abc.ABC):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Convenience alias for :meth:`compute`."""
         return self.compute(state, action, next_state, info=info)
@@ -190,7 +190,7 @@ class RewardComponent:
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute weighted reward if enabled, else return 0.0."""
         if not self.enabled:
@@ -202,7 +202,7 @@ class RewardComponent:
         """Forward reset to the wrapped function."""
         self.reward_fn.reset()
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return info dict augmented with *weight* and *enabled* status."""
         base = self.reward_fn.get_info()
         base["weight"] = self.weight
@@ -251,7 +251,7 @@ class CompositeReward(RewardFunction):
         super().__init__(name=name)
         self._components: list[RewardComponent] = list(components or [])
         self._track_decomposition = track_decomposition
-        self._last_decomposition: Dict[str, float] = {}
+        self._last_decomposition: dict[str, float] = {}
 
     # -- component management ------------------------------------------------
 
@@ -315,7 +315,7 @@ class CompositeReward(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Sum all enabled, weighted component rewards.
 
@@ -330,7 +330,7 @@ class CompositeReward(RewardFunction):
             Total composite reward.
         """
         total = 0.0
-        decomposition: Dict[str, float] = {}
+        decomposition: dict[str, float] = {}
         for comp in self._components:
             value = comp.compute(state, action, next_state, info=info)
             total += value
@@ -346,7 +346,7 @@ class CompositeReward(RewardFunction):
         for comp in self._components:
             comp.reset()
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return per-component reward decomposition.
 
         Returns
@@ -496,7 +496,7 @@ class RewardNormalizer(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute the normalised reward.
 
@@ -546,7 +546,7 @@ class RewardNormalizer(RewardFunction):
         self._ema_mean = 0.0
         self._ema_var = 1.0
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return normalisation diagnostics."""
         return {
             "raw": self._last_raw,
@@ -607,7 +607,7 @@ class RewardClipper(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Compute and clip the reward.
 
@@ -634,7 +634,7 @@ class RewardClipper(RewardFunction):
         """Forward reset to the wrapped function."""
         self._fn.reset()
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return clipping diagnostics."""
         return {
             "raw": self._last_raw,
@@ -718,7 +718,7 @@ class RewardShaper(RewardFunction):
         action: Action,
         next_state: State,
         *,
-        info: Dict[str, Any] | None = None,
+        info: dict[str, Any] | None = None,
     ) -> float:
         """Return the shaped reward ``r + scale * (gamma * Phi(s') - Phi(s))``.
 
@@ -770,7 +770,7 @@ class RewardShaper(RewardFunction):
         self._fn.reset()
         self._prev_potential = None
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Return shaping diagnostics."""
         return {
             "base_reward": self._last_base,

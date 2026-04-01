@@ -8,14 +8,13 @@ generation, and a lane-following controller.
 from __future__ import annotations
 
 import enum
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from navirl.robots.base import RobotController, EventSink
 from navirl.core.types import Action, AgentState
-
+from navirl.robots.base import EventSink, RobotController
 
 # -----------------------------------------------------------------------
 # Configuration
@@ -70,7 +69,7 @@ def bicycle_forward(
     delta: float,
     wheelbase: float,
     dt: float,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Integrate bicycle kinematics for one time-step.
 
     The reference point is at the rear axle centre.
@@ -90,7 +89,7 @@ def bicycle_forward(
     beta = np.arctan(0.5 * np.tan(delta))  # slip angle at CG for bicycle
     x_new = x + v * np.cos(theta + beta) * dt
     y_new = y + v * np.sin(theta + beta) * dt
-    dtheta = (v / wheelbase) * np.sin(beta) * 2.0  # equivalent to v*tan(delta)/L
+    (v / wheelbase) * np.sin(beta) * 2.0  # equivalent to v*tan(delta)/L
     # Use exact formulation: dtheta = v * tan(delta) / L
     dtheta_exact = v * np.tan(delta) / wheelbase
     theta_new = _wrap_angle(theta + dtheta_exact * dt)
@@ -132,7 +131,7 @@ def rate_limit_ackermann(
     delta_prev: float,
     dt: float,
     config: AckermannConfig,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Enforce acceleration and steering-rate limits.
 
     Args:
@@ -184,7 +183,7 @@ class RSSegment:
 def _rs_forward(
     x: float, y: float, theta: float,
     seg: RSSegment, radius: float,
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Propagate state through one RS segment."""
     if seg.kind == RSSegmentType.STRAIGHT:
         x += seg.length * np.cos(theta)
@@ -206,7 +205,7 @@ def reeds_shepp_path(
     x1: float, y1: float, theta1: float,
     radius: float,
     num_samples: int = 100,
-) -> Tuple[np.ndarray, List[RSSegment]]:
+) -> tuple[np.ndarray, list[RSSegment]]:
     """Compute an approximate Reeds-Shepp path.
 
     Uses a set of candidate word types (CSC and CCC families) and picks
@@ -233,11 +232,11 @@ def reeds_shepp_path(
     ltheta = _wrap_angle(theta1 - theta0)
 
     # Candidate word types: LSL, RSR, LSR, RSL, LRL, RLR
-    candidates: List[List[RSSegment]] = []
+    candidates: list[list[RSSegment]] = []
 
     def _try_csc(
         turn1: RSSegmentType, turn2: RSSegmentType,
-    ) -> Optional[List[RSSegment]]:
+    ) -> list[RSSegment] | None:
         """Attempt a CSC (curve-straight-curve) path."""
         s1 = 1.0 if turn1 == RSSegmentType.LEFT else -1.0
         s2 = 1.0 if turn2 == RSSegmentType.LEFT else -1.0
@@ -290,7 +289,7 @@ def reeds_shepp_path(
     candidates.append([RSSegment(RSSegmentType.STRAIGHT, dist)])
 
     # Pick shortest.
-    def _total_length(segs: List[RSSegment]) -> float:
+    def _total_length(segs: list[RSSegment]) -> float:
         return sum(abs(s.length) for s in segs)
 
     candidates.sort(key=_total_length)
@@ -340,7 +339,7 @@ def parallel_parking_trajectory(
     theta_spot: float,
     config: AckermannConfig,
     dt: float = 0.05,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Generate a parallel-parking manoeuvre.
 
     The manoeuvre consists of:
@@ -364,7 +363,7 @@ def parallel_parking_trajectory(
     max_delta = config.max_steering_angle
 
     # Build a sequence of (v, delta, duration) phases.
-    phases: List[Tuple[float, float, float]] = [
+    phases: list[tuple[float, float, float]] = [
         # Phase 1: reverse with full right lock.
         (-park_speed, -max_delta, r * np.pi * 0.25 / park_speed),
         # Phase 2: reverse with full left lock.
@@ -373,8 +372,8 @@ def parallel_parking_trajectory(
         (park_speed * 0.5, 0.0, 0.5),
     ]
 
-    poses: List[Tuple[float, float, float]] = [(x_start, y_start, theta_start)]
-    controls: List[Tuple[float, float]] = []
+    poses: list[tuple[float, float, float]] = [(x_start, y_start, theta_start)]
+    controls: list[tuple[float, float]] = []
 
     x, y, theta = x_start, y_start, theta_start
     for v, delta, duration in phases:
@@ -647,10 +646,10 @@ class AckermannRobot(RobotController):
 
         if controller == "stanley":
             self._stanley = LaneFollower()
-            self._pursuit: Optional[PurePursuitController] = None
+            self._pursuit: PurePursuitController | None = None
         else:
             self._pursuit = PurePursuitController()
-            self._stanley: Optional[LaneFollower] = None  # type: ignore[assignment]
+            self._stanley: LaneFollower | None = None  # type: ignore[assignment]
 
         # State.
         self._x: float = 0.0
@@ -659,7 +658,7 @@ class AckermannRobot(RobotController):
         self._v: float = 0.0
         self._delta: float = 0.0
         self._robot_id: int = -1
-        self._goal: Tuple[float, float] = (0.0, 0.0)
+        self._goal: tuple[float, float] = (0.0, 0.0)
         self._backend: Any = None
         self._goal_tol: float = 0.5
 
@@ -789,7 +788,7 @@ class AckermannRobot(RobotController):
         self,
         x_spot: float, y_spot: float, theta_spot: float,
         dt: float = 0.05,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Plan a parallel-parking manoeuvre to the given spot.
 
         Returns:

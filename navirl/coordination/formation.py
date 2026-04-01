@@ -6,9 +6,6 @@ formation control, and leader-follower architectures.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Tuple
-
 import numpy as np
 
 
@@ -28,12 +25,12 @@ class FormationController:
         custom_offsets: Array of shape ``(N, 2)`` for ``"custom"`` formation.
     """
 
-    formation_types: Tuple[str, ...] = ("line", "wedge", "circle", "diamond", "custom")
+    formation_types: tuple[str, ...] = ("line", "wedge", "circle", "diamond", "custom")
 
     def __init__(
         self,
         spacing: float = 2.0,
-        custom_offsets: Optional[np.ndarray] = None,
+        custom_offsets: np.ndarray | None = None,
     ) -> None:
         self.spacing = spacing
         self.custom_offsets = custom_offsets
@@ -174,7 +171,7 @@ class ConsensusFormation:
         self,
         desired_offsets: np.ndarray,
         gain: float = 0.1,
-        adjacency: Optional[np.ndarray] = None,
+        adjacency: np.ndarray | None = None,
     ) -> None:
         self.desired_offsets = np.asarray(desired_offsets, dtype=np.float64)
         self.gain = gain
@@ -241,7 +238,7 @@ class LeaderFollower:
     def __init__(
         self,
         leader_index: int = 0,
-        follower_offsets: Optional[np.ndarray] = None,
+        follower_offsets: np.ndarray | None = None,
         gain: float = 0.5,
     ) -> None:
         self.leader_index = leader_index

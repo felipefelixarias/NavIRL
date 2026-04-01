@@ -16,9 +16,9 @@ All units are SI unless explicitly noted:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, Final, NamedTuple, Tuple
+from typing import Final
 
 import numpy as np
 
@@ -91,7 +91,7 @@ class ProxemicZones:
             return "social"
         return "public"
 
-    def all_zones(self) -> Dict[str, ProxemicZone]:
+    def all_zones(self) -> dict[str, ProxemicZone]:
         return {
             "intimate": self.intimate,
             "personal": self.personal,
@@ -128,7 +128,7 @@ class SpeedDistribution:
         return np.clip(raw, self.min_speed, self.max_speed)
 
 
-SPEED_DISTRIBUTIONS: Final[Dict[GaitType, SpeedDistribution]] = {
+SPEED_DISTRIBUTIONS: Final[dict[GaitType, SpeedDistribution]] = {
     GaitType.SLOW: SpeedDistribution(mean=0.7, std=0.15, min_speed=0.2, max_speed=1.0),
     GaitType.NORMAL: SpeedDistribution(mean=1.34, std=0.26, min_speed=0.6, max_speed=2.0),
     GaitType.FAST: SpeedDistribution(mean=1.80, std=0.20, min_speed=1.2, max_speed=2.5),
@@ -235,9 +235,9 @@ class CorridorDimensions:
     door_width_double: float = 1.8        # standard double door
     door_width_emergency: float = 1.2     # emergency exit minimum
     # Rooms
-    room_size_small: Tuple[float, float] = (4.0, 4.0)
-    room_size_medium: Tuple[float, float] = (8.0, 8.0)
-    room_size_large: Tuple[float, float] = (15.0, 15.0)
+    room_size_small: tuple[float, float] = (4.0, 4.0)
+    room_size_medium: tuple[float, float] = (8.0, 8.0)
+    room_size_large: tuple[float, float] = (15.0, 15.0)
     # Stairways
     stair_width_min: float = 1.1
     stair_tread_depth: float = 0.28
@@ -385,7 +385,7 @@ class RLTrainingDefaults:
     clip_obs: float = 10.0
     clip_reward: float = 10.0
     # Network architecture defaults
-    hidden_sizes: Tuple[int, ...] = (256, 256)
+    hidden_sizes: tuple[int, ...] = (256, 256)
     activation: str = "relu"
     # Multi-agent
     n_envs: int = 8                      # parallel environments
@@ -426,7 +426,7 @@ REWARD: Final[RewardConstants] = RewardConstants()
 DENSITY_BINS: Final[np.ndarray] = np.array(
     [0.0, 0.3, 0.5, 0.7, 1.1, 1.7, 2.5, 4.0, 6.0], dtype=np.float64
 )
-DENSITY_LABELS: Final[Tuple[str, ...]] = (
+DENSITY_LABELS: Final[tuple[str, ...]] = (
     "free_flow", "minor_conflict", "restricted",
     "severely_restricted", "shuffling", "congested",
     "crush_warning", "crush",
@@ -439,21 +439,21 @@ DENSITY_LABELS: Final[Tuple[str, ...]] = (
 @dataclass(frozen=True, slots=True)
 class Palette:
     """Standard colour palette for rendering pedestrians and obstacles."""
-    background: Tuple[int, int, int] = (245, 245, 240)
-    robot: Tuple[int, int, int] = (31, 119, 180)
-    human: Tuple[int, int, int] = (255, 127, 14)
-    human_alt: Tuple[int, int, int] = (44, 160, 44)
-    obstacle: Tuple[int, int, int] = (80, 80, 80)
-    wall: Tuple[int, int, int] = (40, 40, 40)
-    goal: Tuple[int, int, int] = (214, 39, 40)
-    path: Tuple[int, int, int] = (148, 103, 189)
-    lidar_beam: Tuple[int, int, int] = (200, 200, 200)
-    collision_highlight: Tuple[int, int, int] = (227, 66, 52)
-    intimate_zone: Tuple[int, int, int] = (255, 200, 200)
-    personal_zone: Tuple[int, int, int] = (255, 230, 200)
-    social_zone: Tuple[int, int, int] = (200, 230, 255)
-    text: Tuple[int, int, int] = (30, 30, 30)
-    grid_line: Tuple[int, int, int] = (220, 220, 220)
+    background: tuple[int, int, int] = (245, 245, 240)
+    robot: tuple[int, int, int] = (31, 119, 180)
+    human: tuple[int, int, int] = (255, 127, 14)
+    human_alt: tuple[int, int, int] = (44, 160, 44)
+    obstacle: tuple[int, int, int] = (80, 80, 80)
+    wall: tuple[int, int, int] = (40, 40, 40)
+    goal: tuple[int, int, int] = (214, 39, 40)
+    path: tuple[int, int, int] = (148, 103, 189)
+    lidar_beam: tuple[int, int, int] = (200, 200, 200)
+    collision_highlight: tuple[int, int, int] = (227, 66, 52)
+    intimate_zone: tuple[int, int, int] = (255, 200, 200)
+    personal_zone: tuple[int, int, int] = (255, 230, 200)
+    social_zone: tuple[int, int, int] = (200, 230, 255)
+    text: tuple[int, int, int] = (30, 30, 30)
+    grid_line: tuple[int, int, int] = (220, 220, 220)
 
 PALETTE: Final[Palette] = Palette()
 
@@ -485,7 +485,7 @@ LIDAR_SIN_TABLE: Final[np.ndarray] = np.sin(_LIDAR_ANGLES)
 #  Named configuration presets (shorthand references)
 # ---------------------------------------------------------------------------
 
-PRESET_NAMES: Final[Tuple[str, ...]] = (
+PRESET_NAMES: Final[tuple[str, ...]] = (
     "debug",
     "fast_train",
     "full_train",
