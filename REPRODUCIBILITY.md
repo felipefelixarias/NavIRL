@@ -6,23 +6,24 @@ NavIRL is designed for deterministic, inspectable research workflows.
 
 - Python: 3.11
 - CMake: 3.16+
-- Install: `python -m pip install -e .[dev]`
+- Install: `python3 -m venv .venv && ./.venv/bin/python -m pip install -e .[dev]`
 
 ## Required verification before claiming results
 
 ```bash
-pytest -q
-python -m navirl verify --suite quick
+./.venv/bin/pytest -q
+./.venv/bin/python -m navirl verify --suite quick
 ```
 
 When core simulator/controllers/planners/metrics change:
 
 ```bash
-python -m navirl verify --suite full
+./.venv/bin/python -m navirl verify --suite full
 ```
 
-If using the repo-managed interpreter, replace `python` with
-`.venv311/bin/python`.
+If your shell exposes `python`, the equivalent commands also work there. The
+repo-managed venv is the most portable option on hosts that only provide
+`python3`.
 
 ## Seed policy
 

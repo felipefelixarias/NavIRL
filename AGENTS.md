@@ -33,27 +33,27 @@ AI agents may auto-merge PRs that:
 
 ### Install and test
 - Install editable package:
-  - `python -m pip install -e .[dev]`
+  - `python3 -m venv .venv && ./.venv/bin/python -m pip install -e .[dev]`
 - Run tests:
-  - `pytest -q`
+  - `./.venv/bin/pytest -q`
 
 ### Run smoke simulation
 - Run a canonical scenario:
-  - `python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/`
+  - `./.venv/bin/python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/`
 - Run thesis floorplan demo:
-  - `python -m navirl run navirl/scenarios/library/wainscott_main_demo.yaml --out logs/`
+  - `./.venv/bin/python -m navirl run navirl/scenarios/library/wainscott_main_demo.yaml --out logs/`
 
 ### Run verify gate
 - Quick suite (required before claiming task completion):
-  - `python -m navirl verify --suite quick`
+  - `./.venv/bin/python -m navirl verify --suite quick`
 - Full suite (required when changing core sim/controllers/planners/metrics):
-  - `python -m navirl verify --suite full`
+  - `./.venv/bin/python -m navirl verify --suite full`
 
 ### Tune ORCA/social-nav hyperparameters
 - Default quick tuning sweep:
-  - `python -m navirl tune --suite quick --trials 24 --out out/tune/`
+  - `./.venv/bin/python -m navirl tune --suite quick --trials 24 --out out/tune/`
 - Custom scenario set:
-  - `python -m navirl tune --scenarios navirl/scenarios/library/hallway_pass.yaml navirl/scenarios/library/doorway_token_yield.yaml --trials 40`
+  - `./.venv/bin/python -m navirl tune --scenarios navirl/scenarios/library/hallway_pass.yaml navirl/scenarios/library/doorway_token_yield.yaml --trials 40`
 - Notes:
   - tuner jointly optimizes ORCA params, traversability wall-clearance offset,
     and deadlock-retry controls using numeric invariants + visual judge score.

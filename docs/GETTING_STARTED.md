@@ -3,14 +3,15 @@
 ## Install
 
 ```bash
-python -m pip install -U pip
-python -m pip install -e .[dev]
+python3 -m venv .venv
+./.venv/bin/python -m pip install -U pip
+./.venv/bin/python -m pip install -e .[dev]
 ```
 
-If you use the repo-managed Python, run commands as:
+Use the repo-managed interpreter for all commands:
 
 ```bash
-.venv311/bin/python -m navirl --help
+./.venv/bin/python -m navirl --help
 ```
 
 ## Three-command workflow
@@ -18,7 +19,7 @@ If you use the repo-managed Python, run commands as:
 1. Run a scenario:
 
 ```bash
-python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
+./.venv/bin/python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
 ```
 
 `run` / `run-batch` apply log retention by default (7-day TTL). Override with
@@ -27,19 +28,19 @@ python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
 2. Evaluate one or more runs:
 
 ```bash
-python -m navirl eval logs/**/state.jsonl --report out/eval/
+./.venv/bin/python -m navirl eval logs/**/state.jsonl --report out/eval/
 ```
 
 3. View/debug a replay:
 
 ```bash
-python -m navirl view logs/<run_id>/bundle/state.jsonl --out out/view/
+./.venv/bin/python -m navirl view logs/<run_id>/bundle/state.jsonl --out out/view/
 ```
 
 Main thesis-map demo:
 
 ```bash
-python -m navirl run navirl/scenarios/library/wainscott_main_demo.yaml --out logs/
+./.venv/bin/python -m navirl run navirl/scenarios/library/wainscott_main_demo.yaml --out logs/
 ```
 
 For path-based maps, always provide map scale in ScenarioSpec:
@@ -50,15 +51,15 @@ For path-based maps, always provide map scale in ScenarioSpec:
 Quick suite:
 
 ```bash
-python -m navirl verify --suite quick
+./.venv/bin/python -m navirl verify --suite quick
 export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file} --output-last-message {output_file} {image_flags} < {prompt_file}"'
-python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
+./.venv/bin/python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
 ```
 
 Full suite:
 
 ```bash
-python -m navirl verify --suite full
+./.venv/bin/python -m navirl verify --suite full
 ```
 
 `verify` applies artifact retention by default (7-day TTL). Override with
@@ -69,7 +70,7 @@ python -m navirl verify --suite full
 Run ORCA/controller tuning with visual-judge scoring:
 
 ```bash
-python -m navirl tune --suite quick --trials 24 --out out/tune/
+./.venv/bin/python -m navirl tune --suite quick --trials 24 --out out/tune/
 ```
 
 Wainscott VLM workflow (strict no-fallback preflight + full run):

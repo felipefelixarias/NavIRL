@@ -20,12 +20,10 @@ import numpy as np
 
 try:
     import wandb
-    from wandb.sdk.wandb_run import Run as WandbRun
 
     _WANDB_AVAILABLE = True
 except ImportError:
     wandb = None  # type: ignore[assignment]
-    WandbRun = None  # type: ignore[assignment,misc]
     _WANDB_AVAILABLE = False
 
 logger = logging.getLogger(__name__)

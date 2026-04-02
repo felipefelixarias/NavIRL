@@ -31,7 +31,7 @@ def load_state_rows(state_path: Path) -> list[dict]:
             line = line.strip()
             if line:
                 # Check line size before parsing
-                if len(line.encode('utf-8')) > MAX_LINE_SIZE:
+                if len(line.encode("utf-8")) > MAX_LINE_SIZE:
                     raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE/1024:.1f}KB)")
                 rows.append(json.loads(line))
     if not rows:
@@ -53,7 +53,7 @@ def load_events(events_path: Path) -> list[dict]:
             line = line.strip()
             if line:
                 # Check line size before parsing
-                if len(line.encode('utf-8')) > MAX_LINE_SIZE:
+                if len(line.encode("utf-8")) > MAX_LINE_SIZE:
                     raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE/1024:.1f}KB)")
                 out.append(json.loads(line))
     return out
@@ -66,7 +66,9 @@ def _load_scenario(bundle_dir: Path) -> dict:
     if not scenario_path.exists():
         raise ValueError(f"Scenario file not found: {scenario_path}")
     if scenario_path.stat().st_size > MAX_FILE_SIZE:
-        raise ValueError(f"Scenario file too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {scenario_path}")
+        raise ValueError(
+            f"Scenario file too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {scenario_path}"
+        )
 
     with scenario_path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -300,9 +302,9 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
                 float(spec["goal"][0] - spec["start"][0]),
                 float(spec["goal"][1] - spec["start"][1]),
             ),
-            "min_path_clearance_m": float(min_clearance_m)
-            if math.isfinite(min_clearance_m)
-            else None,
+            "min_path_clearance_m": (
+                float(min_clearance_m) if math.isfinite(min_clearance_m) else None
+            ),
         }
 
     # Bidirectional bottleneck risk detection (warning-level).

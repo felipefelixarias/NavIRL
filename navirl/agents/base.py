@@ -8,13 +8,13 @@ A2C, …) inherits from :class:`BaseAgent` and implements its abstract protocol.
 
 Key responsibilities handled at this level:
 * Device management (CPU / CUDA, with automatic fallback).
-* Hyperparameter storage and access (dict‑like *and* attribute‑like).
+* Hyperparameter storage and access (dict-like *and* attribute-like).
 * Checkpoint save / load with versioned metadata.
-* Evaluation‑mode toggle that propagates to all owned ``nn.Module`` objects.
+* Evaluation-mode toggle that propagates to all owned ``nn.Module`` objects.
 * Logging integration via Python's standard :mod:`logging` module and an
-  optional structured‑metrics callback.
-* Training‑loop hooks that concrete agents can override to inject custom
-  behaviour at well‑defined points (epoch start/end, step start/end, etc.).
+  optional structured-metrics callback.
+* Training-loop hooks that concrete agents can override to inject custom
+  behaviour at well-defined points (epoch start/end, step start/end, etc.).
 * Reproducibility helpers (seed management).
 """
 
@@ -29,6 +29,7 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from typing import (
     Any,
+    ClassVar,
 )
 
 import numpy as np
@@ -40,7 +41,7 @@ try:
     from torch.optim.lr_scheduler import _LRScheduler
 
     _TORCH_AVAILABLE = True
-except ImportError:  # pragma: no cover – allow import for type‑checking
+except ImportError:  # pragma: no cover - allow import for type-checking
     _TORCH_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -52,9 +53,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class HyperParameters:
-    """Base dataclass that all agent‑specific config dataclasses extend.
+    """Base dataclass that all agent-specific config dataclasses extend.
 
-    Provides serialisation helpers and dict‑like access so that configs can be
+    Provides serialisation helpers and dict-like access so that configs can be
     passed around generically.
     """
 
@@ -91,7 +92,7 @@ class HyperParameters:
 
 
 # ---------------------------------------------------------------------------
-# Metric‑logging helpers
+# Metric-logging helpers
 # ---------------------------------------------------------------------------
 
 MetricsCallback = Callable[[dict[str, float], int], None]
@@ -165,8 +166,8 @@ class CheckpointMeta:
 class RunningMeanStd:
     """Welford's online algorithm for computing running mean / variance.
 
-    This is a pure‑NumPy implementation so that it works even without Torch.
-    Agents that need a Torch‑backed version can wrap this.
+    This is a pure-NumPy implementation so that it works even without Torch.
+    Agents that need a Torch-backed version can wrap this.
     """
 
     def __init__(self, shape: tuple[int, ...] = (), epsilon: float = 1e-8) -> None:
@@ -227,7 +228,7 @@ class BaseAgent(abc.ABC):
     Parameters
     ----------
     config : HyperParameters
-        Agent‑specific configuration dataclass.
+        Agent-specific configuration dataclass.
     observation_space : gymnasium.spaces.Space
         Environment observation space.
     action_space : gymnasium.spaces.Space
@@ -243,7 +244,7 @@ class BaseAgent(abc.ABC):
     """
 
     # Registry of concrete subclasses (populated by __init_subclass__).
-    _registry: dict[str, type[BaseAgent]] = {}
+    _registry: ClassVar[dict[str, type[BaseAgent]]] = {}
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -270,7 +271,7 @@ class BaseAgent(abc.ABC):
         # Device selection -------------------------------------------------
         if _TORCH_AVAILABLE:
             if isinstance(device, str) and "cuda" in device and not torch.cuda.is_available():
-                logger.warning("CUDA requested but not available – falling back to CPU.")
+                logger.warning("CUDA requested but not available - falling back to CPU.")
                 device = "cpu"
             self._device = torch.device(device)
         else:
@@ -291,11 +292,11 @@ class BaseAgent(abc.ABC):
         self._logger = logging.getLogger(f"{__name__}.{type(self).__name__}")
         self._metrics = MetricsLogger(callback=metrics_callback)
 
-        # Modules list – subclasses should append nn.Modules here so that
+        # Modules list - subclasses should append nn.Modules here so that
         # eval()/train() toggles propagate automatically.
         self._modules: list[nn.Module] = []
 
-        # Optimizers list – for checkpoint serialisation.
+        # Optimizers list - for checkpoint serialisation.
         self._optimizers: dict[str, Optimizer] = {}
 
         # Schedulers list.
@@ -372,7 +373,7 @@ class BaseAgent(abc.ABC):
         action : np.ndarray
             The chosen action (compatible with ``env.step``).
         info : dict
-            Auxiliary information (e.g. log‑prob, value estimate, …).
+            Auxiliary information (e.g. log-prob, value estimate, …).
         """
 
     @abc.abstractmethod
@@ -382,7 +383,7 @@ class BaseAgent(abc.ABC):
         Parameters
         ----------
         batch
-            Agent‑specific data structure (rollout buffer slice, replay
+            Agent-specific data structure (rollout buffer slice, replay
             buffer sample, etc.).
 
         Returns
@@ -400,7 +401,7 @@ class BaseAgent(abc.ABC):
         """Restore the agent from a checkpoint on disk."""
 
     # ------------------------------------------------------------------
-    # Training‑loop hooks (no‑op by default; override in subclasses)
+    # Training-loop hooks (no-op by default; override in subclasses)
     # ------------------------------------------------------------------
 
     def on_training_start(self) -> None:  # noqa: B027
@@ -423,7 +424,9 @@ class BaseAgent(abc.ABC):
         """Called before each environment step."""
         pass
 
-    def on_step_end(self, step: int, reward: float, done: bool, info: dict[str, Any]) -> None:  # noqa: B027
+    def on_step_end(
+        self, step: int, reward: float, done: bool, info: dict[str, Any]
+    ) -> None:  # noqa: B027
         """Called after each environment step."""
         pass
 
@@ -436,7 +439,7 @@ class BaseAgent(abc.ABC):
         pass
 
     def on_rollout_start(self) -> None:  # noqa: B027
-        """Called before a rollout collection phase (on‑policy agents)."""
+        """Called before a rollout collection phase (on-policy agents)."""
         pass
 
     def on_rollout_end(self) -> None:  # noqa: B027
@@ -533,7 +536,7 @@ class BaseAgent(abc.ABC):
         else:
             raise RuntimeError("Cannot save checkpoint without PyTorch installed.")
 
-        # Also write a human‑readable JSON sidecar with metadata.
+        # Also write a human-readable JSON sidecar with metadata.
         meta_path = filepath.with_suffix(".json")
         with open(meta_path, "w") as f:
             json.dump(asdict(meta), f, indent=2, default=str)
@@ -564,7 +567,7 @@ class BaseAgent(abc.ABC):
         ckpt_version = meta.get("checkpoint_version", 1)
         if ckpt_version > _CHECKPOINT_VERSION:
             logger.warning(
-                "Checkpoint version %d is newer than agent version %d – loading may fail.",
+                "Checkpoint version %d is newer than agent version %d - loading may fail.",
                 ckpt_version,
                 _CHECKPOINT_VERSION,
             )

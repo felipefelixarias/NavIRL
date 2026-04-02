@@ -59,6 +59,7 @@ if _GYM_AVAILABLE:
             truncated = False
             info = {"success": terminated}
             return obs, reward, terminated, truncated, info
+
 else:
 
     class MockNavEnv:
