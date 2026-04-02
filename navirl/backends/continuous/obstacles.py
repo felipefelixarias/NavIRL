@@ -177,14 +177,53 @@ class CircleObstacle(Obstacle):
         self.center = np.asarray(self.center, dtype=np.float64)
 
     def contains_point(self, point: np.ndarray) -> bool:
+        """Check if a point lies inside this circular obstacle.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            2D point coordinates, shape (2,).
+
+        Returns
+        -------
+        bool
+            True if point is inside or on the boundary of the circle.
+        """
         point = np.asarray(point, dtype=np.float64)
         return float(np.linalg.norm(point - self.center)) <= self.radius
 
     def distance_to_point(self, point: np.ndarray) -> float:
+        """Calculate signed distance from a point to this circular obstacle.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            2D point coordinates, shape (2,).
+
+        Returns
+        -------
+        float
+            Signed distance to obstacle boundary. Negative if point is inside,
+            zero if on boundary, positive if outside.
+        """
         point = np.asarray(point, dtype=np.float64)
         return float(np.linalg.norm(point - self.center)) - self.radius
 
     def intersects_circle(self, center: np.ndarray, radius: float) -> bool:
+        """Check if this circular obstacle intersects with another circle.
+
+        Parameters
+        ----------
+        center : np.ndarray
+            Center coordinates of the other circle, shape (2,).
+        radius : float
+            Radius of the other circle.
+
+        Returns
+        -------
+        bool
+            True if the circles intersect or touch.
+        """
         center = np.asarray(center, dtype=np.float64)
         dist = float(np.linalg.norm(center - self.center))
         return dist <= self.radius + radius
@@ -194,6 +233,24 @@ class CircleObstacle(Obstacle):
         origin: np.ndarray,
         direction: np.ndarray,
     ) -> float | None:
+        """Cast a ray and find intersection distance with this circular obstacle.
+
+        Uses the quadratic formula to solve for ray-circle intersection. Returns
+        the closest non-negative intersection distance along the ray direction.
+
+        Parameters
+        ----------
+        origin : np.ndarray
+            Ray starting point, shape (2,).
+        direction : np.ndarray
+            Ray direction vector, shape (2,). Does not need to be normalized.
+
+        Returns
+        -------
+        float or None
+            Distance along ray to first intersection, or None if no intersection
+            occurs in the positive ray direction.
+        """
         origin = np.asarray(origin, dtype=np.float64)
         direction = np.asarray(direction, dtype=np.float64)
 
@@ -217,6 +274,19 @@ class CircleObstacle(Obstacle):
         return None
 
     def closest_point(self, point: np.ndarray) -> np.ndarray:
+        """Find the closest point on this circular obstacle boundary to a given point.
+
+        Parameters
+        ----------
+        point : np.ndarray
+            Query point coordinates, shape (2,).
+
+        Returns
+        -------
+        np.ndarray
+            Closest point on the circle boundary, shape (2,).
+            If the query point is at the center, returns a point on the right.
+        """
         point = np.asarray(point, dtype=np.float64)
         diff = point - self.center
         dist = np.linalg.norm(diff)
