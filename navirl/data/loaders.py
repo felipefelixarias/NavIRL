@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -62,8 +63,6 @@ class NavIRLLogLoader:
         Returns:
             A :class:`TrajectoryCollection` with one trajectory per agent.
         """
-        from collections import defaultdict
-
         grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for row in self.states:
             aid = str(row.get("agent_id", "robot"))
@@ -197,8 +196,6 @@ class GenericCSVLoader:
         return tc
 
     def _load_file(self, filepath: Path) -> TrajectoryCollection:
-        from collections import defaultdict
-
         grouped: dict[str, list[tuple[float, float, float]]] = defaultdict(list)
         with filepath.open("r", encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=self.delimiter)
