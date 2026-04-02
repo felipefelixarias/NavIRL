@@ -1,3 +1,9 @@
+"""Artifact management utilities for NavIRL.
+
+Provides functions for managing run directories, log retention policies,
+and cleanup of old experiment artifacts to prevent disk space issues.
+"""
+
 from __future__ import annotations
 
 import os

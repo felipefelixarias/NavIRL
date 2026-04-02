@@ -92,14 +92,50 @@ class CallbackList(Callback):
     # ------------------------------------------------------------------
 
     def on_training_start(self, locals_: dict[str, Any]) -> None:
+        """Called at the beginning of training, before any episodes.
+
+        Delegates to all registered callbacks in order.
+
+        Parameters
+        ----------
+        locals_ : dict[str, Any]
+            Local variables from the training context, typically including
+            the agent, environment, and training configuration.
+        """
         for cb in self.callbacks:
             cb.on_training_start(locals_)
 
     def on_training_end(self, locals_: dict[str, Any]) -> None:
+        """Called at the end of training, after all episodes complete.
+
+        Delegates to all registered callbacks in order.
+
+        Parameters
+        ----------
+        locals_ : dict[str, Any]
+            Local variables from the training context, typically including
+            final statistics, trained agent, and training results.
+        """
         for cb in self.callbacks:
             cb.on_training_end(locals_)
 
     def on_step(self, locals_: dict[str, Any]) -> bool:
+        """Called after each training step.
+
+        Delegates to all registered callbacks. If any callback returns False,
+        training will be terminated early.
+
+        Parameters
+        ----------
+        locals_ : dict[str, Any]
+            Local variables from the training step, typically including
+            current step count, episode metrics, and agent state.
+
+        Returns
+        -------
+        bool
+            True if training should continue, False to terminate early.
+        """
         continue_training = True
         for cb in self.callbacks:
             if not cb.on_step(locals_):
@@ -107,14 +143,44 @@ class CallbackList(Callback):
         return continue_training
 
     def on_episode_end(self, locals_: dict[str, Any]) -> None:
+        """Called at the end of each training episode.
+
+        Delegates to all registered callbacks in order.
+
+        Parameters
+        ----------
+        locals_ : dict[str, Any]
+            Local variables from the episode, typically including
+            episode statistics, final state, and performance metrics.
+        """
         for cb in self.callbacks:
             cb.on_episode_end(locals_)
 
     def on_rollout_start(self, locals_: dict[str, Any]) -> None:
+        """Called at the start of each rollout phase.
+
+        Delegates to all registered callbacks in order.
+
+        Parameters
+        ----------
+        locals_ : dict[str, Any]
+            Local variables from the rollout context, typically including
+            the current policy and environment configuration.
+        """
         for cb in self.callbacks:
             cb.on_rollout_start(locals_)
 
     def on_rollout_end(self, locals_: dict[str, Any]) -> None:
+        """Called at the end of each rollout phase.
+
+        Delegates to all registered callbacks in order.
+
+        Parameters
+        ----------
+        locals_ : dict[str, Any]
+            Local variables from the rollout, typically including
+            collected experiences and rollout statistics.
+        """
         for cb in self.callbacks:
             cb.on_rollout_end(locals_)
 
