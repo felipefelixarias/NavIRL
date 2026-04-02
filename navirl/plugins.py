@@ -10,7 +10,12 @@ from navirl.humans.orca import ORCAHumanController
 from navirl.humans.orca_plus import ORCAPlusHumanController
 from navirl.humans.replay import ReplayHumanController
 from navirl.humans.scripted import ScriptedHumanController
-from navirl.robots.baselines import BaselineAStarRobotController
+from navirl.robots.baselines import (
+    BaselineAStarRobotController,
+    PRMRobotController,
+    RRTStarRobotController,
+    SocialCostAStarRobotController,
+)
 
 _REGISTERED = False
 
@@ -41,6 +46,18 @@ def register_default_plugins() -> None:
     register_robot_controller(
         "baseline_astar",
         lambda cfg: BaselineAStarRobotController(cfg=cfg),
+    )
+    register_robot_controller(
+        "social_astar",
+        lambda cfg: SocialCostAStarRobotController(cfg=cfg),
+    )
+    register_robot_controller(
+        "prm",
+        lambda cfg: PRMRobotController(cfg=cfg),
+    )
+    register_robot_controller(
+        "rrt_star",
+        lambda cfg: RRTStarRobotController(cfg=cfg),
     )
     register_robot_controller(
         "user",
