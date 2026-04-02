@@ -5,10 +5,10 @@ document synchronized: mark an item done only after its issue is closed.
 
 ## Near-term
 
-- [ ] Expand scenario library with stronger indoor daily-life coverage ([#1](https://github.com/felipefelixarias/NavIRL/issues/1))
-- [ ] Harden controller plugin APIs for external user controllers ([#2](https://github.com/felipefelixarias/NavIRL/issues/2))
-- [ ] Improve report readability for verify failures and regressions ([#3](https://github.com/felipefelixarias/NavIRL/issues/3))
-- [ ] Add richer baseline robot planners (social-cost A*, PRM variants) ([#4](https://github.com/felipefelixarias/NavIRL/issues/4))
+- [x] Expand scenario library with stronger indoor daily-life coverage ([#1](https://github.com/felipefelixarias/NavIRL/issues/1))
+- [x] Harden controller plugin APIs for external user controllers ([#2](https://github.com/felipefelixarias/NavIRL/issues/2))
+- [x] Improve report readability for verify failures and regressions ([#3](https://github.com/felipefelixarias/NavIRL/issues/3))
+- [x] Add richer baseline robot planners (social-cost A*, PRM variants) ([#4](https://github.com/felipefelixarias/NavIRL/issues/4))
 
 ## Mid-term
 

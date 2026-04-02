@@ -1,4 +1,5 @@
 """Plugin validation utilities for hardening external API usage."""
+
 from __future__ import annotations
 
 import inspect
@@ -29,9 +30,7 @@ class PluginPerformanceError(PluginValidationError):
 
 
 def validate_plugin_interface(
-    plugin_class: type,
-    expected_base: type[ABC],
-    plugin_name: str
+    plugin_class: type, expected_base: type[ABC], plugin_name: str
 ) -> None:
     """
     Validate that a plugin class conforms to the expected interface.
@@ -56,7 +55,7 @@ def validate_plugin_interface(
         )
 
     # Check for required methods
-    abstract_methods = getattr(expected_base, '__abstractmethods__', set())
+    abstract_methods = getattr(expected_base, "__abstractmethods__", set())
     for method_name in abstract_methods:
         if not hasattr(plugin_class, method_name):
             raise PluginValidationError(
@@ -70,10 +69,7 @@ def validate_plugin_interface(
             )
 
 
-def validate_plugin_factory(
-    factory: Callable[..., Any],
-    plugin_name: str
-) -> None:
+def validate_plugin_factory(factory: Callable[..., Any], plugin_name: str) -> None:
     """
     Validate that a plugin factory function is properly structured.
 
@@ -102,7 +98,7 @@ def validate_plugin_factory(
         logger.warning(
             "Plugin factory for '%s' takes no parameters - "
             "consider accepting a config parameter for flexibility",
-            plugin_name
+            plugin_name,
         )
 
 
@@ -125,12 +121,11 @@ def validate_controller_config(config: dict | None, plugin_name: str) -> dict:
 
     if not isinstance(config, dict):
         raise ConfigValidationError(
-            f"Plugin '{plugin_name}' config must be a dictionary or None, "
-            f"got {type(config)}"
+            f"Plugin '{plugin_name}' config must be a dictionary or None, got {type(config)}"
         )
 
     # Check for potentially dangerous keys
-    dangerous_keys = ['__class__', '__module__', '__globals__']
+    dangerous_keys = ["__class__", "__module__", "__globals__"]
     for key in dangerous_keys:
         if key in config:
             raise ConfigValidationError(
@@ -139,10 +134,10 @@ def validate_controller_config(config: dict | None, plugin_name: str) -> dict:
 
     # Validate common numeric parameters
     numeric_params = {
-        'goal_tolerance': (0.01, 10.0, "Goal tolerance"),
-        'max_speed': (0.01, 20.0, "Maximum speed"),
-        'lookahead': (1, 100, "Lookahead distance"),
-        'velocity_smoothing': (0.0, 1.0, "Velocity smoothing factor"),
+        "goal_tolerance": (0.01, 10.0, "Goal tolerance"),
+        "max_speed": (0.01, 20.0, "Maximum speed"),
+        "lookahead": (1, 100, "Lookahead distance"),
+        "velocity_smoothing": (0.0, 1.0, "Velocity smoothing factor"),
     }
 
     validated_config = dict(config)
@@ -186,8 +181,8 @@ def validate_plugin_security(plugin_class: type, plugin_name: str) -> None:
         PluginSecurityError: If security risks are detected
     """
     # Check for dangerous method names
-    dangerous_methods = {'exec', 'eval', 'compile', '__import__', 'open'}
-    class_methods = {name for name in dir(plugin_class) if not name.startswith('_')}
+    dangerous_methods = {"exec", "eval", "compile", "__import__", "open"}
+    class_methods = {name for name in dir(plugin_class) if not name.startswith("_")}
 
     if dangerous_methods & class_methods:
         risky_methods = dangerous_methods & class_methods
@@ -196,15 +191,16 @@ def validate_plugin_security(plugin_class: type, plugin_name: str) -> None:
         )
 
     # Check for risky imports in the module
-    if hasattr(plugin_class, '__module__'):
+    if hasattr(plugin_class, "__module__"):
         module = inspect.getmodule(plugin_class)
-        if module and hasattr(module, '__dict__'):
+        if module and hasattr(module, "__dict__"):
             module_attrs = set(module.__dict__.keys())
-            dangerous_imports = {'subprocess', 'os', 'sys', 'importlib'}
+            dangerous_imports = {"subprocess", "os", "sys", "importlib"}
             if dangerous_imports & module_attrs:
                 logger.warning(
                     "Plugin '%s' imports potentially risky modules: %s",
-                    plugin_name, dangerous_imports & module_attrs
+                    plugin_name,
+                    dangerous_imports & module_attrs,
                 )
 
 
@@ -218,6 +214,7 @@ def performance_monitor(max_time_s: float = 1.0):
     Returns:
         Decorated function with performance monitoring
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -230,12 +227,16 @@ def performance_monitor(max_time_s: float = 1.0):
                 if elapsed > max_time_s:
                     logger.warning(
                         "Plugin method %s.%s took %.3f seconds (limit: %.3f)",
-                        func.__self__.__class__.__name__ if hasattr(func, '__self__') else 'Unknown',
+                        func.__self__.__class__.__name__
+                        if hasattr(func, "__self__")
+                        else "Unknown",
                         func.__name__,
                         elapsed,
-                        max_time_s
+                        max_time_s,
                     )
+
         return wrapper
+
     return decorator
 
 
@@ -245,7 +246,7 @@ def safe_plugin_call(
     plugin_name: str = "unknown",
     method_name: str = "unknown",
     timeout_s: float = 5.0,
-    **kwargs
+    **kwargs,
 ) -> Any:
     """
     Safely call a plugin method with error handling and timeouts.
@@ -285,7 +286,10 @@ def safe_plugin_call(
         elapsed = time.perf_counter() - start_time
         logger.error(
             "Plugin '%s' method '%s' failed after %.3f seconds: %s",
-            plugin_name, method_name, elapsed, str(e)
+            plugin_name,
+            method_name,
+            elapsed,
+            str(e),
         )
         raise PluginValidationError(
             f"Plugin '{plugin_name}' method '{method_name}' failed: {e}"
@@ -293,9 +297,7 @@ def safe_plugin_call(
 
 
 def validate_plugin_api_version(
-    plugin_class: type,
-    plugin_name: str,
-    required_api_version: str = "1.0"
+    plugin_class: type, plugin_name: str, required_api_version: str = "1.0"
 ) -> None:
     """
     Validate plugin API version compatibility.
@@ -308,12 +310,12 @@ def validate_plugin_api_version(
     Raises:
         PluginValidationError: If API version is incompatible
     """
-    plugin_version = getattr(plugin_class, '__navirl_api_version__', '0.9')
+    plugin_version = getattr(plugin_class, "__navirl_api_version__", "0.9")
 
     # Simple version check (can be enhanced for semantic versioning)
     try:
-        plugin_major = float(plugin_version.split('.')[0])
-        required_major = float(required_api_version.split('.')[0])
+        plugin_major = float(plugin_version.split(".")[0])
+        required_major = float(required_api_version.split(".")[0])
 
         if plugin_major < required_major:
             raise PluginValidationError(
@@ -325,7 +327,9 @@ def validate_plugin_api_version(
             logger.warning(
                 "Plugin '%s' API version %s may be too new (current: %s). "
                 "Consider updating NavIRL.",
-                plugin_name, plugin_version, required_api_version
+                plugin_name,
+                plugin_version,
+                required_api_version,
             )
 
     except (ValueError, IndexError) as e:

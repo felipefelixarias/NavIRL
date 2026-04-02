@@ -162,7 +162,7 @@ class RobotController(ABC):
             return Action(pref_vx=0.0, pref_vy=0.0, behavior="STOP")
 
         # Clamp velocities to reasonable bounds
-        max_vel = self.cfg.get('max_speed', 5.0)  # Default 5 m/s
+        max_vel = self.cfg.get("max_speed", 5.0)  # Default 5 m/s
         min_vel = -max_vel
 
         # Check for NaN or infinite values
@@ -177,13 +177,16 @@ class RobotController(ABC):
         if clamped_vx != action.pref_vx or clamped_vy != action.pref_vy:
             logger.info(
                 "Clamped velocity from (%.2f, %.2f) to (%.2f, %.2f)",
-                action.pref_vx, action.pref_vy, clamped_vx, clamped_vy
+                action.pref_vx,
+                action.pref_vy,
+                clamped_vx,
+                clamped_vy,
             )
 
         return Action(
             pref_vx=clamped_vx,
             pref_vy=clamped_vy,
-            behavior=action.behavior if hasattr(action, 'behavior') else "NORMAL"
+            behavior=action.behavior if hasattr(action, "behavior") else "NORMAL",
         )
 
     def check_computational_performance(self, computation_time: float) -> None:
@@ -199,7 +202,9 @@ class RobotController(ABC):
             logger.warning(
                 "Controller %s step() took %.3f seconds (step %d) - "
                 "consider optimizing for real-time performance",
-                self.__class__.__name__, computation_time, self._step_count
+                self.__class__.__name__,
+                computation_time,
+                self._step_count,
             )
 
         # Alert if consistently slow (last 10 steps average)
@@ -207,5 +212,5 @@ class RobotController(ABC):
             if self._last_computation_time > self._max_computation_time * 0.8:
                 logger.info(
                     "Controller %s consistently approaching performance limit",
-                    self.__class__.__name__
+                    self.__class__.__name__,
                 )

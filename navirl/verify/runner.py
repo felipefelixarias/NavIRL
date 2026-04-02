@@ -90,25 +90,29 @@ def _write_report(
     ]
 
     if failed_scenarios == 0 and pytest_ok:
-        lines.extend([
-            "🎉 **All scenarios passed!** Your implementation meets verification standards.",
-            "",
-            "**✅ Next Steps:**",
-            "- Consider running the full suite if you ran quick verification",
-            "- Review any warnings in the detailed results below",
-            "- Ready for production deployment consideration",
-            ""
-        ])
+        lines.extend(
+            [
+                "🎉 **All scenarios passed!** Your implementation meets verification standards.",
+                "",
+                "**✅ Next Steps:**",
+                "- Consider running the full suite if you ran quick verification",
+                "- Review any warnings in the detailed results below",
+                "- Ready for production deployment consideration",
+                "",
+            ]
+        )
     elif failed_scenarios == 0 and not pytest_ok:
-        lines.extend([
-            "⚠️ **Scenarios passed but test suite failed.** Core functionality may be compromised.",
-            "",
-            "**🚨 Immediate Actions:**",
-            "1. 🔍 Fix failing tests - see Test Suite Output section",
-            "2. 🧪 Ensure all unit tests pass before scenario verification",
-            f"3. 🔄 Re-run: `python -m navirl verify --suite {suite}`",
-            ""
-        ])
+        lines.extend(
+            [
+                "⚠️ **Scenarios passed but test suite failed.** Core functionality may be compromised.",
+                "",
+                "**🚨 Immediate Actions:**",
+                "1. 🔍 Fix failing tests - see Test Suite Output section",
+                "2. 🧪 Ensure all unit tests pass before scenario verification",
+                f"3. 🔄 Re-run: `python -m navirl verify --suite {suite}`",
+                "",
+            ]
+        )
     else:
         failure_types = []
         if invariant_failures:
@@ -118,49 +122,49 @@ def _write_report(
         if needs_review:
             failure_types.append(f"⚠️ {needs_review} scenario(s) need human review")
 
-        lines.extend([
-            f"❌ **{failed_scenarios} scenario(s) need attention.** Failure breakdown:",
-            "",
-            *[f"- {ft}" for ft in failure_types],
-            "",
-            "**📋 Recommended Workflow:**",
-            "1. 📖 Review **Failure Analysis** section below for specific issues",
-            "2. 🔧 Start with the first failed scenario - fixes often resolve multiple issues",
-            "3. 🔄 Test individually: `python -m navirl pipeline --scenario <scenario_name>`",
-            f"4. 🧪 Re-run full suite: `python -m navirl verify --suite {suite}`",
-            "5. 🎯 Focus on highest-impact fixes first (invariant violations > visual issues)",
-            ""
-        ])
+        lines.extend(
+            [
+                f"❌ **{failed_scenarios} scenario(s) need attention.** Failure breakdown:",
+                "",
+                *[f"- {ft}" for ft in failure_types],
+                "",
+                "**📋 Recommended Workflow:**",
+                "1. 📖 Review **Failure Analysis** section below for specific issues",
+                "2. 🔧 Start with the first failed scenario - fixes often resolve multiple issues",
+                "3. 🔄 Test individually: `python -m navirl pipeline --scenario <scenario_name>`",
+                f"4. 🧪 Re-run full suite: `python -m navirl verify --suite {suite}`",
+                "5. 🎯 Focus on highest-impact fixes first (invariant violations > visual issues)",
+                "",
+            ]
+        )
 
-    lines.extend([
-        "",
-        "## ⚙️ Configuration",
-        "",
-        f"- **Judge confidence threshold:** {thresholds['judge_confidence_min']} (higher = stricter)",
-        "- **Suite type:** {suite} ({'full artifacts + video' if suite == 'full' else 'essential checks only'})",
-        "- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
-        "- **Max speed:** scenario-specific (`evaluation.max_speed`)",
-        "- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
-        "",
-        "## 📋 Scenario Results",
-        "",
-        "*💡 Tip: Click on bundle names to explore detailed artifacts and logs.*",
-        "",
-        "| Scenario | 📊 Invariants | 👁️ Judge | 🎯 Confidence | 🎥 Video | ✅ Overall | 📝 Key Issues | 📁 Bundle |",
-        "|---|:---:|:---:|:---:|:---:|:---:|---|:---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## ⚙️ Configuration",
+            "",
+            f"- **Judge confidence threshold:** {thresholds['judge_confidence_min']} (higher = stricter)",
+            "- **Suite type:** {suite} ({'full artifacts + video' if suite == 'full' else 'essential checks only'})",
+            "- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
+            "- **Max speed:** scenario-specific (`evaluation.max_speed`)",
+            "- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
+            "",
+            "## 📋 Scenario Results",
+            "",
+            "*💡 Tip: Click on bundle names to explore detailed artifacts and logs.*",
+            "",
+            "| Scenario | 📊 Invariants | 👁️ Judge | 🎯 Confidence | 🎥 Video | ✅ Overall | 📝 Key Issues | 📁 Bundle |",
+            "|---|:---:|:---:|:---:|:---:|:---:|---|:---:|",
+        ]
+    )
 
     for row in rows:
         # Enhanced status formatting with better visual hierarchy
         invariants_status = "✅ Pass" if row.invariants_pass else "❌ **Fail**"
 
-        judge_icons = {
-            "pass": "✅",
-            "fail": "❌",
-            "needs_human_review": "⚠️"
-        }
+        judge_icons = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}
         judge_status_icon = judge_icons.get(row.judge_status, "❓")
-        judge_text = row.judge_status.replace('_', ' ').title()
+        judge_text = row.judge_status.replace("_", " ").title()
         judge_status_text = f"{judge_status_icon} {judge_text}"
 
         # Confidence with visual indicators
@@ -207,33 +211,45 @@ def _write_report(
         visual_issues = [r for r in failing if r.judge_status == "fail"]
         needs_review_issues = [r for r in failing if r.judge_status == "needs_human_review"]
 
-        lines.extend([
-            f"**{len(failing)} scenario(s) failed.** Organized by priority:",
-            "",
-            "| Priority | Category | Count | Description |",
-            "|:---:|---|:---:|---|",
-            f"| 🔴 | **Critical** | {len(critical_failures)} | Invariant violations (core functionality broken) |",
-            f"| 🟡 | **Visual** | {len(visual_issues)} | Visual judge failures (behavior concerns) |",
-            f"| 🟠 | **Review** | {len(needs_review_issues)} | Needs human evaluation (edge cases) |",
-            "",
-            "*💡 Strategy: Fix critical issues first - they often resolve visual problems too.*",
-            ""
-        ])
+        lines.extend(
+            [
+                f"**{len(failing)} scenario(s) failed.** Organized by priority:",
+                "",
+                "| Priority | Category | Count | Description |",
+                "|:---:|---|:---:|---|",
+                f"| 🔴 | **Critical** | {len(critical_failures)} | Invariant violations (core functionality broken) |",
+                f"| 🟡 | **Visual** | {len(visual_issues)} | Visual judge failures (behavior concerns) |",
+                f"| 🟠 | **Review** | {len(needs_review_issues)} | Needs human evaluation (edge cases) |",
+                "",
+                "*💡 Strategy: Fix critical issues first - they often resolve visual problems too.*",
+                "",
+            ]
+        )
 
         # Process failures in priority order
         prioritized_failures = []
         prioritized_failures.extend([(r, "🔴 Critical") for r in critical_failures])
-        prioritized_failures.extend([(r, "🟡 Visual") for r in visual_issues if r not in critical_failures])
-        prioritized_failures.extend([(r, "🟠 Review") for r in needs_review_issues if r not in critical_failures and r not in visual_issues])
+        prioritized_failures.extend(
+            [(r, "🟡 Visual") for r in visual_issues if r not in critical_failures]
+        )
+        prioritized_failures.extend(
+            [
+                (r, "🟠 Review")
+                for r in needs_review_issues
+                if r not in critical_failures and r not in visual_issues
+            ]
+        )
 
         for i, (row, priority_label) in enumerate(prioritized_failures, 1):
-            lines.extend([
-                f"### {i}. {row.scenario_id} {priority_label}",
-                "",
-                f"**Bundle:** `{Path(row.bundle_dir).name}`",
-                f"**Judge Confidence:** {row.judge_confidence:.2f}",
-                ""
-            ])
+            lines.extend(
+                [
+                    f"### {i}. {row.scenario_id} {priority_label}",
+                    "",
+                    f"**Bundle:** `{Path(row.bundle_dir).name}`",
+                    f"**Judge Confidence:** {row.judge_confidence:.2f}",
+                    "",
+                ]
+            )
 
             # Enhanced failure type analysis
             failure_types = []
@@ -253,15 +269,14 @@ def _write_report(
                 severity_indicators.append("Artifact generation failed")
 
             if failure_types:
-                lines.extend([
-                    "**Issue Summary:**",
-                    ""
-                ])
+                lines.extend(["**Issue Summary:**", ""])
                 for ft, sev in zip(failure_types, severity_indicators, strict=True):
-                    lines.extend([
-                        f"- {ft}",
-                        f"  - *Impact:* {sev}",
-                    ])
+                    lines.extend(
+                        [
+                            f"- {ft}",
+                            f"  - *Impact:* {sev}",
+                        ]
+                    )
                 lines.append("")
 
             # Enhanced detailed invariant analysis
@@ -272,38 +287,40 @@ def _write_report(
                 failed_checks = [c for c in inv.get("checks", []) if not c.get("pass", False)]
 
                 if failed_checks:
-                    lines.extend([
-                        "#### 📊 Invariant Analysis",
-                        "",
-                        f"**{len(failed_checks)}** check(s) failed out of {len(inv.get('checks', []))} total.",
-                        ""
-                    ])
+                    lines.extend(
+                        [
+                            "#### 📊 Invariant Analysis",
+                            "",
+                            f"**{len(failed_checks)}** check(s) failed out of {len(inv.get('checks', []))} total.",
+                            "",
+                        ]
+                    )
 
                     # Categorize checks by severity
                     critical_checks = []
                     warning_checks = []
 
                     for check in failed_checks:
-                        check_name = check.get('name', 'unknown')
-                        severity = check.get('severity', 'unknown')
+                        check_name = check.get("name", "unknown")
+                        severity = check.get("severity", "unknown")
 
-                        if severity in ['critical', 'high'] or check_name in ['collision_free', 'safety_constraints']:
+                        if severity in ["critical", "high"] or check_name in [
+                            "collision_free",
+                            "safety_constraints",
+                        ]:
                             critical_checks.append(check)
                         else:
                             warning_checks.append(check)
 
                     # Process critical checks first
                     if critical_checks:
-                        lines.extend([
-                            "**🚨 Critical Issues (Fix Immediately):**",
-                            ""
-                        ])
+                        lines.extend(["**🚨 Critical Issues (Fix Immediately):**", ""])
                         for check in critical_checks:
-                            check_name = check.get('name', 'unknown').replace('_', ' ').title()
+                            check_name = check.get("name", "unknown").replace("_", " ").title()
                             lines.append(f"**❌ {check_name}**")
 
                             if "num_violations" in check:
-                                violations = check.get('num_violations', 0)
+                                violations = check.get("num_violations", 0)
                                 lines.append(f"- **Violations:** {violations}")
 
                             if "message" in check:
@@ -321,16 +338,13 @@ def _write_report(
 
                     # Process warning checks
                     if warning_checks:
-                        lines.extend([
-                            "**⚠️ Warnings (Address After Critical Issues):**",
-                            ""
-                        ])
+                        lines.extend(["**⚠️ Warnings (Address After Critical Issues):**", ""])
                         for check in warning_checks:
-                            check_name = check.get('name', 'unknown').replace('_', ' ').title()
+                            check_name = check.get("name", "unknown").replace("_", " ").title()
                             lines.append(f"**🟡 {check_name}**")
 
                             if "num_violations" in check:
-                                violations = check.get('num_violations', 0)
+                                violations = check.get("num_violations", 0)
                                 lines.append(f"- Count: {violations}")
 
                             if "message" in check:
@@ -346,74 +360,94 @@ def _write_report(
                 violations = judge.get("violations", [])
 
                 if violations:
-                    confidence_desc = "Very Low" if row.judge_confidence < 0.3 else \
-                                    "Low" if row.judge_confidence < 0.6 else \
-                                    "Moderate" if row.judge_confidence < 0.8 else "High"
+                    confidence_desc = (
+                        "Very Low"
+                        if row.judge_confidence < 0.3
+                        else "Low"
+                        if row.judge_confidence < 0.6
+                        else "Moderate"
+                        if row.judge_confidence < 0.8
+                        else "High"
+                    )
 
-                    lines.extend([
-                        "#### 👁️ Visual Behavior Analysis",
-                        "",
-                        f"**Judge Confidence:** {row.judge_confidence:.2f} ({confidence_desc})",
-                        f"**Decision:** {row.judge_status.replace('_', ' ').title()}",
-                        f"**Violations Found:** {len(violations)}",
-                        ""
-                    ])
+                    lines.extend(
+                        [
+                            "#### 👁️ Visual Behavior Analysis",
+                            "",
+                            f"**Judge Confidence:** {row.judge_confidence:.2f} ({confidence_desc})",
+                            f"**Decision:** {row.judge_status.replace('_', ' ').title()}",
+                            f"**Violations Found:** {len(violations)}",
+                            "",
+                        ]
+                    )
 
                     # Group violations by severity
-                    high_sev = [v for v in violations if v.get('severity', '').lower() in ['high', 'critical']]
-                    med_sev = [v for v in violations if v.get('severity', '').lower() == 'medium']
-                    low_sev = [v for v in violations if v.get('severity', '').lower() in ['low', 'warning']]
+                    high_sev = [
+                        v
+                        for v in violations
+                        if v.get("severity", "").lower() in ["high", "critical"]
+                    ]
+                    med_sev = [v for v in violations if v.get("severity", "").lower() == "medium"]
+                    low_sev = [
+                        v for v in violations if v.get("severity", "").lower() in ["low", "warning"]
+                    ]
 
                     for sev_group, sev_name, sev_icon in [
                         (high_sev, "High Priority", "🔴"),
                         (med_sev, "Medium Priority", "🟡"),
-                        (low_sev, "Low Priority", "🟠")
+                        (low_sev, "Low Priority", "🟠"),
                     ]:
                         if sev_group:
                             lines.extend([f"**{sev_icon} {sev_name} Issues:**", ""])
                             for viol in sev_group[:3]:  # Limit to top 3 per category
-                                viol_type = viol.get('type', 'unknown').replace('_', ' ').title()
-                                evidence = viol.get('evidence', 'No details provided')
+                                viol_type = viol.get("type", "unknown").replace("_", " ").title()
+                                evidence = viol.get("evidence", "No details provided")
 
-                                lines.extend([
-                                    f"- **{viol_type}**",
-                                    f"  - *Observation:* {evidence[:100]}{'...' if len(evidence) > 100 else ''}",
-                                ])
+                                lines.extend(
+                                    [
+                                        f"- **{viol_type}**",
+                                        f"  - *Observation:* {evidence[:100]}{'...' if len(evidence) > 100 else ''}",
+                                    ]
+                                )
                             lines.append("")
 
             # Video check details with actionable guidance
             if row.video_check_pass is False:
-                lines.extend([
-                    "#### 🎥 Video Generation Issues",
-                    "",
-                    "**Problem:** Video artifact generation failed",
-                    "**Impact:** Visual analysis capabilities reduced",
-                    "**Next Steps:**",
-                    "- Check rendering pipeline configuration",
-                    "- Verify sufficient disk space and memory",
-                    "- Review scenario complexity settings",
-                    ""
-                ])
+                lines.extend(
+                    [
+                        "#### 🎥 Video Generation Issues",
+                        "",
+                        "**Problem:** Video artifact generation failed",
+                        "**Impact:** Visual analysis capabilities reduced",
+                        "**Next Steps:**",
+                        "- Check rendering pipeline configuration",
+                        "- Verify sufficient disk space and memory",
+                        "- Review scenario complexity settings",
+                        "",
+                    ]
+                )
 
             # Enhanced reproduction steps with debugging options
-            lines.extend([
-                "#### 🔄 Debugging This Scenario",
-                "",
-                "```bash",
-                "# Quick re-run (same configuration)",
-                f"python -m navirl pipeline --scenario {row.scenario_id}",
-                "",
-                "# Debug run with detailed logging",
-                f"NAVIRL_LOG_LEVEL=DEBUG python -m navirl pipeline --scenario {row.scenario_id} --render",
-                "",
-                "# Interactive exploration",
-                f"cd {Path(row.bundle_dir).parent}",
-                f"python -m navirl interactive --bundle {Path(row.bundle_dir).name}",
-                "```",
-                "",
-                "---",
-                ""
-            ])
+            lines.extend(
+                [
+                    "#### 🔄 Debugging This Scenario",
+                    "",
+                    "```bash",
+                    "# Quick re-run (same configuration)",
+                    f"python -m navirl pipeline --scenario {row.scenario_id}",
+                    "",
+                    "# Debug run with detailed logging",
+                    f"NAVIRL_LOG_LEVEL=DEBUG python -m navirl pipeline --scenario {row.scenario_id} --render",
+                    "",
+                    "# Interactive exploration",
+                    f"cd {Path(row.bundle_dir).parent}",
+                    f"python -m navirl interactive --bundle {Path(row.bundle_dir).name}",
+                    "```",
+                    "",
+                    "---",
+                    "",
+                ]
+            )
 
     lines.extend(
         [
