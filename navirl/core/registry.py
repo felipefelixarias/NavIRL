@@ -68,18 +68,13 @@ def get_backend(name: str) -> Callable[..., Any]:
     factory = _BACKENDS[name]
 
     def safe_factory(*args, **kwargs):
-        return safe_plugin_call(
-            factory, *args, plugin_name=name, method_name="__init__", **kwargs
-        )
+        return safe_plugin_call(factory, *args, plugin_name=name, method_name="__init__", **kwargs)
 
     return safe_factory
 
 
 def register_human_controller(
-    name: str,
-    factory: Callable[..., Any],
-    *,
-    enable_security_validation: bool = True
+    name: str, factory: Callable[..., Any], *, enable_security_validation: bool = True
 ) -> None:
     """
     Register a human controller factory with comprehensive validation.
@@ -141,21 +136,19 @@ def get_human_controller(name: str) -> Callable[..., Any]:
 
     def safe_factory(*args, **kwargs):
         return safe_plugin_call(
-            factory, *args,
+            factory,
+            *args,
             plugin_name=name,
             method_name="__init__",
             timeout_s=10.0,  # Allow more time for initialization
-            **kwargs
+            **kwargs,
         )
 
     return safe_factory
 
 
 def register_robot_controller(
-    name: str,
-    factory: Callable[..., Any],
-    *,
-    enable_security_validation: bool = True
+    name: str, factory: Callable[..., Any], *, enable_security_validation: bool = True
 ) -> None:
     """
     Register a robot controller factory with comprehensive validation.
@@ -217,11 +210,12 @@ def get_robot_controller(name: str) -> Callable[..., Any]:
 
     def safe_factory(*args, **kwargs):
         return safe_plugin_call(
-            factory, *args,
+            factory,
+            *args,
             plugin_name=name,
             method_name="__init__",
             timeout_s=10.0,  # Allow more time for initialization
-            **kwargs
+            **kwargs,
         )
 
     return safe_factory
@@ -252,9 +246,9 @@ def get_plugin_info(plugin_type: str, plugin_name: str) -> dict:
         ValueError: If plugin_type is invalid
     """
     registries = {
-        'human_controller': _HUMAN_CONTROLLERS,
-        'robot_controller': _ROBOT_CONTROLLERS,
-        'backend': _BACKENDS,
+        "human_controller": _HUMAN_CONTROLLERS,
+        "robot_controller": _ROBOT_CONTROLLERS,
+        "backend": _BACKENDS,
     }
 
     if plugin_type not in registries:
@@ -268,27 +262,29 @@ def get_plugin_info(plugin_type: str, plugin_name: str) -> dict:
 
     factory = registry[plugin_name]
     info = {
-        'name': plugin_name,
-        'type': plugin_type,
-        'factory_type': 'class' if inspect.isclass(factory) else 'function',
+        "name": plugin_name,
+        "type": plugin_type,
+        "factory_type": "class" if inspect.isclass(factory) else "function",
     }
 
     # Add additional metadata for class-based plugins
     if inspect.isclass(factory):
-        info.update({
-            'module': factory.__module__,
-            'doc': factory.__doc__ or "No documentation available",
-            'api_version': getattr(factory, '__navirl_api_version__', 'unknown'),
-            'bases': [base.__name__ for base in factory.__bases__],
-        })
+        info.update(
+            {
+                "module": factory.__module__,
+                "doc": factory.__doc__ or "No documentation available",
+                "api_version": getattr(factory, "__navirl_api_version__", "unknown"),
+                "bases": [base.__name__ for base in factory.__bases__],
+            }
+        )
 
         # Check for configuration parameters
         try:
             sig = inspect.signature(factory.__init__)
             params = list(sig.parameters.keys())[1:]  # Skip 'self'
-            info['init_parameters'] = params
+            info["init_parameters"] = params
         except (ValueError, TypeError):
-            info['init_parameters'] = 'unknown'
+            info["init_parameters"] = "unknown"
 
     return info
 
@@ -302,13 +298,11 @@ def validate_all_plugins() -> dict[str, list[str]]:
     """
     issues = {}
 
-    all_plugins = [
-        ('human_controller', name, factory) for name, factory in _HUMAN_CONTROLLERS.items()
-    ] + [
-        ('robot_controller', name, factory) for name, factory in _ROBOT_CONTROLLERS.items()
-    ] + [
-        ('backend', name, factory) for name, factory in _BACKENDS.items()
-    ]
+    all_plugins = (
+        [("human_controller", name, factory) for name, factory in _HUMAN_CONTROLLERS.items()]
+        + [("robot_controller", name, factory) for name, factory in _ROBOT_CONTROLLERS.items()]
+        + [("backend", name, factory) for name, factory in _BACKENDS.items()]
+    )
 
     for plugin_type, name, factory in all_plugins:
         plugin_issues = []

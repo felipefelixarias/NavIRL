@@ -71,12 +71,12 @@ def hospital_corridor_map() -> np.ndarray:
     # main corridor
     m[50:230, 30:370] = FREE_SPACE
     # patient rooms (alternating on both sides)
-    m[20:50, 50:120] = FREE_SPACE   # room 1
+    m[20:50, 50:120] = FREE_SPACE  # room 1
     m[20:50, 160:230] = FREE_SPACE  # room 2
     m[20:50, 270:340] = FREE_SPACE  # room 3
-    m[230:260, 70:140] = FREE_SPACE # room 4
-    m[230:260, 180:250] = FREE_SPACE # room 5
-    m[230:260, 290:360] = FREE_SPACE # room 6
+    m[230:260, 70:140] = FREE_SPACE  # room 4
+    m[230:260, 180:250] = FREE_SPACE  # room 5
+    m[230:260, 290:360] = FREE_SPACE  # room 6
     # nursing station (central)
     m[110:170, 150:250] = FREE_SPACE
     # medical equipment obstacles

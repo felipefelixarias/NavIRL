@@ -207,15 +207,18 @@ class ORCAHumanController(HumanController):
 
                 # Validate state values
                 if not (math.isfinite(state.x) and math.isfinite(state.y)):
-                    logger.warning("Invalid position for human %s: (%s, %s)",
-                                   human_id, state.x, state.y)
+                    logger.warning(
+                        "Invalid position for human %s: (%s, %s)", human_id, state.x, state.y
+                    )
                     actions[human_id] = Action(pref_vx=0.0, pref_vy=0.0, behavior="STOP")
                     continue
 
                 # Handle goal swapping
                 if self._maybe_swap_goal(human_id, state, emit_event):
                     try:
-                        self.paths[human_id] = self._plan_path((state.x, state.y), self.goals[human_id])
+                        self.paths[human_id] = self._plan_path(
+                            (state.x, state.y), self.goals[human_id]
+                        )
                         self.path_idx[human_id] = 0
                     except Exception as e:
                         logger.warning("Failed to replan path for human %s: %s", human_id, str(e))
