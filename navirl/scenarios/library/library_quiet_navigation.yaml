@@ -1,0 +1,65 @@
+id: library_quiet_navigation
+description: Quiet library environment requiring careful, deliberate movements around studying people.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: group  # Reuse group map as library reading areas
+seed: 15
+horizon:
+  steps: 400
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: false
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false
+      hesitation_prob: 0.2   # High hesitation for quiet environment
+      accel_limit: 0.8       # Very gentle acceleration
+  count: 4
+  starts:
+    - [-1.2, -0.6]    # Student entering study area
+    - [0.8, 0.9]      # Librarian on rounds
+    - [1.1, -0.8]     # Researcher going to stacks
+    - [-0.8, 0.8]     # Student looking for books
+  goals:
+    - [1.0, 0.7]      # Finding a quiet table
+    - [-1.0, -0.7]    # Going to help desk
+    - [-1.1, 0.6]     # Moving to reference section
+    - [1.2, -0.5]     # Heading to study carrel
+  radius: 0.18         # Larger personal space for concentration
+  max_speed: 0.4       # Very slow, deliberate movement
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 20    # Less frequent replanning for smoother paths
+      target_lookahead: 5
+      velocity_smoothing: 0.8 # Very smooth movement
+      max_speed: 0.3
+  start: [-1.3, 0.0]
+  goal: [1.3, 0.0]
+  radius: 0.15             # Small book-sorting robot
+  max_speed: 0.3           # Ultra-quiet operation
+evaluation:
+  intrusion_delta: 0.6     # Large comfort zone for studying
+  max_speed: 0.8           # Low speed enforcement
+  max_accel: 2.0           # Very gentle acceleration limits
+  teleport_thresh: 0.7
+  deadlock_seconds: 8.0    # Patience for people reading/thinking
+  deadlock_resample_attempts: 6
+  traversability_offset_max: 0.05
+  min_robot_progress: 0.02
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.15
+  max_agent_stop_seconds: 20.0  # Long stops expected (reading, studying)
+  expected_high_interaction: false
+render:
+  enabled: true
+  fps: 8
+  video: false
+  playback_speed: 1.5

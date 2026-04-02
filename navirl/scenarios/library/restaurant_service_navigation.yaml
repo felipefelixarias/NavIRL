@@ -1,0 +1,67 @@
+id: restaurant_service_navigation
+description: Restaurant environment with servers navigating between tables and diners moving to seats.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: apartment_micro  # Reuse apartment_micro as restaurant layout
+seed: 67
+horizon:
+  steps: 280
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: true    # Important for navigating between dining areas
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false  # Servers and diners move independently
+      hesitation_prob: 0.1   # Servers are confident, diners occasionally hesitate
+      accel_limit: 2.0       # Servers can move quickly when needed
+  count: 5
+  starts:
+    - [-1.1, -0.5]    # Diner entering restaurant
+    - [-0.3, 0.8]     # Server at service station
+    - [0.7, 0.9]      # Diner at table area
+    - [1.0, -0.7]     # Server moving between tables
+    - [-0.8, 0.3]     # Host seating guests
+  goals:
+    - [0.8, 0.7]      # Diner going to assigned table
+    - [1.1, -0.8]     # Server taking order to kitchen
+    - [-1.0, -0.6]    # Customer leaving restaurant
+    - [-0.5, 0.9]     # Server delivering food
+    - [0.9, 0.5]      # Host checking on tables
+  radius: 0.15         # Smaller radius for agile movement
+  max_speed: 0.9       # Servers can move faster, diners slower
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 8     # Frequent replanning for dynamic environment
+      target_lookahead: 3
+      velocity_smoothing: 0.5
+      max_speed: 0.6
+  start: [-1.3, 0.8]
+  goal: [1.2, -0.9]
+  radius: 0.14             # Small service robot (busing tables, delivering items)
+  max_speed: 0.6           # Efficient but not disruptive speed
+evaluation:
+  intrusion_delta: 0.35    # Smaller comfort zones in busy restaurant
+  max_speed: 1.5           # Servers can move quickly
+  max_accel: 5.0           # Quick responses for service scenarios
+  teleport_thresh: 1.1
+  deadlock_seconds: 4.0    # Quick resolution in busy environment
+  deadlock_resample_attempts: 12
+  traversability_offset_max: 0.09
+  min_robot_progress: 0.05
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.2
+  max_agent_stop_seconds: 8.0   # Brief stops for service interactions
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 15
+  video: false
+  playback_speed: 2.5

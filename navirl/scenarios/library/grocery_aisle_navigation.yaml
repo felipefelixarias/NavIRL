@@ -1,0 +1,67 @@
+id: grocery_aisle_navigation
+description: Narrow grocery store aisle with shoppers stopping to browse and select items.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: hallway  # Reuse hallway as narrow grocery aisle
+seed: 88
+horizon:
+  steps: 360
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: false
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false
+      hesitation_prob: 0.25  # High hesitation (looking at products, comparing prices)
+      accel_limit: 1.0       # Gentle movements with shopping carts
+  count: 5
+  starts:
+    - [-1.3, -0.1]    # Entering aisle from main corridor
+    - [-0.8, 0.05]    # Already shopping mid-aisle
+    - [0.6, -0.08]    # Browsing products
+    - [1.1, 0.12]     # Nearly finished with aisle
+    - [-0.2, 0.0]     # Standing, reading labels
+  goals:
+    - [1.2, 0.1]      # Exiting to checkout
+    - [0.9, -0.05]    # Moving to end of aisle
+    - [-0.7, 0.08]    # Going back for missed item
+    - [-1.2, -0.1]    # Returning to main area
+    - [0.8, 0.05]     # Continuing shopping
+  radius: 0.18         # Larger radius to simulate shopping cart
+  max_speed: 0.5       # Slow shopping pace
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 25    # Less frequent replanning for shelf-stocking robot
+      target_lookahead: 4
+      velocity_smoothing: 0.75
+      max_speed: 0.4
+  start: [1.4, 0.0]
+  goal: [-1.4, 0.0]
+  radius: 0.2              # Stock replenishment robot with cart
+  max_speed: 0.4           # Careful speed around shoppers
+evaluation:
+  intrusion_delta: 0.5     # Respectful distance around shoppers
+  max_speed: 1.0
+  max_accel: 3.0
+  teleport_thresh: 0.8
+  deadlock_seconds: 8.0    # Patience for people reading labels, comparing
+  deadlock_resample_attempts: 10
+  traversability_offset_max: 0.08
+  min_robot_progress: 0.02  # Very slow progress acceptable
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.25
+  max_agent_stop_seconds: 25.0  # Long stops for product selection
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 10
+  video: false
+  playback_speed: 1.8
