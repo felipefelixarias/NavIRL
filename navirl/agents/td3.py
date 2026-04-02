@@ -51,7 +51,6 @@ except ImportError:
 from navirl.agents.base import BaseAgent, HyperParameters, RunningMeanStd
 from navirl.agents.networks import MLP, DeterministicPolicyHead, QValueHead
 
-
 # ---------------------------------------------------------------------------
 # Exploration noise schedules
 # ---------------------------------------------------------------------------

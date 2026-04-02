@@ -44,7 +44,6 @@ import torch.nn.functional as F
 from navirl.agents.base import BaseAgent, HyperParameters, MetricsCallback
 from navirl.agents.networks import MLP, DuelingMLP, NoisyMLP
 
-
 # ---------------------------------------------------------------------------
 # Epsilon schedule
 # ---------------------------------------------------------------------------

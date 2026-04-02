@@ -56,7 +56,6 @@ except ImportError:
 from navirl.agents.base import BaseAgent, HyperParameters, RunningMeanStd
 from navirl.agents.networks import MLP, SquashedGaussianHead, TwinQHead
 
-
 # ---------------------------------------------------------------------------
 # Distributional Q-network helper
 # ---------------------------------------------------------------------------
