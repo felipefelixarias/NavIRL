@@ -34,7 +34,7 @@ class ScriptedHumanController(HumanController):
         raw_scripts = self.cfg.get("waypoints", {})
 
         self.scripts = {}
-        self.indices = {hid: 0 for hid in human_ids}
+        self.indices = dict.fromkeys(human_ids, 0)
         for idx, hid in enumerate(human_ids):
             key = str(idx)
             waypoints = raw_scripts.get(key)

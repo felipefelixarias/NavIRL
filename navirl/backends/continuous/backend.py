@@ -314,7 +314,7 @@ class ContinuousBackend:
             Initial observations.
         """
         self._is_reset = True
-        self._episode_rewards = {aid: 0.0 for aid in self._robot_ids + self._pedestrian_ids}
+        self._episode_rewards = dict.fromkeys(self._robot_ids + self._pedestrian_ids, 0.0)
         self._episode_data.clear()
         return self._env.reset()
 
@@ -529,7 +529,7 @@ class ContinuousBackend:
             Episode results including trajectories, rewards, statistics.
         """
         obs = self.reset()
-        total_rewards = {aid: 0.0 for aid in self._robot_ids}
+        total_rewards = dict.fromkeys(self._robot_ids, 0.0)
         steps = max_steps or self._config.max_steps
         executed_steps = 0
 
