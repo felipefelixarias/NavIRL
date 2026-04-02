@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import math
 
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
@@ -14,18 +17,34 @@ def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
 
 
 class ORCAHumanController(HumanController):
-    """Baseline human controller with map-aware waypoint following for ORCA."""
+    """
+    Baseline human controller with map-aware waypoint following for ORCA.
+
+    This controller implements goal-seeking behavior with path planning,
+    velocity smoothing, and goal swapping when agents reach their destinations.
+
+    Configuration parameters:
+        goal_tolerance (float): Distance threshold to consider goal reached (0.01-10.0)
+        waypoint_tolerance (float): Distance threshold to advance to next waypoint
+        lookahead (int): Number of waypoints to look ahead for smoothing (1-100)
+        min_speed (float): Minimum movement speed when not stopped
+        slowdown_dist (float): Distance to begin slowing down before goal
+        velocity_smoothing (float): Smoothing factor for velocity transitions (0.0-1.0)
+        stop_speed (float): Speed threshold to stop movement
+    """
 
     def __init__(self, cfg: dict | None = None):
-        cfg = cfg or {}
-        self.cfg = cfg
-        self.goal_tolerance = float(cfg.get("goal_tolerance", 0.22))
-        self.waypoint_tolerance = float(cfg.get("waypoint_tolerance", 0.2))
-        self.lookahead = int(cfg.get("lookahead", 4))
-        self.min_speed = float(cfg.get("min_speed", 0.04))
-        self.slowdown_dist = float(cfg.get("slowdown_dist", 0.9))
-        self.velocity_smoothing = float(cfg.get("velocity_smoothing", 0.25))
-        self.stop_speed = float(cfg.get("stop_speed", 0.03))
+        # Let parent handle config validation
+        super().__init__(cfg)
+
+        # Extract validated parameters with safe defaults
+        self.goal_tolerance = self.cfg.get("goal_tolerance", 0.22)
+        self.waypoint_tolerance = self.cfg.get("waypoint_tolerance", 0.2)
+        self.lookahead = self.cfg.get("lookahead", 4)
+        self.min_speed = self.cfg.get("min_speed", 0.04)
+        self.slowdown_dist = self.cfg.get("slowdown_dist", 0.9)
+        self.velocity_smoothing = self.cfg.get("velocity_smoothing", 0.25)
+        self.stop_speed = self.cfg.get("stop_speed", 0.03)
 
         self.human_ids: list[int] = []
         self.starts: dict[int, tuple[float, float]] = {}
@@ -43,6 +62,9 @@ class ORCAHumanController(HumanController):
         goals: dict[int, tuple[float, float]],
         backend=None,
     ) -> None:
+        # Use parent validation
+        super().reset(human_ids, starts, goals, backend)
+
         self.human_ids = list(human_ids)
         self.starts = dict(starts)
         self.goals = dict(goals)
@@ -51,10 +73,18 @@ class ORCAHumanController(HumanController):
         self.paths = {}
         self.path_idx = {}
         self.last_pref = {}
+
         for hid in self.human_ids:
-            self.paths[hid] = self._plan_path(self.starts[hid], self.goals[hid])
-            self.path_idx[hid] = 0
-            self.last_pref[hid] = (0.0, 0.0)
+            try:
+                self.paths[hid] = self._plan_path(self.starts[hid], self.goals[hid])
+                self.path_idx[hid] = 0
+                self.last_pref[hid] = (0.0, 0.0)
+            except Exception as e:
+                # Graceful fallback for path planning failures
+                logger.warning("Failed to plan path for human %s: %s", hid, str(e))
+                self.paths[hid] = [self.goals[hid]]  # Direct path to goal
+                self.path_idx[hid] = 0
+                self.last_pref[hid] = (0.0, 0.0)
 
     def _plan_path(
         self,
@@ -159,26 +189,58 @@ class ORCAHumanController(HumanController):
         robot_id: int,
         emit_event: EventSink,
     ) -> dict[int, Action]:
-        _ = (step, time_s, dt, robot_id)
+        # Use parent input validation
+        super().step(step, time_s, dt, states, robot_id, emit_event)
+
+        _ = (step, time_s, dt, robot_id)  # Unused parameters
         actions: dict[int, Action] = {}
 
         for human_id in self.human_ids:
-            state = states[human_id]
-            if self._maybe_swap_goal(human_id, state, emit_event):
-                self.paths[human_id] = self._plan_path((state.x, state.y), self.goals[human_id])
-                self.path_idx[human_id] = 0
+            try:
+                # Check if agent state is available
+                if human_id not in states:
+                    logger.warning("No state available for human %s, using stop action", human_id)
+                    actions[human_id] = Action(pref_vx=0.0, pref_vy=0.0, behavior="STOP")
+                    continue
 
-            target = self._current_waypoint(human_id, state)
-            vx, vy = self._goal_velocity(state, target)
-            vx, vy = self._smooth_preferred_velocity(human_id, state, vx, vy)
-            actions[human_id] = Action(
-                pref_vx=vx,
-                pref_vy=vy,
-                behavior="GO_TO",
-                metadata={
-                    "target_waypoint": [float(target[0]), float(target[1])],
-                    "path_index": int(self.path_idx.get(human_id, 0)),
-                },
-            )
+                state = states[human_id]
+
+                # Validate state values
+                if not (math.isfinite(state.x) and math.isfinite(state.y)):
+                    logger.warning("Invalid position for human %s: (%s, %s)",
+                                   human_id, state.x, state.y)
+                    actions[human_id] = Action(pref_vx=0.0, pref_vy=0.0, behavior="STOP")
+                    continue
+
+                # Handle goal swapping
+                if self._maybe_swap_goal(human_id, state, emit_event):
+                    try:
+                        self.paths[human_id] = self._plan_path((state.x, state.y), self.goals[human_id])
+                        self.path_idx[human_id] = 0
+                    except Exception as e:
+                        logger.warning("Failed to replan path for human %s: %s", human_id, str(e))
+
+                # Generate action
+                target = self._current_waypoint(human_id, state)
+                vx, vy = self._goal_velocity(state, target)
+                vx, vy = self._smooth_preferred_velocity(human_id, state, vx, vy)
+
+                action = Action(
+                    pref_vx=vx,
+                    pref_vy=vy,
+                    behavior="GO_TO",
+                    metadata={
+                        "target_waypoint": [float(target[0]), float(target[1])],
+                        "path_index": int(self.path_idx.get(human_id, 0)),
+                    },
+                )
+
+                # Validate the generated action
+                actions[human_id] = self.validate_action(human_id, action)
+
+            except Exception as e:
+                logger.error("Error processing human %s: %s", human_id, str(e))
+                # Provide safe fallback action
+                actions[human_id] = Action(pref_vx=0.0, pref_vy=0.0, behavior="STOP")
 
         return actions
