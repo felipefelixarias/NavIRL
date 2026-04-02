@@ -80,7 +80,7 @@ def _write_report(
         f"- **Failed Scenarios:** {failed_scenarios}",
         f"- **Test Suite:** {'✅ Pass' if pytest_ok else '❌ Fail'}",
         "",
-        f"### 🎯 Quick Actions",
+        "### 🎯 Quick Actions",
         "",
     ]
 
@@ -256,7 +256,7 @@ def _write_report(
                 "#### 🔄 Quick Reproduction",
                 "",
                 "```bash",
-                f"# Re-run this specific scenario",
+                "# Re-run this specific scenario",
                 f"cd {Path(row.bundle_dir).parent}",
                 f"python -m navirl pipeline --scenario {row.scenario_id}",
                 "```",
