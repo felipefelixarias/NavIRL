@@ -73,11 +73,37 @@ def _write_report(
     lines = [
         f"# 🔍 NavIRL Verification Report: {suite.title()} Suite",
         "",
-        "## 📊 Summary",
+        "## 📊 Executive Summary",
         "",
         f"- **Overall Status:** {'✅ PASS' if failed_scenarios == 0 and pytest_ok else '❌ FAIL'}",
         f"- **Success Rate:** {success_rate:.1f}% ({passed_scenarios}/{total_scenarios} scenarios)",
+        f"- **Failed Scenarios:** {failed_scenarios}",
         f"- **Test Suite:** {'✅ Pass' if pytest_ok else '❌ Fail'}",
+        "",
+        f"### 🎯 Quick Actions",
+        "",
+    ]
+
+    if failed_scenarios == 0:
+        lines.extend([
+            "🎉 **All scenarios passed!** Your implementation meets verification standards.",
+            "",
+            "- Consider running the full suite if you ran quick verification",
+            "- Review any warnings in the detailed results below",
+            ""
+        ])
+    else:
+        lines.extend([
+            f"⚠️ **{failed_scenarios} scenario(s) need attention.** Common next steps:",
+            "",
+            "1. 📖 Review the **Failure Analysis** section below for specific issues",
+            "2. 🔧 Apply the suggested fixes for each failed scenario",
+            f"3. 🔄 Re-run verification: `python -m navirl verify --suite {suite}`",
+            "4. 📝 Check the reproduction commands for individual scenarios",
+            ""
+        ])
+
+    lines.extend([
         "",
         "## ⚙️ Configuration",
         "",
@@ -90,7 +116,7 @@ def _write_report(
         "",
         "| Scenario | 📊 Invariants | 👁️ Judge | 🎯 Confidence | 🎥 Video | ✅ Overall | 📝 Notes | 📁 Bundle |",
         "|---|---:|---:|---:|---:|---:|---|---|",
-    ]
+    ])
 
     for row in rows:
         # Format status with visual indicators
@@ -113,49 +139,167 @@ def _write_report(
             f"| {row.scenario_id} | {invariants_status} | {judge_status_text} | {row.judge_confidence:.2f} | {video_status} | {overall_status} | {notes_display} | `{Path(row.bundle_dir).name}` |"
         )
 
-    lines.extend(["", "## Failing Details", ""])
+    lines.extend(["", "## ❌ Failure Analysis", ""])
     failing = [r for r in rows if not r.overall_pass]
     if not failing:
-        lines.append("- None")
+        lines.append("🎉 **All scenarios passed!** No failures to report.")
     else:
-        for row in failing:
-            lines.append(f"### {row.scenario_id}")
+        lines.extend([
+            f"**{len(failing)} scenario(s) failed.** See detailed analysis below:",
+            "",
+            "*💡 Tip: Each failure includes suggested fixes and reproduction steps.*",
+            ""
+        ])
+
+        for i, row in enumerate(failing, 1):
+            lines.extend([
+                f"### {i}. {row.scenario_id} 🔴",
+                "",
+                f"**Bundle:** `{Path(row.bundle_dir).name}`",
+                f"**Overall Status:** {'❌ Failed' if not row.overall_pass else '✅ Passed'}",
+                ""
+            ])
+
+            # Analyze failure types
+            failure_types = []
+            if not row.invariants_pass:
+                failure_types.append("📊 Invariant Violations")
+            if row.judge_status in ["fail", "needs_human_review"]:
+                failure_types.append("👁️ Visual Judge Issues")
+            if row.video_check_pass is False:
+                failure_types.append("🎥 Video Generation")
+
+            if failure_types:
+                lines.extend([
+                    "**Failure Categories:**",
+                    ""
+                ])
+                for ft in failure_types:
+                    lines.append(f"- {ft}")
+                lines.append("")
+
+            # Detailed invariant analysis
             inv_path = Path(row.bundle_dir) / "invariants.json"
             if inv_path.exists():
                 with inv_path.open("r", encoding="utf-8") as f:
                     inv = json.load(f)
                 failed_checks = [c for c in inv.get("checks", []) if not c.get("pass", False)]
-                if not failed_checks:
-                    lines.append("- Invariants: none failed.")
-                else:
+
+                if failed_checks:
+                    lines.extend([
+                        "#### 📊 Invariant Failures",
+                        ""
+                    ])
                     for check in failed_checks:
-                        lines.append(f"- Failed check: `{check.get('name', 'unknown')}`")
+                        check_name = check.get('name', 'unknown')
+                        lines.append(f"**❌ {check_name.replace('_', ' ').title()}**")
+
+                        # Add context for specific check types
+                        if "num_violations" in check:
+                            violations = check.get('num_violations', 0)
+                            lines.append(f"- Violation count: **{violations}**")
+
+                        if "message" in check:
+                            lines.append(f"- Details: {check['message']}")
+
+                        # Enhanced suggestions formatting
                         if check.get("name") == "scenario_feasibility":
-                            for sug in check.get("suggestions", [])[:6]:
-                                lines.append(f"- Suggested fix: {sug}")
-                        elif "num_violations" in check:
-                            lines.append(f"- Violations: `{check.get('num_violations')}`")
+                            suggestions = check.get("suggestions", [])[:6]
+                            if suggestions:
+                                lines.extend([
+                                    "- **🔧 Suggested Fixes:**"
+                                ])
+                                for j, sug in enumerate(suggestions, 1):
+                                    lines.append(f"  {j}. {sug}")
+
+                        lines.append("")
+
+            # Enhanced judge analysis
             judge_path = Path(row.bundle_dir) / "judge.json"
             if judge_path.exists():
                 with judge_path.open("r", encoding="utf-8") as f:
                     judge = json.load(f)
-                for viol in judge.get("violations", [])[:6]:
-                    lines.append(
-                        f"- Judge: `{viol.get('type', 'unknown')}` ({viol.get('severity', 'n/a')}) - {viol.get('evidence', '')}"
-                    )
-            lines.append("")
+                violations = judge.get("violations", [])
+
+                if violations:
+                    lines.extend([
+                        "#### 👁️ Visual Judge Analysis",
+                        "",
+                        f"**Confidence:** {row.judge_confidence:.2f}",
+                        f"**Status:** {row.judge_status.replace('_', ' ').title()}",
+                        ""
+                    ])
+
+                    for viol in violations[:6]:
+                        viol_type = viol.get('type', 'unknown').replace('_', ' ').title()
+                        severity = viol.get('severity', 'n/a').upper()
+                        evidence = viol.get('evidence', 'No details provided')
+
+                        lines.extend([
+                            f"**🚨 {viol_type}** (Severity: {severity})",
+                            f"- Evidence: {evidence}",
+                            ""
+                        ])
+
+            # Video check details
+            if row.video_check_pass is False:
+                lines.extend([
+                    "#### 🎥 Video Generation Issues",
+                    "",
+                    "- Video artifact generation failed",
+                    "- This may affect visual analysis capabilities",
+                    ""
+                ])
+
+            # Quick reproduction steps
+            lines.extend([
+                "#### 🔄 Quick Reproduction",
+                "",
+                "```bash",
+                f"# Re-run this specific scenario",
+                f"cd {Path(row.bundle_dir).parent}",
+                f"python -m navirl pipeline --scenario {row.scenario_id}",
+                "```",
+                "",
+                "---",
+                ""
+            ])
 
     lines.extend(
         [
             "",
-            "## Reproduction",
+            "## 🔄 Reproduction Guide",
             "",
+            "### Re-run Full Verification",
             "```bash",
-            "pytest -q",
+            "# Run the complete verification suite",
             f"python -m navirl verify --suite {suite}",
+            "",
+            "# Run with different judge settings",
+            f"python -m navirl verify --suite {suite} --judge-confidence-min 0.5",
+            "",
+            "# Run tests only",
+            "pytest -q",
             "```",
             "",
-            "## Pytest Output",
+            "### Debug Individual Scenarios",
+            "```bash",
+            "# Example: Debug a specific scenario",
+            "python -m navirl pipeline --scenario hallway_pass --render",
+            "",
+            "# Run with detailed logging",
+            f"NAVIRL_LOG_LEVEL=DEBUG python -m navirl verify --suite {suite}",
+            "```",
+            "",
+            "### 📚 Additional Resources",
+            "",
+            "- **Troubleshooting Guide:** `docs/troubleshooting.md`",
+            "- **Scenario Library:** `navirl/scenarios/library/`",
+            "- **Verification Config:** `navirl/verify/`",
+            "",
+            "---",
+            "",
+            "## 🧪 Test Suite Output",
             "",
             "```text",
             pytest_out.strip(),
