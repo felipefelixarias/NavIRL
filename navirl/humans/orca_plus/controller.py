@@ -44,7 +44,7 @@ class ORCAPlusHumanController(ORCAHumanController):
         backend=None,
     ) -> None:
         super().reset(human_ids, starts, goals, backend=backend)
-        self.current_speed = {hid: 0.0 for hid in human_ids}
+        self.current_speed = dict.fromkeys(human_ids, 0.0)
         self.token_holder = None
         self.group_by_agent = {}
         for group in self.groups:

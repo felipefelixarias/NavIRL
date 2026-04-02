@@ -115,12 +115,8 @@ class MultiAgentNavEnv:
         single_obs_space = self._make_single_observation_space()
         single_act_space = self._make_single_action_space()
 
-        self.observation_spaces: dict[str, spaces.Space] = {
-            name: single_obs_space for name in self.possible_agents
-        }
-        self.action_spaces: dict[str, spaces.Space] = {
-            name: single_act_space for name in self.possible_agents
-        }
+        self.observation_spaces: dict[str, spaces.Space] = dict.fromkeys(self.possible_agents, single_obs_space)
+        self.action_spaces: dict[str, spaces.Space] = dict.fromkeys(self.possible_agents, single_act_space)
 
         # Convenience: singular forms expected by some frameworks
         self.observation_space = single_obs_space
@@ -194,7 +190,7 @@ class MultiAgentNavEnv:
         self._human_ids = []
         self._human_goals = {}
         self.agents = list(self.possible_agents)
-        self._terminated = {name: False for name in self.agents}
+        self._terminated = dict.fromkeys(self.agents, False)
 
         # Init communication buffers to zeros
         if self.config.communication_dim > 0:

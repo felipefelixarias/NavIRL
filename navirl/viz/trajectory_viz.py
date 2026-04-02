@@ -185,7 +185,7 @@ def plot_trajectory(
                     "",
                     xy=(xa[i] + dx * 0.5, ya[i] + dy * 0.5),
                     xytext=(xa[i], ya[i]),
-                    arrowprops=dict(arrowstyle="->", color=color, lw=1.2),
+                    arrowprops={"arrowstyle": "->", "color": color, "lw": 1.2},
                 )
 
     if title:
