@@ -20,7 +20,7 @@ from typing import Any
 def save_config(
     config: dict[str, Any],
     path: str | pathlib.Path,
-    format: str | None = None,
+    file_format: str | None = None,
 ) -> None:
     """Persist *config* to *path* in the requested format.
 
@@ -30,12 +30,12 @@ def save_config(
         Configuration to save.
     path : str | Path
         Destination file path.
-    format : str, optional
+    file_format : str, optional
         ``"yaml"``, ``"json"``, or ``"toml"``.  Inferred from extension when
         ``None``.
     """
     path = pathlib.Path(path)
-    fmt = _resolve_format(path, format)
+    fmt = _resolve_format(path, file_format)
     path = _normalize_output_path(path, fmt)
 
     path.parent.mkdir(parents=True, exist_ok=True)
