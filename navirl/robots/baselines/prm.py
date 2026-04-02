@@ -23,7 +23,9 @@ class PRMRobotController(RobotController):
 
         # PRM parameters
         self.num_samples = int(self.cfg.get("num_samples", 100))  # Number of random samples
-        self.connection_radius = float(self.cfg.get("connection_radius", 1.5))  # Connection distance
+        self.connection_radius = float(
+            self.cfg.get("connection_radius", 1.5)
+        )  # Connection distance
         self.max_connections = int(self.cfg.get("max_connections", 8))  # Max edges per node
         self.roadmap_update_interval = int(self.cfg.get("roadmap_update_interval", 100))
 
@@ -39,14 +41,19 @@ class PRMRobotController(RobotController):
         self.roadmap_nodes: list[tuple[float, float]] = []
         self.roadmap_edges: dict[int, list[int]] = {}
         self.roadmap_built = False
-        self.map_bounds: tuple[float, float, float, float] = (0, 0, 0, 0)  # min_x, min_y, max_x, max_y
+        self.map_bounds: tuple[float, float, float, float] = (
+            0,
+            0,
+            0,
+            0,
+        )  # min_x, min_y, max_x, max_y
 
     def _get_map_bounds(self) -> tuple[float, float, float, float]:
         """Get the bounds of the map for sampling."""
-        if hasattr(self.backend, 'map_metadata'):
+        if hasattr(self.backend, "map_metadata"):
             metadata = self.backend.map_metadata()
-            width = metadata.get('width', 20)
-            height = metadata.get('height', 20)
+            width = metadata.get("width", 20)
+            height = metadata.get("height", 20)
             return (0.0, 0.0, float(width), float(height))
         else:
             # Default bounds - adjust based on your typical map sizes
@@ -94,13 +101,13 @@ class PRMRobotController(RobotController):
                 if i == j:
                     continue
 
-                dist = math.sqrt((node_i[0] - node_j[0])**2 + (node_i[1] - node_j[1])**2)
+                dist = math.sqrt((node_i[0] - node_j[0]) ** 2 + (node_i[1] - node_j[1]) ** 2)
                 if dist <= self.connection_radius:
                     candidates.append((j, dist))
 
             # Sort by distance and connect to closest valid neighbors
             candidates.sort(key=lambda x: x[1])
-            for j, _dist in candidates[:self.max_connections - len(self.roadmap_edges[i])]:
+            for j, _dist in candidates[: self.max_connections - len(self.roadmap_edges[i])]:
                 if len(self.roadmap_edges[j]) >= self.max_connections:
                     continue
 
@@ -114,7 +121,7 @@ class PRMRobotController(RobotController):
     def _is_edge_valid(self, pos1: tuple[float, float], pos2: tuple[float, float]) -> bool:
         """Check if an edge between two positions is valid (no obstacles)."""
         # Sample points along the edge
-        num_checks = max(3, int(math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2) * 5))
+        num_checks = max(3, int(math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) * 5))
         for i in range(num_checks + 1):
             t = i / num_checks
             x = pos1[0] * (1 - t) + pos2[0] * t
@@ -128,11 +135,11 @@ class PRMRobotController(RobotController):
         if not self.roadmap_nodes:
             return -1
 
-        min_dist = float('inf')
+        min_dist = float("inf")
         nearest_idx = -1
 
         for i, node in enumerate(self.roadmap_nodes):
-            dist = math.sqrt((pos[0] - node[0])**2 + (pos[1] - node[1])**2)
+            dist = math.sqrt((pos[0] - node[0]) ** 2 + (pos[1] - node[1]) ** 2)
             if dist < min_dist:
                 min_dist = dist
                 nearest_idx = i
@@ -168,8 +175,8 @@ class PRMRobotController(RobotController):
                 current_pos = self.roadmap_nodes[current]
                 neighbor_pos = self.roadmap_nodes[neighbor]
                 edge_cost = math.sqrt(
-                    (current_pos[0] - neighbor_pos[0])**2 +
-                    (current_pos[1] - neighbor_pos[1])**2
+                    (current_pos[0] - neighbor_pos[0]) ** 2
+                    + (current_pos[1] - neighbor_pos[1]) ** 2
                 )
                 new_cost = cost + edge_cost
                 new_path = path + [neighbor]
@@ -179,9 +186,7 @@ class PRMRobotController(RobotController):
         return []
 
     def _plan_via_roadmap(
-        self,
-        start_pos: tuple[float, float],
-        goal_pos: tuple[float, float]
+        self, start_pos: tuple[float, float], goal_pos: tuple[float, float]
     ) -> list[tuple[float, float]]:
         """Plan path using the PRM roadmap."""
         if not self.roadmap_built:
@@ -205,8 +210,7 @@ class PRMRobotController(RobotController):
         start_node = self.roadmap_nodes[start_idx]
         goal_node = self.roadmap_nodes[goal_idx]
 
-        if (self._is_edge_valid(start_pos, start_node) and
-            self._is_edge_valid(goal_node, goal_pos)):
+        if self._is_edge_valid(start_pos, start_node) and self._is_edge_valid(goal_node, goal_pos):
 
             # Search through roadmap
             node_path = self._dijkstra_search(start_idx, goal_idx)
@@ -273,11 +277,15 @@ class PRMRobotController(RobotController):
         # Replan periodically
         if step % max(1, self.replan_interval) == 0:
             self._plan((st.x, st.y))
-            emit_event("robot_prm_replan", self.robot_id, {
-                "path_len": len(self.path),
-                "roadmap_nodes": len(self.roadmap_nodes),
-                "roadmap_edges": sum(len(edges) for edges in self.roadmap_edges.values())
-            })
+            emit_event(
+                "robot_prm_replan",
+                self.robot_id,
+                {
+                    "path_len": len(self.path),
+                    "roadmap_nodes": len(self.roadmap_nodes),
+                    "roadmap_edges": sum(len(edges) for edges in self.roadmap_edges.values()),
+                },
+            )
 
         target = self._current_target()
         dist_target = math.hypot(target[0] - st.x, target[1] - st.y)
@@ -313,8 +321,10 @@ class PRMRobotController(RobotController):
 
         self.last_pref = (vx, vy)
 
-        return self.validate_action(Action(
-            pref_vx=vx,
-            pref_vy=vy,
-            behavior="PRM_NAV",
-        ))
+        return self.validate_action(
+            Action(
+                pref_vx=vx,
+                pref_vy=vy,
+                behavior="PRM_NAV",
+            )
+        )

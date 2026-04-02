@@ -47,12 +47,42 @@ def mock_backend():
 def sample_states():
     """Create sample agent states for testing."""
     return {
-        0: AgentState(agent_id=0, kind="robot", x=0.0, y=0.0, vx=0.0, vy=0.0,
-                      goal_x=10.0, goal_y=10.0, max_speed=1.0, radius=0.3),
-        1: AgentState(agent_id=1, kind="human", x=2.0, y=1.0, vx=0.1, vy=0.0,
-                      goal_x=8.0, goal_y=8.0, max_speed=1.0, radius=0.3),
-        2: AgentState(agent_id=2, kind="human", x=1.0, y=2.0, vx=0.0, vy=0.1,
-                      goal_x=9.0, goal_y=9.0, max_speed=1.0, radius=0.3),
+        0: AgentState(
+            agent_id=0,
+            kind="robot",
+            x=0.0,
+            y=0.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=10.0,
+            goal_y=10.0,
+            max_speed=1.0,
+            radius=0.3,
+        ),
+        1: AgentState(
+            agent_id=1,
+            kind="human",
+            x=2.0,
+            y=1.0,
+            vx=0.1,
+            vy=0.0,
+            goal_x=8.0,
+            goal_y=8.0,
+            max_speed=1.0,
+            radius=0.3,
+        ),
+        2: AgentState(
+            agent_id=2,
+            kind="human",
+            x=1.0,
+            y=2.0,
+            vx=0.0,
+            vy=0.1,
+            goal_x=9.0,
+            goal_y=9.0,
+            max_speed=1.0,
+            radius=0.3,
+        ),
     }
 
 
@@ -72,7 +102,7 @@ class TestSocialCostAStarRobotController:
             "social_radius": 3.0,
             "personal_space": 1.0,
             "social_weight": 5.0,
-            "max_speed": 1.5
+            "max_speed": 1.5,
         }
         controller = SocialCostAStarRobotController(cfg=config)
         assert controller.social_radius == 3.0
@@ -119,11 +149,7 @@ class TestPRMRobotController:
 
     def test_creation_with_config(self):
         """Test controller creation with custom config."""
-        config = {
-            "num_samples": 50,
-            "connection_radius": 2.0,
-            "max_connections": 6
-        }
+        config = {"num_samples": 50, "connection_radius": 2.0, "max_connections": 6}
         controller = PRMRobotController(cfg=config)
         assert controller.num_samples == 50
         assert controller.connection_radius == 2.0
@@ -165,11 +191,7 @@ class TestRRTStarRobotController:
 
     def test_creation_with_config(self):
         """Test controller creation with custom config."""
-        config = {
-            "max_iterations": 100,
-            "step_size": 0.5,
-            "goal_sample_rate": 0.2
-        }
+        config = {"max_iterations": 100, "step_size": 0.5, "goal_sample_rate": 0.2}
         controller = RRTStarRobotController(cfg=config)
         assert controller.max_iterations == 100
         assert controller.step_size == 0.5
@@ -204,7 +226,7 @@ class TestRRTStarRobotController:
 
         # Test steering beyond step size
         result = controller._steer((0.0, 0.0), (2.0, 2.0))
-        expected_dist = math.sqrt(result[0]**2 + result[1]**2)
+        expected_dist = math.sqrt(result[0] ** 2 + result[1] ** 2)
         assert abs(expected_dist - 1.0) < 1e-6
 
     def test_reset_and_step(self, mock_backend, sample_states):
@@ -240,8 +262,20 @@ class TestPlannerComparison:
             controller.reset(0, start, goal, mock_backend)
 
             # Simulate until goal reached or timeout
-            states = {0: AgentState(agent_id=0, kind="robot", x=start[0], y=start[1], vx=0.0, vy=0.0,
-                                  goal_x=goal[0], goal_y=goal[1], max_speed=1.0, radius=0.3)}
+            states = {
+                0: AgentState(
+                    agent_id=0,
+                    kind="robot",
+                    x=start[0],
+                    y=start[1],
+                    vx=0.0,
+                    vy=0.0,
+                    goal_x=goal[0],
+                    goal_y=goal[1],
+                    max_speed=1.0,
+                    radius=0.3,
+                )
+            }
             mock_emit = Mock()
 
             max_steps = 100
@@ -255,16 +289,30 @@ class TestPlannerComparison:
                 dt = 0.1
                 new_x = states[0].x + action.pref_vx * dt
                 new_y = states[0].y + action.pref_vy * dt
-                states[0] = AgentState(agent_id=0, kind="robot", x=new_x, y=new_y, vx=action.pref_vx, vy=action.pref_vy,
-                                     goal_x=goal[0], goal_y=goal[1], max_speed=1.0, radius=0.3)
+                states[0] = AgentState(
+                    agent_id=0,
+                    kind="robot",
+                    x=new_x,
+                    y=new_y,
+                    vx=action.pref_vx,
+                    vy=action.pref_vy,
+                    goal_x=goal[0],
+                    goal_y=goal[1],
+                    max_speed=1.0,
+                    radius=0.3,
+                )
 
                 # Check if goal reached
-                dist_to_goal = math.sqrt((states[0].x - goal[0])**2 + (states[0].y - goal[1])**2)
+                dist_to_goal = math.sqrt(
+                    (states[0].x - goal[0]) ** 2 + (states[0].y - goal[1]) ** 2
+                )
                 if dist_to_goal < 0.2:  # Goal tolerance
                     break
 
             # Verify controller made progress toward goal
-            final_dist = math.sqrt((states[0].x - goal[0])**2 + (states[0].y - goal[1])**2)
-            initial_dist = math.sqrt((start[0] - goal[0])**2 + (start[1] - goal[1])**2)
+            final_dist = math.sqrt((states[0].x - goal[0]) ** 2 + (states[0].y - goal[1]) ** 2)
+            initial_dist = math.sqrt((start[0] - goal[0]) ** 2 + (start[1] - goal[1]) ** 2)
 
-            assert final_dist < initial_dist, f"{controller.__class__.__name__} should make progress toward goal"
+            assert (
+                final_dist < initial_dist
+            ), f"{controller.__class__.__name__} should make progress toward goal"

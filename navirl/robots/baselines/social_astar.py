@@ -20,10 +20,16 @@ class SocialCostAStarRobotController(RobotController):
         self.stop_speed = float(self.cfg.get("stop_speed", 0.02))
 
         # Social cost parameters
-        self.social_radius = float(self.cfg.get("social_radius", 2.0))  # Distance to consider humans
-        self.personal_space = float(self.cfg.get("personal_space", 0.8))  # Preferred distance from humans
+        self.social_radius = float(
+            self.cfg.get("social_radius", 2.0)
+        )  # Distance to consider humans
+        self.personal_space = float(
+            self.cfg.get("personal_space", 0.8)
+        )  # Preferred distance from humans
         self.social_weight = float(self.cfg.get("social_weight", 3.0))  # Weight for social cost
-        self.crossing_penalty = float(self.cfg.get("crossing_penalty", 2.0))  # Cost for crossing human paths
+        self.crossing_penalty = float(
+            self.cfg.get("crossing_penalty", 2.0)
+        )  # Cost for crossing human paths
 
         self.robot_id = -1
         self.start = (0.0, 0.0)
@@ -38,9 +44,7 @@ class SocialCostAStarRobotController(RobotController):
         self._human_velocities: dict[int, tuple[float, float]] = {}
 
     def _compute_social_cost(
-        self,
-        pos: tuple[float, float],
-        states: dict[int, AgentState]
+        self, pos: tuple[float, float], states: dict[int, AgentState]
     ) -> float:
         """Compute social cost for a position based on nearby humans."""
         if not states:
@@ -63,12 +67,14 @@ class SocialCostAStarRobotController(RobotController):
 
             # Proximity cost - higher when closer than personal space
             if dist < self.personal_space:
-                proximity_cost = self.social_weight * (self.personal_space - dist) / self.personal_space
+                proximity_cost = (
+                    self.social_weight * (self.personal_space - dist) / self.personal_space
+                )
                 social_cost += proximity_cost * proximity_cost  # Quadratic penalty
 
             # Path crossing cost - penalize positions that cross human movement direction
-            vx = getattr(state, 'vx', 0.0)
-            vy = getattr(state, 'vy', 0.0)
+            vx = getattr(state, "vx", 0.0)
+            vy = getattr(state, "vy", 0.0)
             speed = math.sqrt(vx * vx + vy * vy)
 
             if speed > 0.1:  # Only consider moving humans
@@ -88,10 +94,7 @@ class SocialCostAStarRobotController(RobotController):
         return social_cost
 
     def _point_to_line_distance(
-        self,
-        px: float, py: float,
-        lx1: float, ly1: float,
-        lx2: float, ly2: float
+        self, px: float, py: float, lx1: float, ly1: float, lx2: float, ly2: float
     ) -> float:
         """Compute distance from point to line segment."""
         ldx = lx2 - lx1
@@ -112,7 +115,7 @@ class SocialCostAStarRobotController(RobotController):
         self,
         start_pos: tuple[float, float],
         goal_pos: tuple[float, float],
-        states: dict[int, AgentState]
+        states: dict[int, AgentState],
     ) -> list[tuple[float, float]]:
         """Run A* with social cost consideration."""
         # Get basic path from backend
@@ -133,7 +136,16 @@ class SocialCostAStarRobotController(RobotController):
             best_cost = self._compute_social_cost(current_wp, states)
 
             # Sample alternatives around the current waypoint
-            for angle in [0, math.pi/4, math.pi/2, 3*math.pi/4, math.pi, 5*math.pi/4, 3*math.pi/2, 7*math.pi/4]:
+            for angle in [
+                0,
+                math.pi / 4,
+                math.pi / 2,
+                3 * math.pi / 4,
+                math.pi,
+                5 * math.pi / 4,
+                3 * math.pi / 2,
+                7 * math.pi / 4,
+            ]:
                 for radius in [0.3, 0.6]:
                     alt_x = current_wp[0] + radius * math.cos(angle)
                     alt_y = current_wp[1] + radius * math.sin(angle)
@@ -203,12 +215,10 @@ class SocialCostAStarRobotController(RobotController):
 
         # Update human tracking for social cost
         self._human_positions = {
-            aid: (state.x, state.y)
-            for aid, state in states.items()
-            if aid != self.robot_id
+            aid: (state.x, state.y) for aid, state in states.items() if aid != self.robot_id
         }
         self._human_velocities = {
-            aid: (getattr(state, 'vx', 0.0), getattr(state, 'vy', 0.0))
+            aid: (getattr(state, "vx", 0.0), getattr(state, "vy", 0.0))
             for aid, state in states.items()
             if aid != self.robot_id
         }
@@ -217,10 +227,11 @@ class SocialCostAStarRobotController(RobotController):
         if step % max(1, self.replan_interval) == 0:
             self._plan((st.x, st.y), states)
             social_cost = self._compute_social_cost((st.x, st.y), states)
-            emit_event("robot_social_replan", self.robot_id, {
-                "path_len": len(self.path),
-                "social_cost": social_cost
-            })
+            emit_event(
+                "robot_social_replan",
+                self.robot_id,
+                {"path_len": len(self.path), "social_cost": social_cost},
+            )
 
         target = self._current_target()
         dist_target = math.hypot(target[0] - st.x, target[1] - st.y)
@@ -261,8 +272,10 @@ class SocialCostAStarRobotController(RobotController):
 
         self.last_pref = (vx, vy)
 
-        return self.validate_action(Action(
-            pref_vx=vx,
-            pref_vy=vy,
-            behavior="SOCIAL_NAV",
-        ))
+        return self.validate_action(
+            Action(
+                pref_vx=vx,
+                pref_vy=vy,
+                behavior="SOCIAL_NAV",
+            )
+        )

@@ -560,7 +560,9 @@ class SequenceEncoder(nn.Module):
                 max_len = rnn_out.size(1)
                 mask = torch.arange(max_len, device=rnn_out.device).unsqueeze(0).expand(
                     batch_size, -1
-                ) < lengths.unsqueeze(1)  # (batch, max_len)
+                ) < lengths.unsqueeze(
+                    1
+                )  # (batch, max_len)
                 mask = mask.unsqueeze(-1).float()  # (batch, max_len, 1)
                 encoded = (rnn_out * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
             else:
@@ -692,9 +694,9 @@ class HiddenStateManager(nn.Module):
             New hidden state to store.  Must match the expected shape.
         """
         if self.rnn_type == "lstm":
-            assert isinstance(hidden_state, tuple) and len(hidden_state) == 2, (
-                "LSTM hidden state must be a (h, c) tuple."
-            )
+            assert (
+                isinstance(hidden_state, tuple) and len(hidden_state) == 2
+            ), "LSTM hidden state must be a (h, c) tuple."
             self._h.copy_(hidden_state[0].detach())
             self._c.copy_(hidden_state[1].detach())
         else:

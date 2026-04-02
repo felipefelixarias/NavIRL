@@ -227,9 +227,11 @@ def performance_monitor(max_time_s: float = 1.0):
                 if elapsed > max_time_s:
                     logger.warning(
                         "Plugin method %s.%s took %.3f seconds (limit: %.3f)",
-                        func.__self__.__class__.__name__
-                        if hasattr(func, "__self__")
-                        else "Unknown",
+                        (
+                            func.__self__.__class__.__name__
+                            if hasattr(func, "__self__")
+                            else "Unknown"
+                        ),
                         func.__name__,
                         elapsed,
                         max_time_s,

@@ -363,11 +363,11 @@ def _write_report(
                     confidence_desc = (
                         "Very Low"
                         if row.judge_confidence < 0.3
-                        else "Low"
-                        if row.judge_confidence < 0.6
-                        else "Moderate"
-                        if row.judge_confidence < 0.8
-                        else "High"
+                        else (
+                            "Low"
+                            if row.judge_confidence < 0.6
+                            else "Moderate" if row.judge_confidence < 0.8 else "High"
+                        )
                     )
 
                     lines.extend(

@@ -18,8 +18,8 @@ class RRTNode:
     def _distance_to(self, other: RRTNode) -> float:
         """Calculate distance to another node."""
         return math.sqrt(
-            (self.position[0] - other.position[0])**2 +
-            (self.position[1] - other.position[1])**2
+            (self.position[0] - other.position[0]) ** 2
+            + (self.position[1] - other.position[1]) ** 2
         )
 
     def path_to_root(self) -> list[tuple[float, float]]:
@@ -66,10 +66,10 @@ class RRTStarRobotController(RobotController):
 
     def _get_map_bounds(self) -> tuple[float, float, float, float]:
         """Get the bounds of the map for sampling."""
-        if hasattr(self.backend, 'map_metadata'):
+        if hasattr(self.backend, "map_metadata"):
             metadata = self.backend.map_metadata()
-            width = metadata.get('width', 20)
-            height = metadata.get('height', 20)
+            width = metadata.get("width", 20)
+            height = metadata.get("height", 20)
             return (0.0, 0.0, float(width), float(height))
         else:
             return (0.0, 0.0, 20.0, 20.0)
@@ -93,20 +93,16 @@ class RRTStarRobotController(RobotController):
             return (self.goal[0] + noise_x, self.goal[1] + noise_y)
 
         # Regular random sampling
-        return (
-            random.uniform(min_x, max_x),
-            random.uniform(min_y, max_y)
-        )
+        return (random.uniform(min_x, max_x), random.uniform(min_y, max_y))
 
     def _nearest_node(self, position: tuple[float, float]) -> RRTNode:
         """Find the nearest node in the tree to the given position."""
-        min_dist = float('inf')
+        min_dist = float("inf")
         nearest = self.tree[0]
 
         for node in self.tree:
             dist = math.sqrt(
-                (position[0] - node.position[0])**2 +
-                (position[1] - node.position[1])**2
+                (position[0] - node.position[0]) ** 2 + (position[1] - node.position[1]) ** 2
             )
             if dist < min_dist:
                 min_dist = dist
@@ -114,7 +110,9 @@ class RRTStarRobotController(RobotController):
 
         return nearest
 
-    def _steer(self, from_pos: tuple[float, float], to_pos: tuple[float, float]) -> tuple[float, float]:
+    def _steer(
+        self, from_pos: tuple[float, float], to_pos: tuple[float, float]
+    ) -> tuple[float, float]:
         """Steer from one position towards another with step size limit."""
         dx = to_pos[0] - from_pos[0]
         dy = to_pos[1] - from_pos[1]
@@ -130,7 +128,9 @@ class RRTStarRobotController(RobotController):
 
     def _is_path_valid(self, pos1: tuple[float, float], pos2: tuple[float, float]) -> bool:
         """Check if path between two positions is collision-free."""
-        num_checks = max(3, int(math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2) * 10))
+        num_checks = max(
+            3, int(math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) * 10)
+        )
 
         for i in range(num_checks + 1):
             t = i / num_checks
@@ -147,17 +147,14 @@ class RRTStarRobotController(RobotController):
         nearby_nodes = []
         for node in self.tree:
             dist = math.sqrt(
-                (position[0] - node.position[0])**2 +
-                (position[1] - node.position[1])**2
+                (position[0] - node.position[0]) ** 2 + (position[1] - node.position[1]) ** 2
             )
             if dist <= radius:
                 nearby_nodes.append(node)
         return nearby_nodes
 
     def _plan_rrt_star(
-        self,
-        start_pos: tuple[float, float],
-        goal_pos: tuple[float, float]
+        self, start_pos: tuple[float, float], goal_pos: tuple[float, float]
     ) -> list[tuple[float, float]]:
         """Plan path using RRT* algorithm."""
         self.map_bounds = self._get_map_bounds()
@@ -189,8 +186,7 @@ class RRTStarRobotController(RobotController):
             # Choose best parent among nearby nodes
             best_parent = nearest
             best_cost = nearest.cost + math.sqrt(
-                (new_pos[0] - nearest.position[0])**2 +
-                (new_pos[1] - nearest.position[1])**2
+                (new_pos[0] - nearest.position[0]) ** 2 + (new_pos[1] - nearest.position[1]) ** 2
             )
 
             for node in nearby_nodes:
@@ -198,13 +194,11 @@ class RRTStarRobotController(RobotController):
                     continue
 
                 edge_cost = math.sqrt(
-                    (new_pos[0] - node.position[0])**2 +
-                    (new_pos[1] - node.position[1])**2
+                    (new_pos[0] - node.position[0]) ** 2 + (new_pos[1] - node.position[1]) ** 2
                 )
                 potential_cost = node.cost + edge_cost
 
-                if (potential_cost < best_cost and
-                    self._is_path_valid(node.position, new_pos)):
+                if potential_cost < best_cost and self._is_path_valid(node.position, new_pos):
                     best_parent = node
                     best_cost = potential_cost
 
@@ -219,20 +213,17 @@ class RRTStarRobotController(RobotController):
                     continue
 
                 edge_cost = math.sqrt(
-                    (node.position[0] - new_pos[0])**2 +
-                    (node.position[1] - new_pos[1])**2
+                    (node.position[0] - new_pos[0]) ** 2 + (node.position[1] - new_pos[1]) ** 2
                 )
                 potential_cost = new_node.cost + edge_cost
 
-                if (potential_cost < node.cost and
-                    self._is_path_valid(new_pos, node.position)):
+                if potential_cost < node.cost and self._is_path_valid(new_pos, node.position):
                     node.parent = new_node
                     node.cost = potential_cost
 
             # Check if we're close to goal
             dist_to_goal = math.sqrt(
-                (new_pos[0] - goal_pos[0])**2 +
-                (new_pos[1] - goal_pos[1])**2
+                (new_pos[0] - goal_pos[0]) ** 2 + (new_pos[1] - goal_pos[1]) ** 2
             )
 
             if dist_to_goal <= self.goal_tolerance:
@@ -243,10 +234,12 @@ class RRTStarRobotController(RobotController):
                     return goal_node.path_to_root()
 
         # If we couldn't reach the goal, return path to closest node
-        closest_node = min(self.tree, key=lambda n: math.sqrt(
-            (n.position[0] - goal_pos[0])**2 +
-            (n.position[1] - goal_pos[1])**2
-        ))
+        closest_node = min(
+            self.tree,
+            key=lambda n: math.sqrt(
+                (n.position[0] - goal_pos[0]) ** 2 + (n.position[1] - goal_pos[1]) ** 2
+            ),
+        )
 
         path = closest_node.path_to_root()
         if path[-1] != goal_pos:
@@ -306,10 +299,11 @@ class RRTStarRobotController(RobotController):
         # Replan periodically
         if step % max(1, self.replan_interval) == 0:
             self._plan((st.x, st.y))
-            emit_event("robot_rrt_replan", self.robot_id, {
-                "path_len": len(self.path),
-                "tree_size": len(self.tree)
-            })
+            emit_event(
+                "robot_rrt_replan",
+                self.robot_id,
+                {"path_len": len(self.path), "tree_size": len(self.tree)},
+            )
 
         target = self._current_target()
         dist_target = math.hypot(target[0] - st.x, target[1] - st.y)
@@ -345,8 +339,10 @@ class RRTStarRobotController(RobotController):
 
         self.last_pref = (vx, vy)
 
-        return self.validate_action(Action(
-            pref_vx=vx,
-            pref_vy=vy,
-            behavior="RRT_NAV",
-        ))
+        return self.validate_action(
+            Action(
+                pref_vx=vx,
+                pref_vy=vy,
+                behavior="RRT_NAV",
+            )
+        )
