@@ -66,6 +66,25 @@ def apartment_micro_map() -> np.ndarray:
     return m
 
 
+def hospital_corridor_map() -> np.ndarray:
+    m = np.zeros((280, 400), dtype=np.uint8)
+    # main corridor
+    m[50:230, 30:370] = FREE_SPACE
+    # patient rooms (alternating on both sides)
+    m[20:50, 50:120] = FREE_SPACE   # room 1
+    m[20:50, 160:230] = FREE_SPACE  # room 2
+    m[20:50, 270:340] = FREE_SPACE  # room 3
+    m[230:260, 70:140] = FREE_SPACE # room 4
+    m[230:260, 180:250] = FREE_SPACE # room 5
+    m[230:260, 290:360] = FREE_SPACE # room 6
+    # nursing station (central)
+    m[110:170, 150:250] = FREE_SPACE
+    # medical equipment obstacles
+    m[130:150, 100:130] = OBSTACLE_SPACE  # equipment cart
+    m[130:150, 270:300] = OBSTACLE_SPACE  # another cart
+    return m
+
+
 DEFAULT_PIXELS_PER_METER = 100.0
 
 
@@ -108,6 +127,7 @@ BUILTIN_MAPS = {
     "group": {"factory": group_map, "pixels_per_meter": 100.0},
     "comfort": {"factory": comfort_map, "pixels_per_meter": 100.0},
     "apartment_micro": {"factory": apartment_micro_map, "pixels_per_meter": 100.0},
+    "hospital_corridor": {"factory": hospital_corridor_map, "pixels_per_meter": 100.0},
 }
 
 

@@ -1,0 +1,69 @@
+id: hospital_corridor_navigation
+description: Hospital corridor with patients, visitors, and medical staff requiring careful, respectful navigation.
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: hospital_corridor
+seed: 54
+horizon:
+  steps: 420
+  dt: 0.1
+humans:
+  controller:
+    type: orca_plus
+    params:
+      doorway_token: true    # Important for room entrances
+      anisotropic_space: true
+      speed_profile: true
+      group_cohesion: false  # Medical staff vs patients move differently
+      hesitation_prob: 0.18  # Patients may move slowly/hesitantly
+      accel_limit: 1.0       # Gentle movements in medical environment
+  count: 6
+  starts:
+    - [-1.6, -0.3]    # Visitor entering from elevator
+    - [-0.8, 0.5]     # Nurse coming from patient room
+    - [0.2, -0.8]     # Patient walking in corridor
+    - [1.1, 0.2]      # Doctor moving between rooms
+    - [-0.3, 0.0]     # Visitor at nursing station
+    - [1.4, -0.6]     # Patient family member
+  goals:
+    - [0.5, 0.8]      # Visiting patient room
+    - [1.3, -0.4]     # Nurse going to another room
+    - [-1.2, 0.7]     # Patient returning to room
+    - [-0.5, -0.3]    # Doctor heading to nursing station
+    - [1.2, 0.6]      # Visitor looking for room
+    - [-1.5, 0.0]     # Leaving hospital floor
+  radius: 0.17         # Slightly larger for medical equipment considerations
+  max_speed: 0.6       # Slower, more careful pace
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 30    # Less frequent replanning for predictable paths
+      target_lookahead: 6
+      velocity_smoothing: 0.85 # Very smooth for medical environment
+      max_speed: 0.4
+  start: [-1.7, 0.0]
+  goal: [1.7, 0.0]
+  radius: 0.16             # Medical supply/medication delivery robot
+  max_speed: 0.4           # Quiet, non-disruptive operation
+evaluation:
+  intrusion_delta: 0.6     # Large comfort zone for medical setting
+  max_speed: 1.0           # Enforce slow speeds
+  max_accel: 2.5           # Very gentle acceleration
+  teleport_thresh: 0.7
+  deadlock_seconds: 10.0   # High patience for patients with mobility issues
+  deadlock_resample_attempts: 6
+  traversability_offset_max: 0.04
+  min_robot_progress: 0.015 # Very slow progress acceptable
+  wall_clearance_buffer: 0.0
+  near_wall_buffer: 0.0
+  max_wall_proximity_fraction: 0.18
+  max_agent_stop_seconds: 30.0  # Very long stops (medical consultations, patient care)
+  expected_high_interaction: false
+render:
+  enabled: true
+  fps: 8
+  video: false
+  playback_speed: 1.2
