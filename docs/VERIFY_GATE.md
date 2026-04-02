@@ -7,20 +7,20 @@
 Quick suite:
 
 ```bash
-python -m navirl verify --suite quick
+./.venv/bin/python -m navirl verify --suite quick
 ```
 
 Full suite:
 
 ```bash
-python -m navirl verify --suite full
+./.venv/bin/python -m navirl verify --suite full
 ```
 
 VLM-backed overseer mode:
 
 ```bash
 export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file} --output-last-message {output_file} {image_flags} < {prompt_file}"'
-python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
+./.venv/bin/python -m navirl verify --suite quick --judge-mode vlm --judge-provider codex --no-judge-allow-fallback
 ```
 
 For Wainscott-specific provider sanity checks before tuning, run:
@@ -47,7 +47,7 @@ Optional provider knobs:
 
 ## What verify runs
 
-1. `pytest -q`
+1. `./.venv/bin/pytest -q`
 2. canonical deterministic scenarios
 3. scenario feasibility analysis (geometry/radius/path viability)
 4. numeric invariants
@@ -145,7 +145,7 @@ Per scenario:
 ## Reproduction pattern
 
 ```bash
-pytest -q
-python -m navirl verify --suite quick
-python -m navirl verify --suite full
+./.venv/bin/pytest -q
+./.venv/bin/python -m navirl verify --suite quick
+./.venv/bin/python -m navirl verify --suite full
 ```

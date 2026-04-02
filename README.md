@@ -51,21 +51,22 @@ and
 Install:
 
 ```bash
-python -m pip install -U pip
-python -m pip install -e .[dev]
+python3 -m venv .venv
+./.venv/bin/python -m pip install -U pip
+./.venv/bin/python -m pip install -e .[dev]
 ```
 
 Run a scenario:
 
 ```bash
-python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
+./.venv/bin/python -m navirl run navirl/scenarios/library/hallway_pass.yaml --out logs/
 ```
 
 Run the verification gate:
 
 ```bash
-python -m navirl verify --suite quick
-python -m navirl verify --suite full
+./.venv/bin/python -m navirl verify --suite quick
+./.venv/bin/python -m navirl verify --suite full
 ```
 
 Run Aegis-backed tuning:
@@ -79,8 +80,12 @@ export NAVIRL_CODEX_CMD='/bin/zsh -lc "codex exec - --output-schema {schema_file
 Run thesis floorplan demo:
 
 ```bash
-python -m navirl run navirl/scenarios/library/wainscott_main_demo.yaml --out logs/ --render --video
+./.venv/bin/python -m navirl run navirl/scenarios/library/wainscott_main_demo.yaml --out logs/ --render --video
 ```
+
+If your environment already exposes `python`, you can replace `./.venv/bin/python`
+with `python`. On systems where only `python3` exists, keeping the repo-managed
+venv avoids path ambiguity.
 
 ## Wainscott Demo (Updated)
 
