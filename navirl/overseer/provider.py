@@ -48,7 +48,9 @@ def _validate_file_path(path: str | Path) -> Path:
 
         # Check file size
         if resolved_path.stat().st_size > MAX_FILE_SIZE:
-            raise ProviderCallError(f"File too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {path}")
+            raise ProviderCallError(
+                f"File too large (>{MAX_FILE_SIZE / 1024 / 1024:.1f}MB): {path}"
+            )
 
         return resolved_path
     except OSError as e:
@@ -99,7 +101,9 @@ def _parse_json_object(raw: str) -> dict:
 
         # Check JSON size before parsing to prevent DoS
         if len(json_text.encode("utf-8")) > MAX_JSON_SIZE:
-            raise ProviderCallError(f"JSON response too large (>{MAX_JSON_SIZE/1024/1024:.1f}MB)")
+            raise ProviderCallError(
+                f"JSON response too large (>{MAX_JSON_SIZE / 1024 / 1024:.1f}MB)"
+            )
 
         return json.loads(json_text)
     except json.JSONDecodeError as exc:

@@ -746,9 +746,9 @@ class MultiScaleFeatureExtractor(nn.Module):
         activation: str = "relu",
     ) -> None:
         super().__init__()
-        assert len(branch_channels) == len(
-            scales
-        ), "branch_channels and scales must have the same length"
+        assert len(branch_channels) == len(scales), (
+            "branch_channels and scales must have the same length"
+        )
         self.input_channels = input_channels
         self.input_height = input_height
         self.input_width = input_width

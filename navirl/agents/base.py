@@ -424,9 +424,7 @@ class BaseAgent(abc.ABC):
         """Called before each environment step."""
         pass
 
-    def on_step_end(
-        self, step: int, reward: float, done: bool, info: dict[str, Any]
-    ) -> None:  # noqa: B027
+    def on_step_end(self, step: int, reward: float, done: bool, info: dict[str, Any]) -> None:  # noqa: B027
         """Called after each environment step."""
         pass
 
