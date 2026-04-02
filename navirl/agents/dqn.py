@@ -32,7 +32,6 @@ DQNAgent
 
 from __future__ import annotations
 
-import logging
 import pathlib
 from dataclasses import dataclass
 from typing import Any
@@ -44,8 +43,6 @@ import torch.nn.functional as F
 
 from navirl.agents.base import BaseAgent, HyperParameters, MetricsCallback
 from navirl.agents.networks import MLP, DuelingMLP, NoisyMLP
-
-logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------

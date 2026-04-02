@@ -33,7 +33,6 @@ Addressing Function Approximation Error in Actor-Critic Methods.
 from __future__ import annotations
 
 import copy
-import logging
 import math
 import pathlib
 from dataclasses import dataclass
@@ -51,8 +50,6 @@ except ImportError:
 
 from navirl.agents.base import BaseAgent, HyperParameters, RunningMeanStd
 from navirl.agents.networks import MLP, DeterministicPolicyHead, QValueHead
-
-logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------

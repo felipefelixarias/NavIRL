@@ -9,7 +9,6 @@ performs a single gradient step per rollout collection.
 
 from __future__ import annotations
 
-import logging
 import pathlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -27,8 +26,6 @@ from navirl.agents.networks import (
     ValueHead,
 )
 from navirl.training.buffer import RolloutBuffer
-
-logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configuration
