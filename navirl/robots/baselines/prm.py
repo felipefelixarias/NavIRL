@@ -240,6 +240,23 @@ class PRMRobotController(RobotController):
         goal: tuple[float, float],
         backend,
     ) -> None:
+        """Reset the PRM controller for a new planning episode.
+
+        Initializes the robot's state and forces a roadmap rebuild for the new
+        environment. This ensures the roadmap is appropriate for the current
+        start/goal configuration and world state.
+
+        Parameters
+        ----------
+        robot_id : int
+            Unique identifier for this robot.
+        start : tuple[float, float]
+            Starting position (x, y).
+        goal : tuple[float, float]
+            Target goal position (x, y).
+        backend : Backend
+            The simulation backend providing collision checking and world info.
+        """
         super().reset(robot_id, start, goal, backend)
         self.robot_id = robot_id
         self.start = start
@@ -263,6 +280,30 @@ class PRMRobotController(RobotController):
         states: dict[int, AgentState],
         emit_event: EventSink,
     ) -> Action:
+        """Compute the robot's next action using PRM path following.
+
+        Follows the pre-computed PRM path toward the goal, advancing waypoints
+        when close enough and replanning periodically. Applies velocity smoothing
+        and respects maximum speed constraints.
+
+        Parameters
+        ----------
+        step : int
+            Current simulation step number.
+        time_s : float
+            Current simulation time in seconds.
+        dt : float
+            Simulation time step in seconds.
+        states : dict[int, AgentState]
+            Current states of all agents in the simulation.
+        emit_event : EventSink
+            Event sink for logging and debugging.
+
+        Returns
+        -------
+        Action
+            The computed action with preferred velocity and behavior flag.
+        """
         super().step(step, time_s, dt, states, emit_event)
 
         st = states[self.robot_id]
