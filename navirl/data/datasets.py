@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -186,8 +187,6 @@ class ETHUCYDataset(TrajectoryDataset):
                     continue
 
         # Group by pedestrian id
-        from collections import defaultdict
-
         grouped: dict[int, list[tuple[float, float, float]]] = defaultdict(list)
         for frame, ped_id, x, y in rows:
             grouped[ped_id].append((frame, x, y))
@@ -232,8 +231,6 @@ class SocialDataset(TrajectoryDataset):
         return [self._parse_csv(f) for f in files]
 
     def _parse_csv(self, filepath: Path) -> TrajectoryCollection:
-        from collections import defaultdict
-
         grouped: dict[Any, list[tuple[float, float, float, float | None, float | None]]] = (
             defaultdict(list)
         )
