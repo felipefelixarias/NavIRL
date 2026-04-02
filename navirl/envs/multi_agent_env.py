@@ -115,8 +115,12 @@ class MultiAgentNavEnv:
         single_obs_space = self._make_single_observation_space()
         single_act_space = self._make_single_action_space()
 
-        self.observation_spaces: dict[str, spaces.Space] = dict.fromkeys(self.possible_agents, single_obs_space)
-        self.action_spaces: dict[str, spaces.Space] = dict.fromkeys(self.possible_agents, single_act_space)
+        self.observation_spaces: dict[str, spaces.Space] = dict.fromkeys(
+            self.possible_agents, single_obs_space
+        )
+        self.action_spaces: dict[str, spaces.Space] = dict.fromkeys(
+            self.possible_agents, single_act_space
+        )
 
         # Convenience: singular forms expected by some frameworks
         self.observation_space = single_obs_space
