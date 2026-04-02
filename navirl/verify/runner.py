@@ -61,6 +61,7 @@ def _write_report(
     pytest_out: str,
     rows: list[VerifyResult],
     thresholds: dict,
+    verify_root: Path,
 ) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -125,7 +126,7 @@ def _write_report(
             "**📋 Recommended Workflow:**",
             "1. 📖 Review **Failure Analysis** section below for specific issues",
             "2. 🔧 Start with the first failed scenario - fixes often resolve multiple issues",
-            f"3. 🔄 Test individually: `python -m navirl pipeline --scenario <scenario_name>`",
+            "3. 🔄 Test individually: `python -m navirl pipeline --scenario <scenario_name>`",
             f"4. 🧪 Re-run full suite: `python -m navirl verify --suite {suite}`",
             "5. 🎯 Focus on highest-impact fixes first (invariant violations > visual issues)",
             ""
@@ -256,7 +257,7 @@ def _write_report(
                     "**Issue Summary:**",
                     ""
                 ])
-                for j, (ft, sev) in enumerate(zip(failure_types, severity_indicators)):
+                for ft, sev in zip(failure_types, severity_indicators, strict=True):
                     lines.extend([
                         f"- {ft}",
                         f"  - *Impact:* {sev}",
@@ -459,7 +460,7 @@ def _write_report(
             "  --teleport-thresh-multiplier 1.5",
             "",
             "# Skip video generation (faster iteration)",
-            f"python -m navirl verify --suite quick",  # Always available
+            "python -m navirl verify --suite quick",  # Always available
             "```",
             "",
             "### 🛠️ Advanced Troubleshooting",
@@ -656,6 +657,7 @@ def run_verify(
         pytest_out=pytest_out,
         rows=scenario_rows,
         thresholds={"judge_confidence_min": judge_confidence_min},
+        verify_root=verify_root,
     )
 
     if any(r.judge_status == "needs_human_review" for r in scenario_rows):
