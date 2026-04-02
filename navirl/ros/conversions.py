@@ -9,10 +9,11 @@ numpy-level helpers will not need rclpy at all.
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 import numpy as np
+
+from navirl.utils.geometry import quat_to_yaw
 
 # ---------------------------------------------------------------------------
 # Guarded ROS2 imports (only needed when real ROS msgs are passed)
@@ -24,18 +25,6 @@ try:
     _ROS2_MSG_AVAILABLE = True
 except ImportError:
     _ROS2_MSG_AVAILABLE = False
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
-    """Convert a quaternion to a yaw angle (radians)."""
-    siny_cosp = 2.0 * (qw * qz + qx * qy)
-    cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
-    return math.atan2(siny_cosp, cosy_cosp)
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +75,7 @@ def odometry_to_state(msg: Any) -> dict[str, Any]:
 
     x = float(pose.position.x)
     y = float(pose.position.y)
-    yaw = _quat_to_yaw(
+    yaw = quat_to_yaw(
         pose.orientation.x,
         pose.orientation.y,
         pose.orientation.z,
@@ -131,7 +120,7 @@ def person_array_to_social_obs(msg: Any) -> np.ndarray:
 
         # Orientation
         ori = t.pose.pose.orientation
-        theta = _quat_to_yaw(float(ori.x), float(ori.y), float(ori.z), float(ori.w))
+        theta = quat_to_yaw(float(ori.x), float(ori.y), float(ori.z), float(ori.w))
 
         track_id = float(getattr(t, "track_id", getattr(t, "detection_id", 0)))
         score = float(getattr(t, "detection_score", getattr(t, "is_matched", 1.0)))

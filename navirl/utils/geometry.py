@@ -152,6 +152,38 @@ def angular_velocity(
     return angle_diff(heading_curr, heading_prev) / dt
 
 
+def quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
+    """Convert a quaternion to a yaw angle.
+
+    Extracts the yaw (rotation about z-axis) from a quaternion representation.
+    This is commonly used for converting ROS pose orientations to 2D headings.
+
+    Parameters
+    ----------
+    qx : float
+        X component of the quaternion.
+    qy : float
+        Y component of the quaternion.
+    qz : float
+        Z component of the quaternion.
+    qw : float
+        W (scalar) component of the quaternion.
+
+    Returns
+    -------
+    float
+        Yaw angle in radians in the range [-pi, pi].
+
+    Notes
+    -----
+    Uses the standard yaw extraction formula:
+    yaw = atan2(2*(qw*qz + qx*qy), 1 - 2*(qy² + qz²))
+    """
+    siny_cosp = 2.0 * (qw * qz + qx * qy)
+    cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
+    return math.atan2(siny_cosp, cosy_cosp)
+
+
 # ---------------------------------------------------------------------------
 # Basic 2-D operations
 # ---------------------------------------------------------------------------

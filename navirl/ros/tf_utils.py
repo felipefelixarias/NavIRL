@@ -14,6 +14,8 @@ from typing import Any
 
 import numpy as np
 
+from navirl.utils.geometry import quat_to_yaw
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -190,7 +192,7 @@ class TransformManager:
                 )
                 t = ts.transform.translation
                 r = ts.transform.rotation
-                yaw = _quat_to_yaw(r.x, r.y, r.z, r.w)
+                yaw = quat_to_yaw(r.x, r.y, r.z, r.w)
                 return (float(t.x), float(t.y), yaw)
             except TransformException:
                 pass  # fall through to manual cache
@@ -247,11 +249,6 @@ class TransformManager:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-
-def _quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
-    siny_cosp = 2.0 * (qw * qz + qx * qy)
-    cosy_cosp = 1.0 - 2.0 * (qy * qy + qz * qz)
-    return math.atan2(siny_cosp, cosy_cosp)
 
 
 def _invert_2d(x: float, y: float, yaw: float) -> tuple[float, float]:
