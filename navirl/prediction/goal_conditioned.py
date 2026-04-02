@@ -16,7 +16,7 @@ from navirl.prediction.base import PredictionResult, TrajectoryPredictor
 HIGH_CONFIDENCE_SCORE = 3.0  # High confidence in predicted intent
 MODERATE_CONFIDENCE_SCORE = 2.0  # Moderate confidence in predicted intent
 MEDIUM_CONFIDENCE_SCORE = 0.2  # Medium confidence/default score
-LOW_CONFIDENCE_SCORE = 0.1   # Low confidence/baseline score
+LOW_CONFIDENCE_SCORE = 0.1  # Low confidence/baseline score
 
 # Behavior thresholds
 DECELERATION_THRESHOLD = -0.1  # m/s² threshold for detecting deceleration
@@ -110,7 +110,9 @@ class GoalConditionedPredictor(TrajectoryPredictor):
         # probable).
         if observed.shape[0] >= 2:
             extrap = observed[-1] + (observed[-1] - observed[-2]) * self.horizon
-            dists = np.array([np.linalg.norm(g.position - extrap) for g in goals])  # linalg.norm already returns float
+            dists = np.array(
+                [np.linalg.norm(g.position - extrap) for g in goals]
+            )  # linalg.norm already returns float
             dists = dists + 1e-6
             inv_dists = 1.0 / dists
             probs = inv_dists / inv_dists.sum()

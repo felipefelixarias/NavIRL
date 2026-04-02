@@ -145,7 +145,9 @@ class GazeboBridge(_SimBridgeBase):
             client = self._node.create_client(EmptySrv, "/reset_simulation")
             if client.wait_for_service(timeout_sec=SERVICE_WAIT_TIMEOUT):
                 future = client.call_async(EmptySrv.Request())
-                rclpy.spin_until_future_complete(self._node, future, timeout_sec=SERVICE_WAIT_TIMEOUT)
+                rclpy.spin_until_future_complete(
+                    self._node, future, timeout_sec=SERVICE_WAIT_TIMEOUT
+                )
                 logger.info("GazeboBridge: simulation reset.")
             else:
                 logger.warning("GazeboBridge: /reset_simulation service not available.")

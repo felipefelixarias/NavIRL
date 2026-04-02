@@ -98,7 +98,7 @@ def _parse_json_object(raw: str) -> dict:
         json_text = _extract_json_text(raw)
 
         # Check JSON size before parsing to prevent DoS
-        if len(json_text.encode('utf-8')) > MAX_JSON_SIZE:
+        if len(json_text.encode("utf-8")) > MAX_JSON_SIZE:
             raise ProviderCallError(f"JSON response too large (>{MAX_JSON_SIZE/1024/1024:.1f}MB)")
 
         return json.loads(json_text)
@@ -190,9 +190,9 @@ def _resolve_native_command(config: ProviderConfig) -> str:
         return cmd
 
     # Check for obviously dangerous patterns (basic security check)
-    dangerous_patterns = [';', '&&', '||', '|', '>', '<', '$', '`', '$(']
+    dangerous_patterns = [";", "&&", "||", "|", ">", "<", "$", "`", "$("]
     for pattern in dangerous_patterns:
-        if pattern in cmd and not (pattern == '>' and 'output_file' in cmd):
+        if pattern in cmd and not (pattern == ">" and "output_file" in cmd):
             # Allow > only in output redirection context
             raise ProviderCallError(
                 f"Potentially unsafe command template contains '{pattern}': {cmd}"
