@@ -5,7 +5,7 @@ from navirl.pipeline import run_scenario_file
 
 def main() -> None:
     log = run_scenario_file(
-        scenario_path="navirl/scenarios/library/hallway_pass.yaml",
+        scenario_path="navirl/scenarios/library/group_cohesion.yaml",
         out_root="logs",
         run_id="quickstart",
         render_override=True,
