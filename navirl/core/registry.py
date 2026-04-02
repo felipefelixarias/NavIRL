@@ -7,7 +7,7 @@ from typing import Any
 from navirl.core.plugin_validation import (
     PluginValidationError,
     safe_plugin_call,
-    validate_plugin_factory
+    validate_plugin_factory,
 )
 
 logger = logging.getLogger(__name__)
