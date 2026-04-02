@@ -3,7 +3,6 @@ from __future__ import annotations
 import heapq
 import math
 import random
-from typing import Dict, List, Set, Tuple
 
 from navirl.core.types import Action, AgentState
 from navirl.robots.base import EventSink, RobotController
@@ -37,12 +36,12 @@ class PRMRobotController(RobotController):
         self.last_pref = (0.0, 0.0)
 
         # PRM data structures
-        self.roadmap_nodes: List[Tuple[float, float]] = []
-        self.roadmap_edges: Dict[int, List[int]] = {}
+        self.roadmap_nodes: list[tuple[float, float]] = []
+        self.roadmap_edges: dict[int, list[int]] = {}
         self.roadmap_built = False
-        self.map_bounds: Tuple[float, float, float, float] = (0, 0, 0, 0)  # min_x, min_y, max_x, max_y
+        self.map_bounds: tuple[float, float, float, float] = (0, 0, 0, 0)  # min_x, min_y, max_x, max_y
 
-    def _get_map_bounds(self) -> Tuple[float, float, float, float]:
+    def _get_map_bounds(self) -> tuple[float, float, float, float]:
         """Get the bounds of the map for sampling."""
         if hasattr(self.backend, 'map_metadata'):
             metadata = self.backend.map_metadata()
@@ -53,7 +52,7 @@ class PRMRobotController(RobotController):
             # Default bounds - adjust based on your typical map sizes
             return (0.0, 0.0, 20.0, 20.0)
 
-    def _is_valid_position(self, pos: Tuple[float, float]) -> bool:
+    def _is_valid_position(self, pos: tuple[float, float]) -> bool:
         """Check if a position is valid (not in collision)."""
         try:
             return not self.backend.check_obstacle_collision(pos)
@@ -101,7 +100,7 @@ class PRMRobotController(RobotController):
 
             # Sort by distance and connect to closest valid neighbors
             candidates.sort(key=lambda x: x[1])
-            for j, dist in candidates[:self.max_connections - len(self.roadmap_edges[i])]:
+            for j, _dist in candidates[:self.max_connections - len(self.roadmap_edges[i])]:
                 if len(self.roadmap_edges[j]) >= self.max_connections:
                     continue
 
@@ -112,7 +111,7 @@ class PRMRobotController(RobotController):
 
         self.roadmap_built = True
 
-    def _is_edge_valid(self, pos1: Tuple[float, float], pos2: Tuple[float, float]) -> bool:
+    def _is_edge_valid(self, pos1: tuple[float, float], pos2: tuple[float, float]) -> bool:
         """Check if an edge between two positions is valid (no obstacles)."""
         # Sample points along the edge
         num_checks = max(3, int(math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2) * 5))
@@ -124,7 +123,7 @@ class PRMRobotController(RobotController):
                 return False
         return True
 
-    def _find_nearest_roadmap_node(self, pos: Tuple[float, float]) -> int:
+    def _find_nearest_roadmap_node(self, pos: tuple[float, float]) -> int:
         """Find the nearest roadmap node to a given position."""
         if not self.roadmap_nodes:
             return -1
@@ -140,14 +139,14 @@ class PRMRobotController(RobotController):
 
         return nearest_idx
 
-    def _dijkstra_search(self, start_idx: int, goal_idx: int) -> List[int]:
+    def _dijkstra_search(self, start_idx: int, goal_idx: int) -> list[int]:
         """Find path through roadmap using Dijkstra's algorithm."""
         if start_idx == -1 or goal_idx == -1:
             return []
 
         # Priority queue: (cost, node_index, path)
         pq = [(0.0, start_idx, [start_idx])]
-        visited: Set[int] = set()
+        visited: set[int] = set()
 
         while pq:
             cost, current, path = heapq.heappop(pq)
@@ -181,9 +180,9 @@ class PRMRobotController(RobotController):
 
     def _plan_via_roadmap(
         self,
-        start_pos: Tuple[float, float],
-        goal_pos: Tuple[float, float]
-    ) -> List[Tuple[float, float]]:
+        start_pos: tuple[float, float],
+        goal_pos: tuple[float, float]
+    ) -> list[tuple[float, float]]:
         """Plan path using the PRM roadmap."""
         if not self.roadmap_built:
             self._build_roadmap()

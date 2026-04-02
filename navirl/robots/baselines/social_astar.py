@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import heapq
 import math
-from typing import Dict, List, Set, Tuple
 
 from navirl.core.types import Action, AgentState
 from navirl.robots.base import EventSink, RobotController
@@ -36,13 +34,13 @@ class SocialCostAStarRobotController(RobotController):
         self.last_pref = (0.0, 0.0)
 
         # Cache for social cost computation
-        self._human_positions: Dict[int, Tuple[float, float]] = {}
-        self._human_velocities: Dict[int, Tuple[float, float]] = {}
+        self._human_positions: dict[int, tuple[float, float]] = {}
+        self._human_velocities: dict[int, tuple[float, float]] = {}
 
     def _compute_social_cost(
         self,
-        pos: Tuple[float, float],
-        states: Dict[int, AgentState]
+        pos: tuple[float, float],
+        states: dict[int, AgentState]
     ) -> float:
         """Compute social cost for a position based on nearby humans."""
         if not states:
@@ -112,10 +110,10 @@ class SocialCostAStarRobotController(RobotController):
 
     def _social_astar(
         self,
-        start_pos: Tuple[float, float],
-        goal_pos: Tuple[float, float],
-        states: Dict[int, AgentState]
-    ) -> List[Tuple[float, float]]:
+        start_pos: tuple[float, float],
+        goal_pos: tuple[float, float],
+        states: dict[int, AgentState]
+    ) -> list[tuple[float, float]]:
         """Run A* with social cost consideration."""
         # Get basic path from backend
         basic_path = self.backend.shortest_path(start_pos, goal_pos)
@@ -157,7 +155,7 @@ class SocialCostAStarRobotController(RobotController):
         optimized_path.append(basic_path[-1])  # End with goal
         return optimized_path
 
-    def _plan(self, position: tuple[float, float], states: Dict[int, AgentState]) -> None:
+    def _plan(self, position: tuple[float, float], states: dict[int, AgentState]) -> None:
         """Plan path using social-cost A* algorithm."""
         self.path = self._social_astar(position, self.goal, states)
         if not self.path:

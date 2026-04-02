@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import math
 import random
-from typing import List, Optional, Tuple
 
 from navirl.core.types import Action, AgentState
 from navirl.robots.base import EventSink, RobotController
@@ -11,19 +10,19 @@ from navirl.robots.base import EventSink, RobotController
 class RRTNode:
     """Node in the RRT tree."""
 
-    def __init__(self, position: Tuple[float, float], parent: Optional['RRTNode'] = None):
+    def __init__(self, position: tuple[float, float], parent: RRTNode | None = None):
         self.position = position
         self.parent = parent
         self.cost = 0.0 if parent is None else parent.cost + self._distance_to(parent)
 
-    def _distance_to(self, other: 'RRTNode') -> float:
+    def _distance_to(self, other: RRTNode) -> float:
         """Calculate distance to another node."""
         return math.sqrt(
             (self.position[0] - other.position[0])**2 +
             (self.position[1] - other.position[1])**2
         )
 
-    def path_to_root(self) -> List[Tuple[float, float]]:
+    def path_to_root(self) -> list[tuple[float, float]]:
         """Return path from this node to the root."""
         path = []
         current = self
@@ -62,10 +61,10 @@ class RRTStarRobotController(RobotController):
         self.last_pref = (0.0, 0.0)
 
         # RRT tree
-        self.tree: List[RRTNode] = []
-        self.map_bounds: Tuple[float, float, float, float] = (0, 0, 0, 0)
+        self.tree: list[RRTNode] = []
+        self.map_bounds: tuple[float, float, float, float] = (0, 0, 0, 0)
 
-    def _get_map_bounds(self) -> Tuple[float, float, float, float]:
+    def _get_map_bounds(self) -> tuple[float, float, float, float]:
         """Get the bounds of the map for sampling."""
         if hasattr(self.backend, 'map_metadata'):
             metadata = self.backend.map_metadata()
@@ -75,14 +74,14 @@ class RRTStarRobotController(RobotController):
         else:
             return (0.0, 0.0, 20.0, 20.0)
 
-    def _is_valid_position(self, pos: Tuple[float, float]) -> bool:
+    def _is_valid_position(self, pos: tuple[float, float]) -> bool:
         """Check if a position is valid (not in collision)."""
         try:
             return not self.backend.check_obstacle_collision(pos)
         except Exception:
             return False
 
-    def _random_sample(self) -> Tuple[float, float]:
+    def _random_sample(self) -> tuple[float, float]:
         """Generate a random sample point."""
         min_x, min_y, max_x, max_y = self.map_bounds
 
@@ -99,7 +98,7 @@ class RRTStarRobotController(RobotController):
             random.uniform(min_y, max_y)
         )
 
-    def _nearest_node(self, position: Tuple[float, float]) -> RRTNode:
+    def _nearest_node(self, position: tuple[float, float]) -> RRTNode:
         """Find the nearest node in the tree to the given position."""
         min_dist = float('inf')
         nearest = self.tree[0]
@@ -115,7 +114,7 @@ class RRTStarRobotController(RobotController):
 
         return nearest
 
-    def _steer(self, from_pos: Tuple[float, float], to_pos: Tuple[float, float]) -> Tuple[float, float]:
+    def _steer(self, from_pos: tuple[float, float], to_pos: tuple[float, float]) -> tuple[float, float]:
         """Steer from one position towards another with step size limit."""
         dx = to_pos[0] - from_pos[0]
         dy = to_pos[1] - from_pos[1]
@@ -129,7 +128,7 @@ class RRTStarRobotController(RobotController):
         uy = dy / dist
         return (from_pos[0] + ux * self.step_size, from_pos[1] + uy * self.step_size)
 
-    def _is_path_valid(self, pos1: Tuple[float, float], pos2: Tuple[float, float]) -> bool:
+    def _is_path_valid(self, pos1: tuple[float, float], pos2: tuple[float, float]) -> bool:
         """Check if path between two positions is collision-free."""
         num_checks = max(3, int(math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2) * 10))
 
@@ -143,7 +142,7 @@ class RRTStarRobotController(RobotController):
 
         return True
 
-    def _nodes_within_radius(self, position: Tuple[float, float], radius: float) -> List[RRTNode]:
+    def _nodes_within_radius(self, position: tuple[float, float], radius: float) -> list[RRTNode]:
         """Find all nodes within a given radius of the position."""
         nearby_nodes = []
         for node in self.tree:
@@ -157,16 +156,16 @@ class RRTStarRobotController(RobotController):
 
     def _plan_rrt_star(
         self,
-        start_pos: Tuple[float, float],
-        goal_pos: Tuple[float, float]
-    ) -> List[Tuple[float, float]]:
+        start_pos: tuple[float, float],
+        goal_pos: tuple[float, float]
+    ) -> list[tuple[float, float]]:
         """Plan path using RRT* algorithm."""
         self.map_bounds = self._get_map_bounds()
 
         # Initialize tree with start position
         self.tree = [RRTNode(start_pos)]
 
-        for iteration in range(self.max_iterations):
+        for _iteration in range(self.max_iterations):
             # Sample random point
             random_pos = self._random_sample()
 

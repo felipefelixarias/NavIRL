@@ -1,8 +1,9 @@
 """Tests for richer baseline robot planners (Issue #4)."""
 
-import pytest
 import math
 from unittest.mock import Mock
+
+import pytest
 
 from navirl.core.types import Action, AgentState
 from navirl.robots.baselines import (
