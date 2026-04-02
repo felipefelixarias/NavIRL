@@ -198,7 +198,9 @@ def _write_report(
             notes_display = "✅ No issues"
 
         lines.append(
-            f"| **{row.scenario_id}** | {invariants_status} | {judge_status_text} | {confidence_display} | {video_status} | {overall_status} | {notes_display} | [`{Path(row.bundle_dir).name}`]({Path(row.bundle_dir).name}) |"
+            f"| **{row.scenario_id}** | {invariants_status} | {judge_status_text} | "
+            f"{confidence_display} | {video_status} | {overall_status} | {notes_display} | "
+            f"[`{Path(row.bundle_dir).name}`]({Path(row.bundle_dir).name}) |"
         )
 
     lines.extend(["", "## ❌ Failure Analysis", ""])

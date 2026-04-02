@@ -32,7 +32,6 @@ High-Dimensional Continuous Control Using Generalized Advantage Estimation.
 
 from __future__ import annotations
 
-import logging
 import math
 import pathlib
 from collections.abc import Sequence
@@ -57,8 +56,6 @@ from navirl.agents.networks import (
     ValueHead,
 )
 from navirl.training.buffer import RolloutBuffer
-
-logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Learning-rate schedule helpers

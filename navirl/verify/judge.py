@@ -259,7 +259,8 @@ def _heuristic_judge(
                 "type": "insufficient_robot_progress",
                 "evidence": (
                     f"progress_fraction={float(robot_progress.get('progress_fraction', 0.0)):.3f}, "
-                    f"effective_min_progress={float(robot_progress.get('effective_min_progress', robot_progress.get('min_progress', 0.0))):.3f}"
+                    f"effective_min_progress="
+                    f"{float(robot_progress.get('effective_min_progress', robot_progress.get('min_progress', 0.0))):.3f}"
                 ),
                 "severity": "major",
             }

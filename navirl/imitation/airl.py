@@ -17,7 +17,6 @@ Reference:
 
 from __future__ import annotations
 
-import logging
 import pathlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -36,8 +35,6 @@ try:
     _TORCH_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _TORCH_AVAILABLE = False
-
-logger = logging.getLogger(__name__)
 
 __all__ = ["AIRLConfig", "RewardNetwork", "AIRLAgent"]
 

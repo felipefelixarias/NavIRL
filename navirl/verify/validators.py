@@ -271,7 +271,8 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
                 }
             )
             suggestions.append(
-                f"Agent {aid}: adjust explicit start/goal away from walls/obstacles (shift {max(start_shift, goal_shift):.2f}m)."
+                f"Agent {aid}: adjust explicit start/goal away from walls/obstacles "
+                f"(shift {max(start_shift, goal_shift):.2f}m)."
             )
 
         has_path = _path_exists(passable, start_rc, goal_rc)
@@ -349,7 +350,8 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
             }
         )
         suggestions.append(
-            "Detected opposing flows through sub-width bottlenecks; stagger start times or route one direction at a time."
+            "Detected opposing flows through sub-width bottlenecks; "
+            "stagger start times or route one direction at a time."
         )
 
     if explicit_h < h_count:

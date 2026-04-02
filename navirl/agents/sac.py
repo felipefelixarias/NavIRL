@@ -37,7 +37,6 @@ Soft Actor-Critic Algorithms and Applications. *arXiv:1812.05905*.
 from __future__ import annotations
 
 import copy
-import logging
 import pathlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -56,9 +55,6 @@ except ImportError:
 
 from navirl.agents.base import BaseAgent, HyperParameters, RunningMeanStd
 from navirl.agents.networks import MLP, SquashedGaussianHead, TwinQHead
-
-logger = logging.getLogger(__name__)
-
 
 # ---------------------------------------------------------------------------
 # Distributional Q-network helper

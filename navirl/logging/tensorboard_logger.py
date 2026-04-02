@@ -8,7 +8,6 @@ optional ``tensorboard`` dependency gracefully via try/except.
 from __future__ import annotations
 
 import json
-import logging
 import time
 import warnings
 from collections.abc import Generator, Sequence
@@ -30,8 +29,6 @@ except ImportError:
     except ImportError:
         SummaryWriter = None  # type: ignore[assignment,misc]
         _TB_AVAILABLE = False
-
-logger = logging.getLogger(__name__)
 
 
 def is_tensorboard_available() -> bool:
