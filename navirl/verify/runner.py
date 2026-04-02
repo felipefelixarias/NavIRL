@@ -266,7 +266,7 @@ def _write_report(
             elif row.judge_status == "needs_human_review":
                 failure_types.append("⚠️ **Needs Human Review** (Low Priority)")
                 severity_indicators.append("Ambiguous behavior detected")
-            if row.video_check_pass is False:
+            if not row.video_check_pass:
                 failure_types.append("🎥 **Video Generation** (Infrastructure)")
                 severity_indicators.append("Artifact generation failed")
 
@@ -414,7 +414,7 @@ def _write_report(
                             lines.append("")
 
             # Video check details with actionable guidance
-            if row.video_check_pass is False:
+            if not row.video_check_pass:
                 lines.extend(
                     [
                         "#### 🎥 Video Generation Issues",
