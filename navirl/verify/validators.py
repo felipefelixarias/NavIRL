@@ -23,7 +23,9 @@ def load_state_rows(state_path: Path) -> list[dict]:
     if not state_path.exists():
         raise ValueError(f"State file not found: {state_path}")
     if state_path.stat().st_size > MAX_FILE_SIZE:
-        raise ValueError(f"State file too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {state_path}")
+        raise ValueError(
+            f"State file too large (>{MAX_FILE_SIZE / 1024 / 1024:.1f}MB): {state_path}"
+        )
 
     rows = []
     with state_path.open("r", encoding="utf-8") as f:
@@ -32,7 +34,7 @@ def load_state_rows(state_path: Path) -> list[dict]:
             if line:
                 # Check line size before parsing
                 if len(line.encode("utf-8")) > MAX_LINE_SIZE:
-                    raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE/1024:.1f}KB)")
+                    raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE / 1024:.1f}KB)")
                 rows.append(json.loads(line))
     if not rows:
         raise ValueError(f"No rows found in {state_path}")
@@ -45,7 +47,9 @@ def load_events(events_path: Path) -> list[dict]:
 
     # Check file size for security
     if events_path.stat().st_size > MAX_FILE_SIZE:
-        raise ValueError(f"Events file too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {events_path}")
+        raise ValueError(
+            f"Events file too large (>{MAX_FILE_SIZE / 1024 / 1024:.1f}MB): {events_path}"
+        )
 
     out = []
     with events_path.open("r", encoding="utf-8") as f:
@@ -54,7 +58,7 @@ def load_events(events_path: Path) -> list[dict]:
             if line:
                 # Check line size before parsing
                 if len(line.encode("utf-8")) > MAX_LINE_SIZE:
-                    raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE/1024:.1f}KB)")
+                    raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE / 1024:.1f}KB)")
                 out.append(json.loads(line))
     return out
 
@@ -67,7 +71,7 @@ def _load_scenario(bundle_dir: Path) -> dict:
         raise ValueError(f"Scenario file not found: {scenario_path}")
     if scenario_path.stat().st_size > MAX_FILE_SIZE:
         raise ValueError(
-            f"Scenario file too large (>{MAX_FILE_SIZE/1024/1024:.1f}MB): {scenario_path}"
+            f"Scenario file too large (>{MAX_FILE_SIZE / 1024 / 1024:.1f}MB): {scenario_path}"
         )
 
     with scenario_path.open("r", encoding="utf-8") as f:
