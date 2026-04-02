@@ -1,3 +1,10 @@
+"""Core simulation pipeline for NavIRL.
+
+Provides the main execution pipeline for running single scenarios and
+batch experiments, including scenario loading, agent orchestration,
+logging, metrics collection, and result rendering.
+"""
+
 from __future__ import annotations
 
 import argparse

@@ -1,3 +1,10 @@
+"""Command-line interface for NavIRL.
+
+This module provides the main CLI entry point for NavIRL operations including
+running scenarios, batch experiments, verification, tuning, visualization,
+and artifact management.
+"""
+
 from __future__ import annotations
 
 import argparse
