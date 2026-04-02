@@ -16,6 +16,7 @@ import numpy as np
 
 from navirl.core.types import Action, AgentState
 from navirl.robots.base import EventSink, RobotController
+from navirl.utils.geometry import normalize_angle
 
 # -----------------------------------------------------------------------
 # Configuration
@@ -146,10 +147,6 @@ class PIDController:
 # -----------------------------------------------------------------------
 
 
-def _wrap_angle(a: float) -> float:
-    """Wrap angle to [-pi, pi)."""
-    return float((a + np.pi) % (2.0 * np.pi) - np.pi)
-
 
 def compute_icc(
     x: float,
@@ -218,7 +215,7 @@ def forward_kinematics(
         dtheta = omega * dt
         x_new = x + r * (np.sin(theta + dtheta) - np.sin(theta))
         y_new = y - r * (np.cos(theta + dtheta) - np.cos(theta))
-        theta_new = _wrap_angle(theta + dtheta)
+        theta_new = normalize_angle(theta + dtheta)
     return (float(x_new), float(y_new), float(theta_new))
 
 
@@ -332,7 +329,7 @@ def track_trajectory(
             dist = float(np.hypot(dx, dy))
 
         desired_heading = float(np.arctan2(dy, dx))
-        heading_error = _wrap_angle(desired_heading - theta)
+        heading_error = normalize_angle(desired_heading - theta)
 
         v_cmd = pid_v.compute(dist, dt)
         omega_cmd = pid_w.compute(heading_error, dt)
@@ -465,7 +462,7 @@ def sensor_world_pose(
     sin_t = np.sin(robot_theta)
     sx = robot_x + cos_t * mount.offset_x - sin_t * mount.offset_y
     sy = robot_y + sin_t * mount.offset_x + cos_t * mount.offset_y
-    stheta = _wrap_angle(robot_theta + mount.offset_theta)
+    stheta = normalize_angle(robot_theta + mount.offset_theta)
     return (float(sx), float(sy), float(stheta))
 
 
@@ -660,7 +657,7 @@ class DifferentialDriveRobot(RobotController):
 
         # PID control.
         desired_heading = float(np.arctan2(dy, dx))
-        heading_error = _wrap_angle(desired_heading - self._theta)
+        heading_error = normalize_angle(desired_heading - self._theta)
 
         v_cmd = self._pid_v.compute(dist, dt)
         omega_cmd = self._pid_w.compute(heading_error, dt)

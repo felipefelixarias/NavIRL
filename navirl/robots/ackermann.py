@@ -15,6 +15,7 @@ import numpy as np
 
 from navirl.core.types import Action, AgentState
 from navirl.robots.base import EventSink, RobotController
+from navirl.utils.geometry import normalize_angle
 
 # -----------------------------------------------------------------------
 # Configuration
@@ -58,9 +59,6 @@ class AckermannConfig:
 # -----------------------------------------------------------------------
 
 
-def _wrap_angle(a: float) -> float:
-    """Wrap angle to [-pi, pi)."""
-    return float((a + np.pi) % (2.0 * np.pi) - np.pi)
 
 
 def bicycle_forward(
@@ -94,7 +92,7 @@ def bicycle_forward(
     (v / wheelbase) * np.sin(beta) * 2.0  # equivalent to v*tan(delta)/L
     # Use exact formulation: dtheta = v * tan(delta) / L
     dtheta_exact = v * np.tan(delta) / wheelbase
-    theta_new = _wrap_angle(theta + dtheta_exact * dt)
+    theta_new = normalize_angle(theta + dtheta_exact * dt)
     return (float(x_new), float(y_new), float(theta_new))
 
 
@@ -206,7 +204,7 @@ def _rs_forward(
     theta_new = theta + sign * phi
     x_new = cx + sign * radius * np.sin(theta_new)
     y_new = cy - sign * radius * np.cos(theta_new)
-    return (float(x_new), float(y_new), float(_wrap_angle(theta_new)))
+    return (float(x_new), float(y_new), float(normalize_angle(theta_new)))
 
 
 def reeds_shepp_path(
@@ -242,7 +240,7 @@ def reeds_shepp_path(
     sin0 = np.sin(theta0)
     lx = cos0 * dx + sin0 * dy
     ly = -sin0 * dx + cos0 * dy
-    ltheta = _wrap_angle(theta1 - theta0)
+    ltheta = normalize_angle(theta1 - theta0)
 
     # Candidate word types: LSL, RSR, LSR, RSL, LRL, RLR
     candidates: list[list[RSSegment]] = []
@@ -271,8 +269,8 @@ def reeds_shepp_path(
                 return None
             straight_len = d  # simplified
             ang1 = float(np.arctan2(ddy, ddx))
-            arc1 = _wrap_angle(ang1 - np.pi / 2.0 * s1)
-            arc2 = _wrap_angle(ltheta - arc1)
+            arc1 = normalize_angle(ang1 - np.pi / 2.0 * s1)
+            arc2 = normalize_angle(ltheta - arc1)
         else:
             # Different turn: cross tangent.
             if d < 2.0 * radius:
@@ -282,8 +280,8 @@ def reeds_shepp_path(
                 return None
             straight_len = np.sqrt(max(d**2 - (2.0 * radius) ** 2, 0.0))
             ang1 = float(np.arctan2(ddy, ddx))
-            arc1 = _wrap_angle(ang1 - np.pi / 2.0 * s1)
-            arc2 = _wrap_angle(ltheta - arc1)
+            arc1 = normalize_angle(ang1 - np.pi / 2.0 * s1)
+            arc2 = normalize_angle(ltheta - arc1)
 
         segs = [
             RSSegment(turn1, arc1 * radius * s1),
@@ -471,7 +469,7 @@ class LaneFollower:
 
         # Heading error.
         lane_heading = float(np.arctan2(tangent[1], tangent[0]))
-        heading_error = _wrap_angle(lane_heading - theta)
+        heading_error = normalize_angle(lane_heading - theta)
 
         # Stanley formula.
         cross_term = np.arctan2(

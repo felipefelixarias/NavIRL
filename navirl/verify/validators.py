@@ -12,6 +12,7 @@ import yaml
 from navirl.backends.grid2d.constants import OBSTACLE_SPACE
 from navirl.backends.grid2d.environment import GridEnvironment
 from navirl.backends.grid2d.maps import load_map_info
+from navirl.utils.geometry import normalize_angle
 
 # Security constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB limit for configuration files
@@ -747,12 +748,6 @@ def validate_speed_accel_bounds(
     }
 
 
-def _wrap_angle(rad: float) -> float:
-    while rad > math.pi:
-        rad -= 2.0 * math.pi
-    while rad < -math.pi:
-        rad += 2.0 * math.pi
-    return rad
 
 
 def validate_motion_jitter(
@@ -777,7 +772,7 @@ def validate_motion_jitter(
     for aid, seq in headings.items():
         if len(seq) < 3:
             continue
-        diffs = [_wrap_angle(seq[i + 1] - seq[i]) for i in range(len(seq) - 1)]
+        diffs = [normalize_angle(seq[i + 1] - seq[i]) for i in range(len(seq) - 1)]
         signs = [0 if abs(d) < 1e-3 else (1 if d > 0 else -1) for d in diffs]
         signs = [s for s in signs if s != 0]
         if len(signs) < 2:
