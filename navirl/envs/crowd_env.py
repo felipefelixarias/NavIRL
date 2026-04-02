@@ -26,11 +26,12 @@ except ImportError as _exc:
         "Install it with:  pip install gymnasium"
     ) from _exc
 
-from navirl.core.constants import (
-    LOS,
-    PROXEMICS,
-)
-from navirl.envs.base_env import NavEnv, NavEnvConfig
+import logging  # noqa: E402
+
+from navirl.core.constants import LOS, PROXEMICS  # noqa: E402
+from navirl.envs.base_env import NavEnv, NavEnvConfig  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 #  Configuration
@@ -235,8 +236,8 @@ class CrowdNavEnv(NavEnv):
                 ppm = meta.get("pixels_per_meter", 10.0)
                 self._walkable_area = max(1.0, free_pixels / (ppm * ppm))
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to calculate walkable area from map: {e}")
         self._walkable_area = self.config.world_width * self.config.world_height
 
     def _local_density(self, x: float, y: float, radius: float = 3.0) -> float:
