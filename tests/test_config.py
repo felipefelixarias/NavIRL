@@ -209,7 +209,7 @@ class TestSerialization:
     def test_explicit_format(self, tmp_path):
         config = {"a": 1}
         path = tmp_path / "cfg_no_ext"
-        save_config(config, path, format="json")
+        save_config(config, path, file_format="json")
         load_config(Path(str(path)))
         # May need the correct extension for load_config
         # If it fails, that's expected behavior
