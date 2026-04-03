@@ -16,7 +16,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from navirl.core.constants import COMFORT_LIMITS, DEFAULT_BOOTSTRAP_SAMPLES, DEFAULT_CONFIDENCE_LEVEL
+from navirl.core.constants import (
+    COMFORT_LIMITS,
+    DEFAULT_BOOTSTRAP_SAMPLES,
+    DEFAULT_CONFIDENCE_LEVEL,
+)
 from navirl.data.trajectory import Trajectory
 
 # ---------------------------------------------------------------------------
