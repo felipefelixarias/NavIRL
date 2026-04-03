@@ -240,7 +240,6 @@ class ActionNode(Node):
     """Base for leaf nodes that produce motor commands."""
 
 
-
 class GoToGoal(ActionNode):
     """Steer toward the agent's goal at preferred speed."""
 

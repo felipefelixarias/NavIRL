@@ -530,10 +530,10 @@ class PhysicsEngine:
             r = state.radius
             # Handle X boundaries
             self._resolve_single_boundary_collision(state, 0, x_min + r, -1)  # left wall
-            self._resolve_single_boundary_collision(state, 0, x_max - r, 1)   # right wall
+            self._resolve_single_boundary_collision(state, 0, x_max - r, 1)  # right wall
             # Handle Y boundaries
             self._resolve_single_boundary_collision(state, 1, y_min + r, -1)  # bottom wall
-            self._resolve_single_boundary_collision(state, 1, y_max - r, 1)   # top wall
+            self._resolve_single_boundary_collision(state, 1, y_max - r, 1)  # top wall
 
     def _resolve_single_boundary_collision(
         self, state: AgentState, axis: int, boundary_pos: float, penetration_direction: int
