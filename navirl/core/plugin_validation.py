@@ -204,7 +204,9 @@ def validate_plugin_security(plugin_class: type, plugin_name: str) -> None:
                 )
 
 
-def performance_monitor(max_time_s: float = 1.0):
+def performance_monitor(
+    max_time_s: float = 1.0,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator to monitor plugin method performance.
 
@@ -215,9 +217,9 @@ def performance_monitor(max_time_s: float = 1.0):
         Decorated function with performance monitoring
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             start_time = time.perf_counter()
             try:
                 result = func(*args, **kwargs)

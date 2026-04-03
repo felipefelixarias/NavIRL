@@ -240,7 +240,7 @@ class Grid2DBackend(SceneBackend):
         rc = self.env._world_to_map(np.array(position, dtype=float))
         return int(rc[0]), int(rc[1])
 
-    def map_image(self):
+    def map_image(self) -> np.ndarray:
         return self.binary_map
 
     def map_metadata(self) -> dict:
