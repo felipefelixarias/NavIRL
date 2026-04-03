@@ -215,12 +215,26 @@ class PhysicsEngine:
         """Compute all forces acting on agents."""
         forces: dict[int, np.ndarray] = {aid: np.zeros(2) for aid in agents}
 
-        # Damping forces
+        self._compute_damping_forces(agents, forces)
+        self._compute_friction_forces(agents, forces)
+        self._compute_agent_repulsion_forces(agents, forces)
+        self._compute_obstacle_repulsion_forces(agents, forces)
+        self._compute_boundary_forces(agents, forces)
+
+        return forces
+
+    def _compute_damping_forces(
+        self, agents: dict[int, AgentState], forces: dict[int, np.ndarray]
+    ) -> None:
+        """Apply damping forces to slow down agents."""
         if self.config.damping > 0:
             for aid, state in agents.items():
                 forces[aid] -= self.config.damping * state.velocity * state.mass
 
-        # Friction forces
+    def _compute_friction_forces(
+        self, agents: dict[int, AgentState], forces: dict[int, np.ndarray]
+    ) -> None:
+        """Apply friction forces opposing motion."""
         if self.config.friction_coefficient > 0:
             for aid, state in agents.items():
                 speed = state.speed
@@ -228,7 +242,10 @@ class PhysicsEngine:
                     friction = -self.config.friction_coefficient * state.mass * 9.81
                     forces[aid] += friction * state.velocity / speed
 
-        # Agent-agent repulsion
+    def _compute_agent_repulsion_forces(
+        self, agents: dict[int, AgentState], forces: dict[int, np.ndarray]
+    ) -> None:
+        """Apply repulsion forces between colliding agents."""
         agent_list = list(agents.items())
         self._collision_pairs.clear()
         for i in range(len(agent_list)):
@@ -248,7 +265,10 @@ class PhysicsEngine:
                     forces[aid_i] += force_mag * direction
                     forces[aid_j] -= force_mag * direction
 
-        # Obstacle repulsion
+    def _compute_obstacle_repulsion_forces(
+        self, agents: dict[int, AgentState], forces: dict[int, np.ndarray]
+    ) -> None:
+        """Apply repulsion forces from obstacles."""
         for aid, state in agents.items():
             for obs in self.obstacles.get_all_obstacles():
                 dist = obs.distance_to_point(state.position)
@@ -258,7 +278,10 @@ class PhysicsEngine:
                     overlap = threshold - dist
                     forces[aid] += self.config.collision_force_magnitude * overlap * normal
 
-        # Boundary forces
+    def _compute_boundary_forces(
+        self, agents: dict[int, AgentState], forces: dict[int, np.ndarray]
+    ) -> None:
+        """Apply forces to keep agents within world boundaries."""
         if self.world_bounds is not None:
             x_min, y_min, x_max, y_max = self.world_bounds
             for aid, state in agents.items():
@@ -274,8 +297,6 @@ class PhysicsEngine:
                     forces[aid][1] += bf * (y_min - pos[1] + r)
                 if pos[1] + r > y_max:
                     forces[aid][1] -= bf * (pos[1] + r - y_max)
-
-        return forces
 
     def _integrate_euler(
         self,
@@ -507,27 +528,39 @@ class PhysicsEngine:
 
         for state in agents.values():
             r = state.radius
-            e = self.config.restitution
+            # Handle X boundaries
+            self._resolve_single_boundary_collision(state, 0, x_min + r, -1)  # left wall
+            self._resolve_single_boundary_collision(state, 0, x_max - r, 1)  # right wall
+            # Handle Y boundaries
+            self._resolve_single_boundary_collision(state, 1, y_min + r, -1)  # bottom wall
+            self._resolve_single_boundary_collision(state, 1, y_max - r, 1)  # top wall
 
-            if state.position[0] - r < x_min:
-                state.position[0] = x_min + r
-                if state.velocity[0] < 0:
-                    state.velocity[0] *= -e
+    def _resolve_single_boundary_collision(
+        self, state: AgentState, axis: int, boundary_pos: float, penetration_direction: int
+    ) -> None:
+        """Resolve collision with a single boundary wall.
 
-            if state.position[0] + r > x_max:
-                state.position[0] = x_max - r
-                if state.velocity[0] > 0:
-                    state.velocity[0] *= -e
-
-            if state.position[1] - r < y_min:
-                state.position[1] = y_min + r
-                if state.velocity[1] < 0:
-                    state.velocity[1] *= -e
-
-            if state.position[1] + r > y_max:
-                state.position[1] = y_max - r
-                if state.velocity[1] > 0:
-                    state.velocity[1] *= -e
+        Parameters
+        ----------
+        state : AgentState
+            The agent state to update
+        axis : int
+            0 for x-axis, 1 for y-axis
+        boundary_pos : float
+            Position of the boundary (already adjusted for agent radius)
+        penetration_direction : int
+            -1 if agent penetrates from negative direction, +1 from positive
+        """
+        if penetration_direction == -1:  # Penetrating from left/bottom
+            if state.position[axis] < boundary_pos:
+                state.position[axis] = boundary_pos
+                if state.velocity[axis] < 0:
+                    state.velocity[axis] *= -self.config.restitution
+        else:  # Penetrating from right/top
+            if state.position[axis] > boundary_pos:
+                state.position[axis] = boundary_pos
+                if state.velocity[axis] > 0:
+                    state.velocity[axis] *= -self.config.restitution
 
     def get_collision_pairs(self) -> list[tuple[int, int]]:
         """Get agent-agent collision pairs from the last step.

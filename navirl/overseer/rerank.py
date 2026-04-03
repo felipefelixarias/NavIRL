@@ -69,7 +69,8 @@ def _rerank_prompt(candidates: list[dict]) -> str:
         "task": "rank_trials_by_visual_realism",
         "instructions": [
             "Return trial indices ordered best to worst for realism.",
-            "Prioritize smooth trajectories, plausible speed, low deadlock/wall sticking, and social realism.",
+            "Prioritize smooth trajectories, plausible speed, "
+            "low deadlock/wall sticking, and social realism.",
             "Return strict JSON only.",
         ],
         "response_schema": RERANK_SCHEMA,

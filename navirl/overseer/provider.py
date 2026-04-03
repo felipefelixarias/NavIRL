@@ -215,7 +215,8 @@ def _run_native_json(
     cmd_template = _resolve_native_command(config)
     if not cmd_template:
         raise ProviderUnavailableError(
-            "No native command configured. Set NAVIRL_VLM_NATIVE_CMD or provider-specific command env var."
+            "No native command configured. Set NAVIRL_VLM_NATIVE_CMD "
+            "or provider-specific command env var."
         )
 
     with tempfile.TemporaryDirectory(prefix="navirl-aegis-native-") as td:
@@ -312,7 +313,8 @@ def _run_openai_compatible_json(
             {
                 "role": "system",
                 "content": (
-                    "You are Aegis Overseer. Return strict JSON only, with no markdown, no prose outside JSON."
+                    "You are Aegis Overseer. Return strict JSON only, "
+                    "with no markdown, no prose outside JSON."
                 ),
             },
             {"role": "user", "content": content},

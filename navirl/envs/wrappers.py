@@ -613,7 +613,8 @@ class CurriculumWrapper(gym.Wrapper):
         if hasattr(self.curriculum_manager, "difficulty"):
             return float(self.curriculum_manager.difficulty)
         raise AttributeError(
-            "curriculum_manager must define get_env_config()['difficulty'] or a difficulty attribute."
+            "curriculum_manager must define get_env_config()['difficulty'] "
+            "or a difficulty attribute."
         )
 
 

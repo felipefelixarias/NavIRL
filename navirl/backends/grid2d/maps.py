@@ -150,7 +150,8 @@ def _resolve_scale(
     if ppm_raw is None and mpp_raw is None:
         if require_explicit:
             raise ValueError(
-                "scene.map.pixels_per_meter or scene.map.meters_per_pixel is required for source=path"
+                "scene.map.pixels_per_meter or scene.map.meters_per_pixel is required "
+                "for source=path"
             )
         ppm = float(default_pixels_per_meter)
         explicit = False

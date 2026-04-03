@@ -134,7 +134,7 @@ class CostmapManager:
         """
         self._master[:] = FREE_SPACE
 
-        for _name, layer in self._layers.items():
+        for layer in self._layers.values():
             layer.update(**kwargs)
             grid = layer.grid
             # Take element-wise maximum (most conservative cost)

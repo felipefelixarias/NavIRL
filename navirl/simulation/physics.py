@@ -599,7 +599,7 @@ class SimplePhysics:
             edata["orientation"] = new_state.orientation
 
         # --- 2. Wall constraints ---
-        for _eid, edata in world.entities.items():
+        for edata in world.entities.values():
             if not edata.get("active", True):
                 continue
             for wc in self._wall_constraints:
