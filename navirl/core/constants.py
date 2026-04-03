@@ -570,6 +570,23 @@ STEP_LENGTH_MEAN: Final[float] = 0.70  # m
 STEP_CADENCE_MEAN: Final[float] = 1.9  # steps/s
 
 # ---------------------------------------------------------------------------
+#  Navigation metrics constants
+# ---------------------------------------------------------------------------
+
+# Distance and proximity thresholds
+INTRUSION_DISTANCE_THRESHOLD: Final[float] = 0.45  # m - personal space intrusion threshold
+GOAL_TOLERANCE: Final[float] = 0.2  # m - distance to consider goal reached
+
+# Deadlock detection parameters
+DEADLOCK_TIMEOUT_SECONDS: Final[float] = 4.0  # s - time window for deadlock detection
+DEADLOCK_SPEED_THRESHOLD: Final[float] = (
+    0.015  # m/s - speed below which agent is considered stopped
+)
+
+# Angle computation thresholds
+ANGLE_EPSILON: Final[float] = 1e-4  # rad - threshold for near-zero angle differences
+
+# ---------------------------------------------------------------------------
 #  Aggregate export
 # ---------------------------------------------------------------------------
 
@@ -652,4 +669,10 @@ __all__ = [
     "FUNDAMENTAL_DIAGRAM_RHO_MAX",
     "STEP_LENGTH_MEAN",
     "STEP_CADENCE_MEAN",
+    # Navigation metrics
+    "INTRUSION_DISTANCE_THRESHOLD",
+    "GOAL_TOLERANCE",
+    "DEADLOCK_TIMEOUT_SECONDS",
+    "DEADLOCK_SPEED_THRESHOLD",
+    "ANGLE_EPSILON",
 ]

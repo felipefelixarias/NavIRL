@@ -116,7 +116,13 @@ def social_force_integral(
         for ped in pedestrian_trajectories:
             if len(ped) == 0:
                 continue
-            p_idx = int(np.argmin(np.abs(ped.timestamps - ts)))
+            # Use binary search instead of linear search for O(log m) vs O(m) performance
+            p_idx = np.searchsorted(ped.timestamps, ts)
+            # Handle edge case: if ts is beyond the last timestamp
+            p_idx = min(p_idx, len(ped.timestamps) - 1)
+            # Check if previous timestamp is closer
+            if p_idx > 0 and abs(ped.timestamps[p_idx - 1] - ts) < abs(ped.timestamps[p_idx] - ts):
+                p_idx = p_idx - 1
             ped_pos = ped.positions[p_idx]
             dist = float(np.linalg.norm(ego_pos - ped_pos))
             if dist > 0:
@@ -151,7 +157,13 @@ def personal_space_violations(
         for ped in pedestrians:
             if len(ped) == 0:
                 continue
-            p_idx = int(np.argmin(np.abs(ped.timestamps - ts)))
+            # Use binary search instead of linear search for O(log m) vs O(m) performance
+            p_idx = np.searchsorted(ped.timestamps, ts)
+            # Handle edge case: if ts is beyond the last timestamp
+            p_idx = min(p_idx, len(ped.timestamps) - 1)
+            # Check if previous timestamp is closer
+            if p_idx > 0 and abs(ped.timestamps[p_idx - 1] - ts) < abs(ped.timestamps[p_idx] - ts):
+                p_idx = p_idx - 1
             dist = float(np.linalg.norm(ego_pos - ped.positions[p_idx]))
             if dist < threshold:
                 violations += 1
@@ -181,7 +193,13 @@ def minimum_separation_distance(
         for ped in pedestrians:
             if len(ped) == 0:
                 continue
-            p_idx = int(np.argmin(np.abs(ped.timestamps - ts)))
+            # Use binary search instead of linear search for O(log m) vs O(m) performance
+            p_idx = np.searchsorted(ped.timestamps, ts)
+            # Handle edge case: if ts is beyond the last timestamp
+            p_idx = min(p_idx, len(ped.timestamps) - 1)
+            # Check if previous timestamp is closer
+            if p_idx > 0 and abs(ped.timestamps[p_idx - 1] - ts) < abs(ped.timestamps[p_idx] - ts):
+                p_idx = p_idx - 1
             dist = float(np.linalg.norm(ego_pos - ped.positions[p_idx]))
             if dist < min_dist:
                 min_dist = dist

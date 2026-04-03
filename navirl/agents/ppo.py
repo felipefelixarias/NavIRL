@@ -323,9 +323,7 @@ class PPOAgent(BaseAgent):
 
         # --- Determine action space type ---
         self._continuous = hasattr(action_space, "shape") and len(action_space.shape) > 0
-        action_dim = (
-            int(np.prod(action_space.shape)) if self._continuous else int(action_space.n)
-        )
+        action_dim = int(np.prod(action_space.shape)) if self._continuous else int(action_space.n)
 
         # --- Observation normalization ---
         self._obs_rms: RunningMeanStd | None = None
