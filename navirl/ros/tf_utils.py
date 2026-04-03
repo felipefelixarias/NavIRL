@@ -250,7 +250,6 @@ class TransformManager:
 # ---------------------------------------------------------------------------
 
 
-
 def _invert_2d(x: float, y: float, yaw: float) -> tuple[float, float]:
     """Invert a 2-D rigid transform ``(x, y, yaw)``."""
     c, s = math.cos(yaw), math.sin(yaw)

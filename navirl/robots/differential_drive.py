@@ -147,7 +147,6 @@ class PIDController:
 # -----------------------------------------------------------------------
 
 
-
 def compute_icc(
     x: float,
     y: float,
