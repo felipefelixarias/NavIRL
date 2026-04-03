@@ -126,18 +126,20 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
     try:
         path = pathlib.Path(path)
 
-        # Validate file exists and is readable
-        if not path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {path}")
-        if not path.is_file():
-            raise ValueError(f"Path is not a file: {path}")
+        # Resolve path (may add extension) before existence check
+        resolved_path = _resolve_existing_path(path)
 
-        path = _resolve_existing_path(path)
-        fmt = _resolve_format(path, None)
+        # Validate file exists and is readable after path resolution
+        if not resolved_path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {resolved_path}")
+        if not resolved_path.is_file():
+            raise ValueError(f"Path is not a file: {resolved_path}")
+
+        fmt = _resolve_format(resolved_path, None)
 
         if fmt == "json":
             try:
-                with open(path, encoding="utf-8") as fh:
+                with open(resolved_path, encoding="utf-8") as fh:
                     config = json.load(fh)
                     if not isinstance(config, dict):
                         raise ValueError(
@@ -145,14 +147,14 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
                         )
                     return config
             except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON in {path}: {e}") from e
+                raise ValueError(f"Invalid JSON in {resolved_path}: {e}") from e
             except OSError as e:
-                raise OSError(f"Cannot read JSON file {path}: {e}") from e
+                raise OSError(f"Cannot read JSON file {resolved_path}: {e}") from e
 
         elif fmt == "yaml":
             try:
                 yaml = _import_yaml()
-                with open(path, encoding="utf-8") as fh:
+                with open(resolved_path, encoding="utf-8") as fh:
                     config = yaml.safe_load(fh)
                     if config is None:
                         return {}
@@ -164,13 +166,13 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
             except Exception as e:
                 # YAML errors can be various types depending on the implementation
                 if "yaml" in str(e).lower() or "parse" in str(e).lower():
-                    raise ValueError(f"Invalid YAML in {path}: {e}") from e
-                raise OSError(f"Cannot read YAML file {path}: {e}") from e
+                    raise ValueError(f"Invalid YAML in {resolved_path}: {e}") from e
+                raise OSError(f"Cannot read YAML file {resolved_path}: {e}") from e
 
         elif fmt == "toml":
             try:
                 toml_mod = _import_toml_read()
-                with open(path, "rb") as fh:
+                with open(resolved_path, "rb") as fh:
                     config = toml_mod(fh)
                     if not isinstance(config, dict):
                         raise ValueError(
@@ -179,11 +181,11 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
                     return config
             except Exception as e:
                 if "toml" in str(e).lower() or "parse" in str(e).lower():
-                    raise ValueError(f"Invalid TOML in {path}: {e}") from e
-                raise OSError(f"Cannot read TOML file {path}: {e}") from e
+                    raise ValueError(f"Invalid TOML in {resolved_path}: {e}") from e
+                raise OSError(f"Cannot read TOML file {resolved_path}: {e}") from e
 
         else:
-            raise ValueError(f"Cannot infer format from extension: '{path.suffix}'")
+            raise ValueError(f"Cannot infer format from extension: '{resolved_path.suffix}'")
 
     except Exception as e:
         # Re-raise known exceptions as-is
