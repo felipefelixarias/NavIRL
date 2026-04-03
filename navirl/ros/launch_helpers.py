@@ -135,6 +135,8 @@ def create_param_file(
 
         fd, path = tempfile.mkstemp(prefix="navirl_params_", suffix=".yaml")
         os.close(fd)
+        # Set restrictive permissions for security (owner read/write only)
+        os.chmod(path, 0o600)
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
