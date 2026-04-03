@@ -233,6 +233,51 @@ def _write_report(
     thresholds: dict,
     verify_root: Path,
 ) -> None:
+    """Generate comprehensive verification report with prioritized failure analysis.
+
+    Creates a detailed markdown report that includes executive summary, configuration
+    details, scenario results table, and in-depth failure analysis. The report is
+    structured to help developers quickly identify and prioritize fixes.
+
+    This function has high complexity (33) because it handles multiple output sections,
+    failure categorization, priority sorting, and detailed diagnostic formatting.
+
+    Args:
+        report_path: Output path for the generated markdown report.
+        suite: Name of the verification suite being reported (e.g., "smoke", "full").
+        pytest_ok: Whether the pytest phase passed without errors.
+        pytest_out: Raw output from pytest execution for debugging context.
+        rows: List of VerifyResult objects containing scenario verification outcomes.
+            Each row contains pass/fail status, confidence scores, and diagnostic data.
+        thresholds: Dictionary of configuration thresholds used during verification.
+            Used to document the verification criteria in the report.
+        verify_root: Root directory of the verification system for relative path resolution.
+
+    Report Structure:
+        1. **Executive Summary**: Pass/fail counts, pytest status, overall health metrics
+        2. **Configuration Section**: Suite name, threshold values, verification criteria
+        3. **Scenario Results Table**: Tabular view of all scenarios with key metrics
+        4. **Failure Analysis**: Prioritized breakdown of failed scenarios:
+           - 🔴 Critical: Invariant violations (core functionality broken)
+           - 🟡 Visual: Visual judge failures (behavior concerns)
+           - 🟠 Review: Needs human evaluation (edge cases)
+
+    Failure Analysis Features:
+        - **Priority-based ordering**: Critical failures first, then visual, then review needed
+        - **Enhanced categorization**: Multiple failure types per scenario with impact assessment
+        - **Detailed invariant analysis**: Failed check breakdown with severity classification
+        - **Diagnostic context**: Bundle paths, confidence scores, evidence details
+        - **Actionable guidance**: Specific recommendations and fix strategies
+
+    Output:
+        Creates a markdown file at report_path with full diagnostic information.
+        The report includes embedded links to bundle directories and artifact paths
+        for easy debugging workflow.
+
+    Note:
+        Future improvements could extract the failure analysis section into smaller
+        functions for better maintainability, as noted in the inline comment.
+    """
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
     stats = _calculate_verification_stats(rows)

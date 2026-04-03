@@ -76,6 +76,54 @@ def _heuristic_judge(
     confidence_threshold: float,
     require_video: bool,
 ) -> dict:
+    """Perform comprehensive quality assessment of simulation scenarios using heuristic rules.
+
+    This function implements a multi-criteria evaluation system that checks simulation
+    scenarios against various quality and safety thresholds. It analyzes invariant
+    violations, collision metrics, progress indicators, and infrastructure requirements
+    to determine scenario validity.
+
+    The function uses different thresholds based on whether high interaction is expected,
+    allowing for more lenient collision and intrusion rates in crowded scenarios while
+    maintaining strict safety requirements.
+
+    Args:
+        summary: Simulation summary containing metrics, checks, and metadata.
+            Expected keys include 'invariants', 'metrics', 'map', 'frame_count',
+            'has_video', 'expected_high_interaction', and 'bundle_dir'.
+        frame_paths: List of paths to frame files for visual validation.
+            Currently used for frame count validation (minimum 20 frames required).
+        confidence_threshold: Minimum confidence level for judge decisions (0.0-1.0).
+            Used to determine when human review is needed vs automatic pass/fail.
+        require_video: Whether video artifacts are mandatory for this judge mode.
+            When True, scenarios without video will be marked as blockers.
+
+    Returns:
+        Dictionary containing judge decision with the following structure:
+        {
+            'violations': List of violation dictionaries with 'type', 'evidence', and 'severity',
+            'status': One of 'pass', 'fail', or 'needs_human_review',
+            'confidence': Float between 0.0 and 1.0,
+            'details': Additional diagnostic information
+        }
+
+    Validation Rules:
+        - **Blocker violations**: Failed invariant checks, <20 frames, missing video (if required),
+          missing/invalid map units, obstacle collisions, deadlocks, excessive agent collisions,
+          extreme intrusion rates
+        - **Major violations**: Near-limit agent stop duration, near-limit wall proximity,
+          moderate collision/intrusion rates, insufficient robot progress
+        - **Minor violations**: Low-level collision or intrusion concerns
+
+    Threshold Adjustments:
+        - **High interaction scenarios**: More lenient collision (1.45→1.8) and intrusion (0.92→0.98) thresholds
+        - **Standard scenarios**: Stricter collision (1.0→1.3) and intrusion (0.72→0.9) thresholds
+
+    Note:
+        This function has high cyclomatic complexity (41) due to the comprehensive
+        rule set. Consider refactoring into smaller validation functions if adding
+        more rules.
+    """
     inv = summary.get("invariants", {})
     checks = inv.get("checks", [])
     checks_by_name = {str(c.get("name", "")): c for c in checks if isinstance(c, dict)}
