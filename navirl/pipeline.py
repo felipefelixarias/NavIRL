@@ -661,8 +661,9 @@ def run_scenario_dict(
         )
     if deadlock_count > 0 and fail_on_deadlock:
         raise ValueError(
-            f"Deadlock remained after retry budget ({retry_max_attempts}) for scenario '{scenario_id}'. "
-            "Resample starts/goals, increase traversability offset budget, or reduce agent radius."
+            f"Deadlock remained after retry budget ({retry_max_attempts}) for "
+            f"scenario '{scenario_id}'. Resample starts/goals, increase traversability "
+            "offset budget, or reduce agent radius."
         )
 
     # Finalized attempt; keep only trace metadata and clear retry counter.

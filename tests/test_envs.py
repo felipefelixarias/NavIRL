@@ -210,7 +210,8 @@ class TestRewardShaping:
     def test_reward_shaping(self, mock_env):
         from navirl.envs.wrappers import RewardShaping
 
-        # Shaping function returns additional reward (original + additional = 2.0, so additional = 1.0)
+        # Shaping function returns additional reward
+        # (original + additional = 2.0, so additional = 1.0)
         wrapped = RewardShaping(
             mock_env, shaping_fn=lambda obs, action, reward, terminated, truncated, info: 1.0
         )

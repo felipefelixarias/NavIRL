@@ -715,9 +715,9 @@ class JSONLLogger(BaseFileLogger):
         entries = []
         with self._path.open("r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if line:
-                    entries.append(json.loads(line))
+                stripped_line = line.strip()
+                if stripped_line:
+                    entries.append(json.loads(stripped_line))
         return entries
 
     def iter_entries(self) -> Generator[dict[str, Any], None, None]:
@@ -731,9 +731,9 @@ class JSONLLogger(BaseFileLogger):
             return
         with self._path.open("r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if line:
-                    yield json.loads(line)
+                stripped_line = line.strip()
+                if stripped_line:
+                    yield json.loads(stripped_line)
 
 
 # ---------------------------------------------------------------------------

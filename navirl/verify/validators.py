@@ -31,12 +31,12 @@ def load_state_rows(state_path: Path) -> list[dict]:
     rows = []
     with state_path.open("r", encoding="utf-8") as f:
         for line in f:
-            line = line.strip()
-            if line:
+            stripped_line = line.strip()
+            if stripped_line:
                 # Check line size before parsing
-                if len(line.encode("utf-8")) > MAX_LINE_SIZE:
+                if len(stripped_line.encode("utf-8")) > MAX_LINE_SIZE:
                     raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE / 1024:.1f}KB)")
-                rows.append(json.loads(line))
+                rows.append(json.loads(stripped_line))
     if not rows:
         raise ValueError(f"No rows found in {state_path}")
     return rows
@@ -55,12 +55,12 @@ def load_events(events_path: Path) -> list[dict]:
     out = []
     with events_path.open("r", encoding="utf-8") as f:
         for line in f:
-            line = line.strip()
-            if line:
+            stripped_line = line.strip()
+            if stripped_line:
                 # Check line size before parsing
-                if len(line.encode("utf-8")) > MAX_LINE_SIZE:
+                if len(stripped_line.encode("utf-8")) > MAX_LINE_SIZE:
                     raise ValueError(f"JSON line too large (>{MAX_LINE_SIZE / 1024:.1f}KB)")
-                out.append(json.loads(line))
+                out.append(json.loads(stripped_line))
     return out
 
 
@@ -249,7 +249,8 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
                 }
             )
             suggestions.append(
-                f"Agent {aid}: reduce radius below {radius:.3f}m or move start/goal to a wider room."
+                f"Agent {aid}: reduce radius below {radius:.3f}m or move start/goal to "
+                f"a wider room."
             )
             continue
 
@@ -287,7 +288,8 @@ def validate_scenario_feasibility(bundle_dir: Path, max_adjust_m: float = 0.6) -
                 }
             )
             suggestions.append(
-                f"Agent {aid}: no clearance-feasible path at radius {radius:.3f}m. Reduce radius or change start/goal."
+                f"Agent {aid}: no clearance-feasible path at radius {radius:.3f}m. "
+                f"Reduce radius or change start/goal."
             )
             continue
 

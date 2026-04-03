@@ -256,6 +256,7 @@ def _run_native_json(
                 capture_output=True,
                 text=True,
                 timeout=max(1.0, float(config.timeout_s)),
+                check=False,
             )
         except subprocess.TimeoutExpired as exc:
             raise ProviderCallError(

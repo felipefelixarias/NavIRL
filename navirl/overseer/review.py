@@ -158,7 +158,8 @@ def build_aegis_findings(bundle_dir: Path, summary: dict) -> list[dict]:
                     "type": "unnatural_jitter",
                     "severity": sev,
                     "evidence": f"worst_flip_rate={worst:.3f}, limit={max_flip:.3f}",
-                    "recommendation": "Increase velocity smoothing and reduce aggressive neighbor response.",
+                    "recommendation": "Increase velocity smoothing and reduce aggressive "
+                    "neighbor response.",
                 }
             )
 
@@ -175,7 +176,8 @@ def build_aegis_findings(bundle_dir: Path, summary: dict) -> list[dict]:
                     "type": "near_wall_or_goal_stall",
                     "severity": "major",
                     "evidence": f"longest_stop={longest:.2f}s, limit={lim:.2f}s",
-                    "recommendation": "Inspect bottlenecks and resample starts/goals to reduce prolonged stalls.",
+                    "recommendation": "Inspect bottlenecks and resample starts/goals to "
+                    "reduce prolonged stalls.",
                 }
             )
 
@@ -189,7 +191,8 @@ def build_aegis_findings(bundle_dir: Path, summary: dict) -> list[dict]:
                     "type": "excess_wall_hugging",
                     "severity": "major",
                     "evidence": f"near_wall_fraction={frac:.3f}, limit={lim:.3f}",
-                    "recommendation": "Increase wall clearance and traversability offset for narrow corridors.",
+                    "recommendation": "Increase wall clearance and traversability offset "
+                    "for narrow corridors.",
                 }
             )
 
@@ -238,7 +241,8 @@ def build_aegis_findings(bundle_dir: Path, summary: dict) -> list[dict]:
                 "type": "robot_scale_implausible",
                 "severity": "blocker",
                 "evidence": f"robot_radius={robot_radius:.3f}m on min_map_dim={min_dim:.3f}m",
-                "recommendation": "Fix map units (pixels_per_meter/meters_per_pixel) or robot radius.",
+                "recommendation": "Fix map units (pixels_per_meter/meters_per_pixel) or "
+                "robot radius.",
             }
         )
 
@@ -321,7 +325,8 @@ def _review_prompt(
         "frame_paths": frame_paths,
         "instructions": [
             "Assess realism like a human simulation overseer.",
-            "Focus on visible bugs: wall sticking, jitter, scale mismatch, unrealistic speed, unnatural trajectories.",
+            "Focus on visible bugs: wall sticking, jitter, scale mismatch, "
+            "unrealistic speed, unnatural trajectories.",
             "Return strict JSON only.",
         ],
         "response_schema": AEGIS_REVIEW_SCHEMA,
