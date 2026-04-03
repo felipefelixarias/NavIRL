@@ -93,10 +93,9 @@ class A2CAgent(BaseAgent):
 
         # --- Determine action space type ---
         self._continuous = hasattr(action_space, "shape") and len(action_space.shape) > 0
-        if self._continuous:
-            action_dim = int(np.prod(action_space.shape))
-        else:
-            action_dim = int(action_space.n)  # Discrete
+        action_dim = (
+            int(np.prod(action_space.shape)) if self._continuous else int(action_space.n)
+        )
 
         # --- Shared feature extractor ---
         self._feature_extractor = MLP(
@@ -240,10 +239,7 @@ class A2CAgent(BaseAgent):
             else:
                 logits = self._policy_head(features)
                 dist = torch.distributions.Categorical(logits=logits)
-                if deterministic:
-                    action_tensor = logits.argmax(dim=-1)
-                else:
-                    action_tensor = dist.sample()
+                action_tensor = logits.argmax(dim=-1) if deterministic else dist.sample()
                 log_prob = dist.log_prob(action_tensor)
 
         action = self._to_numpy(action_tensor.squeeze(0))
