@@ -748,8 +748,6 @@ def validate_speed_accel_bounds(
     }
 
 
-
-
 def validate_motion_jitter(
     state_path: Path,
     *,

@@ -59,8 +59,6 @@ class AckermannConfig:
 # -----------------------------------------------------------------------
 
 
-
-
 def bicycle_forward(
     x: float,
     y: float,
