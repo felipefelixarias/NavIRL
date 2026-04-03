@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import functools
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -441,7 +441,19 @@ class rate_limiter:
     def __init__(self, max_calls: int, window: float) -> None:
         self.max_calls = max_calls
         self.window = window
-        self._call_times: list[float] = []
+        # Use deque for O(1) operations at both ends
+        self._call_times: deque[float] = deque()
+
+    def _prune_expired(self, now: float) -> None:
+        """Remove expired entries from the front of the deque.
+
+        This is more efficient than list comprehension as it only removes
+        elements from the front until we hit a non-expired entry.
+        """
+        cutoff = now - self.window
+        # Remove expired entries from front (O(k) where k = expired entries)
+        while self._call_times and self._call_times[0] <= cutoff:
+            self._call_times.popleft()
 
     def allow(self) -> bool:
         """Check if a call is allowed and record it if so.
@@ -452,13 +464,10 @@ class rate_limiter:
             True if the call is allowed.
         """
         now = time.perf_counter()
-        cutoff = now - self.window
-
-        # Remove expired entries
-        self._call_times = [t for t in self._call_times if t > cutoff]
+        self._prune_expired(now)
 
         if len(self._call_times) < self.max_calls:
-            self._call_times.append(now)
+            self._call_times.append(now)  # O(1) append to deque
             return True
         return False
 
@@ -471,12 +480,12 @@ class rate_limiter:
             Seconds to wait (0.0 if a call is allowed now).
         """
         now = time.perf_counter()
-        cutoff = now - self.window
-        self._call_times = [t for t in self._call_times if t > cutoff]
+        self._prune_expired(now)
 
         if len(self._call_times) < self.max_calls:
             return 0.0
 
+        # After pruning, the first entry is the oldest valid call
         oldest = self._call_times[0]
         return max(0.0, oldest + self.window - now)
 
@@ -488,9 +497,8 @@ class rate_limiter:
     def remaining(self) -> int:
         """Number of remaining calls allowed in current window."""
         now = time.perf_counter()
-        cutoff = now - self.window
-        active = sum(1 for t in self._call_times if t > cutoff)
-        return max(0, self.max_calls - active)
+        self._prune_expired(now)
+        return max(0, self.max_calls - len(self._call_times))
 
 
 # ---------------------------------------------------------------------------
