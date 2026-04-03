@@ -211,7 +211,6 @@ class PRMRobotController(RobotController):
         goal_node = self.roadmap_nodes[goal_idx]
 
         if self._is_edge_valid(start_pos, start_node) and self._is_edge_valid(goal_node, goal_pos):
-
             # Search through roadmap
             node_path = self._dijkstra_search(start_idx, goal_idx)
 

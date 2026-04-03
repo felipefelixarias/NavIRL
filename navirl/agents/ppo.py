@@ -828,11 +828,9 @@ class PPOAgent(BaseAgent):
 
     def on_rollout_start(self) -> None:
         """Reset any per-rollout state."""
-        pass
 
     def on_rollout_end(self) -> None:
         """Called after rollout collection finishes."""
-        pass
 
     # ------------------------------------------------------------------
     # Persistence
