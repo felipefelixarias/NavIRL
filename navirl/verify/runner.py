@@ -368,7 +368,9 @@ def _write_report(
                         else (
                             "Low"
                             if row.judge_confidence < 0.6
-                            else "Moderate" if row.judge_confidence < 0.8 else "High"
+                            else "Moderate"
+                            if row.judge_confidence < 0.8
+                            else "High"
                         )
                     )
 

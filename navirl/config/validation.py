@@ -168,8 +168,7 @@ class SchemaBuilder:
 
             # Required if no default.
             has_default = (
-                f.default is not dataclasses.MISSING
-                or f.default_factory is not dataclasses.MISSING  # type: ignore[misc]
+                f.default is not dataclasses.MISSING or f.default_factory is not dataclasses.MISSING  # type: ignore[misc]
             )
             entry["required"] = not has_default
 

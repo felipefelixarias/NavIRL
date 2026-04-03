@@ -406,53 +406,41 @@ class BaseAgent(abc.ABC):
 
     def on_training_start(self) -> None:  # noqa: B027
         """Called once before the very first environment step."""
-        pass
 
     def on_training_end(self) -> None:  # noqa: B027
         """Called after training is complete."""
-        pass
 
     def on_epoch_start(self, epoch: int) -> None:  # noqa: B027
         """Called at the beginning of each training epoch."""
-        pass
 
     def on_epoch_end(self, epoch: int, metrics: dict[str, float]) -> None:  # noqa: B027
         """Called at the end of each training epoch."""
-        pass
 
     def on_step_start(self, step: int) -> None:  # noqa: B027
         """Called before each environment step."""
-        pass
 
     def on_step_end(
         self, step: int, reward: float, done: bool, info: dict[str, Any]
     ) -> None:  # noqa: B027
         """Called after each environment step."""
-        pass
 
     def on_episode_start(self, episode: int) -> None:  # noqa: B027
         """Called at the start of each episode."""
-        pass
 
     def on_episode_end(self, episode: int, total_reward: float, length: int) -> None:  # noqa: B027
         """Called at the end of each episode."""
-        pass
 
     def on_rollout_start(self) -> None:  # noqa: B027
         """Called before a rollout collection phase (on-policy agents)."""
-        pass
 
     def on_rollout_end(self) -> None:  # noqa: B027
         """Called after a rollout collection phase."""
-        pass
 
     def on_update_start(self) -> None:  # noqa: B027
         """Called before each gradient update."""
-        pass
 
     def on_update_end(self, metrics: dict[str, float]) -> None:  # noqa: B027
         """Called after each gradient update."""
-        pass
 
     # ------------------------------------------------------------------
     # Train / eval toggle

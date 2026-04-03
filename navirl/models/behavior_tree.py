@@ -239,7 +239,6 @@ class IsObstacleAhead(Condition):
 class ActionNode(Node):
     """Base for leaf nodes that produce motor commands."""
 
-    pass
 
 
 class GoToGoal(ActionNode):

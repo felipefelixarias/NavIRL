@@ -313,6 +313,6 @@ class TestPlannerComparison:
             final_dist = math.sqrt((states[0].x - goal[0]) ** 2 + (states[0].y - goal[1]) ** 2)
             initial_dist = math.sqrt((start[0] - goal[0]) ** 2 + (start[1] - goal[1]) ** 2)
 
-            assert (
-                final_dist < initial_dist
-            ), f"{controller.__class__.__name__} should make progress toward goal"
+            assert final_dist < initial_dist, (
+                f"{controller.__class__.__name__} should make progress toward goal"
+            )
