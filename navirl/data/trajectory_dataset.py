@@ -899,16 +899,16 @@ class TrajectoryDatasetPipeline:
         """
         all_trajs: list[Trajectory] = []
         for p in paths:
-            p = Path(p)
-            ext = p.suffix.lower()
+            path = Path(p)
+            ext = path.suffix.lower()
             if ext in (".csv", ".tsv", ".txt"):
-                all_trajs.extend(_load_csv(p))
+                all_trajs.extend(_load_csv(path))
             elif ext == ".json":
-                all_trajs.extend(_load_json(p))
+                all_trajs.extend(_load_json(path))
             elif ext in (".pb", ".bin", ".proto"):
-                all_trajs.extend(_load_protobuf(p))
+                all_trajs.extend(_load_protobuf(path))
             else:
-                logger.warning("Skipping unsupported file: %s", p)
+                logger.warning("Skipping unsupported file: %s", path)
         self._trajectories = all_trajs
         logger.info("Loaded %d trajectories from %d files", len(all_trajs), len(paths))
         return self

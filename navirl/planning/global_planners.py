@@ -614,11 +614,11 @@ class PRMPlanner(Planner):
             dists = np.linalg.norm(nodes_arr - nodes_arr[i], axis=1)
             neighbours = np.argsort(dists)[1 : self.k_neighbors + 1]
             for j in neighbours:
-                j = int(j)
-                d = float(dists[j])
-                if RRTPlanner._collision_free(nodes_arr[i], nodes_arr[j], obstacles):
-                    adjacency[i].append((j, d))
-                    adjacency[j].append((i, d))
+                j_idx = int(j)
+                d = float(dists[j_idx])
+                if RRTPlanner._collision_free(nodes_arr[i], nodes_arr[j_idx], obstacles):
+                    adjacency[i].append((j_idx, d))
+                    adjacency[j_idx].append((i, d))
 
         # Dijkstra from node 0 (start) to node 1 (goal).
         dist_map: dict[int, float] = {0: 0.0}

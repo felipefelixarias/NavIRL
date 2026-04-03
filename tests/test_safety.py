@@ -1,4 +1,5 @@
-"""Tests for navirl/safety/ module: constraints, shield, risk assessment, monitoring, constrained optimization."""
+"""Tests for navirl/safety/ module: constraints, shield, risk assessment, monitoring,
+constrained optimization."""
 
 from __future__ import annotations
 

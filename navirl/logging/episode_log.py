@@ -820,10 +820,10 @@ class EpisodeLogger:
 
             with self.state_path.open("r", encoding="utf-8") as sf:
                 for line in sf:
-                    line = line.strip()
-                    if not line:
+                    stripped_line = line.strip()
+                    if not stripped_line:
                         continue
-                    row = json.loads(line)
+                    row = json.loads(stripped_line)
                     for agent in row.get("agents", []):
                         csv_row = {
                             "step": row["step"],
@@ -893,9 +893,9 @@ class EpisodeLogger:
         if self.state_path.exists():
             with self.state_path.open("r", encoding="utf-8") as f:
                 for line in f:
-                    line = line.strip()
-                    if line:
-                        states.append(json.loads(line))
+                    stripped_line = line.strip()
+                    if stripped_line:
+                        states.append(json.loads(stripped_line))
 
         data = {
             "episode_id": self.episode_id,
@@ -958,9 +958,9 @@ class EpisodeLogger:
         if self.state_path.exists():
             with self.state_path.open("r", encoding="utf-8") as f:
                 for line in f:
-                    line = line.strip()
-                    if line:
-                        yield json.loads(line)
+                    stripped_line = line.strip()
+                    if stripped_line:
+                        yield json.loads(stripped_line)
 
     def pairwise_distances(self, step: int) -> np.ndarray | None:
         """Compute pairwise distances between all agents at a given step.

@@ -169,12 +169,15 @@ class ETHUCYDataset(TrajectoryDataset):
         rows: list[tuple[float, int, float, float]] = []
         with filepath.open("r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if not line:
+                stripped_line = line.strip()
+                if not stripped_line:
                     continue
-                parts = line.split("\t") if self.delim == "auto" else line.split(self.delim)
+                if self.delim == "auto":
+                    parts = stripped_line.split("\t")
+                else:
+                    parts = stripped_line.split(self.delim)
                 if len(parts) < 4 and self.delim == "auto":
-                    parts = line.split()
+                    parts = stripped_line.split()
                 if len(parts) < 4:
                     continue
                 try:

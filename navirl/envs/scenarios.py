@@ -485,7 +485,7 @@ class ScenarioDifficultyScaler(BaseScenario):
         At ``difficulty=1`` the human count is multiplied by this factor.
     """
 
-    base_scenario: BaseScenario = field(default_factory=lambda: CircleCrossing())
+    base_scenario: BaseScenario = field(default_factory=CircleCrossing)
     difficulty: float = 0.5
     max_humans_multiplier: float = 3.0
 

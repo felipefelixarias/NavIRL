@@ -294,11 +294,11 @@ class BCAgent(BaseAgent):
             epoch_loss = 0.0
             n_batches = 0
             for obs_batch, act_batch in train_loader:
-                obs_batch = obs_batch.to(self._device)
-                act_batch = act_batch.to(self._device)
+                obs_batch_device = obs_batch.to(self._device)
+                act_batch_device = act_batch.to(self._device)
 
-                pred = self._policy(obs_batch)
-                loss = self._compute_loss(pred, act_batch)
+                pred = self._policy(obs_batch_device)
+                loss = self._compute_loss(pred, act_batch_device)
 
                 self._optimizer.zero_grad()
                 loss.backward()
@@ -320,10 +320,10 @@ class BCAgent(BaseAgent):
                 val_batches = 0
                 with torch.no_grad():
                     for obs_batch, act_batch in val_loader:
-                        obs_batch = obs_batch.to(self._device)
-                        act_batch = act_batch.to(self._device)
-                        pred = self._policy(obs_batch)
-                        val_loss_total += self._compute_loss(pred, act_batch).item()
+                        obs_batch_device = obs_batch.to(self._device)
+                        act_batch_device = act_batch.to(self._device)
+                        pred = self._policy(obs_batch_device)
+                        val_loss_total += self._compute_loss(pred, act_batch_device).item()
                         val_batches += 1
                 avg_val_loss = val_loss_total / max(val_batches, 1)
                 self._val_losses.append(avg_val_loss)

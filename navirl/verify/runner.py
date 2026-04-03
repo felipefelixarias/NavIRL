@@ -45,7 +45,9 @@ class VerifyResult:
 
 
 def _run_pytest() -> tuple[bool, str]:
-    proc = subprocess.run([sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True)
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True, check=False
+    )
     out = proc.stdout + "\n" + proc.stderr
     return (proc.returncode == 0), out
 
@@ -221,9 +223,11 @@ def _write_report(
                 "|:---:|---|:---:|---|",
                 f"| 🔴 | **Critical** | {len(critical_failures)} | Invariant violations (core functionality broken) |",
                 f"| 🟡 | **Visual** | {len(visual_issues)} | Visual judge failures (behavior concerns) |",
-                f"| 🟠 | **Review** | {len(needs_review_issues)} | Needs human evaluation (edge cases) |",
+                f"| 🟠 | **Review** | {len(needs_review_issues)} | "
+                f"Needs human evaluation (edge cases) |",
                 "",
-                "*💡 Strategy: Fix critical issues first - they often resolve visual problems too.*",
+                "*💡 Strategy: Fix critical issues first - they often resolve visual "
+                "problems too.*",
                 "",
             ]
         )
@@ -293,7 +297,8 @@ def _write_report(
                         [
                             "#### 📊 Invariant Analysis",
                             "",
-                            f"**{len(failed_checks)}** check(s) failed out of {len(inv.get('checks', []))} total.",
+                            f"**{len(failed_checks)}** check(s) failed out of "
+                            f"{len(inv.get('checks', []))} total.",
                             "",
                         ]
                     )
@@ -410,7 +415,8 @@ def _write_report(
                                 lines.extend(
                                     [
                                         f"- **{viol_type}**",
-                                        f"  - *Observation:* {evidence[:100]}{'...' if len(evidence) > 100 else ''}",
+                                        f"  - *Observation:* {evidence[:100]}"
+                                        f"{'...' if len(evidence) > 100 else ''}",
                                     ]
                                 )
                             lines.append("")
@@ -441,7 +447,8 @@ def _write_report(
                     f"python -m navirl pipeline --scenario {row.scenario_id}",
                     "",
                     "# Debug run with detailed logging",
-                    f"NAVIRL_LOG_LEVEL=DEBUG python -m navirl pipeline --scenario {row.scenario_id} --render",
+                    f"NAVIRL_LOG_LEVEL=DEBUG python -m navirl pipeline --scenario "
+                    f"{row.scenario_id} --render",
                     "",
                     "# Interactive exploration",
                     f"cd {Path(row.bundle_dir).parent}",

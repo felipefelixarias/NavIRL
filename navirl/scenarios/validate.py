@@ -142,7 +142,8 @@ def _validate_scene(scene: dict, errors: list[str]) -> None:
             )
             _require(
                 ppm is not None or mpp is not None,
-                "scene.map.pixels_per_meter or scene.map.meters_per_pixel is required for source=path",
+                "scene.map.pixels_per_meter or scene.map.meters_per_pixel is required "
+                "for source=path",
                 errors,
             )
 

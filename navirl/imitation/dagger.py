@@ -313,14 +313,14 @@ class DAggerAgent(BaseAgent):
             epoch_loss = 0.0
             n_batches = 0
             for obs_batch, act_batch in loader:
-                obs_batch = obs_batch.to(self._device)
-                act_batch = act_batch.to(self._device)
+                obs_batch_device = obs_batch.to(self._device)
+                act_batch_device = act_batch.to(self._device)
 
-                pred = self._policy(obs_batch)
+                pred = self._policy(obs_batch_device)
                 if cfg.action_type == "discrete":
-                    loss = nn.functional.cross_entropy(pred, act_batch.long().squeeze(-1))
+                    loss = nn.functional.cross_entropy(pred, act_batch_device.long().squeeze(-1))
                 else:
-                    loss = nn.functional.mse_loss(pred, act_batch)
+                    loss = nn.functional.mse_loss(pred, act_batch_device)
 
                 self._optimizer.zero_grad()
                 loss.backward()
