@@ -80,4 +80,3 @@ Date: 2026-02-13
 - `python -m navirl verify --suite quick` exits `0`.
 - `python -m navirl verify --suite full` exits `0` if full suite runs locally.
 - Required docs are present and aligned with implemented behavior.
-
