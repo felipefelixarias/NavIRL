@@ -93,9 +93,7 @@ class A2CAgent(BaseAgent):
 
         # --- Determine action space type ---
         self._continuous = hasattr(action_space, "shape") and len(action_space.shape) > 0
-        action_dim = (
-            int(np.prod(action_space.shape)) if self._continuous else int(action_space.n)
-        )
+        action_dim = int(np.prod(action_space.shape)) if self._continuous else int(action_space.n)
 
         # --- Shared feature extractor ---
         self._feature_extractor = MLP(
