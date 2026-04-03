@@ -108,7 +108,9 @@ def compute_social_features(
             # Ensure we don't go out of bounds and check both sides for closest
             if closest_idx >= len(ntraj):
                 closest_idx = len(ntraj) - 1
-            elif closest_idx > 0 and (ts - ntraj.timestamps[closest_idx - 1]) < (ntraj.timestamps[closest_idx] - ts):
+            elif (closest_idx > 0 and
+                  (ts - ntraj.timestamps[closest_idx - 1]) <
+                  (ntraj.timestamps[closest_idx] - ts)):
                 closest_idx -= 1
             n_pos = ntraj.positions[closest_idx]
             n_vel = ntraj.velocities[closest_idx] if ntraj.velocities is not None else np.zeros(2)

@@ -125,7 +125,8 @@ def build_aegis_findings(bundle_dir: Path, summary: dict) -> list[dict]:
                 "type": "human_visible_deadlock",
                 "severity": "blocker",
                 "evidence": f"deadlock_count={deadlock_count}",
-                "recommendation": "Increase retry budget, improve start/goal spacing, or tune ORCA horizons.",
+                "recommendation": "Increase retry budget, improve start/goal spacing, "
+                                  "or tune ORCA horizons.",
             }
         )
 
@@ -136,7 +137,8 @@ def build_aegis_findings(bundle_dir: Path, summary: dict) -> list[dict]:
                 "type": "human_visible_wall_hits",
                 "severity": "blocker",
                 "evidence": f"collisions_agent_obstacle={obstacle_collisions}",
-                "recommendation": "Increase wall clearance buffers and validate map scale/radius assumptions.",
+                "recommendation": "Increase wall clearance buffers and validate "
+                                  "map scale/radius assumptions.",
             }
         )
 
