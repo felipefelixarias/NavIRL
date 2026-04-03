@@ -409,24 +409,99 @@ def run_scenario_dict(
     render_override: bool | None = None,
     video_override: bool | None = None,
 ) -> EpisodeLog:
+    """Execute a scenario from a dictionary configuration.
+
+    Parameters
+    ----------
+    scenario : dict
+        Scenario configuration containing required fields: id, seed, humans, robot, scene, horizon
+    out_root : str | Path
+        Output directory for results
+    run_id : str, optional
+        Unique run identifier, generated if None
+    render_override : bool, optional
+        Override scenario render setting
+    video_override : bool, optional
+        Override scenario video setting
+
+    Returns
+    -------
+    EpisodeLog
+        Simulation results and metrics
+
+    Raises
+    ------
+    ValueError
+        If scenario is missing required fields or has invalid values
+    TypeError
+        If scenario is not a dictionary
+    """
+    # Validate input parameters
+    if not isinstance(scenario, dict):
+        raise TypeError(f"Scenario must be a dictionary, got {type(scenario).__name__}")
+
+    if not scenario:
+        raise ValueError("Scenario dictionary cannot be empty")
+
+    # Validate required scenario fields
+    required_fields = ["id", "seed", "humans", "robot", "scene", "horizon"]
+    missing_fields = [field for field in required_fields if field not in scenario]
+    if missing_fields:
+        raise ValueError(f"Scenario missing required fields: {missing_fields}")
+
     register_default_plugins()
 
+    # Safely extract and validate scenario_id
     scenario_id = scenario["id"]
+    if not scenario_id or not isinstance(scenario_id, str):
+        raise ValueError(f"Scenario 'id' must be a non-empty string, got: {scenario_id}")
+
     run_id = run_id or _run_id(scenario_id)
-    out_root = Path(out_root)
+
+    try:
+        out_root = Path(out_root)
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"Invalid output root path: {e}") from e
+
     bundle_dir = out_root / run_id / "bundle"
 
     eval_cfg = scenario.setdefault("evaluation", {})
-    retry_max_attempts = int(eval_cfg.get("deadlock_resample_attempts", 4))
+    if not isinstance(eval_cfg, dict):
+        raise ValueError("Scenario 'evaluation' field must be a dictionary")
+
+    # Safely parse evaluation configuration with validation
+    try:
+        retry_max_attempts = int(eval_cfg.get("deadlock_resample_attempts", 4))
+        if retry_max_attempts < 0:
+            raise ValueError("deadlock_resample_attempts must be non-negative")
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Invalid deadlock_resample_attempts: {e}") from e
+
     auto_resample_on_deadlock = bool(eval_cfg.get("resample_on_deadlock", True))
     auto_tune_traversability = bool(eval_cfg.get("auto_tune_traversability_offset", True))
     fail_on_deadlock = bool(eval_cfg.get("fail_on_deadlock", True))
 
     meta = scenario.setdefault("_meta", {})
-    retry_attempt = int(meta.get("deadlock_retry_attempt", 0))
+    if not isinstance(meta, dict):
+        raise ValueError("Scenario '_meta' field must be a dictionary")
+
+    try:
+        retry_attempt = int(meta.get("deadlock_retry_attempt", 0))
+        if retry_attempt < 0:
+            raise ValueError("deadlock_retry_attempt must be non-negative")
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Invalid deadlock_retry_attempt: {e}") from e
+
     retry_history = list(meta.get("deadlock_retry_history", []))
 
-    seed = int(scenario["seed"])
+    # Safely parse and validate seed
+    try:
+        seed = int(scenario["seed"])
+        if seed < 0:
+            raise ValueError("Seed must be non-negative")
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Invalid seed value '{scenario['seed']}': {e}") from e
+
     attempt_seed = int(seed + retry_attempt * 9973)
     set_global_seed(attempt_seed)
 

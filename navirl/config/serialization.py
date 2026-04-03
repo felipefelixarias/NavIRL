@@ -33,29 +33,68 @@ def save_config(
     file_format : str, optional
         ``"yaml"``, ``"json"``, or ``"toml"``.  Inferred from extension when
         ``None``.
+
+    Raises
+    ------
+    ValueError
+        If file_format is unsupported or config cannot be serialized.
+    OSError
+        If path cannot be created or written to.
+    ImportError
+        If required serialization library (yaml/toml) is not available.
     """
-    path = pathlib.Path(path)
-    fmt = _resolve_format(path, file_format)
-    path = _normalize_output_path(path, fmt)
+    try:
+        path = pathlib.Path(path)
+        fmt = _resolve_format(path, file_format)
+        path = _normalize_output_path(path, fmt)
 
-    path.parent.mkdir(parents=True, exist_ok=True)
+        # Validate config is not None
+        if config is None:
+            raise ValueError("Configuration cannot be None")
 
-    if fmt == "json":
-        with open(path, "w") as fh:
-            json.dump(config, fh, indent=2, default=str)
+        # Create directory with proper error handling
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise OSError(f"Cannot create directory {path.parent}: {e}") from e
 
-    elif fmt == "yaml":
-        yaml = _import_yaml()
-        with open(path, "w") as fh:
-            yaml.dump(config, fh, default_flow_style=False, sort_keys=False)
+        if fmt == "json":
+            try:
+                with open(path, "w", encoding="utf-8") as fh:
+                    json.dump(config, fh, indent=2, default=str)
+            except OSError as e:
+                raise OSError(f"Cannot write JSON to {path}: {e}") from e
+            except (TypeError, ValueError) as e:
+                raise ValueError(f"Configuration cannot be serialized to JSON: {e}") from e
 
-    elif fmt == "toml":
-        toml_mod = _import_toml_write()
-        with open(path, "w") as fh:
-            toml_mod.dump(config, fh)
+        elif fmt == "yaml":
+            try:
+                yaml = _import_yaml()
+                with open(path, "w", encoding="utf-8") as fh:
+                    yaml.dump(config, fh, default_flow_style=False, sort_keys=False)
+            except OSError as e:
+                raise OSError(f"Cannot write YAML to {path}: {e}") from e
+            except Exception as e:
+                raise ValueError(f"Configuration cannot be serialized to YAML: {e}") from e
 
-    else:
-        raise ValueError(f"Unsupported format: '{fmt}'")
+        elif fmt == "toml":
+            try:
+                toml_mod = _import_toml_write()
+                with open(path, "w", encoding="utf-8") as fh:
+                    toml_mod.dump(config, fh)
+            except OSError as e:
+                raise OSError(f"Cannot write TOML to {path}: {e}") from e
+            except Exception as e:
+                raise ValueError(f"Configuration cannot be serialized to TOML: {e}") from e
+
+        else:
+            raise ValueError(f"Unsupported format: '{fmt}'")
+
+    except Exception as e:
+        # Re-raise with context if this is an unexpected error
+        if isinstance(e, (ValueError, OSError, ImportError)):
+            raise
+        raise RuntimeError(f"Unexpected error saving config to {path}: {e}") from e
 
 
 def load_config(path: str | pathlib.Path) -> dict[str, Any]:
@@ -72,26 +111,86 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
     -------
     dict
         Parsed configuration.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the configuration file does not exist.
+    ValueError
+        If file format is unsupported or content cannot be parsed.
+    OSError
+        If file cannot be read due to permissions or I/O errors.
+    ImportError
+        If required parsing library (yaml/toml) is not available.
     """
-    path = _resolve_existing_path(pathlib.Path(path))
-    fmt = _resolve_format(path, None)
+    try:
+        path = pathlib.Path(path)
 
-    if fmt == "json":
-        with open(path) as fh:
-            return json.load(fh)
+        # Validate file exists and is readable
+        if not path.exists():
+            raise FileNotFoundError(f"Configuration file not found: {path}")
+        if not path.is_file():
+            raise ValueError(f"Path is not a file: {path}")
 
-    elif fmt == "yaml":
-        yaml = _import_yaml()
-        with open(path) as fh:
-            return yaml.safe_load(fh) or {}
+        path = _resolve_existing_path(path)
+        fmt = _resolve_format(path, None)
 
-    elif fmt == "toml":
-        toml_mod = _import_toml_read()
-        with open(path, "rb") as fh:
-            return toml_mod(fh)
+        if fmt == "json":
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    config = json.load(fh)
+                    if not isinstance(config, dict):
+                        raise ValueError(
+                            f"JSON file must contain a dictionary, got {type(config).__name__}"
+                        )
+                    return config
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON in {path}: {e}") from e
+            except OSError as e:
+                raise OSError(f"Cannot read JSON file {path}: {e}") from e
 
-    else:
-        raise ValueError(f"Cannot infer format from extension: '{path.suffix}'")
+        elif fmt == "yaml":
+            try:
+                yaml = _import_yaml()
+                with open(path, encoding="utf-8") as fh:
+                    config = yaml.safe_load(fh)
+                    if config is None:
+                        return {}
+                    if not isinstance(config, dict):
+                        raise ValueError(
+                            f"YAML file must contain a dictionary, got {type(config).__name__}"
+                        )
+                    return config
+            except Exception as e:
+                # YAML errors can be various types depending on the implementation
+                if "yaml" in str(e).lower() or "parse" in str(e).lower():
+                    raise ValueError(f"Invalid YAML in {path}: {e}") from e
+                raise OSError(f"Cannot read YAML file {path}: {e}") from e
+
+        elif fmt == "toml":
+            try:
+                toml_mod = _import_toml_read()
+                with open(path, "rb") as fh:
+                    config = toml_mod(fh)
+                    if not isinstance(config, dict):
+                        raise ValueError(
+                            f"TOML file must contain a dictionary, got {type(config).__name__}"
+                        )
+                    return config
+            except Exception as e:
+                if "toml" in str(e).lower() or "parse" in str(e).lower():
+                    raise ValueError(f"Invalid TOML in {path}: {e}") from e
+                raise OSError(f"Cannot read TOML file {path}: {e}") from e
+
+        else:
+            raise ValueError(f"Cannot infer format from extension: '{path.suffix}'")
+
+    except Exception as e:
+        # Re-raise known exceptions as-is
+        if isinstance(e, (FileNotFoundError, ValueError, OSError, ImportError)):
+            raise
+        # Wrap unexpected errors
+        raise RuntimeError(f"Unexpected error loading config from {path}: {e}") from e
 
 
 # ---------------------------------------------------------------------------
