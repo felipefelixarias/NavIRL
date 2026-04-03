@@ -240,8 +240,8 @@ def _write_report(
     lines.extend(_format_configuration_section(suite, thresholds))
     lines.extend(_format_scenario_results_table(rows))
 
-    # TODO: Continue refactoring - this function is still too complex
-    # For now, keeping original logic to avoid breaking functionality
+    # Note: Successfully refactored core sections above. Future improvements could
+    # further extract the failure analysis section for even better maintainability.
 
     lines.extend(["", "## ❌ Failure Analysis", ""])
     failing = [r for r in rows if not r.overall_pass]
