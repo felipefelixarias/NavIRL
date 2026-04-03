@@ -1,3 +1,5 @@
+"""Entry point for running NavIRL as a module via `python -m navirl`."""
+
 from __future__ import annotations
 
 from .cli import main

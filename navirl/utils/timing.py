@@ -92,10 +92,7 @@ class Timer:
         if self._start_time is None:
             return 0.0
         now = time.perf_counter()
-        if self._lap_times:
-            last = self._lap_times[-1]
-        else:
-            last = 0.0
+        last = self._lap_times[-1] if self._lap_times else 0.0
         total_elapsed = now - self._start_time
         lap_time = total_elapsed - last
         self._lap_times.append(total_elapsed)
