@@ -757,13 +757,14 @@ class RobotFleet:
         if len(positions) < 2:
             return 0.0
         pos = np.array(positions)
-        max_dist = 0.0
-        for i in range(len(pos)):
-            for j in range(i + 1, len(pos)):
-                d = float(np.linalg.norm(pos[i] - pos[j]))
-                if d > max_dist:
-                    max_dist = d
-        return max_dist
+        # Vectorized pairwise distance computation using broadcasting
+        # pos[:, None] - pos creates all pairwise difference vectors
+        # then np.linalg.norm computes distances for all pairs efficiently
+        diffs = pos[:, None] - pos[None, :]  # Shape: (n, n, 2)
+        distances = np.linalg.norm(diffs, axis=2)  # Shape: (n, n)
+        # Get upper triangular part (excluding diagonal) for unique pairs
+        upper_tri_mask = np.triu(np.ones_like(distances, dtype=bool), k=1)
+        return float(np.max(distances[upper_tri_mask]))
 
     def formation_error(
         self,

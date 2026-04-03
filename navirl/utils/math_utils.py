@@ -748,9 +748,7 @@ def savitzky_golay(
     half = window // 2
     result = np.empty_like(values)
 
-    # Build the Vandermonde-like matrix for the window
-    x = np.arange(-half, half + 1, dtype=np.float64)
-    np.vander(x, N=poly_order + 1, increasing=True)
+    # Vandermonde matrix is built per-window to handle edge cases properly
 
     for i in range(n):
         lo = max(0, i - half)

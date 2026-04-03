@@ -9,6 +9,13 @@ import yaml
 
 from navirl.backends.grid2d.constants import OBSTACLE_SPACE
 from navirl.backends.grid2d.maps import load_map_info
+from navirl.core.constants import (
+    ANGLE_EPSILON,
+    DEADLOCK_SPEED_THRESHOLD,
+    DEADLOCK_TIMEOUT_SECONDS,
+    GOAL_TOLERANCE,
+    INTRUSION_DISTANCE_THRESHOLD,
+)
 from navirl.metrics.base import MetricsCollector
 
 
@@ -37,14 +44,6 @@ def _pair_dist(a: dict, b: dict) -> float:
     return float(math.hypot(a["x"] - b["x"], a["y"] - b["y"]))
 
 
-def _angle_wrap(rad: float) -> float:
-    while rad > math.pi:
-        rad -= 2 * math.pi
-    while rad < -math.pi:
-        rad += 2 * math.pi
-    return rad
-
-
 class StandardMetrics(MetricsCollector):
     """Stable metrics collection for social navigation episodes."""
 
@@ -55,11 +54,13 @@ class StandardMetrics(MetricsCollector):
 
         dt = float(scenario["horizon"]["dt"])
         eval_cfg = scenario.get("evaluation", {})
-        intrusion_delta = float(eval_cfg.get("intrusion_delta", 0.45))
-        deadlock_seconds = float(eval_cfg.get("deadlock_seconds", 4.0))
-        deadlock_speed_thresh = float(eval_cfg.get("deadlock_speed_thresh", 0.015))
+        intrusion_delta = float(eval_cfg.get("intrusion_delta", INTRUSION_DISTANCE_THRESHOLD))
+        deadlock_seconds = float(eval_cfg.get("deadlock_seconds", DEADLOCK_TIMEOUT_SECONDS))
+        deadlock_speed_thresh = float(
+            eval_cfg.get("deadlock_speed_thresh", DEADLOCK_SPEED_THRESHOLD)
+        )
         deadlock_steps = max(1, int(round(deadlock_seconds / dt)))
-        goal_tol = 0.2
+        goal_tol = GOAL_TOLERANCE
 
         scene_cfg = scenario.get("scene", {})
         src_path = scenario.get("_meta", {}).get("source_path")
@@ -165,9 +166,15 @@ class StandardMetrics(MetricsCollector):
         for _aid, headings in heading_series.items():
             if len(headings) < 3:
                 continue
-            diffs = [_angle_wrap(headings[i + 1] - headings[i]) for i in range(len(headings) - 1)]
-            signs = [0 if abs(d) < 1e-4 else (1 if d > 0 else -1) for d in diffs]
-            signs = [s for s in signs if s != 0]
+            # Vectorized angle difference computation
+            headings_array = np.array(headings)
+            diffs = np.diff(headings_array)
+            # Normalize all angle differences using vectorized operations
+            diffs = (diffs + np.pi) % (2 * np.pi) - np.pi
+            # Vectorized sign computation with threshold
+            signs = np.sign(diffs)
+            signs = signs[np.abs(diffs) >= ANGLE_EPSILON]  # Filter out near-zero values
+            signs = signs[signs != 0]  # Remove zeros
             if len(signs) < 2:
                 continue
             flips = sum(1 for i in range(len(signs) - 1) if signs[i] != signs[i + 1])
