@@ -453,3 +453,179 @@ def render_trace(
         "video_path": str(video_path) if video_path is not None else None,
         "render_diagnostics_path": str(diag_path),
     }
+
+
+class EnvironmentRenderer:
+    """Shared rendering utilities for environment visualization."""
+
+    def __init__(self):
+        self._cv2_available = self._check_cv2_availability()
+
+    @staticmethod
+    def _check_cv2_availability() -> bool:
+        """Check if OpenCV is available."""
+        try:
+            import cv2  # noqa: F401
+
+            return True
+        except ImportError:
+            return False
+
+    def prepare_map_image(self, backend, *, grayscale_to_rgb: bool = True) -> np.ndarray | None:
+        """Prepare base map image for rendering.
+
+        Parameters
+        ----------
+        backend : Backend
+            Environment backend that provides map_image() method.
+        grayscale_to_rgb : bool, default True
+            Convert grayscale images to RGB by stacking channels.
+
+        Returns
+        -------
+        np.ndarray | None
+            Prepared map image as uint8 array, or None if unavailable.
+        """
+        if backend is None:
+            return None
+        img = backend.map_image()
+        if img is None:
+            return None
+        img = np.asarray(img, dtype=np.uint8)
+        if grayscale_to_rgb and img.ndim == 2:
+            img = np.stack([img] * 3, axis=-1)
+        return img
+
+    def draw_agent_circle(
+        self,
+        img: np.ndarray,
+        position: tuple[float, float],
+        backend,
+        *,
+        radius: int = 5,
+        color: tuple[int, int, int] = (31, 119, 180),
+    ) -> None:
+        """Draw a colored circle for an agent on the image.
+
+        Parameters
+        ----------
+        img : np.ndarray
+            Image to draw on (modified in place).
+        position : tuple[float, float]
+            World coordinates (x, y) of the agent.
+        backend : Backend
+            Backend to convert world coordinates to map pixels.
+        radius : int, default 5
+            Circle radius in pixels.
+        color : tuple[int, int, int], default (31, 119, 180)
+            RGB color for the circle.
+        """
+        if not self._cv2_available:
+            return
+
+        try:
+            import cv2
+
+            px = backend.world_to_map(position)
+            # OpenCV uses (x, y) = (col, row) format
+            cv2.circle(img, (px[1], px[0]), radius, color, -1)
+        except (ImportError, Exception):
+            # Silently handle any drawing errors
+            pass
+
+    def draw_goal_circle(
+        self,
+        img: np.ndarray,
+        goal_position: tuple[float, float],
+        backend,
+        *,
+        radius: int = 5,
+        color: tuple[int, int, int] = (214, 39, 40),
+    ) -> None:
+        """Draw a colored circle for a goal on the image.
+
+        Parameters
+        ----------
+        img : np.ndarray
+            Image to draw on (modified in place).
+        goal_position : tuple[float, float]
+            World coordinates (x, y) of the goal.
+        backend : Backend
+            Backend to convert world coordinates to map pixels.
+        radius : int, default 5
+            Circle radius in pixels.
+        color : tuple[int, int, int], default (214, 39, 40)
+            RGB color for the circle.
+        """
+        if not self._cv2_available:
+            return
+
+        try:
+            import cv2
+
+            g_px = backend.world_to_map((float(goal_position[0]), float(goal_position[1])))
+            cv2.circle(img, (g_px[1], g_px[0]), radius, color, -1)
+        except (ImportError, Exception):
+            pass
+
+    def draw_humans(
+        self,
+        img: np.ndarray,
+        human_ids: list[int],
+        backend,
+        *,
+        radius: int = 4,
+        color: tuple[int, int, int] = (255, 127, 14),
+    ) -> None:
+        """Draw circles for all humans on the image.
+
+        Parameters
+        ----------
+        img : np.ndarray
+            Image to draw on (modified in place).
+        human_ids : list[int]
+            List of human agent IDs to draw.
+        backend : Backend
+            Backend to get positions and convert coordinates.
+        radius : int, default 4
+            Circle radius in pixels.
+        color : tuple[int, int, int], default (255, 127, 14)
+            RGB color for human circles.
+        """
+        if not self._cv2_available:
+            return
+
+        try:
+            import cv2
+
+            for hid in human_ids:
+                hp = backend.get_position(hid)
+                hp_px = backend.world_to_map(hp)
+                cv2.circle(img, (hp_px[1], hp_px[0]), radius, color, -1)
+        except (ImportError, Exception):
+            pass
+
+    def show_image(self, img: np.ndarray, window_name: str = "NavIRL Environment") -> None:
+        """Display image in an OpenCV window for human rendering mode.
+
+        Parameters
+        ----------
+        img : np.ndarray
+            Image to display.
+        window_name : str, default "NavIRL Environment"
+            Name of the display window.
+        """
+        if not self._cv2_available:
+            return
+
+        try:
+            import cv2
+
+            cv2.imshow(window_name, img)
+            cv2.waitKey(1)
+        except ImportError:
+            pass
+
+
+# Create a shared instance for convenience
+env_renderer = EnvironmentRenderer()
