@@ -68,21 +68,21 @@ class BenchmarkResults:
 
         # Per-scenario rows
         for s_idx, s_name in enumerate(self.scenario_names):
-            row = s_name[:18].ljust(20)
+            row_parts = [s_name[:18].ljust(20)]
             for m_name, w in zip(metric_names, col_widths, strict=False):
                 vals = self.metrics.get(m_name, [])
                 val = vals[s_idx] if s_idx < len(vals) else float("nan")
-                row += f"{val:.{precision}f}".ljust(w)
-            rows.append(row)
+                row_parts.append(f"{val:.{precision}f}".ljust(w))
+            rows.append("".join(row_parts))
 
         # Summary row
         rows.append(sep)
-        summary = "MEAN".ljust(20)
+        summary_parts = ["MEAN".ljust(20)]
         for m_name, w in zip(metric_names, col_widths, strict=False):
             vals = self.metrics.get(m_name, [])
             mean_val = float(np.mean(vals)) if vals else float("nan")
-            summary += f"{mean_val:.{precision}f}".ljust(w)
-        rows.append(summary)
+            summary_parts.append(f"{mean_val:.{precision}f}".ljust(w))
+        rows.append("".join(summary_parts))
         return "\n".join(rows)
 
     def to_latex(self, precision: int = 3) -> str:

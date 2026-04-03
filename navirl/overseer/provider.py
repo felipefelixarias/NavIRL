@@ -351,11 +351,11 @@ def _run_openai_compatible_json(
     msg = choices[0].get("message", {})
     content_out = msg.get("content")
     if isinstance(content_out, list):
-        text = ""
+        text_parts = []
         for item in content_out:
             if isinstance(item, dict) and item.get("type") == "text":
-                text += str(item.get("text", ""))
-        content_out = text
+                text_parts.append(str(item.get("text", "")))
+        content_out = "".join(text_parts)
     if not isinstance(content_out, str):
         raise ProviderCallError("Provider message content is not text.")
 
