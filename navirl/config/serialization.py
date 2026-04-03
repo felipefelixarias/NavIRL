@@ -74,7 +74,10 @@ def save_config(
                     yaml.dump(config, fh, default_flow_style=False, sort_keys=False)
             except OSError as e:
                 raise OSError(f"Cannot write YAML to {path}: {e}") from e
+            except (TypeError, ValueError) as e:
+                raise ValueError(f"Configuration cannot be serialized to YAML: {e}") from e
             except Exception as e:
+                # Catch YAML-specific errors (implementation varies by library)
                 raise ValueError(f"Configuration cannot be serialized to YAML: {e}") from e
 
         elif fmt == "toml":
@@ -84,7 +87,10 @@ def save_config(
                     toml_mod.dump(config, fh)
             except OSError as e:
                 raise OSError(f"Cannot write TOML to {path}: {e}") from e
+            except (TypeError, ValueError) as e:
+                raise ValueError(f"Configuration cannot be serialized to TOML: {e}") from e
             except Exception as e:
+                # Catch TOML-specific errors (implementation varies by library)
                 raise ValueError(f"Configuration cannot be serialized to TOML: {e}") from e
 
         else:
@@ -163,8 +169,12 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
                             f"YAML file must contain a dictionary, got {type(config).__name__}"
                         )
                     return config
+            except OSError as e:
+                raise OSError(f"Cannot read YAML file {resolved_path}: {e}") from e
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Invalid YAML in {resolved_path}: {e}") from e
             except Exception as e:
-                # YAML errors can be various types depending on the implementation
+                # YAML-specific errors (implementation varies)
                 if "yaml" in str(e).lower() or "parse" in str(e).lower():
                     raise ValueError(f"Invalid YAML in {resolved_path}: {e}") from e
                 raise OSError(f"Cannot read YAML file {resolved_path}: {e}") from e
@@ -179,7 +189,12 @@ def load_config(path: str | pathlib.Path) -> dict[str, Any]:
                             f"TOML file must contain a dictionary, got {type(config).__name__}"
                         )
                     return config
+            except OSError as e:
+                raise OSError(f"Cannot read TOML file {resolved_path}: {e}") from e
+            except (ValueError, TypeError) as e:
+                raise ValueError(f"Invalid TOML in {resolved_path}: {e}") from e
             except Exception as e:
+                # TOML-specific errors (implementation varies)
                 if "toml" in str(e).lower() or "parse" in str(e).lower():
                     raise ValueError(f"Invalid TOML in {resolved_path}: {e}") from e
                 raise OSError(f"Cannot read TOML file {resolved_path}: {e}") from e
