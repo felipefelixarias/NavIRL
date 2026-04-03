@@ -11,18 +11,48 @@ research best practices.
 - Update documentation for any public API or workflow changes.
 - Avoid introducing large binary artifacts without discussion.
 
+### Quality Standards Checklist
+Before creating a PR, verify:
+- [ ] All tests pass (`python -m pytest`)
+- [ ] Code style passes (`ruff check .`)
+- [ ] No new TODO/FIXME comments without justification
+- [ ] No hardcoded paths, credentials, or sensitive data
+- [ ] Documentation reflects any public API changes
+- [ ] Commit messages are descriptive and follow conventional format
+
+### E2E Verification Requirements
+Based on change scope, run appropriate verification:
+- **Any change**: `python -m navirl verify --suite quick` (required)
+- **Core sim/controllers/planners/metrics**: `python -m navirl verify --suite full` (required)
+- **New scenarios**: Test with canonical examples + new scenario
+- **Plugin changes**: Include deterministic test + example scenario
+- **Performance changes**: Include before/after metrics
+
 ## Required annotations
 Every AI-authored PR should include:
 - A concise summary of changes
-- Test plan and results
+- Test plan and results with specific commands run
 - Any breaking changes and migration notes
 - Reproducibility notes (seeds, configs, data sources)
+- Key assumptions and limitations documented
+- Evidence of appropriate verification suite completion
 
-## Auto-merge behavior
-AI agents may auto-merge PRs that:
-- Pass all CI checks
-- Have no unresolved review comments
-- Include tests or documented rationale for omission
+## Pre-merge Evidence Requirements
+All AI-authored PRs must demonstrate:
+1. **Functional verification**: Appropriate test suite completion
+2. **Quality verification**: Linting and style checks pass
+3. **Regression verification**: No behavior regressions introduced
+4. **Documentation verification**: Changes reflected in docs/comments
+5. **Reproducibility verification**: Clean environment compatibility
+
+### Auto-merge Eligibility
+AI agents may auto-merge PRs that meet ALL criteria:
+- [ ] Pass all CI checks (tests, linting, builds)
+- [ ] Complete required verification suites for change scope
+- [ ] Have no unresolved review comments from humans
+- [ ] Include tests or documented rationale for omission
+- [ ] Follow PR template with all required sections completed
+- [ ] Demonstrate reproducibility across environments
 
 ## Safety and data handling
 - Do not include credentials, private datasets, or personally identifiable
