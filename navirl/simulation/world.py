@@ -447,7 +447,7 @@ class World:
 
     def enforce_boundaries(self) -> None:
         """Clamp or wrap entity positions to stay inside the world bounds."""
-        for _eid, edata in self._entities.items():
+        for edata in self._entities.values():
             pos = edata["position"]
             r = edata["radius"]
             if self.wrap:
