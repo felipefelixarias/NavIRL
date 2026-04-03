@@ -7,7 +7,6 @@ parsing integration.
 
 from __future__ import annotations
 
-import copy
 import json
 import os
 from dataclasses import dataclass, fields, is_dataclass
@@ -15,35 +14,6 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 T = TypeVar("T")
-
-
-# ---------------------------------------------------------------------------
-# Configuration merging
-# ---------------------------------------------------------------------------
-
-
-def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    """Deep merge two dictionaries, with override taking precedence.
-
-    Parameters
-    ----------
-    base : dict
-        Base dictionary.
-    override : dict
-        Override dictionary.
-
-    Returns
-    -------
-    dict
-        Merged dictionary.
-    """
-    result = copy.deepcopy(base)
-    for key, value in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = deep_merge(result[key], value)
-        else:
-            result[key] = copy.deepcopy(value)
-    return result
 
 
 def flatten_dict(
@@ -305,44 +275,86 @@ def dict_to_dataclass(cls: type[T], data: dict[str, Any]) -> T:
 # ---------------------------------------------------------------------------
 
 
-def interpolate_env_vars(config: dict[str, Any]) -> dict[str, Any]:
+def interpolate_env_vars(config: dict[str, Any], strict: bool = False) -> dict[str, Any]:
     """Replace ${VAR} patterns with environment variable values.
 
     Parameters
     ----------
     config : dict
         Configuration with potential env var references.
+    strict : bool
+        If True, raise KeyError when environment variables are not found.
+        If False, log warnings for missing variables.
 
     Returns
     -------
     dict
         Configuration with env vars resolved.
+
+    Raises
+    ------
+    KeyError
+        In strict mode when an environment variable is not found.
     """
     result: dict[str, Any] = {}
 
     for key, value in config.items():
         if isinstance(value, dict):
-            result[key] = interpolate_env_vars(value)
+            result[key] = interpolate_env_vars(value, strict=strict)
         elif isinstance(value, str):
-            result[key] = _resolve_env_vars(value)
+            result[key] = _resolve_env_vars(value, strict=strict)
         elif isinstance(value, list):
-            result[key] = [_resolve_env_vars(v) if isinstance(v, str) else v for v in value]
+            result[key] = [
+                _resolve_env_vars(v, strict=strict) if isinstance(v, str) else v for v in value
+            ]
         else:
             result[key] = value
 
     return result
 
 
-def _resolve_env_vars(s: str) -> str:
-    """Resolve ${VAR} and ${VAR:-default} patterns in a string."""
+def _resolve_env_vars(s: str, strict: bool = False) -> str:
+    """Resolve ${VAR} and ${VAR:-default} patterns in a string.
+
+    Parameters
+    ----------
+    s : str
+        String containing environment variable patterns.
+    strict : bool
+        If True, raise KeyError when environment variables are not found.
+        If False, log warnings and leave unexpanded variables as-is.
+
+    Returns
+    -------
+    str
+        String with environment variables resolved.
+
+    Raises
+    ------
+    KeyError
+        In strict mode when an environment variable is not found.
+    """
+    import logging
     import re
+
+    logger = logging.getLogger(__name__)
 
     def _replace(match: re.Match) -> str:
         var_expr = match.group(1)
         if ":-" in var_expr:
+            # Handle ${VAR:-default} syntax
             var_name, default = var_expr.split(":-", 1)
             return os.environ.get(var_name, default)
-        return os.environ.get(var_expr, match.group(0))
+
+        # Handle ${VAR} syntax
+        value = os.environ.get(var_expr)
+        if value is None:
+            if strict:
+                raise KeyError(f"Environment variable '{var_expr}' not found")
+            else:
+                logger.warning(f"Environment variable '{var_expr}' not found, leaving unexpanded")
+                return match.group(0)  # Return original ${VAR} pattern
+        return value
 
     return re.sub(r"\$\{([^}]+)\}", _replace, s)
 
@@ -359,183 +371,6 @@ class ValidationError:
     path: str
     message: str
     severity: str = "error"  # "error" or "warning"
-
-
-class ConfigValidator:
-    """Validates configuration dictionaries against a schema.
-
-    The schema is a dictionary specifying expected keys, types,
-    ranges, and required fields.
-
-    Parameters
-    ----------
-    schema : dict
-        Validation schema.
-
-    Examples
-    --------
-    >>> schema = {
-    ...     "learning_rate": {"type": float, "min": 0, "max": 1, "required": True},
-    ...     "batch_size": {"type": int, "min": 1, "default": 32},
-    ...     "optimizer": {"type": str, "choices": ["adam", "sgd"]},
-    ... }
-    >>> validator = ConfigValidator(schema)
-    >>> errors = validator.validate({"learning_rate": 0.001})
-    """
-
-    def __init__(self, schema: dict[str, dict[str, Any]]) -> None:
-        self.schema = schema
-
-    def validate(self, config: dict[str, Any]) -> list[ValidationError]:
-        """Validate a configuration against the schema.
-
-        Parameters
-        ----------
-        config : dict
-            Configuration to validate.
-
-        Returns
-        -------
-        list of ValidationError
-            List of validation errors/warnings.
-        """
-        errors: list[ValidationError] = []
-
-        # Check required fields
-        for key, spec in self.schema.items():
-            if spec.get("required", False) and key not in config:
-                errors.append(
-                    ValidationError(
-                        path=key,
-                        message=f"Required field '{key}' is missing",
-                    )
-                )
-
-        # Check each config value
-        for key, value in config.items():
-            if key not in self.schema:
-                errors.append(
-                    ValidationError(
-                        path=key,
-                        message=f"Unknown configuration key '{key}'",
-                        severity="warning",
-                    )
-                )
-                continue
-
-            spec = self.schema[key]
-            errors.extend(self._validate_field(key, value, spec))
-
-        return errors
-
-    def _validate_field(
-        self,
-        path: str,
-        value: Any,
-        spec: dict[str, Any],
-    ) -> list[ValidationError]:
-        """Validate a single field."""
-        errors: list[ValidationError] = []
-
-        # Type check
-        expected_type = spec.get("type")
-        if expected_type is not None and not isinstance(value, expected_type):
-            errors.append(
-                ValidationError(
-                    path=path,
-                    message=(
-                        f"Expected type {expected_type.__name__} for '{path}', "
-                        f"got {type(value).__name__}"
-                    ),
-                )
-            )
-            return errors  # Skip further checks if type is wrong
-
-        # Range checks
-        min_val = spec.get("min")
-        if min_val is not None and value < min_val:
-            errors.append(
-                ValidationError(
-                    path=path,
-                    message=f"Value {value} for '{path}' is below minimum {min_val}",
-                )
-            )
-
-        max_val = spec.get("max")
-        if max_val is not None and value > max_val:
-            errors.append(
-                ValidationError(
-                    path=path,
-                    message=f"Value {value} for '{path}' exceeds maximum {max_val}",
-                )
-            )
-
-        # Choice check
-        choices = spec.get("choices")
-        if choices is not None and value not in choices:
-            errors.append(
-                ValidationError(
-                    path=path,
-                    message=f"Value '{value}' for '{path}' not in {choices}",
-                )
-            )
-
-        # Length check (for strings and lists)
-        min_len = spec.get("min_length")
-        if min_len is not None and hasattr(value, "__len__") and len(value) < min_len:
-            errors.append(
-                ValidationError(
-                    path=path,
-                    message=f"Length {len(value)} for '{path}' is below minimum {min_len}",
-                )
-            )
-
-        max_len = spec.get("max_length")
-        if max_len is not None and hasattr(value, "__len__") and len(value) > max_len:
-            errors.append(
-                ValidationError(
-                    path=path,
-                    message=f"Length {len(value)} for '{path}' exceeds maximum {max_len}",
-                )
-            )
-
-        return errors
-
-    def apply_defaults(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Apply default values for missing fields.
-
-        Parameters
-        ----------
-        config : dict
-            Input configuration.
-
-        Returns
-        -------
-        dict
-            Configuration with defaults applied.
-        """
-        result = dict(config)
-        for key, spec in self.schema.items():
-            if key not in result and "default" in spec:
-                result[key] = copy.deepcopy(spec["default"])
-        return result
-
-    def get_help(self) -> str:
-        """Generate a help string describing the schema.
-
-        Returns
-        -------
-        str
-            Formatted help text.
-        """
-        lines = []
-        for key, spec in sorted(self.schema.items()):
-            type_str = spec.get("type", Any).__name__ if "type" in spec else "any"
-            required = "required" if spec.get("required") else "optional"
-            default = f", default={spec['default']}" if "default" in spec else ""
-            desc = spec.get("description", "")
-            lines.append(f"  {key} ({type_str}, {required}{default}): {desc}")
-        return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------

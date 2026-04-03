@@ -23,6 +23,28 @@ from navirl.plugins import register_default_plugins
 from navirl.scenarios.load import load_scenario
 from navirl.viz.render import render_trace
 
+# ==============================================================================
+# Pipeline Configuration Constants
+# ==============================================================================
+
+# Spatial sampling and placement constraints
+MIN_CLEARANCE_FLOOR = 0.08  # Minimum clearance floor to prevent deadlocks (meters)
+RELAXATION_FACTOR = 0.85  # Factor to reduce spacing when strict placement fails
+HUMAN_SPACING_FACTOR = 2.4  # Human radius multiplier for minimum separation distance
+MIN_ABSOLUTE_SPACING = 0.2  # Absolute minimum spacing between agents (meters)
+BASE_STEP_FACTOR = 0.35  # Multiplier for local search step size around desired positions
+MIN_BASE_STEP = 0.02  # Minimum absolute base step for local search (meters)
+
+# Sampling limits and tolerances
+MAX_SPATIAL_SAMPLES = 4000  # Maximum attempts for spatial search before fallback
+ATTEMPTS_PER_POINT = 2500  # Sampling attempts per point when ensuring minimum distance
+MAX_SEARCH_RINGS = 25  # Maximum radial rings for local placement search around desired position
+POSITION_TOLERANCE = 1e-6  # Tolerance for detecting position adjustments (meters)
+
+# Search pattern parameters
+INITIAL_RING_POINTS = 12  # Base number of points in first search ring
+RING_POINT_INCREMENT = 4  # Additional points per ring in spiral search
+
 
 def _run_id(scenario_id: str) -> str:
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
@@ -37,8 +59,8 @@ def _ensure_points(
 ) -> list[tuple[float, float]]:
     pts = [tuple(map(float, p)) for p in existing]
     cur_min_dist = max(0.0, float(min_dist))
-    min_floor = min(0.08, cur_min_dist) if cur_min_dist > 0.0 else 0.0
-    attempts_per_point = 2500
+    min_floor = min(MIN_CLEARANCE_FLOOR, cur_min_dist) if cur_min_dist > 0.0 else 0.0
+    attempts_per_point = ATTEMPTS_PER_POINT
 
     while len(pts) < count:
         found = None
@@ -54,7 +76,7 @@ def _ensure_points(
 
         # If strict spacing is infeasible for dense scenes, relax gradually.
         if cur_min_dist > min_floor:
-            cur_min_dist = max(min_floor, cur_min_dist * 0.85)
+            cur_min_dist = max(min_floor, cur_min_dist * RELAXATION_FACTOR)
             continue
 
         # Final fallback: keep moving by accepting a free sample point.
@@ -73,13 +95,13 @@ def _resolve_human_start_goal_lists(
         existing=humans.get("starts", []),
         count=count,
         sampler=backend.sample_free_point,
-        min_dist=max(0.2, radius * 2.4),
+        min_dist=max(MIN_ABSOLUTE_SPACING, radius * HUMAN_SPACING_FACTOR),
     )
     goals = _ensure_points(
         existing=humans.get("goals", []),
         count=count,
         sampler=backend.sample_free_point,
-        min_dist=max(0.2, radius * 2.4),
+        min_dist=max(MIN_ABSOLUTE_SPACING, radius * HUMAN_SPACING_FACTOR),
     )
     return starts, goals
 
@@ -92,20 +114,84 @@ def _min_anchor_dist(a_radius: float, b_radius: float) -> float:
     return max(_diameter(a_radius), _diameter(b_radius))
 
 
+def _has_obstacle_collision(position: tuple[float, float], radius: float, backend) -> bool:
+    """Check if position collides with obstacles.
+
+    Parameters
+    ----------
+    position : tuple[float, float]
+        Candidate position to check.
+    radius : float
+        Agent radius.
+    backend : Any
+        Backend providing collision detection.
+
+    Returns
+    -------
+    bool
+        True if position would cause an obstacle collision.
+    """
+    return backend.check_obstacle_collision(position, _diameter(radius))
+
+
+def _has_agent_collision(
+    position: tuple[float, float],
+    radius: float,
+    placed_agents: list[dict],
+) -> bool:
+    """Check if position collides with already-placed agents.
+
+    Parameters
+    ----------
+    position : tuple[float, float]
+        Candidate position to check.
+    radius : float
+        Agent radius.
+    placed_agents : list[dict]
+        List of already-placed agents with 'position' and 'radius' keys.
+
+    Returns
+    -------
+    bool
+        True if position would cause an agent-agent collision.
+    """
+    for agent in placed_agents:
+        min_dist = _min_anchor_dist(radius, float(agent["radius"]))
+        agent_pos = agent["position"]
+        distance = math.hypot(position[0] - agent_pos[0], position[1] - agent_pos[1])
+        if distance < min_dist:
+            return True
+    return False
+
+
 def _anchor_ok(
     candidate: tuple[float, float],
     radius: float,
     placed: list[dict],
     backend,
 ) -> bool:
-    if backend.check_obstacle_collision(candidate, _diameter(radius)):
-        return False
+    """Check if anchor position is valid (no collisions with obstacles or other agents).
 
-    for p in placed:
-        min_dist = _min_anchor_dist(radius, float(p["radius"]))
-        if math.hypot(candidate[0] - p["position"][0], candidate[1] - p["position"][1]) < min_dist:
-            return False
-    return True
+    Parameters
+    ----------
+    candidate : tuple[float, float]
+        Candidate anchor position.
+    radius : float
+        Agent radius.
+    placed : list[dict]
+        List of already-placed agents.
+    backend : Any
+        Backend providing collision detection.
+
+    Returns
+    -------
+    bool
+        True if position is valid for placement.
+    """
+    return not (
+        _has_obstacle_collision(candidate, radius, backend)
+        or _has_agent_collision(candidate, radius, placed)
+    )
 
 
 def _project_anchor(candidate: tuple[float, float], radius: float, backend) -> tuple[float, float]:
@@ -116,7 +202,7 @@ def _project_anchor(candidate: tuple[float, float], radius: float, backend) -> t
 def _enforce_anchor_layout(
     anchors: list[dict],
     backend,
-    max_samples: int = 4000,
+    max_samples: int = MAX_SPATIAL_SAMPLES,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     placed: list[dict] = []
     adjustments: list[dict] = []
@@ -131,10 +217,10 @@ def _enforce_anchor_layout(
         if not _anchor_ok(candidate, radius, placed, backend):
             found = None
             # Preserve scenario semantics when possible by searching nearby offsets first.
-            base_step = max(0.02, _diameter(radius) * 0.35)
-            for ring in range(1, 25):
+            base_step = max(MIN_BASE_STEP, _diameter(radius) * BASE_STEP_FACTOR)
+            for ring in range(1, MAX_SEARCH_RINGS + 1):
                 dist = base_step * ring
-                num = 12 + ring * 4
+                num = INITIAL_RING_POINTS + ring * RING_POINT_INCREMENT
                 for i in range(num):
                     ang = (2.0 * math.pi * i) / max(1, num)
                     local = (
@@ -171,7 +257,7 @@ def _enforce_anchor_layout(
             else:
                 candidate = found
 
-        if math.hypot(candidate[0] - desired[0], candidate[1] - desired[1]) > 1e-6:
+        if math.hypot(candidate[0] - desired[0], candidate[1] - desired[1]) > POSITION_TOLERANCE:
             adjustments.append(
                 {
                     "key": key,
