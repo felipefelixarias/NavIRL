@@ -595,10 +595,49 @@ class NavEnv(gym.Env):
     #  Utilities
     # -----------------------------------------------------------------
 
-    def _sample_free_point(self) -> np.ndarray:
+    def _sample_free_point(self, max_attempts: int = 1000) -> np.ndarray:
+        """Sample a free point from the environment.
+
+        Parameters
+        ----------
+        max_attempts : int, default 1000
+            Maximum number of sampling attempts before raising an error.
+
+        Returns
+        -------
+        np.ndarray
+            A valid free point as [x, y] coordinates.
+
+        Raises
+        ------
+        RuntimeError
+            If no free point can be found within max_attempts.
+        """
         assert self._backend is not None
-        pt = self._backend.sample_free_point()
-        return np.array(pt, dtype=np.float32)
+
+        for attempt in range(max_attempts):
+            try:
+                pt = self._backend.sample_free_point()
+                if pt is None:
+                    continue
+
+                # Validate that the returned point is valid
+                pt_array = np.array(pt, dtype=np.float32)
+                if len(pt_array) < 2:
+                    continue
+                if not np.all(np.isfinite(pt_array[:2])):
+                    continue
+
+                return pt_array
+            except Exception as e:
+                # Log the exception but continue trying
+                if attempt == max_attempts - 1:
+                    raise RuntimeError(
+                        f"Failed to sample free point after {max_attempts} attempts"
+                    ) from e
+                continue
+
+        raise RuntimeError(f"Failed to sample free point after {max_attempts} attempts")
 
     def _make_info(self) -> dict[str, Any]:
         """Assemble the info dict returned alongside observations."""
