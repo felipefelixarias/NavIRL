@@ -346,40 +346,23 @@ class NavEnv(gym.Env):
         return obs, reward, terminated, truncated, info
 
     def render(self) -> np.ndarray | None:
-        if self._backend is None:
-            return None
-        img = self._backend.map_image()
+        from navirl.viz.render import env_renderer
+
+        # Prepare base map image
+        img = env_renderer.prepare_map_image(self._backend)
         if img is None:
             return None
-        img = np.asarray(img, dtype=np.uint8)
-        if img.ndim == 2:
-            img = np.stack([img] * 3, axis=-1)
-        # Simple overlay: draw robot and goal as coloured circles
-        try:
-            import cv2
 
-            robot_pos = self._backend.get_position(self._robot_id)
-            r_px = self._backend.world_to_map(robot_pos)
-            g_px = self._backend.world_to_map(
-                (float(self._robot_goal[0]), float(self._robot_goal[1]))
-            )
-            cv2.circle(img, (r_px[1], r_px[0]), 5, (31, 119, 180), -1)
-            cv2.circle(img, (g_px[1], g_px[0]), 5, (214, 39, 40), -1)
-            for hid in self._human_ids:
-                hp = self._backend.get_position(hid)
-                hp_px = self._backend.world_to_map(hp)
-                cv2.circle(img, (hp_px[1], hp_px[0]), 4, (255, 127, 14), -1)
-        except ImportError:
-            pass
+        # Draw robot, goal, and humans
+        robot_pos = self._backend.get_position(self._robot_id)
+        env_renderer.draw_agent_circle(img, robot_pos, self._backend)
+        env_renderer.draw_goal_circle(img, self._robot_goal, self._backend)
+        env_renderer.draw_humans(img, self._human_ids, self._backend)
 
+        # Show in window if in human mode
         if self.render_mode == "human":
-            try:
-                import cv2 as _cv2
+            env_renderer.show_image(img, "NavEnv")
 
-                _cv2.imshow("NavEnv", img)
-                _cv2.waitKey(1)
-            except ImportError:
-                pass
         return img
 
     def close(self) -> None:
@@ -595,10 +578,49 @@ class NavEnv(gym.Env):
     #  Utilities
     # -----------------------------------------------------------------
 
-    def _sample_free_point(self) -> np.ndarray:
+    def _sample_free_point(self, max_attempts: int = 1000) -> np.ndarray:
+        """Sample a free point from the environment.
+
+        Parameters
+        ----------
+        max_attempts : int, default 1000
+            Maximum number of sampling attempts before raising an error.
+
+        Returns
+        -------
+        np.ndarray
+            A valid free point as [x, y] coordinates.
+
+        Raises
+        ------
+        RuntimeError
+            If no free point can be found within max_attempts.
+        """
         assert self._backend is not None
-        pt = self._backend.sample_free_point()
-        return np.array(pt, dtype=np.float32)
+
+        for attempt in range(max_attempts):
+            try:
+                pt = self._backend.sample_free_point()
+                if pt is None:
+                    continue
+
+                # Validate that the returned point is valid
+                pt_array = np.array(pt, dtype=np.float32)
+                if len(pt_array) < 2:
+                    continue
+                if not np.all(np.isfinite(pt_array[:2])):
+                    continue
+
+                return pt_array
+            except Exception as e:
+                # Log the exception but continue trying
+                if attempt == max_attempts - 1:
+                    raise RuntimeError(
+                        f"Failed to sample free point after {max_attempts} attempts"
+                    ) from e
+                continue
+
+        raise RuntimeError(f"Failed to sample free point after {max_attempts} attempts")
 
     def _make_info(self) -> dict[str, Any]:
         """Assemble the info dict returned alongside observations."""

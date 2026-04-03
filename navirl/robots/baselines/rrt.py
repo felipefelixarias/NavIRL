@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import math
 import random
 
@@ -78,7 +79,9 @@ class RRTStarRobotController(RobotController):
         """Check if a position is valid (not in collision)."""
         try:
             return not self.backend.check_obstacle_collision(pos)
-        except Exception:
+        except (AttributeError, TypeError, ValueError) as e:
+            # Log the error for debugging but return safe default
+            logging.getLogger(__name__).warning(f"Collision check failed for position {pos}: {e}")
             return False
 
     def _random_sample(self) -> tuple[float, float]:
@@ -253,8 +256,9 @@ class RRTStarRobotController(RobotController):
             if not self.path:
                 # Fallback to backend path
                 self.path = self.backend.shortest_path(position, self.goal) or [self.goal]
-        except Exception:
-            # Fallback on any error
+        except (AttributeError, ValueError, RuntimeError) as e:
+            # Fallback on RRT planning errors
+            logging.getLogger(__name__).warning(f"RRT* planning failed: {e}")
             self.path = self.backend.shortest_path(position, self.goal) or [self.goal]
 
         self.path_idx = 0

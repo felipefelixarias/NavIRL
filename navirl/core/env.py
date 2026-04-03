@@ -62,7 +62,42 @@ class SceneBackend(ABC):
     def nearest_clear_point(
         self, position: tuple[float, float], radius: float
     ) -> tuple[float, float]:
+        """Find the nearest collision-free point to the given position.
+
+        Parameters
+        ----------
+        position : tuple[float, float]
+            Target position as (x, y) coordinates.
+        radius : float
+            Search radius for finding clear space.
+
+        Returns
+        -------
+        tuple[float, float]
+            Nearest clear position as (x, y) coordinates.
+            Base implementation returns input position unchanged.
+
+        Note
+        ----
+        This base implementation does not perform collision checking.
+        Subclasses should override to provide actual collision avoidance.
+        """
         return tuple(map(float, position))
 
     def map_metadata(self) -> dict:
+        """Get metadata about the environment map.
+
+        Returns
+        -------
+        dict
+            Dictionary containing map properties such as:
+            - 'bounds': Map boundaries
+            - 'resolution': Grid resolution
+            - 'obstacles': Obstacle information
+            Base implementation returns empty dictionary.
+
+        Note
+        ----
+        Subclasses should override to provide specific map metadata.
+        """
         return {}

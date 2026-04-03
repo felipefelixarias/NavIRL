@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import heapq
+import logging
 import math
 import random
 
@@ -63,7 +64,9 @@ class PRMRobotController(RobotController):
         """Check if a position is valid (not in collision)."""
         try:
             return not self.backend.check_obstacle_collision(pos)
-        except Exception:
+        except (AttributeError, TypeError, ValueError) as e:
+            # Log the error for debugging but return safe default
+            logging.getLogger(__name__).warning(f"Collision check failed for position {pos}: {e}")
             return False
 
     def _build_roadmap(self) -> None:

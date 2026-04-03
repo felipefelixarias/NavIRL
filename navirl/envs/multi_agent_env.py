@@ -318,39 +318,27 @@ class MultiAgentNavEnv:
         return observations, rewards, terminated, truncated, infos
 
     def render(self) -> np.ndarray | None:
-        if self._backend is None:
-            return None
-        img = self._backend.map_image()
+        from navirl.viz.render import env_renderer
+
+        # Prepare base map image
+        img = env_renderer.prepare_map_image(self._backend)
         if img is None:
             return None
-        img = np.asarray(img, dtype=np.uint8)
-        if img.ndim == 2:
-            img = np.stack([img] * 3, axis=-1)
-        try:
-            import cv2
 
-            for name, aid in self._name_to_id.items():
-                pos = self._backend.get_position(aid)
-                px = self._backend.world_to_map(pos)
-                cv2.circle(img, (px[1], px[0]), 5, (31, 119, 180), -1)
-                goal = self._robot_goals[name]
-                gx_px = self._backend.world_to_map((float(goal[0]), float(goal[1])))
-                cv2.circle(img, (gx_px[1], gx_px[0]), 4, (214, 39, 40), -1)
-            for hid in self._human_ids:
-                hp = self._backend.get_position(hid)
-                hp_px = self._backend.world_to_map(hp)
-                cv2.circle(img, (hp_px[1], hp_px[0]), 4, (255, 127, 14), -1)
-        except ImportError:
-            pass
+        # Draw all robots and their goals
+        for name, aid in self._name_to_id.items():
+            pos = self._backend.get_position(aid)
+            goal = self._robot_goals[name]
+            env_renderer.draw_agent_circle(img, pos, self._backend)
+            env_renderer.draw_goal_circle(img, goal, self._backend, radius=4)
 
+        # Draw humans
+        env_renderer.draw_humans(img, self._human_ids, self._backend)
+
+        # Show in window if in human mode
         if self.render_mode == "human":
-            try:
-                import cv2 as _cv2
+            env_renderer.show_image(img, "MultiAgentNavEnv")
 
-                _cv2.imshow("MultiAgentNavEnv", img)
-                _cv2.waitKey(1)
-            except ImportError:
-                pass
         return img
 
     def close(self) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 
@@ -95,8 +96,16 @@ class RobotController(ABC):
             raise ValueError(f"Position coordinates must be numeric: {e}") from e
 
         # Check for NaN or infinite values
-        if not all(abs(val) < 1e6 for val in [start_x, start_y, goal_x, goal_y]):
-            raise ValueError("Position coordinates must be finite and reasonable")
+        if not all(math.isfinite(val) for val in [start_x, start_y, goal_x, goal_y]):
+            raise ValueError("Position coordinates must be finite (no NaN or infinite values)")
+
+        # Basic sanity check for extremely large coordinates (likely indicates an error)
+        MAX_COORD = 1e6  # Reasonable limit for simulation coordinates
+        if not all(abs(val) < MAX_COORD for val in [start_x, start_y, goal_x, goal_y]):
+            raise ValueError(
+                f"Position coordinates too large (must be < {MAX_COORD}): "
+                f"start=({start_x}, {start_y}), goal=({goal_x}, {goal_y})"
+            )
 
         self._step_count = 0
 

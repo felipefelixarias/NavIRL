@@ -509,8 +509,8 @@ class Trainer:
             if n > 1:
                 return SubprocVecEnv([self.env_fn for _ in range(n)])
             return DummyVecEnv([self.env_fn])
-        except Exception:
-            logger.warning("Vectorised env wrappers unavailable -- using a single-env shim")
+        except (ImportError, ModuleNotFoundError) as e:
+            logger.warning(f"Vectorised env wrappers unavailable: {e} -- using a single-env shim")
             return _SingleEnvShim(self.env_fn())
 
 

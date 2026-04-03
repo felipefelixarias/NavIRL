@@ -7,7 +7,6 @@ velocity-obstacle-based coordination.
 from __future__ import annotations
 
 import heapq
-from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -35,14 +34,6 @@ class PlanningResult:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _path_length(path: Sequence[np.ndarray]) -> float:
-    """Compute total Euclidean length of a waypoint path."""
-    length = 0.0
-    for i in range(1, len(path)):
-        length += float(np.linalg.norm(path[i] - path[i - 1]))
-    return length
 
 
 def _reconstruct(came_from: dict[tuple, tuple], current: tuple) -> list[tuple]:

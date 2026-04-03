@@ -95,8 +95,19 @@ def load_json_config(path: str | Path) -> dict[str, Any]:
     dict
         Parsed configuration.
     """
-    with open(path) as f:
-        return json.load(f)
+    from pathlib import Path
+
+    path_obj = Path(path)
+    if not path_obj.exists():
+        raise FileNotFoundError(f"Configuration file not found: {path}")
+    if not path_obj.is_file():
+        raise ValueError(f"Path is not a regular file: {path}")
+
+    try:
+        with open(path_obj) as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in configuration file {path}: {e}") from e
 
 
 def save_json_config(config: dict[str, Any], path: str | Path) -> None:
