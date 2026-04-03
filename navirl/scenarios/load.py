@@ -80,6 +80,19 @@ def _resolve_paths(scenario: dict, scenario_path: Path) -> dict:
 
 
 def load_scenario(path: str | Path, *, validate: bool = True) -> dict:
+    """Load and parse a scenario file.
+
+    Args:
+        path (str | Path): Path to the scenario YAML file.
+        validate (bool, optional): Whether to validate the scenario against the schema.
+            Defaults to True.
+
+    Returns:
+        dict: The loaded and processed scenario dictionary with applied defaults.
+
+    Raises:
+        ValueError: If the scenario file is invalid or doesn't decode to a dictionary.
+    """
     scenario_path = Path(path)
     with scenario_path.open("r", encoding="utf-8") as f:
         scenario = yaml.safe_load(f)

@@ -7,6 +7,11 @@ _SCHEMA_PATH = Path(__file__).with_name("schema.json")
 
 
 def load_schema() -> dict:
+    """Load the JSON schema for scenario validation.
+
+    Returns:
+        dict: The JSON schema dictionary for validating scenario files.
+    """
     with _SCHEMA_PATH.open("r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -160,6 +165,14 @@ def _validate_horizon(horizon: dict, errors: list[str]) -> None:
 
 
 def validate_scenario_dict(scenario: dict) -> None:
+    """Validate a scenario dictionary against the schema.
+
+    Args:
+        scenario (dict): The scenario dictionary to validate.
+
+    Raises:
+        ValueError: If the scenario is invalid, with details of all validation errors.
+    """
     errors: list[str] = []
     _require(isinstance(scenario, dict), "scenario must be an object", errors)
     if not isinstance(scenario, dict):
