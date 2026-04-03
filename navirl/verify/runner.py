@@ -56,18 +56,8 @@ def _scenario_file_path(name: str) -> Path:
     return Path(__file__).resolve().parents[1] / "scenarios" / "library" / name
 
 
-def _write_report(
-    report_path: Path,
-    suite: str,
-    pytest_ok: bool,
-    pytest_out: str,
-    rows: list[VerifyResult],
-    thresholds: dict,
-    verify_root: Path,
-) -> None:
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Calculate enhanced summary statistics
+def _calculate_verification_stats(rows: list[VerifyResult]) -> dict:
+    """Calculate summary statistics for verification results."""
     total_scenarios = len(rows)
     passed_scenarios = sum(1 for r in rows if r.overall_pass)
     failed_scenarios = total_scenarios - passed_scenarios
@@ -76,22 +66,35 @@ def _write_report(
     judge_failures = sum(1 for r in rows if r.judge_status == "fail")
     success_rate = (passed_scenarios / total_scenarios * 100) if total_scenarios > 0 else 0
 
+    return {
+        "total_scenarios": total_scenarios,
+        "passed_scenarios": passed_scenarios,
+        "failed_scenarios": failed_scenarios,
+        "needs_review": needs_review,
+        "invariant_failures": invariant_failures,
+        "judge_failures": judge_failures,
+        "success_rate": success_rate,
+    }
+
+
+def _format_executive_summary(suite: str, pytest_ok: bool, stats: dict) -> list[str]:
+    """Format the executive summary section of the verification report."""
     lines = [
         f"# 🔍 NavIRL Verification Report: {suite.title()} Suite",
         "",
         "## 📊 Executive Summary",
         "",
-        f"- **Overall Status:** {'✅ PASS' if failed_scenarios == 0 and pytest_ok else '❌ FAIL'}",
-        f"- **Success Rate:** {success_rate:.1f}% ({passed_scenarios}/{total_scenarios} scenarios)",
-        f"- **Failed Scenarios:** {failed_scenarios}",
-        f"- **Needs Review:** {needs_review}",
+        f"- **Overall Status:** {'✅ PASS' if stats['failed_scenarios'] == 0 and pytest_ok else '❌ FAIL'}",
+        f"- **Success Rate:** {stats['success_rate']:.1f}% ({stats['passed_scenarios']}/{stats['total_scenarios']} scenarios)",
+        f"- **Failed Scenarios:** {stats['failed_scenarios']}",
+        f"- **Needs Review:** {stats['needs_review']}",
         f"- **Test Suite:** {'✅ Pass' if pytest_ok else '❌ Fail'}",
         "",
         "### 🎯 Quick Actions",
         "",
     ]
 
-    if failed_scenarios == 0 and pytest_ok:
+    if stats["failed_scenarios"] == 0 and pytest_ok:
         lines.extend(
             [
                 "🎉 **All scenarios passed!** Your implementation meets verification standards.",
@@ -103,7 +106,7 @@ def _write_report(
                 "",
             ]
         )
-    elif failed_scenarios == 0 and not pytest_ok:
+    elif stats["failed_scenarios"] == 0 and not pytest_ok:
         lines.extend(
             [
                 "⚠️ **Scenarios passed but test suite failed.** Core functionality may be compromised.",
@@ -117,16 +120,16 @@ def _write_report(
         )
     else:
         failure_types = []
-        if invariant_failures:
-            failure_types.append(f"📊 {invariant_failures} invariant violation(s)")
-        if judge_failures:
-            failure_types.append(f"👁️ {judge_failures} visual issue(s)")
-        if needs_review:
-            failure_types.append(f"⚠️ {needs_review} scenario(s) need human review")
+        if stats["invariant_failures"]:
+            failure_types.append(f"📊 {stats['invariant_failures']} invariant violation(s)")
+        if stats["judge_failures"]:
+            failure_types.append(f"👁️ {stats['judge_failures']} visual issue(s)")
+        if stats["needs_review"]:
+            failure_types.append(f"⚠️ {stats['needs_review']} scenario(s) need human review")
 
         lines.extend(
             [
-                f"❌ **{failed_scenarios} scenario(s) need attention.** Failure breakdown:",
+                f"❌ **{stats['failed_scenarios']} scenario(s) need attention.** Failure breakdown:",
                 "",
                 *[f"- {ft}" for ft in failure_types],
                 "",
@@ -140,70 +143,105 @@ def _write_report(
             ]
         )
 
-    lines.extend(
-        [
-            "",
-            "## ⚙️ Configuration",
-            "",
-            f"- **Judge confidence threshold:** {thresholds['judge_confidence_min']} (higher = stricter)",
-            "- **Suite type:** {suite} ({'full artifacts + video' if suite == 'full' else 'essential checks only'})",
-            "- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
-            "- **Max speed:** scenario-specific (`evaluation.max_speed`)",
-            "- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
-            "",
-            "## 📋 Scenario Results",
-            "",
-            "*💡 Tip: Click on bundle names to explore detailed artifacts and logs.*",
-            "",
-            "| Scenario | 📊 Invariants | 👁️ Judge | 🎯 Confidence | 🎥 Video | ✅ Overall | 📝 Key Issues | 📁 Bundle |",
-            "|---|:---:|:---:|:---:|:---:|:---:|---|:---:|",
-        ]
+    return lines
+
+
+def _format_configuration_section(suite: str, thresholds: dict) -> list[str]:
+    """Format the configuration section of the verification report."""
+    return [
+        "",
+        "## ⚙️ Configuration",
+        "",
+        f"- **Judge confidence threshold:** {thresholds['judge_confidence_min']} (higher = stricter)",
+        f"- **Suite type:** {suite} ({'full artifacts + video' if suite == 'full' else 'essential checks only'})",
+        "- **Teleport threshold:** scenario-specific (`evaluation.teleport_thresh`)",
+        "- **Max speed:** scenario-specific (`evaluation.max_speed`)",
+        "- **Max acceleration:** scenario-specific (`evaluation.max_accel`)",
+        "",
+    ]
+
+
+def _format_scenario_row(row: VerifyResult) -> str:
+    """Format a single scenario row for the results table."""
+    invariants_status = "✅ Pass" if row.invariants_pass else "❌ **Fail**"
+
+    judge_icons = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}
+    judge_status_icon = judge_icons.get(row.judge_status, "❓")
+    judge_text = row.judge_status.replace("_", " ").title()
+    judge_status_text = f"{judge_status_icon} {judge_text}"
+
+    # Confidence with visual indicators
+    confidence_display = f"{row.judge_confidence:.2f}"
+    if row.judge_confidence < 0.3:
+        confidence_display = f"🔴 {confidence_display}"
+    elif row.judge_confidence < 0.6:
+        confidence_display = f"🟡 {confidence_display}"
+    elif row.judge_confidence >= 0.8:
+        confidence_display = f"🟢 {confidence_display}"
+
+    video_status = (
+        ("✅ Pass" if row.video_check_pass else "❌ **Fail**")
+        if row.video_check_pass is not None
+        else "➖"
+    )
+    overall_status = "✅ **Pass**" if row.overall_pass else "❌ **Fail**"
+
+    # Enhanced notes with better truncation and key info
+    if row.notes:
+        # Extract the most important part of the notes
+        if "failed=" in row.notes:
+            failed_part = row.notes.split("failed=")[1].split(";")[0]
+            notes_display = f"Failed: {failed_part}"
+        elif "fix=" in row.notes:
+            fix_part = row.notes.split("fix=")[1][:50]
+            notes_display = f"Fix: {fix_part}"
+        else:
+            notes_display = row.notes[:50] + "..." if len(row.notes) > 50 else row.notes
+    else:
+        notes_display = "✅ No issues"
+
+    return (
+        f"| **{row.scenario_id}** | {invariants_status} | {judge_status_text} | "
+        f"{confidence_display} | {video_status} | {overall_status} | {notes_display} | "
+        f"[`{Path(row.bundle_dir).name}`]({Path(row.bundle_dir).name}) |"
     )
 
+
+def _format_scenario_results_table(rows: list[VerifyResult]) -> list[str]:
+    """Format the scenario results table section."""
+    lines = [
+        "## 📋 Scenario Results",
+        "",
+        "*💡 Tip: Click on bundle names to explore detailed artifacts and logs.*",
+        "",
+        "| Scenario | 📊 Invariants | 👁️ Judge | 🎯 Confidence | 🎥 Video | ✅ Overall | 📝 Key Issues | 📁 Bundle |",
+        "|---|:---:|:---:|:---:|:---:|:---:|---|:---:|",
+    ]
+
     for row in rows:
-        # Enhanced status formatting with better visual hierarchy
-        invariants_status = "✅ Pass" if row.invariants_pass else "❌ **Fail**"
+        lines.append(_format_scenario_row(row))
 
-        judge_icons = {"pass": "✅", "fail": "❌", "needs_human_review": "⚠️"}
-        judge_status_icon = judge_icons.get(row.judge_status, "❓")
-        judge_text = row.judge_status.replace("_", " ").title()
-        judge_status_text = f"{judge_status_icon} {judge_text}"
+    return lines
 
-        # Confidence with visual indicators
-        confidence_display = f"{row.judge_confidence:.2f}"
-        if row.judge_confidence < 0.3:
-            confidence_display = f"🔴 {confidence_display}"
-        elif row.judge_confidence < 0.6:
-            confidence_display = f"🟡 {confidence_display}"
-        elif row.judge_confidence >= 0.8:
-            confidence_display = f"🟢 {confidence_display}"
 
-        video_status = (
-            ("✅ Pass" if row.video_check_pass else "❌ **Fail**")
-            if row.video_check_pass is not None
-            else "➖"
-        )
-        overall_status = "✅ **Pass**" if row.overall_pass else "❌ **Fail**"
+def _write_report(
+    report_path: Path,
+    suite: str,
+    pytest_ok: bool,
+    pytest_out: str,
+    rows: list[VerifyResult],
+    thresholds: dict,
+    verify_root: Path,
+) -> None:
+    report_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Enhanced notes with better truncation and key info
-        if row.notes:
-            # Extract the most important part of the notes
-            if "failed=" in row.notes:
-                failed_part = row.notes.split("failed=")[1].split(";")[0]
-                notes_display = f"Failed: {failed_part}"
-            elif "fix=" in row.notes:
-                fix_part = row.notes.split("fix=")[1][:50]
-                notes_display = f"Fix: {fix_part}"
-            else:
-                notes_display = row.notes[:50] + "..." if len(row.notes) > 50 else row.notes
-        else:
-            notes_display = "✅ No issues"
+    stats = _calculate_verification_stats(rows)
+    lines = _format_executive_summary(suite, pytest_ok, stats)
+    lines.extend(_format_configuration_section(suite, thresholds))
+    lines.extend(_format_scenario_results_table(rows))
 
-        lines.append(
-            f"| **{row.scenario_id}** | {invariants_status} | {judge_status_text} | "
-            f"{confidence_display} | {video_status} | {overall_status} | {notes_display} | "
-            f"[`{Path(row.bundle_dir).name}`]({Path(row.bundle_dir).name}) |"
-        )
+    # TODO: Continue refactoring - this function is still too complex
+    # For now, keeping original logic to avoid breaking functionality
 
     lines.extend(["", "## ❌ Failure Analysis", ""])
     failing = [r for r in rows if not r.overall_pass]
