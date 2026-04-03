@@ -184,14 +184,14 @@ class AgentComparison:
         lines.extend([header, sep])
 
         for m in metric_names:
-            row = f"| {m} "
+            row_parts = [f"| {m} "]
             for name in agent_names:
                 vals = results[name].metrics.get(m, [])
                 mean = float(np.mean(vals)) if vals else float("nan")
                 std = float(np.std(vals)) if vals else float("nan")
-                row += f"| {mean:.{precision}f} +/- {std:.{precision}f} "
-            row += "|"
-            lines.append(row)
+                row_parts.append(f"| {mean:.{precision}f} +/- {std:.{precision}f} ")
+            row_parts.append("|")
+            lines.append("".join(row_parts))
 
         lines.append("")
 
