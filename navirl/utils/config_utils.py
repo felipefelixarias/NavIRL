@@ -95,8 +95,6 @@ def load_json_config(path: str | Path) -> dict[str, Any]:
     dict
         Parsed configuration.
     """
-    from pathlib import Path
-
     path_obj = Path(path)
     if not path_obj.exists():
         raise FileNotFoundError(f"Configuration file not found: {path}")
