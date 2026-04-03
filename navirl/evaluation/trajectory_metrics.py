@@ -16,6 +16,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from navirl.core.constants import (
+    COMFORT_LIMITS,
+    DEFAULT_BOOTSTRAP_SAMPLES,
+    DEFAULT_CONFIDENCE_LEVEL,
+)
 from navirl.data.trajectory import Trajectory
 
 # ---------------------------------------------------------------------------
@@ -43,7 +48,7 @@ class MetricResult:
     unit: str = ""
     ci_lower: float = float("nan")
     ci_upper: float = float("nan")
-    confidence_level: float = 0.95
+    confidence_level: float = DEFAULT_CONFIDENCE_LEVEL
     sample_size: int = 0
     raw_values: np.ndarray | None = None
 
@@ -85,6 +90,30 @@ class MetricSummary:
 
 
 # ---------------------------------------------------------------------------
+# Velocity computation helper
+# ---------------------------------------------------------------------------
+
+
+def _compute_velocities(trajectory: Trajectory) -> np.ndarray:
+    """Compute velocities from trajectory positions and timestamps.
+
+    Returns velocities with the last velocity replicated for consistent length.
+    Guards against zero time differences to avoid division by zero.
+
+    Args:
+        trajectory: Trajectory object with positions and timestamps.
+
+    Returns:
+        Array of velocities with shape (len(trajectory), 2).
+    """
+    dt = np.diff(trajectory.timestamps)
+    dt[dt == 0] = 1e-6  # Guard against zero time differences
+    vel = np.diff(trajectory.positions, axis=0) / dt[:, None]
+    # Pad last velocity for consistent length
+    return np.vstack([vel, vel[-1:]])
+
+
+# ---------------------------------------------------------------------------
 # Bootstrap helper
 # ---------------------------------------------------------------------------
 
@@ -92,8 +121,8 @@ class MetricSummary:
 def _bootstrap_ci(
     values: np.ndarray,
     statistic: str = "mean",
-    confidence: float = 0.95,
-    n_bootstrap: int = 1000,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+    n_bootstrap: int = DEFAULT_BOOTSTRAP_SAMPLES,
     rng: np.random.Generator | None = None,
 ) -> tuple[float, float, float]:
     """Compute bootstrap confidence interval for a statistic.
@@ -216,8 +245,8 @@ def final_displacement_error(
 def ade_fde_batch(
     predicted_list: Sequence[Trajectory],
     ground_truth_list: Sequence[Trajectory],
-    confidence: float = 0.95,
-    n_bootstrap: int = 1000,
+    confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+    n_bootstrap: int = DEFAULT_BOOTSTRAP_SAMPLES,
 ) -> tuple[MetricResult, MetricResult]:
     """Compute ADE and FDE over a batch with bootstrap confidence intervals.
 
@@ -576,11 +605,8 @@ def speed_profile(trajectory: Trajectory) -> np.ndarray:
     """
     if len(trajectory) < 2:
         return np.array([0.0])
-    dt = np.diff(trajectory.timestamps)
-    dt[dt == 0] = 1e-6
-    vel = np.diff(trajectory.positions, axis=0) / dt[:, None]
-    speeds = np.linalg.norm(vel, axis=1)
-    return np.concatenate([speeds, speeds[-1:]])
+    vel = _compute_velocities(trajectory)
+    return np.linalg.norm(vel, axis=1)
 
 
 def acceleration_profile(trajectory: Trajectory) -> np.ndarray:
@@ -625,9 +651,9 @@ def jerk_metric(trajectory: Trajectory) -> float:
 
 def comfort_score(
     trajectory: Trajectory,
-    max_speed: float = 2.0,
-    max_accel: float = 1.5,
-    max_jerk: float = 3.0,
+    max_speed: float = COMFORT_LIMITS.max_speed,
+    max_accel: float = COMFORT_LIMITS.max_accel,
+    max_jerk: float = COMFORT_LIMITS.max_jerk,
 ) -> float:
     """Composite comfort score in [0, 1] combining speed, acceleration, and jerk.
 
@@ -802,8 +828,8 @@ class TrajectoryEvaluator:
         collision_radius: float = 0.5,
         personal_space: float = 0.8,
         goal_threshold: float = 1.0,
-        confidence: float = 0.95,
-        n_bootstrap: int = 1000,
+        confidence: float = DEFAULT_CONFIDENCE_LEVEL,
+        n_bootstrap: int = DEFAULT_BOOTSTRAP_SAMPLES,
     ) -> None:
         self.collision_radius = collision_radius
         self.personal_space = personal_space

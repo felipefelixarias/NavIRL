@@ -424,9 +424,9 @@ class BaseAgent(abc.ABC):
         """Called before each environment step."""
         pass
 
-    def on_step_end(
+    def on_step_end(  # noqa: B027
         self, step: int, reward: float, done: bool, info: dict[str, Any]
-    ) -> None:  # noqa: B027
+    ) -> None:
         """Called after each environment step."""
         pass
 
@@ -559,7 +559,19 @@ class BaseAgent(abc.ABC):
             raise FileNotFoundError(msg)
 
         if _TORCH_AVAILABLE:
-            payload = torch.load(path, map_location=self._device, weights_only=False)
+            # Use weights_only=True for security (prevents arbitrary code execution)
+            try:
+                payload = torch.load(path, map_location=self._device, weights_only=True)
+            except (RuntimeError, TypeError) as e:
+                # If weights_only=True fails, checkpoint may contain custom objects
+                logger.error(
+                    f"Failed to load checkpoint with weights_only=True: {e}. "
+                    f"Checkpoint at {path} may contain unsafe objects."
+                )
+                raise RuntimeError(
+                    f"Cannot load checkpoint {path}: contains unsafe objects. "
+                    "Please regenerate checkpoint or verify its source."
+                ) from e
         else:
             raise RuntimeError("Cannot load checkpoint without PyTorch installed.")
 

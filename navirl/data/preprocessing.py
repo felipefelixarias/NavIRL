@@ -103,7 +103,13 @@ def compute_social_features(
         for ntraj in neighbor_trajs:
             if len(ntraj) == 0:
                 continue
-            closest_idx = int(np.argmin(np.abs(ntraj.timestamps - ts)))
+            # Use binary search for faster timestamp lookup (O(log N) vs O(N))
+            closest_idx = int(np.searchsorted(ntraj.timestamps, ts, side='left'))
+            # Ensure we don't go out of bounds and check both sides for closest
+            if closest_idx >= len(ntraj):
+                closest_idx = len(ntraj) - 1
+            elif closest_idx > 0 and (ts - ntraj.timestamps[closest_idx - 1]) < (ntraj.timestamps[closest_idx] - ts):
+                closest_idx -= 1
             n_pos = ntraj.positions[closest_idx]
             n_vel = ntraj.velocities[closest_idx] if ntraj.velocities is not None else np.zeros(2)
             dist = float(np.linalg.norm(n_pos - ego_pos))

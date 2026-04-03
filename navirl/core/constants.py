@@ -587,6 +587,26 @@ DEADLOCK_SPEED_THRESHOLD: Final[float] = (
 ANGLE_EPSILON: Final[float] = 1e-4  # rad - threshold for near-zero angle differences
 
 # ---------------------------------------------------------------------------
+#  Evaluation and metrics constants
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ComfortEvaluationLimits:
+    """Comfort evaluation thresholds for trajectory analysis."""
+
+    max_speed: float = 2.0  # m/s - maximum comfortable walking speed
+    max_accel: float = 1.5  # m/s² - maximum comfortable acceleration
+    max_jerk: float = 3.0  # m/s³ - maximum comfortable jerk
+
+
+COMFORT_LIMITS: Final[ComfortEvaluationLimits] = ComfortEvaluationLimits()
+
+# Statistical analysis defaults
+DEFAULT_BOOTSTRAP_SAMPLES: Final[int] = 1000  # number of bootstrap samples for CI estimation
+DEFAULT_CONFIDENCE_LEVEL: Final[float] = 0.95  # confidence level for statistical tests
+
+# ---------------------------------------------------------------------------
 #  Aggregate export
 # ---------------------------------------------------------------------------
 
@@ -675,4 +695,9 @@ __all__ = [
     "DEADLOCK_TIMEOUT_SECONDS",
     "DEADLOCK_SPEED_THRESHOLD",
     "ANGLE_EPSILON",
+    # Evaluation metrics
+    "COMFORT_LIMITS",
+    "ComfortEvaluationLimits",
+    "DEFAULT_BOOTSTRAP_SAMPLES",
+    "DEFAULT_CONFIDENCE_LEVEL",
 ]
