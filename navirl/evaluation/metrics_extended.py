@@ -92,7 +92,8 @@ def social_force_integral(
 ) -> float:
     """Integrate the repulsive social force experienced along the trajectory.
 
-    Uses a simplified exponential repulsion model.
+    Uses a simplified exponential repulsion model with vectorized computation for
+    performance on large pedestrian populations.
 
     Parameters:
         trajectory: Ego agent trajectory.
@@ -106,31 +107,55 @@ def social_force_integral(
     if not pedestrian_trajectories or len(trajectory) < 2:
         return 0.0
 
-    dt_arr = np.diff(trajectory.timestamps)
-    total_force = 0.0
+    # Pre-filter empty trajectories
+    valid_peds = [ped for ped in pedestrian_trajectories if len(ped) > 0]
+    if not valid_peds:
+        return 0.0
 
-    for t_idx in range(len(trajectory)):
-        ego_pos = trajectory.positions[t_idx]
-        ts = trajectory.timestamps[t_idx]
-        force_sum = 0.0
-        for ped in pedestrian_trajectories:
-            if len(ped) == 0:
-                continue
-            # Use binary search instead of linear search for O(log m) vs O(m) performance
+    dt_arr = np.diff(trajectory.timestamps)
+    n_timesteps = len(trajectory)
+    n_pedestrians = len(valid_peds)
+
+    # Vectorized approach: compute all pedestrian positions at ego timestamps
+    # Shape: (n_timesteps, n_pedestrians, 2)
+    ped_positions = np.full((n_timesteps, n_pedestrians, 2), np.nan)
+
+    for ped_idx, ped in enumerate(valid_peds):
+        for t_idx, ts in enumerate(trajectory.timestamps):
+            # Find closest timestamp using binary search (O(log m) vs O(m))
             p_idx = np.searchsorted(ped.timestamps, ts)
-            # Handle edge case: if ts is beyond the last timestamp
             p_idx = min(p_idx, len(ped.timestamps) - 1)
+
             # Check if previous timestamp is closer
             if p_idx > 0 and abs(ped.timestamps[p_idx - 1] - ts) < abs(ped.timestamps[p_idx] - ts):
                 p_idx = p_idx - 1
-            ped_pos = ped.positions[p_idx]
-            dist = float(np.linalg.norm(ego_pos - ped_pos))
-            if dist > 0:
-                force_sum += amplitude * np.exp(-dist / sigma)
+
+            ped_positions[t_idx, ped_idx] = ped.positions[p_idx]
+
+    # Vectorized distance computation
+    # ego_positions shape: (n_timesteps, 1, 2) to enable broadcasting
+    ego_positions = trajectory.positions[:, np.newaxis, :]
+
+    # Compute all distances at once: shape (n_timesteps, n_pedestrians)
+    # Using broadcasting: (n_timesteps, 1, 2) - (n_timesteps, n_pedestrians, 2)
+    position_diffs = ego_positions - ped_positions
+    distances = np.linalg.norm(position_diffs, axis=2)
+
+    # Apply social force model vectorially, avoiding division by zero
+    with np.errstate(divide="ignore", invalid="ignore"):
+        forces = np.where(distances > 0, amplitude * np.exp(-distances / sigma), 0.0)
+
+    # Sum forces across all pedestrians for each timestep
+    force_per_timestep = np.nansum(forces, axis=1)  # shape: (n_timesteps,)
+
+    # Integrate over time using appropriate dt values
+    total_force = 0.0
+    for t_idx in range(n_timesteps):
         if t_idx < len(dt_arr):
-            total_force += force_sum * dt_arr[t_idx]
-        else:
-            total_force += force_sum * (dt_arr[-1] if len(dt_arr) > 0 else 0.0)
+            total_force += force_per_timestep[t_idx] * dt_arr[t_idx]
+        elif len(dt_arr) > 0:
+            # Use last dt for the final timestep
+            total_force += force_per_timestep[t_idx] * dt_arr[-1]
 
     return float(total_force)
 
