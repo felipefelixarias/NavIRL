@@ -35,11 +35,9 @@ def normalize_angle(angle: float) -> float:
     >>> normalize_angle(3 * math.pi)
     -3.141592653589793  # approximately -pi
     """
-    while angle > math.pi:
-        angle -= 2.0 * math.pi
-    while angle < -math.pi:
-        angle += 2.0 * math.pi
-    return angle
+    # Use atan2 approach for better numerical stability and efficiency
+    # This handles edge cases better than modulo arithmetic
+    return math.atan2(math.sin(angle), math.cos(angle))
 
 
 def wrap_angle(angle: float) -> float:
