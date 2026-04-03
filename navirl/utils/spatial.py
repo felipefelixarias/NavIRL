@@ -7,6 +7,7 @@ k-d tree implementation.
 
 from __future__ import annotations
 
+import heapq
 import math
 from collections import defaultdict
 from collections.abc import Sequence
@@ -524,8 +525,8 @@ class KDTree2D:
             Up to k nearest (entity_id, distance) pairs, sorted by distance.
         """
         point = np.asarray(point, dtype=np.float64)
-        # Use a simple list-based max-heap substitute
-        heap: list[tuple[float, int]] = []  # (neg_dist, entity_id)
+        # Use heapq for efficient max-heap operations (O(log k) instead of O(k log k))
+        heap: list[tuple[float, int]] = []  # (neg_dist, entity_id) - max heap with neg distances
 
         def _search(node: _KDNode | None) -> None:
             if node is None:
@@ -534,11 +535,11 @@ class KDTree2D:
             if node.entity_id != exclude_id:
                 dist = float(np.linalg.norm(node.point - point))
                 if len(heap) < k:
-                    heap.append((-dist, node.entity_id))
-                    heap.sort(reverse=True)  # Keep sorted by neg_dist (desc)
-                elif dist < -heap[0][0]:
-                    heap[0] = (-dist, node.entity_id)
-                    heap.sort(reverse=True)
+                    # Push to heap - O(log k) operation
+                    heapq.heappush(heap, (-dist, node.entity_id))
+                elif dist < -heap[0][0]:  # heap[0] is the maximum (most negative) element
+                    # Replace maximum with new closer point - O(log k) operation
+                    heapq.heappushpop(heap, (-dist, node.entity_id))
 
             diff = point[node.axis] - node.point[node.axis]
 
@@ -780,10 +781,12 @@ def compute_voronoi_neighbors(
     """
     positions = np.asarray(positions, dtype=np.float64)
     n = len(positions)
-    neighbors: dict[int, list[int]] = {i: [] for i in range(n)}
+    # Use sets for efficient membership checking during computation
+    neighbors_sets: dict[int, set[int]] = {i: set() for i in range(n)}
 
     if n <= 1:
-        return neighbors
+        # Convert to lists for return type consistency
+        return {i: [] for i in range(n)}
 
     # For each point, find neighbors by angular sectors
     num_sectors = 6
@@ -808,20 +811,18 @@ def compute_voronoi_neighbors(
                 if j == i:
                     continue
                 a = angles[j]
-                # Normalize to sector range
-                while a < sector_start:
-                    a += 2.0 * math.pi
-                while a > sector_start + 2.0 * math.pi:
-                    a -= 2.0 * math.pi
+                # Normalize to sector range using efficient modulo arithmetic
+                # Instead of while loops, use modulo to wrap angle to [start, start + 2π)
+                a = ((a - sector_start) % (2.0 * math.pi)) + sector_start
                 if sector_start <= a < sector_end:
                     in_sector[j] = True
 
             sector_indices = np.where(in_sector)[0]
             if len(sector_indices) > 0:
                 nearest = sector_indices[np.argmin(dists[sector_indices])]
-                if nearest not in neighbors[i]:
-                    neighbors[i].append(nearest)
-                if i not in neighbors[nearest]:
-                    neighbors[nearest].append(i)
+                # Use sets for O(1) membership checking and adding
+                neighbors_sets[i].add(nearest)
+                neighbors_sets[nearest].add(i)
 
-    return neighbors
+    # Convert sets back to lists for return type consistency
+    return {i: list(neighbors_sets[i]) for i in range(n)}
