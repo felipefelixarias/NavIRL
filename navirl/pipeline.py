@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import multiprocessing as mp
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -847,6 +848,30 @@ def expand_state_paths(inputs: list[str]) -> list[Path]:
     return deduped
 
 
+def _run_scenario_worker(task_data: tuple) -> EpisodeLog:
+    """Worker function for parallel batch execution.
+
+    Args:
+        task_data: Tuple of (scenario_path, seed, out_root, render_override, video_override)
+
+    Returns:
+        EpisodeLog for the completed scenario run
+    """
+    scenario_path, seed, out_root, render_override, video_override = task_data
+
+    scenario = load_scenario(scenario_path)
+    scenario["seed"] = seed
+    run_id = f"{scenario['id']}_seed{seed}"
+
+    return run_scenario_dict(
+        scenario=scenario,
+        out_root=out_root,
+        run_id=run_id,
+        render_override=render_override,
+        video_override=video_override,
+    )
+
+
 def run_batch(args: argparse.Namespace) -> list[EpisodeLog]:
     scenario_dir = Path(args.scenarios)
     scenario_files = sorted(scenario_dir.rglob("*.yaml"))
@@ -855,21 +880,21 @@ def run_batch(args: argparse.Namespace) -> list[EpisodeLog]:
         raise FileNotFoundError(msg)
 
     seeds = [int(s.strip()) for s in args.seeds.split(",") if s.strip()]
-    logs: list[EpisodeLog] = []
 
+    # Prepare all tasks (scenario, seed combinations)
+    tasks = []
     for scenario_path in scenario_files:
         for seed in seeds:
-            scenario = load_scenario(scenario_path)
-            scenario["seed"] = seed
-            run_id = f"{scenario['id']}_seed{seed}"
-            logs.append(
-                run_scenario_dict(
-                    scenario=scenario,
-                    out_root=args.out,
-                    run_id=run_id,
-                    render_override=args.render,
-                    video_override=args.video,
-                )
-            )
+            tasks.append((scenario_path, seed, args.out, args.render, args.video))
+
+    # Execute tasks in parallel or sequentially based on args.parallel
+    if args.parallel <= 1:
+        # Sequential execution (maintains backward compatibility)
+        logs = [_run_scenario_worker(task) for task in tasks]
+    else:
+        # Parallel execution using multiprocessing
+        num_processes = min(args.parallel, len(tasks), mp.cpu_count())
+        with mp.Pool(processes=num_processes) as pool:
+            logs = pool.map(_run_scenario_worker, tasks)
 
     return logs
