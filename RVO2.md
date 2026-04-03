@@ -114,9 +114,9 @@ report for the RVO2 library itself to [geom@cs.unc.edu](mailto:geom@cs.unc.edu).
 
 The RVO2 authors may be contacted via:
 
-Jur van den Berg, Stephen J. Guy, Jamie Snape, Ming C. Lin, and Dinesh Manocha  
-Dept. of Computer Science  
-201 S. Columbia St.  
-Frederick P. Brooks, Jr. Computer Science Bldg.  
-Chapel Hill, N.C. 27599-3175  
+Jur van den Berg, Stephen J. Guy, Jamie Snape, Ming C. Lin, and Dinesh Manocha
+Dept. of Computer Science
+201 S. Columbia St.
+Frederick P. Brooks, Jr. Computer Science Bldg.
+Chapel Hill, N.C. 27599-3175
 United States of America

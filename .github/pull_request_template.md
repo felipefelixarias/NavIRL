@@ -1,15 +1,15 @@
 ## Summary
-- 
+-
 
 ## Changes
-- 
+-
 
 ## Testing
 - [ ] `python -m pytest`
 - [ ] Not run (explain why)
 
 ## Notes for reviewers
-- 
+-
 
 ## AI agent checklist
 - [ ] I recorded key assumptions and limitations

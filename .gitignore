@@ -44,6 +44,10 @@ output/
 logs/
 *.log
 
+# Security analysis files
+installed_packages.json
+safety_report.txt
+
 # CMake
 CMakeFiles/
 CMakeCache.txt

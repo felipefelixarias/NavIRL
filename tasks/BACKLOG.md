@@ -1,6 +1,6 @@
 # NavIRL Backlog
 
-Date: 2026-02-13  
+Date: 2026-02-13
 Scope: Transform INDOORCA into NavIRL toolkit with a working vertical slice.
 
 ## Phase 0: Foundation
@@ -131,4 +131,3 @@ Scope: Transform INDOORCA into NavIRL toolkit with a working vertical slice.
   - all tests pass in local environment.
 - Verification commands:
   - `pytest -q`
-
