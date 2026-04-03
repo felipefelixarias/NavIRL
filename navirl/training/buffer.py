@@ -1,8 +1,18 @@
 """Experience replay buffers for RL training.
 
 Provides various buffer implementations for storing and sampling transitions
-during reinforcement learning training, including uniform, prioritized,
-n-step, hindsight, sequence, rollout, multi-agent, and demonstration buffers.
+during reinforcement learning training. Each buffer type is optimized for
+different training scenarios and agent architectures.
+
+Available Buffer Types:
+- ReplayBuffer: Standard uniform sampling for off-policy algorithms (DQN, SAC)
+- PrioritizedReplayBuffer: Samples important transitions more frequently (Rainbow DQN)
+- NStepBuffer: Multi-step returns for improved sample efficiency (Rainbow, R2D2)
+- HindsightReplayBuffer: Goal-conditioned RL with automatic goal relabeling (HER)
+- SequenceBuffer: Variable-length sequences for RNN-based agents (R2D2, DRQN)
+- RolloutBuffer: On-policy trajectory storage for policy gradient methods (PPO, A2C)
+- MultiAgentBuffer: Centralized storage for multi-agent training scenarios
+- DemonstrationBuffer: Expert demonstrations for imitation learning (DQfD, DDPGfD)
 """
 
 from collections import deque

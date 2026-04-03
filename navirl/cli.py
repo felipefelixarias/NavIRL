@@ -46,7 +46,6 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 
 def _cmd_run_batch(args: argparse.Namespace) -> int:
-    _ = args.parallel  # currently sequential; kept for CLI compatibility.
     retention_hours = resolve_retention_hours(
         args.retention_hours,
         env_var="NAVIRL_LOG_TTL_HOURS",
@@ -212,7 +211,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_batch.add_argument("scenarios", type=str)
     p_batch.add_argument("--out", type=str, default="logs")
     p_batch.add_argument("--seeds", type=str, default="7")
-    p_batch.add_argument("--parallel", type=int, default=1)
+    p_batch.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Number of parallel processes to use for batch execution (default: 1, sequential)",
+    )
     p_batch.add_argument("--render", action=argparse.BooleanOptionalAction, default=False)
     p_batch.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
     p_batch.add_argument("--retention-hours", type=float, default=None)
