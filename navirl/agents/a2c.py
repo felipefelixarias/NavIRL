@@ -1,6 +1,4 @@
-"""
-NavIRL A2C Agent
-================
+"""NavIRL A2C Agent.
 
 Synchronous Advantage Actor-Critic implementation for pedestrian navigation.
 Uses a shared feature extractor with separate policy and value heads, and

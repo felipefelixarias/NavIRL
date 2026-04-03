@@ -36,7 +36,7 @@ _EXPORTS: dict[str, str] = {
     "ValueHead": "navirl.agents.networks",
 }
 
-__all__ = ["networks", *_EXPORTS]
+__all__ = ["networks"] + list(_EXPORTS.keys())
 
 
 def __getattr__(name: str) -> object:
