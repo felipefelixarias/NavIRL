@@ -219,8 +219,7 @@ def align_trajectories(traj_list: Sequence[Trajectory]) -> list[Trajectory]:
             for t in traj_list
         ]
     # Use the finest dt among all trajectories.
-    dts = [float(np.min(np.diff(t.timestamps)))
-           for t in traj_list if len(t.timestamps) >= 2]
+    dts = [float(np.min(np.diff(t.timestamps))) for t in traj_list if len(t.timestamps) >= 2]
     dt = min(dts) if dts else 0.1
 
     aligned: list[Trajectory] = []

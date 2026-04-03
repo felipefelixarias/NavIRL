@@ -20,6 +20,30 @@ _HUMAN_CONTROLLERS: dict[str, Callable[..., Any]] = {}
 _ROBOT_CONTROLLERS: dict[str, Callable[..., Any]] = {}
 
 
+def _create_safe_factory(
+    factory: Callable[..., Any], name: str, timeout_s: float | None = None
+) -> Callable[..., Any]:
+    """Create a safe factory wrapper that handles plugin validation and error handling.
+
+    Args:
+        factory: The original factory function to wrap
+        name: Plugin name for error reporting
+        timeout_s: Optional timeout for plugin initialization
+
+    Returns:
+        Wrapped factory function with safe plugin call handling
+    """
+
+    def safe_factory(*args, **kwargs):
+        call_kwargs = {"plugin_name": name, "method_name": "__init__", **kwargs}
+        if timeout_s is not None:
+            call_kwargs["timeout_s"] = timeout_s
+
+        return safe_plugin_call(factory, *args, **call_kwargs)
+
+    return safe_factory
+
+
 def register_backend(name: str, factory: Callable[..., Any]) -> None:
     """
     Register a backend factory with validation.
@@ -66,11 +90,7 @@ def get_backend(name: str) -> Callable[..., Any]:
         raise KeyError(f"Unknown backend '{name}'. Available: {available}")
 
     factory = _BACKENDS[name]
-
-    def safe_factory(*args, **kwargs):
-        return safe_plugin_call(factory, *args, plugin_name=name, method_name="__init__", **kwargs)
-
-    return safe_factory
+    return _create_safe_factory(factory, name)
 
 
 def register_human_controller(
@@ -133,18 +153,7 @@ def get_human_controller(name: str) -> Callable[..., Any]:
         raise KeyError(f"Unknown human controller '{name}'. Available: {available}")
 
     factory = _HUMAN_CONTROLLERS[name]
-
-    def safe_factory(*args, **kwargs):
-        return safe_plugin_call(
-            factory,
-            *args,
-            plugin_name=name,
-            method_name="__init__",
-            timeout_s=10.0,  # Allow more time for initialization
-            **kwargs,
-        )
-
-    return safe_factory
+    return _create_safe_factory(factory, name, timeout_s=10.0)  # Allow more time for initialization
 
 
 def register_robot_controller(
@@ -207,18 +216,7 @@ def get_robot_controller(name: str) -> Callable[..., Any]:
         raise KeyError(f"Unknown robot controller '{name}'. Available: {available}")
 
     factory = _ROBOT_CONTROLLERS[name]
-
-    def safe_factory(*args, **kwargs):
-        return safe_plugin_call(
-            factory,
-            *args,
-            plugin_name=name,
-            method_name="__init__",
-            timeout_s=10.0,  # Allow more time for initialization
-            **kwargs,
-        )
-
-    return safe_factory
+    return _create_safe_factory(factory, name, timeout_s=10.0)  # Allow more time for initialization
 
 
 def registry_snapshot() -> dict[str, list[str]]:

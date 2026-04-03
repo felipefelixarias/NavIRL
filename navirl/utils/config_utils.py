@@ -279,7 +279,6 @@ def dict_to_dataclass(cls: type[T], data: dict[str, Any]) -> T:
     if not is_dataclass(cls):
         return data  # type: ignore[return-value]
 
-    {f.name: f.type for f in fields(cls)}
     kwargs: dict[str, Any] = {}
 
     for f in fields(cls):

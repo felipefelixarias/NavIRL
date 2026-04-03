@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class SceneBackend(ABC):
@@ -52,7 +56,7 @@ class SceneBackend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def map_image(self):
+    def map_image(self) -> np.ndarray:
         raise NotImplementedError
 
     def nearest_clear_point(
