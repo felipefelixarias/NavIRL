@@ -12,6 +12,11 @@ os.environ.setdefault("MPLBACKEND", "Agg")
 
 
 def _resolve_mplconfig_dir() -> Path:
+    """Resolve the matplotlib configuration directory for NavIRL.
+
+    Returns:
+        Path: The path to a writable directory for matplotlib configuration.
+    """
     explicit = os.environ.get("NAVIRL_MPLCONFIGDIR", "").strip()
     if explicit:
         return Path(explicit)
