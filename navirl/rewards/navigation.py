@@ -46,11 +46,6 @@ def _dist(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.linalg.norm(np.asarray(a, dtype=np.float64) - np.asarray(b, dtype=np.float64)))
 
 
-def _norm(v: np.ndarray) -> float:
-    """L2 norm of a vector."""
-    return float(np.linalg.norm(np.asarray(v, dtype=np.float64)))
-
-
 # ---------------------------------------------------------------------------
 # GoalReward
 # ---------------------------------------------------------------------------
