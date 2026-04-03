@@ -526,14 +526,25 @@ class FrequencyTracker:
 
     def __init__(self, window: float = 1.0) -> None:
         self.window = window
-        self._ticks: list[float] = []
+        # Use deque for O(1) operations at both ends
+        self._ticks: deque[float] = deque()
+
+    def _prune_expired(self, now: float) -> None:
+        """Remove expired entries from the front of the deque.
+
+        This is more efficient than list comprehension as it only removes
+        elements from the front until we hit a non-expired entry.
+        """
+        cutoff = now - self.window
+        # Remove expired entries from front (O(k) where k = expired entries)
+        while self._ticks and self._ticks[0] <= cutoff:
+            self._ticks.popleft()
 
     def tick(self) -> None:
         """Record an event occurrence."""
         now = time.perf_counter()
-        cutoff = now - self.window
-        self._ticks = [t for t in self._ticks if t > cutoff]
-        self._ticks.append(now)
+        self._prune_expired(now)
+        self._ticks.append(now)  # O(1) append to deque
 
     @property
     def frequency(self) -> float:
@@ -541,21 +552,21 @@ class FrequencyTracker:
         if not self._ticks:
             return 0.0
         now = time.perf_counter()
-        cutoff = now - self.window
-        active = [t for t in self._ticks if t > cutoff]
-        if len(active) < 2:
+        self._prune_expired(now)
+
+        if len(self._ticks) < 2:
             return 0.0
-        duration = active[-1] - active[0]
+        duration = self._ticks[-1] - self._ticks[0]
         if duration < 1e-9:
             return 0.0
-        return (len(active) - 1) / duration
+        return (len(self._ticks) - 1) / duration
 
     @property
     def count(self) -> int:
         """Number of events in the current window."""
         now = time.perf_counter()
-        cutoff = now - self.window
-        return sum(1 for t in self._ticks if t > cutoff)
+        self._prune_expired(now)
+        return len(self._ticks)
 
     def reset(self) -> None:
         """Clear all recorded ticks."""
