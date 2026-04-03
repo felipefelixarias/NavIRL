@@ -16,6 +16,7 @@ def _resolve_mplconfig_dir() -> Path:
 
     Returns:
         Path: The path to a writable directory for matplotlib configuration.
+
     """
     explicit = os.environ.get("NAVIRL_MPLCONFIGDIR", "").strip()
     if explicit:
@@ -32,9 +33,10 @@ def _resolve_mplconfig_dir() -> Path:
     for cand in candidates:
         try:
             cand.mkdir(parents=True, exist_ok=True)
-            return cand
         except OSError:
             continue
+        else:
+            return cand
 
     return Path(tempfile.mkdtemp(prefix="navirl-mplconfig-"))
 
