@@ -331,7 +331,7 @@ def _heuristic_judge(
         total_text = float(diag.get("total_text_elements", 0))
         style_version = str(diag.get("style_version", ""))
 
-        if not (style_version.startswith("v2_") or style_version.startswith("v3_")):
+        if not (style_version.startswith(("v2_", "v3_"))):
             violations.append(
                 {
                     "type": "unexpected_render_style",

@@ -182,7 +182,7 @@ class PRMRobotController(RobotController):
                     + (current_pos[1] - neighbor_pos[1]) ** 2
                 )
                 new_cost = cost + edge_cost
-                new_path = path + [neighbor]
+                new_path = [*path, neighbor]
 
                 heapq.heappush(pq, (new_cost, neighbor, new_path))
 

@@ -15,7 +15,7 @@ def _assert_object_nodes_are_strict(node):
             assert node.get("additionalProperties") is False
             props = node.get("properties")
             assert isinstance(props, dict)
-            assert node.get("required") == [str(k) for k in props.keys()]
+            assert node.get("required") == [str(k) for k in props]
         for value in node.values():
             _assert_object_nodes_are_strict(value)
     elif isinstance(node, list):

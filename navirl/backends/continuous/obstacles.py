@@ -677,9 +677,8 @@ class PolygonObstacle(Obstacle):
             t = (diff[0] * seg_dir[1] - diff[1] * seg_dir[0]) / cross
             u = (diff[0] * direction[1] - diff[1] * direction[0]) / cross
 
-            if t >= 0 and 0 <= u <= 1:
-                if min_t is None or t < min_t:
-                    min_t = t
+            if t >= 0 and 0 <= u <= 1 and (min_t is None or t < min_t):
+                min_t = t
 
         return min_t
 

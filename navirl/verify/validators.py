@@ -108,12 +108,10 @@ def validate_units_metadata(scenario: dict) -> dict:
         if mpp is None and ppm is not None:
             mpp = 1.0 / ppm
 
-    if ppm is not None:
-        if ppm <= 0.0:
-            violations.append({"reason": "pixels_per_meter_nonpositive", "pixels_per_meter": ppm})
-    if mpp is not None:
-        if mpp <= 0.0:
-            violations.append({"reason": "meters_per_pixel_nonpositive", "meters_per_pixel": mpp})
+    if ppm is not None and ppm <= 0.0:
+        violations.append({"reason": "pixels_per_meter_nonpositive", "pixels_per_meter": ppm})
+    if mpp is not None and mpp <= 0.0:
+        violations.append({"reason": "meters_per_pixel_nonpositive", "meters_per_pixel": mpp})
 
     if ppm is not None and mpp is not None:
         expected = 1.0 / ppm

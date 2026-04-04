@@ -359,7 +359,7 @@ def create_windows(
     windows: list[TrajectoryWindow] = []
     for traj in trajectories:
         T = len(traj.timestamps)
-        if T < min_length:
+        if min_length > T:
             continue
         vel = _compute_velocities(traj)
         for start in range(0, T - total_len + 1, stride):
