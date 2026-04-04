@@ -320,10 +320,8 @@ class EventBus:
             if not sub.active:
                 continue
             # Entity filter
-            if (
-                sub.entity_filter is not None
-                and record.source_id != sub.entity_filter
-                and record.target_id != sub.entity_filter
+            if sub.entity_filter is not None and (
+                record.source_id != sub.entity_filter and record.target_id != sub.entity_filter
             ):
                 continue
             # Tag filter
