@@ -12,6 +12,7 @@ CrowdNavConfig  -- extended configuration dataclass
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -26,10 +27,8 @@ except ImportError as _exc:
         "Install it with:  pip install gymnasium"
     ) from _exc
 
-import logging  # noqa: E402
-
-from navirl.core.constants import LOS, PROXEMICS  # noqa: E402
-from navirl.envs.base_env import NavEnv, NavEnvConfig  # noqa: E402
+from navirl.core.constants import LOS, PROXEMICS
+from navirl.envs.base_env import NavEnv, NavEnvConfig
 
 logger = logging.getLogger(__name__)
 

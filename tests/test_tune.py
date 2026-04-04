@@ -6,6 +6,7 @@ from pathlib import Path
 import yaml
 
 from navirl.tune import run_tuning
+from navirl.tune.runner import TuningConfig
 
 
 def test_tuning_smoke_single_scenario(tmp_path: Path):
@@ -19,7 +20,7 @@ def test_tuning_smoke_single_scenario(tmp_path: Path):
     scenario_path.write_text(yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
 
     out_dir = tmp_path / "tune"
-    result = run_tuning(
+    config = TuningConfig(
         out_root=out_dir,
         suite="quick",
         scenarios=[str(scenario_path)],
@@ -30,6 +31,7 @@ def test_tuning_smoke_single_scenario(tmp_path: Path):
         max_frames=6,
         video=False,
     )
+    result = run_tuning(config)
 
     report_path = Path(result["report_path"])
     best_path = Path(result["best_params_path"])

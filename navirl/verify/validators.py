@@ -1,3 +1,15 @@
+"""Scenario validation utilities for NavIRL.
+
+Provides comprehensive validation of scenario configurations, including
+feasibility checking, path validation, and configuration security screening.
+Validators ensure scenarios are both physically realizable and safe to execute.
+
+Functions
+---------
+validate_scenario_feasibility -- Check if scenario is physically realizable
+validate_configuration_security -- Screen for security issues in config files
+"""
+
 from __future__ import annotations
 
 import json

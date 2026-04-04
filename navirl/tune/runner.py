@@ -44,6 +44,46 @@ DEFAULT_SCENARIOS = {
 DEFAULT_TUNE_RETENTION_HOURS = 168.0
 
 
+@dataclass
+class TuningConfig:
+    """Configuration for hyperparameter tuning experiments.
+
+    Groups all tuning parameters into logical categories for better
+    maintainability and type safety.
+    """
+
+    # Output configuration
+    out_root: str | Path
+    retention_hours: float | None = None
+
+    # Scenario configuration
+    suite: str = "quick"
+    scenarios: list[str] | None = None
+
+    # Search configuration
+    trials: int = 24
+    seed: int = 17
+    search_space_path: str | Path | None = None
+
+    # Judge configuration
+    judge_mode: str = "heuristic"
+    judge_confidence_min: float = 0.7
+    judge_provider: str = "codex"
+    judge_model: str | None = None
+    judge_endpoint: str | None = None
+    judge_api_key_env: str = "NAVIRL_VLM_API_KEY"
+    judge_native_cmd: str | None = None
+    judge_allow_fallback: bool = True
+
+    # Output format
+    max_frames: int = 10
+    video: bool = False
+
+    # Aegis configuration
+    aegis_rerank: bool = True
+    aegis_top_k: int = 6
+
+
 DEFAULT_SEARCH_SPACE = {
     "scene.orca.neighbor_dist": [3.5, 4.5, 5.5, 6.5],
     "scene.orca.max_neighbors": [10, 14, 18, 24],
@@ -303,36 +343,15 @@ def _write_report(
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def run_tuning(
-    *,
-    out_root: str | Path,
-    suite: str = "quick",
-    scenarios: list[str] | None = None,
-    trials: int = 24,
-    seed: int = 17,
-    judge_mode: str = "heuristic",
-    judge_confidence_min: float = 0.7,
-    judge_provider: str = "codex",
-    judge_model: str | None = None,
-    judge_endpoint: str | None = None,
-    judge_api_key_env: str = "NAVIRL_VLM_API_KEY",
-    judge_native_cmd: str | None = None,
-    judge_allow_fallback: bool = True,
-    max_frames: int = 10,
-    video: bool = False,
-    search_space_path: str | Path | None = None,
-    retention_hours: float | None = None,
-    aegis_rerank: bool = True,
-    aegis_top_k: int = 6,
-) -> dict:
-    if trials <= 0:
-        raise ValueError("trials must be positive")
-    if max_frames <= 0:
-        raise ValueError("max_frames must be positive")
+def run_tuning(config: TuningConfig) -> dict:
+    if config.trials <= 0:
+        raise ValueError("config.trials must be positive")
+    if config.max_frames <= 0:
+        raise ValueError("config.max_frames must be positive")
 
-    out_root = Path(out_root)
+    out_root = Path(config.out_root)
     resolved_retention_hours = resolve_retention_hours(
-        retention_hours,
+        config.retention_hours,
         env_var="NAVIRL_TUNE_TTL_HOURS",
         default_hours=DEFAULT_TUNE_RETENTION_HOURS,
     )
@@ -343,32 +362,34 @@ def run_tuning(
         keep_latest=3,
     )
 
-    run_tag = f"tune_{suite}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    run_tag = (
+        f"tune_{config.suite}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    )
     run_dir = out_root / run_tag
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    scenario_paths = _resolve_scenarios(scenarios, suite=suite)
+    scenario_paths = _resolve_scenarios(config.scenarios, suite=config.suite)
     scenario_templates = [load_scenario(p) for p in scenario_paths]
-    search_space = _load_search_space(search_space_path)
+    search_space = _load_search_space(config.search_space_path)
     _emit_progress(f"run_dir={run_dir}")
     _emit_progress(
         "config: "
-        f"suite={suite} trials={trials} seed={seed} scenarios={len(scenario_templates)} "
-        f"judge_mode={judge_mode} judge_provider={judge_provider} "
-        f"judge_allow_fallback={judge_allow_fallback} max_frames={max_frames} "
-        f"video={video} retention_hours={resolved_retention_hours}"
+        f"suite={config.suite} config.trials={config.trials} seed={config.seed} scenarios={len(scenario_templates)} "
+        f"config.judge_mode={config.judge_mode} config.judge_provider={config.judge_provider} "
+        f"config.judge_allow_fallback={config.judge_allow_fallback} config.max_frames={config.max_frames} "
+        f"config.video={config.video} retention_hours={resolved_retention_hours}"
     )
     if pruned_runs:
         _emit_progress(f"pruned_old_runs={len(pruned_runs)}")
 
-    rng = random.Random(seed)
+    rng = random.Random(config.seed)
     ranking: list[dict] = []
     trials_path = run_dir / "trials.jsonl"
 
     with trials_path.open("w", encoding="utf-8") as trials_file:
-        for trial_idx in range(trials):
+        for trial_idx in range(config.trials):
             trial_t0 = perf_counter()
-            _emit_progress(f"trial {trial_idx + 1}/{trials}: start")
+            _emit_progress(f"trial {trial_idx + 1}/{config.trials}: start")
             overrides = _sample_overrides(rng, search_space)
             trial_scenarios: list[TrialScenarioResult] = []
 
@@ -378,7 +399,7 @@ def run_tuning(
                 trial_out = run_dir / "trials" / f"trial_{trial_idx:03d}"
                 run_id = f"trial_{trial_idx:03d}_{scenario_id}"
                 _emit_progress(
-                    f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: run simulation"
+                    f"trial {trial_idx + 1}/{config.trials} scenario {scenario_id}: run simulation"
                 )
 
                 try:
@@ -387,7 +408,7 @@ def run_tuning(
                         out_root=trial_out,
                         run_id=run_id,
                         render_override=True,
-                        video_override=video,
+                        video_override=config.video,
                     )
                     bundle_dir = Path(log.bundle_dir)
                 except Exception as exc:
@@ -404,7 +425,7 @@ def run_tuning(
                         )
                     )
                     _emit_progress(
-                        f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: run_error={exc}"
+                        f"trial {trial_idx + 1}/{config.trials} scenario {scenario_id}: run_error={exc}"
                     )
                     continue
 
@@ -413,20 +434,20 @@ def run_tuning(
                     json.dump(invariants, f, indent=2, sort_keys=True)
 
                 summary = build_visual_summary(bundle_dir, invariants)
-                frame_paths = sample_key_frames(bundle_dir, num_frames=max_frames)
+                frame_paths = sample_key_frames(bundle_dir, num_frames=config.max_frames)
                 judge_payload = run_visual_judge(
                     bundle_dir=bundle_dir,
                     summary=summary,
                     frame_paths=frame_paths,
-                    confidence_threshold=judge_confidence_min,
-                    mode=judge_mode,
-                    require_video=video,
-                    provider=judge_provider,
-                    model=judge_model,
-                    endpoint=judge_endpoint,
-                    api_key_env=judge_api_key_env,
-                    native_cmd=judge_native_cmd,
-                    allow_fallback=judge_allow_fallback,
+                    confidence_threshold=config.judge_confidence_min,
+                    mode=config.judge_mode,
+                    require_video=config.video,
+                    provider=config.judge_provider,
+                    model=config.judge_model,
+                    endpoint=config.judge_endpoint,
+                    api_key_env=config.judge_api_key_env,
+                    native_cmd=config.judge_native_cmd,
+                    allow_fallback=config.judge_allow_fallback,
                 )
                 write_judge_output(bundle_dir / "judge.json", judge_payload)
 
@@ -449,7 +470,7 @@ def run_tuning(
                     )
                 )
                 _emit_progress(
-                    f"trial {trial_idx + 1}/{trials} scenario {scenario_id}: "
+                    f"trial {trial_idx + 1}/{config.trials} scenario {scenario_id}: "
                     f"invariants={'pass' if invariants.get('overall_pass', False) else 'fail'} "
                     f"judge={judge_payload.get('status', 'fail')} "
                     f"conf={float(judge_payload.get('confidence', 0.0)):.2f} "
@@ -489,7 +510,7 @@ def run_tuning(
             ranking.append(trial_record)
             trials_file.write(json.dumps(trial_record, sort_keys=True) + "\n")
             _emit_progress(
-                f"trial {trial_idx + 1}/{trials}: done "
+                f"trial {trial_idx + 1}/{config.trials}: done "
                 f"score={aggregate_score:.3f} pass_rate={pass_rate:.2f} "
                 f"mean_judge_conf={mean_judge_conf:.2f} "
                 f"elapsed_s={perf_counter() - trial_t0:.1f}"
@@ -513,20 +534,20 @@ def run_tuning(
         "blended_scores": {},
         "status": "skipped",
     }
-    if aegis_rerank and ranking:
-        _emit_progress(f"aegis_rerank: start top_k={max(1, int(aegis_top_k))}")
+    if config.aegis_rerank and ranking:
+        _emit_progress(f"config.aegis_rerank: start top_k={max(1, int(config.aegis_top_k))}")
         rerank_info = run_aegis_rerank(
             ranking,
-            mode=judge_mode,
+            mode=config.judge_mode,
             provider_config=ProviderConfig(
-                provider=judge_provider,
-                model=judge_model,
-                endpoint=judge_endpoint,
-                api_key_env=judge_api_key_env,
-                native_cmd=judge_native_cmd,
+                provider=config.judge_provider,
+                model=config.judge_model,
+                endpoint=config.judge_endpoint,
+                api_key_env=config.judge_api_key_env,
+                native_cmd=config.judge_native_cmd,
             ),
-            top_k=max(1, int(aegis_top_k)),
-            allow_fallback=judge_allow_fallback,
+            top_k=max(1, int(config.aegis_top_k)),
+            allow_fallback=config.judge_allow_fallback,
         )
         score_map = {int(k): float(v) for k, v in rerank_info.get("blended_scores", {}).items()}
         for row in ranking:
@@ -541,7 +562,7 @@ def run_tuning(
             reverse=True,
         )
         _emit_progress(
-            "aegis_rerank: "
+            "config.aegis_rerank: "
             f"status={rerank_info.get('status', 'unknown')} "
             f"provider_used={bool(rerank_info.get('provider_used', False))}"
         )
@@ -555,12 +576,12 @@ def run_tuning(
     report_path = run_dir / "REPORT.md"
     _write_report(
         report_path,
-        suite=suite,
+        suite=config.suite,
         scenarios=scenario_paths,
-        trials=trials,
-        seed=seed,
-        judge_mode=judge_mode,
-        judge_confidence_min=judge_confidence_min,
+        trials=config.trials,
+        seed=config.seed,
+        judge_mode=config.judge_mode,
+        judge_confidence_min=config.judge_confidence_min,
         search_space=search_space,
         ranking=ranking,
     )
