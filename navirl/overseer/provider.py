@@ -18,10 +18,14 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB limit for image files
 
 
 class ProviderUnavailableError(RuntimeError):
+    """Raised when a required AI provider service is not available or configured."""
+
     pass
 
 
 class ProviderCallError(RuntimeError):
+    """Raised when an AI provider call fails due to API errors or invalid responses."""
+
     pass
 
 
@@ -59,6 +63,21 @@ def _validate_file_path(path: str | Path) -> Path:
 
 @dataclass(slots=True)
 class ProviderConfig:
+    """Configuration for AI provider services (vision/language models).
+
+    Contains settings for connecting to and configuring AI provider APIs
+    including timeouts, authentication, and request limits.
+
+    Attributes:
+        provider: Name of the AI provider service ("codex", "openai", etc.).
+        model: Specific model name to use, or None for provider default.
+        endpoint: Custom API endpoint URL, or None for provider default.
+        api_key_env: Environment variable name containing the API key.
+        native_cmd: Optional native command to execute instead of API calls.
+        timeout_s: Request timeout in seconds for API calls.
+        max_images: Maximum number of images to include in vision requests.
+    """
+
     provider: str = "codex"
     model: str | None = None
     endpoint: str | None = None

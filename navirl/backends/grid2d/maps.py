@@ -90,6 +90,26 @@ DEFAULT_PIXELS_PER_METER = 100.0
 
 @dataclass(slots=True)
 class MapInfo:
+    """Complete metadata and spatial information for a simulation map.
+
+    Contains both the binary occupancy data and comprehensive spatial metadata
+    including scaling factors, dimensions, and source information.
+
+    Attributes:
+        binary_map: 2D numpy array representing occupancy (0=free, 1=occupied).
+        source: Source descriptor for map origin ("loaded", "generated", etc.).
+        map_id: Unique identifier for this map instance.
+        map_path: Optional file path where map was loaded from.
+        pixels_per_meter: Spatial resolution for pixel-to-meter conversion.
+        meters_per_pixel: Inverse spatial resolution for meter-to-pixel conversion.
+        width_px: Map width in pixels.
+        height_px: Map height in pixels.
+        width_m: Map width in real-world meters.
+        height_m: Map height in real-world meters.
+        scale_explicit: Whether spatial scale was explicitly specified.
+        downsample: Downsampling factor applied during map processing.
+    """
+
     binary_map: np.ndarray
     source: str
     map_id: str
