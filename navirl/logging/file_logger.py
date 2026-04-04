@@ -677,8 +677,8 @@ class JSONLLogger(BaseFileLogger):
             with os.fdopen(fd, "w", encoding="utf-8") as tmp_f:
                 tmp_f.write(new_content)
             os.replace(tmp_path, str(self._path))
-        except Exception:
-            # Clean up temp file on error
+        except (OSError, UnicodeEncodeError):
+            # Clean up temp file on file I/O or encoding errors
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
             raise
