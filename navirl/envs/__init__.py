@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """NavIRL Gymnasium RL environments for social robot navigation.
 
 This package provides a comprehensive suite of Gymnasium-compatible environments

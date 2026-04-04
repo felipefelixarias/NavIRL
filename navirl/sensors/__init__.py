@@ -5,6 +5,8 @@ occupancy grid) with configurable noise models, plus sensor fusion and
 Kalman-filter state estimation.
 """
 
+from __future__ import annotations
+
 from navirl.sensors.base import (
     DropoutNoise,
     GaussianNoise,

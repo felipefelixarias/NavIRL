@@ -5,6 +5,8 @@ including behavioral cloning, inverse reinforcement learning, and adversarial
 imitation learning methods.
 """
 
+from __future__ import annotations
+
 from .airl import AIRL
 from .bc import BehavioralCloning
 from .dagger import DAgger

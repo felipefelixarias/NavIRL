@@ -6,6 +6,8 @@ common transformations like observation normalization, frame stacking,
 and episode monitoring.
 """
 
+from __future__ import annotations
+
 import multiprocessing as mp
 from abc import ABC, abstractmethod
 from collections import deque

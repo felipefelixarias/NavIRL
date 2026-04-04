@@ -29,6 +29,8 @@ behavior_tree
     behavior subtrees.
 """
 
+from __future__ import annotations
+
 from navirl.models.behavior_tree import (
     BehaviorTree,
     BehaviorTreeHumanController,

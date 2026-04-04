@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Scenario library for NavIRL.
 
 This package contains predefined scenario configurations for various
