@@ -1,3 +1,15 @@
+"""Layout generation and spatial arrangement utilities.
+
+Provides automated layout generation for placing agents, obstacles, and
+other entities in simulation environments. Includes coordinate conversion,
+collision detection, and spatial optimization algorithms.
+
+Functions
+---------
+_world_from_rc -- Convert grid coordinates to world coordinates
+generate_layout -- Generate optimized spatial arrangements
+"""
+
 from __future__ import annotations
 
 import copy

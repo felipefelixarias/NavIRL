@@ -1,3 +1,14 @@
+"""Default plugin registration for NavIRL components.
+
+Provides centralized registration of built-in backends, human controllers,
+and robot controllers. The registration ensures components are available
+for use in simulations without requiring explicit imports.
+
+Functions
+---------
+register_default_plugins -- Register all built-in components once
+"""
+
 from __future__ import annotations
 
 from navirl.backends.grid2d import Grid2DBackend
