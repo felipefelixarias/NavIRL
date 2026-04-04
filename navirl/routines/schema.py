@@ -15,6 +15,28 @@ import jsonschema
 import yaml
 
 
+def _convert_tuples_to_lists(obj: Any) -> Any:
+    """Recursively convert tuples to lists for YAML serialization."""
+    if isinstance(obj, (tuple, list)):
+        return [_convert_tuples_to_lists(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: _convert_tuples_to_lists(value) for key, value in obj.items()}
+    else:
+        return obj
+
+
+def _convert_location_lists_to_tuples(params: dict[str, Any]) -> dict[str, Any]:
+    """Convert location-related lists back to tuples for task parameters."""
+    location_keys = {"location", "queue_location"}
+    result = params.copy()
+
+    for key, value in result.items():
+        if key in location_keys and isinstance(value, list) and len(value) == 2:
+            result[key] = tuple(value)
+
+    return result
+
+
 class TaskType(Enum):
     """Types of tasks that can be included in a routine."""
 
@@ -138,7 +160,7 @@ class RoutineSpec:
         tasks = []
         for task_data in data.get("tasks", []):
             task_type = TaskType[task_data["type"].upper()]
-            params = task_data.get("params", {})
+            params = _convert_location_lists_to_tuples(task_data.get("params", {}))
             duration = task_data.get("duration")
             priority = task_data.get("priority", 1)
 
@@ -172,7 +194,7 @@ class RoutineSpec:
                 branch_tasks.append(
                     Task(
                         type=task_type,
-                        params=task_data.get("params", {}),
+                        params=_convert_location_lists_to_tuples(task_data.get("params", {})),
                         duration=task_data.get("duration"),
                         priority=task_data.get("priority", 1),
                     )
@@ -223,7 +245,7 @@ class RoutineSpec:
         for task in self.tasks:
             task_dict = {
                 "type": task.type.name.lower(),
-                "params": task.params,
+                "params": _convert_tuples_to_lists(task.params),
                 "priority": task.priority,
             }
             if task.duration is not None:
@@ -231,7 +253,7 @@ class RoutineSpec:
             if task.completion_condition is not None:
                 task_dict["completion_condition"] = {
                     "type": task.completion_condition.type.name.lower(),
-                    "params": task.completion_condition.params,
+                    "params": _convert_tuples_to_lists(task.completion_condition.params),
                 }
             result["tasks"].append(task_dict)
 
@@ -242,7 +264,7 @@ class RoutineSpec:
                 branch_dict = {
                     "condition": {
                         "type": branch.condition.type.name.lower(),
-                        "params": branch.condition.params,
+                        "params": _convert_tuples_to_lists(branch.condition.params),
                     },
                     "tasks": [],
                     "probability": branch.probability,
@@ -251,7 +273,7 @@ class RoutineSpec:
                     branch_dict["tasks"].append(
                         {
                             "type": task.type.name.lower(),
-                            "params": task.params,
+                            "params": _convert_tuples_to_lists(task.params),
                             "priority": task.priority,
                         }
                     )
