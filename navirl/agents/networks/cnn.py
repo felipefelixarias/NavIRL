@@ -285,7 +285,6 @@ class ImpalaCNN(nn.Module):
         # MaxPool2d with stride=2, padding=1)
         h, w = input_height, input_width
         for _ in channel_sequence:
-            # MaxPool2d(kernel_size=3, stride=2, padding=1)
             h = (h - 3 + 2 * 1) // 2 + 1
             w = (w - 3 + 2 * 1) // 2 + 1
         self._flat_dim = int(channel_sequence[-1]) * h * w

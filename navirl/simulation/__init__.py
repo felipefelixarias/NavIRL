@@ -36,7 +36,6 @@ __all__ = [
     "KinematicModel",
     "NavigationGraph",
     "Region",
-    "Runner",
     "SimplePhysics",
     "SimulationClock",
     "SimulationRunner",

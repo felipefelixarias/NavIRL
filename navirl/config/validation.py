@@ -17,20 +17,6 @@ logger = logging.getLogger(__name__)
 # Schema types
 # ---------------------------------------------------------------------------
 
-# A schema is a plain dict describing expected keys:
-#   {
-#       "key_name": {
-#           "type": <python type or tuple of types>,
-#           "required": bool,
-#           "default": <value>,            # optional
-#           "choices": [...],               # optional
-#           "min": <number>,                # optional
-#           "max": <number>,                # optional
-#           "nested": <sub-schema dict>,    # optional
-#       },
-#       ...
-#   }
-
 
 # ---------------------------------------------------------------------------
 # ConfigValidator
