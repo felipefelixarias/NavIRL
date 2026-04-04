@@ -26,8 +26,8 @@ from navirl.utils import normalize_vector
 
 __all__ = [
     "PowerLawConfig",
-    "PowerLawModel",
     "PowerLawHumanController",
+    "PowerLawModel",
 ]
 
 

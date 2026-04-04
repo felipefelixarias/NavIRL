@@ -542,8 +542,8 @@ class _SingleEnvShim:
 
 
 __all__ = [
+    "EvalResult",
     "Trainer",
     "TrainerConfig",
     "TrainingLogger",
-    "EvalResult",
 ]

@@ -80,8 +80,34 @@ addopts = "-ra"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501", "B027"]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "PIE", # flake8-pie
+    "SIM", # flake8-simplify
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "E402",  # module level import not at top of file (special cases)
+    "B027",  # empty method in abstract base class
+    "C416",  # unnecessary dict comprehension
+    "RUF002", # docstring contains ambiguous characters
+    "RUF003", # comment contains ambiguous characters
+    "RUF012", # mutable default value for class attribute
+    "RUF022", # __all__ is not sorted (manually organized)
+    "RUF046", # unnecessary int() calls
+    "RUF059", # unused unpacked variables
+    "SIM108", # use ternary operator (readability preference)
+    "SIM110", # use any() instead of for loop (sometimes less readable)
+    "SIM115", # use context manager (special cases)
+    "F401",   # unused imports in specific contexts
+]
 
 [tool.black]
 line-length = 100

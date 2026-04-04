@@ -487,7 +487,7 @@ class BehaviorModel:
             rng_seed=rng_seed,
         )
         # Store the physical radius hint for the caller.
-        model._disability_radius = radius  # noqa: SLF001
+        model._disability_radius = radius
         return model
 
     # -- decision methods -----------------------------------------------------

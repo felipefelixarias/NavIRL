@@ -52,7 +52,7 @@ class RiskEstimator:
         agent_state : np.ndarray
             ``[x, y, vx, vy]`` of the agent.
         obstacle_states : np.ndarray
-            Shape ``(N, 4)`` – ``[x, y, vx, vy]`` per obstacle.
+            Shape ``(N, 4)`` - ``[x, y, vx, vy]`` per obstacle.
 
         Returns
         -------

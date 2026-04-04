@@ -127,7 +127,7 @@ class RunningNormalizer(nn.Module):
 
         Returns
         -------
-        Tensor – normalized ``x``.
+        Tensor - normalized ``x``.
         """
         if self.training:
             self.update(x.reshape(-1, self.input_dim))
@@ -678,7 +678,7 @@ class RecurrentExtractor(nn.Module):
         if single_step:
             features = self.base_extractor(x).unsqueeze(1)  # (B, 1, feat)
         else:
-            # x: (B, T, *obs_shape) – extract features per step
+            # x: (B, T, *obs_shape) - extract features per step
             B, T = x.shape[0], x.shape[1]
             flat = x.reshape(B * T, *x.shape[2:])
             flat_features = self.base_extractor(flat)  # (B*T, feat)

@@ -113,7 +113,7 @@ class SocialAttention(nn.Module):
         Tensor ``(B, output_dim)``
             Attention-weighted social feature.
         """
-        B, N, _ = human_states.shape
+        _B, N, _ = human_states.shape
 
         # Embed both
         robot_emb = F.relu(self.robot_embed(robot_state))  # (B, hidden_dim)
@@ -215,7 +215,7 @@ class MultiHeadSocialAttention(nn.Module):
         -------
         Tensor ``(B, output_dim)``
         """
-        B, N, _ = human_states.shape
+        _B, N, _ = human_states.shape
         head_outputs = []
 
         for i in range(self.num_heads):
@@ -1039,7 +1039,7 @@ class SpatialTransformer(nn.Module):
         Tensor ``(B, N, d_model)``
             Transformed spatial features.
         """
-        B, N, _ = x.shape
+        _B, N, _ = x.shape
 
         # Project and normalize
         h = self.input_norm(F.relu(self.input_proj(x)))  # (B, N, d_model)

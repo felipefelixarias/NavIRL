@@ -408,42 +408,40 @@ class BaseAgent(abc.ABC):
     # Training-loop hooks (no-op by default; override in subclasses)
     # ------------------------------------------------------------------
 
-    def on_training_start(self) -> None:  # noqa: B027
+    def on_training_start(self) -> None:
         """Called once before the very first environment step."""
 
-    def on_training_end(self) -> None:  # noqa: B027
+    def on_training_end(self) -> None:
         """Called after training is complete."""
 
-    def on_epoch_start(self, epoch: int) -> None:  # noqa: B027
+    def on_epoch_start(self, epoch: int) -> None:
         """Called at the beginning of each training epoch."""
 
-    def on_epoch_end(self, epoch: int, metrics: dict[str, float]) -> None:  # noqa: B027
+    def on_epoch_end(self, epoch: int, metrics: dict[str, float]) -> None:
         """Called at the end of each training epoch."""
 
-    def on_step_start(self, step: int) -> None:  # noqa: B027
+    def on_step_start(self, step: int) -> None:
         """Called before each environment step."""
 
-    def on_step_end(  # noqa: B027
-        self, step: int, reward: float, done: bool, info: dict[str, Any]
-    ) -> None:
+    def on_step_end(self, step: int, reward: float, done: bool, info: dict[str, Any]) -> None:
         """Called after each environment step."""
 
-    def on_episode_start(self, episode: int) -> None:  # noqa: B027
+    def on_episode_start(self, episode: int) -> None:
         """Called at the start of each episode."""
 
-    def on_episode_end(self, episode: int, total_reward: float, length: int) -> None:  # noqa: B027
+    def on_episode_end(self, episode: int, total_reward: float, length: int) -> None:
         """Called at the end of each episode."""
 
-    def on_rollout_start(self) -> None:  # noqa: B027
+    def on_rollout_start(self) -> None:
         """Called before a rollout collection phase (on-policy agents)."""
 
-    def on_rollout_end(self) -> None:  # noqa: B027
+    def on_rollout_end(self) -> None:
         """Called after a rollout collection phase."""
 
-    def on_update_start(self) -> None:  # noqa: B027
+    def on_update_start(self) -> None:
         """Called before each gradient update."""
 
-    def on_update_end(self, metrics: dict[str, float]) -> None:  # noqa: B027
+    def on_update_end(self, metrics: dict[str, float]) -> None:
         """Called after each gradient update."""
 
     # ------------------------------------------------------------------

@@ -19,7 +19,7 @@ from navirl.safety.constraints import ConstraintSet, SafetyConstraint
 
 
 class AgentLike(Protocol):
-    """Structural protocol – any object with an ``act`` method."""
+    """Structural protocol - any object with an ``act`` method."""
 
     def act(self, obs: np.ndarray) -> np.ndarray: ...
 
@@ -121,11 +121,11 @@ class CBFShield:
     Parameters
     ----------
     barrier_fn : callable
-        ``h(state) -> float`` – barrier function.  Safe when >= 0.
+        ``h(state) -> float`` - barrier function.  Safe when >= 0.
     barrier_grad_fn : callable
-        ``dh/dx(state) -> np.ndarray`` – gradient of *h* w.r.t. state.
+        ``dh/dx(state) -> np.ndarray`` - gradient of *h* w.r.t. state.
     dynamics_fn : callable
-        ``f(state, action) -> next_state`` – (simplified) dynamics.
+        ``f(state, action) -> next_state`` - (simplified) dynamics.
     alpha : float
         Class-K function gain: ``dh/dt >= -alpha * h(x)``.
     action_dim : int

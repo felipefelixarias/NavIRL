@@ -23,13 +23,12 @@ try:
 except Exception as e:
     logger.debug(f"Failed to set matplotlib backend to Agg: {e}")
 
-import matplotlib.animation as animation  # noqa: E402
-import matplotlib.cm as cm  # noqa: E402
-import matplotlib.colors as mcolors  # noqa: E402
-import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.collections import LineCollection  # noqa: E402
-from matplotlib.patches import Ellipse  # noqa: E402
-from mpl_toolkits.mplot3d import Axes3D  # noqa: E402,F401 - registers 3-D projection
+import matplotlib.animation as animation
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.patches import Ellipse
 
 # ---------------------------------------------------------------------------
 # Helpers

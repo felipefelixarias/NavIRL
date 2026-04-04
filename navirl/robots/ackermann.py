@@ -229,7 +229,7 @@ def reeds_shepp_path(
 
     Returns:
         ``(path, segments)`` where *path* has shape ``(num_samples, 3)``
-        – ``[x, y, theta]`` – and *segments* lists the RS segments.
+        - ``[x, y, theta]`` - and *segments* lists the RS segments.
     """
     # Transform goal into start frame.
     dx = x1 - x0
@@ -367,7 +367,7 @@ def parallel_parking_trajectory(
 
     Returns:
         ``(poses, controls)`` where *poses* has shape ``(T, 3)`` and
-        *controls* has shape ``(T, 2)`` – ``[v, delta]``.
+        *controls* has shape ``(T, 2)`` - ``[v, delta]``.
     """
     r = config.min_turning_radius
     park_speed = min(1.0, config.max_speed * 0.3)

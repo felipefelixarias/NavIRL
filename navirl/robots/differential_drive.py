@@ -296,8 +296,8 @@ def track_trajectory(
         angular_pid: PID gains for heading control.
 
     Returns:
-        ``(poses, controls)`` where *poses* has shape ``(T, 3)`` –
-        ``[x, y, theta]`` – and *controls* has shape ``(T, 2)`` –
+        ``(poses, controls)`` where *poses* has shape ``(T, 3)`` -
+        ``[x, y, theta]`` - and *controls* has shape ``(T, 2)`` -
         ``[v, omega]``.
     """
     pid_v = PIDController(linear_pid or PIDGains(kp=1.5, ki=0.0, kd=0.2))
@@ -454,7 +454,7 @@ def sensor_world_pose(
         mount: Sensor mounting specification.
 
     Returns:
-        ``(sx, sy, stheta)`` – world-frame position and heading of the
+        ``(sx, sy, stheta)`` - world-frame position and heading of the
         sensor.
     """
     cos_t = np.cos(robot_theta)

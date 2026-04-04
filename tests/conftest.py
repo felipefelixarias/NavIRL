@@ -10,8 +10,8 @@ atexit.register(shutil.rmtree, _MPLCONFIGDIR, ignore_errors=True)
 os.environ["MPLCONFIGDIR"] = str(_MPLCONFIGDIR)
 os.environ["NAVIRL_MPLCONFIGDIR"] = str(_MPLCONFIGDIR)
 
-import matplotlib  # noqa: E402
-import pytest  # noqa: E402
+import matplotlib
+import pytest
 
 # Ensure rendering tests are stable in headless environments.
 matplotlib.use("Agg", force=True)

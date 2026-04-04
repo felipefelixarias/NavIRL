@@ -34,7 +34,7 @@ DEG2RAD: Final[float] = math.pi / 180.0
 RAD2DEG: Final[float] = 180.0 / math.pi
 
 # ---------------------------------------------------------------------------
-#  Pedestrian body dimensions (adult, 50th‑percentile)
+#  Pedestrian body dimensions (adult, 50th-percentile)
 # ---------------------------------------------------------------------------
 
 
@@ -42,11 +42,11 @@ RAD2DEG: Final[float] = 180.0 / math.pi
 class BodyDimensions:
     """Average adult pedestrian body measurements."""
 
-    shoulder_width: float = 0.45  # m – bideltoid breadth
-    chest_depth: float = 0.25  # m – anteroposterior diameter
-    body_radius: float = 0.25  # m – bounding-circle radius (typical)
-    body_radius_min: float = 0.18  # m – slim adult
-    body_radius_max: float = 0.35  # m – large adult / with backpack
+    shoulder_width: float = 0.45  # m - bideltoid breadth
+    chest_depth: float = 0.25  # m - anteroposterior diameter
+    body_radius: float = 0.25  # m - bounding-circle radius (typical)
+    body_radius_min: float = 0.18  # m - slim adult
+    body_radius_max: float = 0.35  # m - large adult / with backpack
     height_mean: float = 1.70  # m
     height_std: float = 0.10  # m
     mass_mean: float = 75.0  # kg
@@ -56,7 +56,7 @@ class BodyDimensions:
 BODY: Final[BodyDimensions] = BodyDimensions()
 
 # ---------------------------------------------------------------------------
-#  Hall's proxemics – interpersonal distance zones
+#  Hall's proxemics - interpersonal distance zones
 # ---------------------------------------------------------------------------
 
 
@@ -197,22 +197,22 @@ class SocialForceConstants:
 
     # --- Repulsive interaction force ---
     # V_alpha_beta = A * exp((r_ab - d_ab) / B) * w(theta)
-    A: float = 2.1  # N  – strength of repulsive interaction
-    B: float = 0.3  # m  – range of repulsive interaction
-    A_wall: float = 10.0  # N  – strength of wall repulsion
-    B_wall: float = 0.2  # m  – range of wall repulsion
+    A: float = 2.1  # N  - strength of repulsive interaction
+    B: float = 0.3  # m  - range of repulsive interaction
+    A_wall: float = 10.0  # N  - strength of wall repulsion
+    B_wall: float = 0.2  # m  - range of wall repulsion
     # --- Anisotropy (field-of-view weighting) ---
     # w(theta) = lambda + (1 - lambda) * (1 + cos(theta)) / 2
     lambda_anisotropy: float = 0.35  # 0 = isotropic, 1 = only forward
     # --- Body compression / sliding friction (contact forces) ---
-    k_body: float = 1.2e5  # N/m  – body-compression spring constant
-    kappa_friction: float = 2.4e5  # kg/(m·s) – sliding friction coefficient
+    k_body: float = 1.2e5  # N/m  - body-compression spring constant
+    kappa_friction: float = 2.4e5  # kg/(m·s) - sliding friction coefficient
     # --- Desired-force relaxation ---
-    tau: float = 0.5  # s  – relaxation time to preferred velocity
+    tau: float = 0.5  # s  - relaxation time to preferred velocity
     # --- Attractive force (groups) ---
-    C_attraction: float = 0.5  # N  – group-attraction strength
+    C_attraction: float = 0.5  # N  - group-attraction strength
     # --- Pedestrian-to-pedestrian interaction cutoff ---
-    interaction_range: float = 5.0  # m – ignore ped-ped forces beyond this
+    interaction_range: float = 5.0  # m - ignore ped-ped forces beyond this
     # --- Wall interaction cutoff ---
     wall_interaction_range: float = 3.0  # m
 
@@ -272,7 +272,7 @@ class CorridorDimensions:
 ENVIRONMENT: Final[CorridorDimensions] = CorridorDimensions()
 
 # ---------------------------------------------------------------------------
-#  Level-of-service (Fruin) – pedestrian density thresholds
+#  Level-of-service (Fruin) - pedestrian density thresholds
 # ---------------------------------------------------------------------------
 
 
@@ -299,16 +299,16 @@ LOS: Final[LevelOfService] = LevelOfService()
 class SimulationDefaults:
     """Default simulation parameters."""
 
-    dt: float = 0.04  # s  – physics timestep (25 Hz)
+    dt: float = 0.04  # s  - physics timestep (25 Hz)
     max_steps: int = 10_000  # safety cap
-    max_time: float = 300.0  # s  – 5-minute timeout
+    max_time: float = 300.0  # s  - 5-minute timeout
     default_fps: int = 25  # frames per second for rendering
     substeps: int = 1  # physics substeps per control step
     warmup_steps: int = 0  # steps before RL control starts
     # Collision detection
-    collision_eps: float = 0.01  # m – penetration tolerance
+    collision_eps: float = 0.01  # m - penetration tolerance
     # Goal reaching
-    goal_radius: float = 0.5  # m – distance considered "arrived"
+    goal_radius: float = 0.5  # m - distance considered "arrived"
     # Random seed
     default_seed: int = 42
     # Recording
@@ -334,7 +334,7 @@ class LidarParams:
     min_range: float = 0.1  # m
     fov: float = TWO_PI  # rad (full 360°)
     angular_resolution: float = TWO_PI / 360  # rad
-    noise_std: float = 0.01  # m – range noise
+    noise_std: float = 0.01  # m - range noise
     # Beam grouping for lower-dimensional observations
     num_sectors: int = 36  # coarsened sectors
 

@@ -570,13 +570,13 @@ class ProceduralScenarioGenerator(BaseScenario):
 __all__ = [
     "BaseScenario",
     "CircleCrossing",
-    "RandomGoal",
     "CorridorPassing",
-    "DoorwayNegotiation",
-    "IntersectionCrossing",
-    "GroupNavigation",
     "DenseRoom",
+    "DoorwayNegotiation",
+    "GroupNavigation",
+    "IntersectionCrossing",
     "OpenField",
-    "ScenarioDifficultyScaler",
     "ProceduralScenarioGenerator",
+    "RandomGoal",
+    "ScenarioDifficultyScaler",
 ]

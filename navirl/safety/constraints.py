@@ -76,7 +76,7 @@ class CollisionConstraint(SafetyConstraint):
 
     # ---- interface --------------------------------------------------------
 
-    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
+    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:
         if self.obstacle_positions.shape[0] == 0:
             return True
         future = self._forward_positions(state, action)
@@ -119,7 +119,7 @@ class SpeedConstraint(SafetyConstraint):
 
     max_speed: float = 1.5
 
-    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
+    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:
         speed = float(np.linalg.norm(action[:2]))
         return speed <= self.max_speed
 
@@ -160,7 +160,7 @@ class AccelerationConstraint(SafetyConstraint):
         current_vel = state[2:4] if state.shape[0] >= 4 else np.zeros(2)
         return (action[:2] - current_vel) / max(self.dt, 1e-8)
 
-    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
+    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:
         acc = self._acceleration(state, action)
         acc_mag = float(np.linalg.norm(acc))
         if acc_mag > self.max_acceleration:
@@ -202,9 +202,9 @@ class ProxemicsConstraint(SafetyConstraint):
     """Maintains minimum distance to pedestrians based on proxemic zones.
 
     The zones follow Hall's proxemic model:
-    - *intimate*: 0 – 0.45 m (always forbidden)
-    - *personal*: 0.45 – 1.2 m (forbidden by default)
-    - *social*: 1.2 – 3.6 m (allowed but penalised outside this module)
+    - *intimate*: 0 - 0.45 m (always forbidden)
+    - *personal*: 0.45 - 1.2 m (forbidden by default)
+    - *social*: 1.2 - 3.6 m (allowed but penalised outside this module)
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ class ProxemicsConstraint(SafetyConstraint):
     def _next_position(self, state: np.ndarray, action: np.ndarray) -> np.ndarray:
         return state[:2] + action[:2] * self.dt
 
-    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
+    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:
         if self.pedestrian_positions.shape[0] == 0:
             return True
         next_pos = self._next_position(state, action)
@@ -287,7 +287,7 @@ class BoundaryConstraint(SafetyConstraint):
     def _next_position(self, state: np.ndarray, action: np.ndarray) -> np.ndarray:
         return state[:2] + action[:2] * self.dt
 
-    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
+    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:
         nxt = self._next_position(state, action)
         return bool(self.x_min <= nxt[0] <= self.x_max and self.y_min <= nxt[1] <= self.y_max)
 
@@ -342,7 +342,7 @@ class ConstraintSet(SafetyConstraint):
 
     # -- interface ----------------------------------------------------------
 
-    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:  # noqa: D401
+    def is_safe(self, state: np.ndarray, action: np.ndarray) -> bool:
         return all(c.is_safe(state, action) for c in self.constraints)
 
     def project(self, state: np.ndarray, action: np.ndarray) -> np.ndarray:

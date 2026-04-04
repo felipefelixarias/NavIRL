@@ -35,7 +35,7 @@ class Status(Enum):
 
 
 # ---------------------------------------------------------------------------
-#  Blackboard – shared data store for a single agent's tree evaluation
+#  Blackboard - shared data store for a single agent's tree evaluation
 # ---------------------------------------------------------------------------
 
 
@@ -232,7 +232,7 @@ class IsObstacleAhead(Condition):
 
 
 # ---------------------------------------------------------------------------
-#  Action (leaf) nodes – modify the blackboard's preferred velocity
+#  Action (leaf) nodes - modify the blackboard's preferred velocity
 # ---------------------------------------------------------------------------
 
 
@@ -416,7 +416,7 @@ class WaitInQueue(ActionNode):
         agent = bb.agent
         speed = math.hypot(agent.vx, agent.vy)
         if speed < EPSILON:
-            # Already stopped – check if there is someone very close ahead
+            # Already stopped - check if there is someone very close ahead
             # by looking toward the goal.
             gx = bb.goal[0] - agent.x
             gy = bb.goal[1] - agent.y

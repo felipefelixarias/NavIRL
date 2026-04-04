@@ -25,14 +25,14 @@ import numpy as np
 #          SequenceBuffer, RolloutBuffer, MultiAgentBuffer, DemonstrationBuffer
 
 __all__ = [
-    "ReplayBuffer",
-    "PrioritizedReplayBuffer",
-    "NStepBuffer",
-    "HindsightReplayBuffer",
-    "SequenceBuffer",
-    "RolloutBuffer",
-    "MultiAgentBuffer",
     "DemonstrationBuffer",
+    "HindsightReplayBuffer",
+    "MultiAgentBuffer",
+    "NStepBuffer",
+    "PrioritizedReplayBuffer",
+    "ReplayBuffer",
+    "RolloutBuffer",
+    "SequenceBuffer",
 ]
 
 

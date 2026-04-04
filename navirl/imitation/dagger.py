@@ -35,7 +35,7 @@ except ImportError:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["DAggerConfig", "DAggerAgent"]
+__all__ = ["DAggerAgent", "DAggerConfig"]
 
 
 # ---------------------------------------------------------------------------

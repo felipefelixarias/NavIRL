@@ -18,26 +18,26 @@ from navirl.prediction.constant_velocity import (
 from navirl.prediction.goal_conditioned import GoalConditionedPredictor, IntentPredictor
 
 __all__ = [
-    "PredictionResult",
-    "TrajectoryPredictor",
     "ConstantVelocityPredictor",
-    "LinearPredictor",
-    "KalmanPredictor",
     "GoalConditionedPredictor",
     "IntentPredictor",
+    "KalmanPredictor",
+    "LinearPredictor",
+    "PredictionResult",
+    "TrajectoryPredictor",
 ]
 
 # Neural network predictors are available only when torch is installed.
 try:
-    from navirl.prediction.social_gan import SocialGAN, SocialGANPredictor  # noqa: F401
-    from navirl.prediction.social_lstm import SocialLSTM, SocialLSTMPredictor  # noqa: F401
-    from navirl.prediction.trajectron import Trajectron, TrajectronPredictor  # noqa: F401
+    from navirl.prediction.social_gan import SocialGAN, SocialGANPredictor
+    from navirl.prediction.social_lstm import SocialLSTM, SocialLSTMPredictor
+    from navirl.prediction.trajectron import Trajectron, TrajectronPredictor
 
     __all__ += [
-        "SocialLSTM",
-        "SocialLSTMPredictor",
         "SocialGAN",
         "SocialGANPredictor",
+        "SocialLSTM",
+        "SocialLSTMPredictor",
         "Trajectron",
         "TrajectronPredictor",
     ]

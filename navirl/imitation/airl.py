@@ -36,7 +36,7 @@ try:
 except ImportError:  # pragma: no cover
     _TORCH_AVAILABLE = False
 
-__all__ = ["AIRLConfig", "RewardNetwork", "AIRLAgent"]
+__all__ = ["AIRLAgent", "AIRLConfig", "RewardNetwork"]
 
 
 # ---------------------------------------------------------------------------

@@ -37,12 +37,12 @@ from navirl.humans.base import EventSink, HumanController
 from navirl.utils import normalize_vector
 
 __all__ = [
-    "VOConfig",
-    "VelocityObstacle",
-    "ReciprocalVelocityObstacle",
     "HybridReciprocalVO",
     "ORCAPurePython",
+    "ReciprocalVelocityObstacle",
+    "VOConfig",
     "VOHumanController",
+    "VelocityObstacle",
 ]
 
 

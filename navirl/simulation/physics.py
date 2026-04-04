@@ -431,7 +431,7 @@ class SimplePhysics:
     integration_method : str
         ``"euler"`` or ``"rk4"``.
     default_model : str
-        ``"kinematic"`` or ``"dynamic"`` – used when an entity has no
+        ``"kinematic"`` or ``"dynamic"`` - used when an entity has no
         explicit model assigned.
     gravity : float
         Gravitational acceleration constant (used for friction forces only

@@ -665,7 +665,7 @@ class StatePredictor:
         c = float(np.dot(dp, dp)) - combined_r * combined_r
 
         if a < 1e-12:
-            # Parallel velocities – check if already overlapping.
+            # Parallel velocities - check if already overlapping.
             return 0.0 if c <= 0.0 else None
 
         discriminant = b * b - 4.0 * a * c

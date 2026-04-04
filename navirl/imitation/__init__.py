@@ -16,11 +16,11 @@ from .irl import InverseReinforcementLearning
 from .reward_learning import RewardLearning
 
 __all__ = [
-    "BehavioralCloning",
-    "DAgger",
-    "InverseReinforcementLearning",
     "AIRL",
     "GAIL",
+    "BehavioralCloning",
+    "DAgger",
     "ImitationDataset",
+    "InverseReinforcementLearning",
     "RewardLearning",
 ]

@@ -29,9 +29,9 @@ class GridMap:
     """2-D occupancy grid map.
 
     The grid uses integer cell values:
-    * ``0`` – free
-    * ``1`` – occupied
-    * ``-1`` – unknown
+    * ``0`` - free
+    * ``1`` - occupied
+    * ``-1`` - unknown
 
     Parameters
     ----------
@@ -356,9 +356,9 @@ class GridMap:
         Parameters
         ----------
         mode : str
-            ``"overwrite"`` – other's non-unknown cells replace ours.
-            ``"max"`` – take the max (most restrictive) of both.
-            ``"min"`` – take the min (most permissive) of both.
+            ``"overwrite"`` - other's non-unknown cells replace ours.
+            ``"max"`` - take the max (most restrictive) of both.
+            ``"min"`` - take the min (most permissive) of both.
         """
         for r in range(min(self.height, other.height)):
             for c in range(min(self.width, other.width)):
