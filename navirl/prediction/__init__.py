@@ -1,3 +1,12 @@
+"""Trajectory prediction algorithms for human and robot agents.
+
+This package provides predictors for anticipating future agent paths including:
+- Constant velocity and linear motion models
+- Kalman filter-based prediction
+- Goal-conditioned trajectory prediction
+- Neural network models (Social LSTM, Social GAN, Trajectron)
+"""
+
 from __future__ import annotations
 
 from navirl.prediction.base import PredictionResult, TrajectoryPredictor
