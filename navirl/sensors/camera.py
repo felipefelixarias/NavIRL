@@ -141,7 +141,7 @@ class CameraSensor(SensorBase):
             draw_filled_circle(img, px, py, r_px, color)
 
         # Draw static circular obstacles
-        obs_c = ws.get("obstacles_circles", None)
+        obs_c = ws.get("obstacles_circles")
         if obs_c is not None:
             centres = np.asarray(obs_c["centres"])
             radii = np.asarray(obs_c["radii"])
@@ -151,7 +151,7 @@ class CameraSensor(SensorBase):
                 draw_filled_circle(img, px, py, r_px, [80, 80, 80])
 
         # Draw wall segments as lines
-        segs = ws.get("obstacles_segments", None)
+        segs = ws.get("obstacles_segments")
         if segs is not None:
             segs = np.asarray(segs)
             for s in range(segs.shape[0]):
@@ -285,7 +285,7 @@ class DepthSensor(SensorBase):
         ranges = np.full(self.config.resolution, self.config.max_range, dtype=np.float64)
 
         # Segments
-        segments = world_state.get("obstacles_segments", None)
+        segments = world_state.get("obstacles_segments")
         if segments is not None:
             segments = np.asarray(segments, dtype=np.float64)
             if segments.ndim == 3 and segments.shape[0] > 0:
@@ -295,7 +295,7 @@ class DepthSensor(SensorBase):
                 ranges = np.minimum(ranges, seg_r)
 
         # Circular obstacles
-        obs_c = world_state.get("obstacles_circles", None)
+        obs_c = world_state.get("obstacles_circles")
         if obs_c is not None:
             centres = np.asarray(obs_c["centres"], dtype=np.float64)
             radii_arr = np.asarray(obs_c["radii"], dtype=np.float64)

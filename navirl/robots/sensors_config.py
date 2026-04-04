@@ -428,8 +428,10 @@ def compute_visible_points(
     for i in range(n):
         if not check_point_visibility(sensor_x, sensor_y, sensor_yaw, mount, points[i]):
             continue
-        if obstacles is not None and obstacles.shape[0] > 0:
-            if raytrace_occlusion(
+        if (
+            obstacles is not None
+            and obstacles.shape[0] > 0
+            and raytrace_occlusion(
                 sensor_x,
                 sensor_y,
                 sensor_yaw,
@@ -437,8 +439,9 @@ def compute_visible_points(
                 points[i],
                 obstacles,
                 obstacle_radius,
-            ):
-                continue
+            )
+        ):
+            continue
         visible[i] = True
     return visible
 

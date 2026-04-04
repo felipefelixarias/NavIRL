@@ -157,7 +157,7 @@ class OccupancyGridSensor(SensorBase):
         layer = np.zeros(gs * gs, dtype=np.float32)
 
         # Circular obstacles
-        obs_c = ws.get("obstacles_circles", None)
+        obs_c = ws.get("obstacles_circles")
         if obs_c is not None:
             centres = np.asarray(obs_c["centres"], dtype=np.float64)
             radii = np.asarray(obs_c["radii"], dtype=np.float64)
@@ -168,7 +168,7 @@ class OccupancyGridSensor(SensorBase):
                 layer[dist_sq <= (radii[i] + res / 2) ** 2] = 1.0
 
         # Segment obstacles: mark cells near each segment
-        segs = ws.get("obstacles_segments", None)
+        segs = ws.get("obstacles_segments")
         if segs is not None:
             segs = np.asarray(segs, dtype=np.float64)
             for s in range(segs.shape[0]):

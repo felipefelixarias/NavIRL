@@ -250,7 +250,7 @@ class LidarSensor(SensorBase):
         ranges = np.full(self.config.num_beams, self.config.max_range, dtype=np.float64)
 
         # --- Obstacle segments (walls) ---
-        segments = world_state.get("obstacles_segments", None)
+        segments = world_state.get("obstacles_segments")
         if segments is not None:
             segments = np.asarray(segments, dtype=np.float64)
             if segments.ndim == 3 and segments.shape[0] > 0:
@@ -264,7 +264,7 @@ class LidarSensor(SensorBase):
                 ranges = np.minimum(ranges, seg_ranges)
 
         # --- Static circular obstacles ---
-        obs_circles = world_state.get("obstacles_circles", None)
+        obs_circles = world_state.get("obstacles_circles")
         if obs_circles is not None:
             centres = np.asarray(obs_circles["centres"], dtype=np.float64)
             radii = np.asarray(obs_circles["radii"], dtype=np.float64)
