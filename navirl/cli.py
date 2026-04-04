@@ -194,22 +194,55 @@ def _cmd_overseer_layout(args: argparse.Namespace) -> int:
     return 0
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="navirl")
-    sub = parser.add_subparsers(dest="command", required=True)
+def _add_judge_arguments(
+    parser: argparse.ArgumentParser,
+    *,
+    default_mode: str = "heuristic",
+    default_confidence_min: float | None = None,
+    default_provider: str = "codex",
+) -> None:
+    """Add common judge-related arguments to a parser."""
+    parser.add_argument("--judge-mode", choices=["heuristic", "vlm"], default=default_mode)
+    parser.add_argument("--judge-confidence-min", type=float, default=default_confidence_min)
+    parser.add_argument(
+        "--judge-provider",
+        choices=["codex", "claude", "native", "openai_compatible", "kimi"],
+        default=default_provider,
+    )
+    parser.add_argument("--judge-model", type=str, default=None)
+    parser.add_argument("--judge-endpoint", type=str, default=None)
+    parser.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
+    parser.add_argument("--judge-native-cmd", type=str, default=None)
+    parser.add_argument(
+        "--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True
+    )
 
-    p_run = sub.add_parser("run", help="Run a scenario and emit a trace bundle")
+
+def _add_common_arguments(
+    parser: argparse.ArgumentParser, *, out_default: str = "logs", retention_hours: bool = True
+) -> None:
+    """Add common arguments like --out and --retention-hours."""
+    parser.add_argument("--out", type=str, default=out_default)
+    if retention_hours:
+        parser.add_argument("--retention-hours", type=float, default=None)
+
+
+def _create_run_parser(subparsers) -> None:
+    """Create the 'run' command parser."""
+    p_run = subparsers.add_parser("run", help="Run a scenario and emit a trace bundle")
     p_run.add_argument("scenario", type=str)
-    p_run.add_argument("--out", type=str, default="logs")
+    _add_common_arguments(p_run, out_default="logs")
     p_run.add_argument("--run-id", type=str, default=None)
     p_run.add_argument("--render", action=argparse.BooleanOptionalAction, default=None)
     p_run.add_argument("--video", action=argparse.BooleanOptionalAction, default=None)
-    p_run.add_argument("--retention-hours", type=float, default=None)
     p_run.set_defaults(func=_cmd_run)
 
-    p_batch = sub.add_parser("run-batch", help="Run a directory of scenarios")
+
+def _create_batch_parser(subparsers) -> None:
+    """Create the 'run-batch' command parser."""
+    p_batch = subparsers.add_parser("run-batch", help="Run a directory of scenarios")
     p_batch.add_argument("scenarios", type=str)
-    p_batch.add_argument("--out", type=str, default="logs")
+    _add_common_arguments(p_batch, out_default="logs")
     p_batch.add_argument("--seeds", type=str, default="7")
     p_batch.add_argument(
         "--parallel",
@@ -219,15 +252,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_batch.add_argument("--render", action=argparse.BooleanOptionalAction, default=False)
     p_batch.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
-    p_batch.add_argument("--retention-hours", type=float, default=None)
     p_batch.set_defaults(func=_cmd_run_batch)
 
-    p_eval = sub.add_parser("eval", help="Evaluate one or more state logs")
+
+def _create_eval_parser(subparsers) -> None:
+    """Create the 'eval' command parser."""
+    p_eval = subparsers.add_parser("eval", help="Evaluate one or more state logs")
     p_eval.add_argument("inputs", nargs="+", help="state.jsonl files, run dirs, or globs")
     p_eval.add_argument("--report", type=str, default="out/eval")
     p_eval.set_defaults(func=_cmd_eval)
 
-    p_view = sub.add_parser("view", help="Render replay overlays from a state log")
+
+def _create_view_parser(subparsers) -> None:
+    """Create the 'view' command parser."""
+    p_view = subparsers.add_parser("view", help="Render replay overlays from a state log")
     p_view.add_argument("state", type=str)
     p_view.add_argument("--out", type=str, default="out/view")
     p_view.add_argument("--fps", type=int, default=12)
@@ -235,31 +273,28 @@ def build_parser() -> argparse.ArgumentParser:
     p_view.add_argument("--max-frames", type=int, default=None)
     p_view.set_defaults(func=_cmd_view)
 
-    p_validate = sub.add_parser("validate", help="Validate a scenario file against ScenarioSpec")
+
+def _create_validate_parser(subparsers) -> None:
+    """Create the 'validate' command parser."""
+    p_validate = subparsers.add_parser(
+        "validate", help="Validate a scenario file against ScenarioSpec"
+    )
     p_validate.add_argument("scenario", type=str)
     p_validate.set_defaults(func=_cmd_validate)
 
-    p_verify = sub.add_parser("verify", help="Run NavIRL victory gate suites")
+
+def _create_verify_parser(subparsers) -> None:
+    """Create the 'verify' command parser."""
+    p_verify = subparsers.add_parser("verify", help="Run NavIRL victory gate suites")
     p_verify.add_argument("--suite", choices=["quick", "full"], default="quick")
-    p_verify.add_argument("--out", type=str, default="out/verify")
-    p_verify.add_argument("--judge-mode", choices=["heuristic", "vlm"], default="heuristic")
-    p_verify.add_argument("--judge-confidence-min", type=float, default=None)
-    p_verify.add_argument(
-        "--judge-provider",
-        choices=["codex", "claude", "native", "openai_compatible", "kimi"],
-        default="codex",
-    )
-    p_verify.add_argument("--judge-model", type=str, default=None)
-    p_verify.add_argument("--judge-endpoint", type=str, default=None)
-    p_verify.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
-    p_verify.add_argument("--judge-native-cmd", type=str, default=None)
-    p_verify.add_argument(
-        "--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True
-    )
-    p_verify.add_argument("--retention-hours", type=float, default=None)
+    _add_common_arguments(p_verify, out_default="out/verify")
+    _add_judge_arguments(p_verify)
     p_verify.set_defaults(func=_cmd_verify)
 
-    p_tune = sub.add_parser(
+
+def _create_tune_parser(subparsers) -> None:
+    """Create the 'tune' command parser."""
+    p_tune = subparsers.add_parser(
         "tune",
         help="Tune ORCA/social-nav hyperparameters with visual judge feedback",
     )
@@ -272,30 +307,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_tune.add_argument("--trials", type=int, default=20)
     p_tune.add_argument("--seed", type=int, default=17)
-    p_tune.add_argument("--out", type=str, default="out/tune")
-    p_tune.add_argument("--judge-mode", choices=["heuristic", "vlm"], default="heuristic")
-    p_tune.add_argument("--judge-confidence-min", type=float, default=0.7)
-    p_tune.add_argument(
-        "--judge-provider",
-        choices=["codex", "claude", "native", "openai_compatible", "kimi"],
-        default="codex",
-    )
-    p_tune.add_argument("--judge-model", type=str, default=None)
-    p_tune.add_argument("--judge-endpoint", type=str, default=None)
-    p_tune.add_argument("--judge-api-key-env", type=str, default="NAVIRL_VLM_API_KEY")
-    p_tune.add_argument("--judge-native-cmd", type=str, default=None)
-    p_tune.add_argument(
-        "--judge-allow-fallback", action=argparse.BooleanOptionalAction, default=True
-    )
+    _add_common_arguments(p_tune, out_default="out/tune")
+    _add_judge_arguments(p_tune, default_confidence_min=0.7)
     p_tune.add_argument("--aegis-rerank", action=argparse.BooleanOptionalAction, default=True)
     p_tune.add_argument("--aegis-top-k", type=int, default=6)
     p_tune.add_argument("--max-frames", type=int, default=10)
     p_tune.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
     p_tune.add_argument("--search-space", type=str, default=None)
-    p_tune.add_argument("--retention-hours", type=float, default=None)
     p_tune.set_defaults(func=_cmd_tune)
 
-    p_layout = sub.add_parser(
+
+def _create_layout_parser(subparsers) -> None:
+    """Create the 'overseer-layout' command parser."""
+    p_layout = subparsers.add_parser(
         "overseer-layout",
         help="Suggest map-aware starts/goals for realistic showcase scenarios",
     )
@@ -309,6 +333,29 @@ def build_parser() -> argparse.ArgumentParser:
     p_layout.add_argument("--seed", type=int, default=17)
     p_layout.add_argument("--write-scenario", type=str, default=None)
     p_layout.set_defaults(func=_cmd_overseer_layout)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the complete NavIRL command-line argument parser.
+
+    Creates the main parser and all subcommands (run, eval, verify, etc.)
+    using helper functions to reduce code duplication.
+
+    Returns:
+        Configured ArgumentParser ready for parsing command line arguments.
+    """
+    parser = argparse.ArgumentParser(prog="navirl")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Create all command parsers using dedicated helper functions
+    _create_run_parser(subparsers)
+    _create_batch_parser(subparsers)
+    _create_eval_parser(subparsers)
+    _create_view_parser(subparsers)
+    _create_validate_parser(subparsers)
+    _create_verify_parser(subparsers)
+    _create_tune_parser(subparsers)
+    _create_layout_parser(subparsers)
 
     return parser
 
