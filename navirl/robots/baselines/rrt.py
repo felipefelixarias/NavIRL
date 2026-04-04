@@ -229,12 +229,11 @@ class RRTStarRobotController(RobotController):
                 (new_pos[0] - goal_pos[0]) ** 2 + (new_pos[1] - goal_pos[1]) ** 2
             )
 
-            if dist_to_goal <= self.goal_tolerance:
+            if dist_to_goal <= self.goal_tolerance and self._is_path_valid(new_pos, goal_pos):
                 # Try to connect to goal
-                if self._is_path_valid(new_pos, goal_pos):
-                    goal_node = RRTNode(goal_pos, new_node)
-                    goal_node.cost = new_node.cost + dist_to_goal
-                    return goal_node.path_to_root()
+                goal_node = RRTNode(goal_pos, new_node)
+                goal_node.cost = new_node.cost + dist_to_goal
+                return goal_node.path_to_root()
 
         # If we couldn't reach the goal, return path to closest node
         closest_node = min(

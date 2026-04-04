@@ -198,7 +198,7 @@ class TestSerialization:
         assert loaded["gamma"] == pytest.approx(0.99)
 
     def test_save_unsupported_format(self, tmp_path):
-        with pytest.raises(ValueError, match="Unsupported format|Cannot infer"):
+        with pytest.raises(ValueError, match=r"Unsupported format|Cannot infer"):
             save_config({}, tmp_path / "config.xyz")
 
     def test_save_creates_parent_dirs(self, tmp_path):
