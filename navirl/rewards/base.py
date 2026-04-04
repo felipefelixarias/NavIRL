@@ -761,6 +761,8 @@ class RewardShaper(RewardFunction):
         try:
             return float(self._potential_fn(state))
         except Exception:
+            # Note: Catching all exceptions is intentional here since _potential_fn
+            # is user-provided code that may raise any type of exception
             logger.warning("Potential function raised; returning 0.0", exc_info=True)
             return 0.0
 

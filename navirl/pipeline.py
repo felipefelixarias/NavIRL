@@ -200,11 +200,110 @@ def _project_anchor(candidate: tuple[float, float], radius: float, backend) -> t
     return float(projected[0]), float(projected[1])
 
 
+def _search_ring_positions(
+    desired: tuple[float, float], radius: float, placed: list[dict], backend, base_step: float
+) -> tuple[float, float] | None:
+    """Search for valid anchor position using expanding ring pattern.
+
+    Searches in expanding rings around the desired position to find a valid
+    placement that doesn't collide with existing anchors or map obstacles.
+
+    Args:
+        desired: Desired (x, y) position coordinates.
+        radius: Agent radius for collision detection.
+        placed: List of already-placed anchor dictionaries.
+        backend: Simulation backend for spatial queries.
+        base_step: Base distance between rings in the search pattern.
+
+    Returns:
+        Valid (x, y) position if found, None otherwise.
+    """
+    for ring in range(1, MAX_SEARCH_RINGS + 1):
+        position = _search_ring_points(desired, radius, placed, backend, base_step, ring)
+        if position is not None:
+            return position
+    return None
+
+
+def _search_ring_points(
+    desired: tuple[float, float],
+    radius: float,
+    placed: list[dict],
+    backend,
+    base_step: float,
+    ring: int,
+) -> tuple[float, float] | None:
+    """Search points around a specific ring for valid anchor position.
+
+    Args:
+        desired: Desired (x, y) position coordinates.
+        radius: Agent radius for collision detection.
+        placed: List of already-placed anchor dictionaries.
+        backend: Simulation backend for spatial queries.
+        base_step: Base distance between rings.
+        ring: Ring number (1-based) to search.
+
+    Returns:
+        Valid (x, y) position if found, None otherwise.
+    """
+    dist = base_step * ring
+    num_points = INITIAL_RING_POINTS + ring * RING_POINT_INCREMENT
+
+    for i in range(num_points):
+        angle = (2.0 * math.pi * i) / max(1, num_points)
+        local = (
+            desired[0] + dist * math.cos(angle),
+            desired[1] + dist * math.sin(angle),
+        )
+        trial = _project_anchor(local, radius, backend)
+        if _anchor_ok(trial, radius, placed, backend):
+            return trial
+    return None
+
+
+def _search_random_positions(
+    radius: float, placed: list[dict], backend, max_samples: int
+) -> tuple[float, float] | None:
+    """Search for valid anchor position using random sampling.
+
+    Fallback search method that randomly samples free points when ring
+    search fails to find a valid position.
+
+    Args:
+        radius: Agent radius for collision detection.
+        placed: List of already-placed anchor dictionaries.
+        backend: Simulation backend for spatial queries.
+        max_samples: Maximum number of random samples to try.
+
+    Returns:
+        Valid (x, y) position if found, None otherwise.
+    """
+    for _ in range(max_samples):
+        trial = _project_anchor(tuple(map(float, backend.sample_free_point())), radius, backend)
+        if _anchor_ok(trial, radius, placed, backend):
+            return trial
+    return None
+
+
 def _enforce_anchor_layout(
     anchors: list[dict],
     backend,
     max_samples: int = MAX_SPATIAL_SAMPLES,
 ) -> tuple[list[dict], list[dict], list[dict]]:
+    """Enforce spatial layout constraints for anchor points.
+
+    Attempts to place anchors at desired positions while avoiding collisions
+    with obstacles and other anchors. Uses ring-based search followed by
+    random sampling as fallback strategies.
+
+    Args:
+        anchors: List of anchor specifications with position, radius, and key.
+        backend: Simulation backend for spatial queries and collision detection.
+        max_samples: Maximum random samples to try per anchor during fallback.
+
+    Returns:
+        Tuple of (placed, adjustments, unresolved) anchor lists.
+    """
     placed: list[dict] = []
     adjustments: list[dict] = []
     unresolved: list[dict] = []
@@ -217,32 +316,15 @@ def _enforce_anchor_layout(
 
         if not _anchor_ok(candidate, radius, placed, backend):
             found = None
+
             # Preserve scenario semantics when possible by searching nearby offsets first.
             base_step = max(MIN_BASE_STEP, _diameter(radius) * BASE_STEP_FACTOR)
-            for ring in range(1, MAX_SEARCH_RINGS + 1):
-                dist = base_step * ring
-                num = INITIAL_RING_POINTS + ring * RING_POINT_INCREMENT
-                for i in range(num):
-                    ang = (2.0 * math.pi * i) / max(1, num)
-                    local = (
-                        desired[0] + dist * math.cos(ang),
-                        desired[1] + dist * math.sin(ang),
-                    )
-                    trial = _project_anchor(local, radius, backend)
-                    if _anchor_ok(trial, radius, placed, backend):
-                        found = trial
-                        break
-                if found is not None:
-                    break
+            found = _search_ring_positions(desired, radius, placed, backend, base_step)
 
+            # Fallback to random sampling if ring search fails
             if found is None:
-                for _ in range(max_samples):
-                    trial = _project_anchor(
-                        tuple(map(float, backend.sample_free_point())), radius, backend
-                    )
-                    if _anchor_ok(trial, radius, placed, backend):
-                        found = trial
-                        break
+                found = _search_random_positions(radius, placed, backend, max_samples)
+
             if found is None:
                 fallback = _project_anchor(desired, radius, backend)
                 unresolved.append(
@@ -618,6 +700,16 @@ def run_scenario_dict(
     events: list[EventRecord] = []
 
     def emit_event(event_type: str, agent_id: int | None, payload: dict) -> None:
+        """Emit a simulation event and log it for analysis.
+
+        Creates an EventRecord with current simulation state and writes it to both
+        the in-memory events list and the episode logger.
+
+        Args:
+            event_type: Type identifier for the event (e.g., "collision", "goal_reached").
+            agent_id: ID of the agent associated with this event, or None for global events.
+            payload: Additional event-specific data as a dictionary.
+        """
         ev = EventRecord(
             step=current_step,
             time_s=current_step * dt,
@@ -629,6 +721,18 @@ def run_scenario_dict(
         logger.write_event(ev)
 
     def capture_states(behaviors: dict[int, str] | None = None) -> dict[int, AgentState]:
+        """Capture current state of all agents in the simulation.
+
+        Extracts position, velocity, goals, and behavior information for both robot
+        and human agents from the simulation backend.
+
+        Args:
+            behaviors: Optional mapping from agent ID to behavior string. If not provided,
+                      defaults to empty dict and standard behaviors are inferred.
+
+        Returns:
+            Dictionary mapping agent IDs to their current AgentState objects.
+        """
         behaviors = behaviors or {}
         goals_now = _human_goal_map(human_controller, human_goals)
         out: dict[int, AgentState] = {}
@@ -873,6 +977,26 @@ def _run_scenario_worker(task_data: tuple) -> EpisodeLog:
 
 
 def run_batch(args: argparse.Namespace) -> list[EpisodeLog]:
+    """Run multiple scenarios in batch mode with parallel execution support.
+
+    Discovers all scenario YAML files in the specified directory and executes them
+    across multiple random seeds. Supports both sequential and parallel execution.
+
+    Args:
+        args: Argparse namespace containing batch execution parameters:
+            - scenarios: Directory path containing scenario YAML files
+            - seeds: Comma-separated string of random seeds to use
+            - out: Output directory for simulation results
+            - render: Whether to enable rendering during simulation
+            - video: Whether to record video output
+            - parallel: Number of parallel processes (<=1 for sequential)
+
+    Returns:
+        List of EpisodeLog objects, one for each scenario-seed combination.
+
+    Raises:
+        FileNotFoundError: If no scenario YAML files are found in the directory.
+    """
     scenario_dir = Path(args.scenarios)
     scenario_files = sorted(scenario_dir.rglob("*.yaml"))
     if not scenario_files:

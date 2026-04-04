@@ -451,4 +451,6 @@ class ResultsDB:
         try:
             self._conn.close()
         except Exception:
+            # Note: Catching all exceptions is intentional in destructor to prevent
+            # issues during garbage collection. Connection may be in unknown state.
             pass

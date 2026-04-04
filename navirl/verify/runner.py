@@ -34,6 +34,22 @@ CANONICAL_SCENARIOS = [
 
 @dataclass(slots=True)
 class VerifyResult:
+    """Results from scenario verification including test outcomes and analysis.
+
+    Contains comprehensive verification status including invariant checks,
+    automated judgment, video validation, and overall pass/fail determination.
+
+    Attributes:
+        scenario_id: Unique identifier for the verified scenario.
+        bundle_dir: Directory path containing scenario execution artifacts.
+        invariants_pass: Whether all scenario invariants were satisfied.
+        judge_status: Status string from automated scenario judgment.
+        judge_confidence: Confidence score (0.0-1.0) of the automated judge.
+        overall_pass: Final pass/fail determination combining all checks.
+        video_check_pass: Optional video validation result, None if not performed.
+        notes: Additional human-readable notes or error details.
+    """
+
     scenario_id: str
     bundle_dir: str
     invariants_pass: bool

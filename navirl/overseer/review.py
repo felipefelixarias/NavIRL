@@ -65,7 +65,8 @@ def _load_bundle_scenario(bundle_dir: Path) -> dict:
         with scenario_path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
         return raw if isinstance(raw, dict) else {}
-    except Exception:
+    except (OSError, yaml.YAMLError, UnicodeDecodeError):
+        # Handle file access errors, YAML parsing errors, and encoding issues
         return {}
 
 
