@@ -5,15 +5,9 @@ import math
 
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
+from navirl.utils import normalize_vector
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
-    n = math.hypot(vx, vy)
-    if n < 1e-8:
-        return 0.0, 0.0, 0.0
-    return vx / n, vy / n, n
 
 
 class ORCAHumanController(HumanController):
@@ -149,7 +143,7 @@ class ORCAHumanController(HumanController):
     def _goal_velocity(self, state: AgentState, target: tuple[float, float]) -> tuple[float, float]:
         dx = target[0] - state.x
         dy = target[1] - state.y
-        ux, uy, dist = _normalize(dx, dy)
+        ux, uy, dist = normalize_vector(dx, dy)
         if dist <= self.goal_tolerance:
             return 0.0, 0.0
 

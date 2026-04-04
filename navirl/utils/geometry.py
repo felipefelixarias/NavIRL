@@ -187,6 +187,33 @@ def quat_to_yaw(qx: float, qy: float, qz: float, qw: float) -> float:
 # ---------------------------------------------------------------------------
 
 
+def normalize_vector(vx: float, vy: float) -> tuple[float, float, float]:
+    """Normalize a 2-D vector and return its components and magnitude.
+
+    Parameters
+    ----------
+    vx : float
+        X component of the vector.
+    vy : float
+        Y component of the vector.
+
+    Returns
+    -------
+    tuple[float, float, float]
+        A tuple (unit_x, unit_y, magnitude) where:
+        - unit_x, unit_y: normalized vector components (0, 0) if magnitude is negligible
+        - magnitude: original vector magnitude
+
+    Notes
+    -----
+    Uses a small epsilon (1e-8) to guard against division by zero.
+    """
+    magnitude = math.hypot(vx, vy)
+    if magnitude < 1e-8:
+        return 0.0, 0.0, 0.0
+    return vx / magnitude, vy / magnitude, magnitude
+
+
 def cross2d(u: np.ndarray, v: np.ndarray) -> float:
     """Compute the 2-D cross product (z-component of 3-D cross product).
 

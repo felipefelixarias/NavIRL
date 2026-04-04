@@ -22,6 +22,7 @@ import numpy as np
 from navirl.core.constants import BODY, EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
+from navirl.utils import normalize_vector
 
 __all__ = [
     "PowerLawConfig",
@@ -71,13 +72,6 @@ class PowerLawConfig:
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
-
-
-def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
-    n = math.hypot(vx, vy)
-    if n < EPSILON:
-        return 0.0, 0.0, 0.0
-    return vx / n, vy / n, n
 
 
 def _time_to_collision(px: float, py: float, vx: float, vy: float, radius_sum: float) -> float:
@@ -154,7 +148,7 @@ class PowerLawModel:
         """
         dx = goal[0] - state.x
         dy = goal[1] - state.y
-        ex, ey, dist = _normalize(dx, dy)
+        ex, ey, dist = normalize_vector(dx, dy)
 
         if dist < EPSILON:
             return (-state.vx / self.cfg.relaxation_time, -state.vy / self.cfg.relaxation_time)
@@ -224,11 +218,11 @@ class PowerLawModel:
             # Force direction: away from predicted collision
             diff_x = pred_x - other_pred_x
             diff_y = pred_y - other_pred_y
-            nx, ny, n_dist = _normalize(diff_x, diff_y)
+            nx, ny, n_dist = normalize_vector(diff_x, diff_y)
 
             if n_dist < EPSILON:
                 # Use current relative position as fallback direction
-                nx, ny, _ = _normalize(-rel_px, -rel_py)
+                nx, ny, _ = normalize_vector(-rel_px, -rel_py)
 
             fx_total += magnitude * nx
             fy_total += magnitude * ny
