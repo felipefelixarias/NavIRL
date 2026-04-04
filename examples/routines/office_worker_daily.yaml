@@ -1,0 +1,103 @@
+id: "office_worker_daily"
+description: "Typical office worker daily routine with realistic behaviors"
+
+tasks:
+  # Start at desk
+  - type: "go_to"
+    params:
+      x: 2.0
+      y: 3.0
+    priority: 10
+
+  # Check email (simulate with short wait)
+  - type: "wait"
+    params:
+      duration: 12.0
+    priority: 9
+
+  # Get morning coffee
+  - type: "go_to"
+    params:
+      x: -5.0
+      y: 1.0
+    priority: 8
+  - type: "interact"
+    params:
+      location: [-5.0, 1.0]
+      interaction_type: "coffee_machine"
+    priority: 7
+
+  # Return to desk for work
+  - type: "go_to"
+    params:
+      x: 2.0
+      y: 3.0
+    priority: 6
+
+  # Work period (longer wait)
+  - type: "wait"
+    params:
+      duration: 45.0
+    priority: 5
+
+branches:
+  # Occasionally go to printer (30% chance after 45 seconds)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 45.0
+    tasks:
+      - type: "go_to"
+        params:
+          x: 8.0
+          y: -2.0
+      - type: "interact"
+        params:
+          location: [8.0, -2.0]
+          interaction_type: "printer"
+      - type: "go_to"
+        params:
+          x: 2.0
+          y: 3.0  # Return to desk
+    probability: 0.3
+
+  # Chat with nearby colleagues (40% chance when someone is close)
+  - condition:
+      type: "agent_nearby"
+      params:
+        distance: 1.5
+    tasks:
+      - type: "wait"
+        params:
+          duration: 8.0  # Brief conversation
+    probability: 0.4
+
+  # Bathroom break (20% chance after 60 seconds)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 60.0
+    tasks:
+      - type: "go_to"
+        params:
+          x: -2.0
+          y: -4.0
+      - type: "wait"
+        params:
+          duration: 5.0
+      - type: "go_to"
+        params:
+          x: 2.0
+          y: 3.0  # Return to desk
+    probability: 0.2
+
+temporal_constraints:
+  max_duration: 300.0  # 5 minutes maximum per cycle
+
+repetitions: 4  # Do this routine 4 times
+loop: false
+
+metadata:
+  employee_type: "office_worker"
+  department: "general"
+  expected_duration_minutes: 20

@@ -1,0 +1,109 @@
+id: "restaurant_customer"
+description: "Complete restaurant dining experience from entry to exit"
+
+tasks:
+  # Enter restaurant and wait to be seated
+  - type: "go_to"
+    params:
+      x: 0.0
+      y: -3.0
+    priority: 10
+
+  - type: "queue"
+    params:
+      queue_location: [0.0, -3.0]
+      max_wait_time: 180.0  # Wait up to 3 minutes to be seated
+    priority: 9
+
+  # Go to assigned table
+  - type: "go_to"
+    params:
+      x: 3.0
+      y: 2.0
+    priority: 8
+
+  # Order and wait for food (simulated)
+  - type: "wait"
+    params:
+      duration: 8.0  # Time to order
+    priority: 7
+
+  # Dining time
+  - type: "wait"
+    params:
+      duration: 35.0  # Main dining period
+    priority: 6
+
+  # Go to counter to pay
+  - type: "go_to"
+    params:
+      x: -2.0
+      y: -1.0
+    priority: 5
+
+  - type: "interact"
+    params:
+      location: [-2.0, -1.0]
+      interaction_type: "payment"
+    priority: 4
+
+  # Exit restaurant
+  - type: "go_to"
+    params:
+      x: 0.0
+      y: -5.0
+    priority: 3
+
+branches:
+  # Restroom visit (25% chance during dining)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 25.0
+    tasks:
+      - type: "go_to"
+        params:
+          x: -4.0
+          y: 3.0
+      - type: "wait"
+        params:
+          duration: 6.0
+      - type: "go_to"
+        params:
+          x: 3.0
+          y: 2.0  # Return to table
+    probability: 0.25
+
+  # Look at phone while waiting for food (60% chance)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 15.0
+    tasks:
+      - type: "wait"
+        params:
+          duration: 5.0  # Phone checking time
+    probability: 0.6
+
+  # Chat with other diners if nearby (30% chance)
+  - condition:
+      type: "agent_nearby"
+      params:
+        distance: 2.0
+    tasks:
+      - type: "wait"
+        params:
+          duration: 12.0  # Conversation time
+    probability: 0.3
+
+temporal_constraints:
+  min_duration: 60.0   # At least 1 minute dining experience
+  max_duration: 480.0  # At most 8 minutes (timeout for realism)
+
+repetitions: 1
+loop: false
+
+metadata:
+  customer_type: "casual_diner"
+  expected_duration_minutes: 4
+  tip_percentage: 15

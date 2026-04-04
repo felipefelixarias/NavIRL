@@ -1,0 +1,333 @@
+id: restaurant_service_routines
+description: Restaurant customers and staff following realistic service routines using compiled behaviors
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: restaurant
+seed: 17
+horizon:
+  steps: 1200  # Extended simulation for full dining experience
+  dt: 0.1
+humans:
+  controller:
+    type: compiled_routine
+    params:
+      routines:
+        # Customer 1 - Quick lunch customer
+        1:
+          id: "quick_lunch_customer"
+          description: "Customer wanting a quick lunch experience"
+          tasks:
+            # Enter and wait to be seated
+            - type: "go_to"
+              params: {"x": 0.0, "y": -4.0}  # Entrance
+              priority: 10
+            - type: "queue"
+              params:
+                queue_location: [0.0, -4.0]
+                max_wait_time: 120.0
+              priority: 9
+            # Go to table
+            - type: "go_to"
+              params: {"x": 2.0, "y": 1.0}   # Table 1
+              priority: 8
+            # Quick ordering
+            - type: "wait"
+              params: {"duration": 5.0}       # Fast ordering
+              priority: 7
+            # Eat quickly
+            - type: "wait"
+              params: {"duration": 25.0}      # Quick meal
+              priority: 6
+            # Pay and leave
+            - type: "go_to"
+              params: {"x": -2.0, "y": -1.0} # Counter
+              priority: 5
+            - type: "interact"
+              params:
+                location: [-2.0, -1.0]
+                interaction_type: "quick_payment"
+              priority: 4
+            - type: "go_to"
+              params: {"x": 0.0, "y": -6.0}  # Exit
+              priority: 3
+          branches:
+            # Check phone while eating (70% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 15.0}
+              tasks:
+                - type: "wait"
+                  params: {"duration": 8.0}
+              probability: 0.7
+          temporal_constraints:
+            max_duration: 180.0  # 3-minute maximum
+          repetitions: 1
+          loop: false
+          metadata:
+            customer_type: "quick_lunch"
+            expected_tip: 10
+
+        # Customer 2 - Casual dining customer
+        2:
+          id: "casual_dining_customer"
+          description: "Customer enjoying a relaxed dining experience"
+          tasks:
+            # Enter and wait
+            - type: "go_to"
+              params: {"x": 0.0, "y": -4.0}
+              priority: 10
+            - type: "queue"
+              params:
+                queue_location: [0.0, -4.0]
+                max_wait_time: 240.0
+              priority: 9
+            # Go to table
+            - type: "go_to"
+              params: {"x": -3.0, "y": 2.0}  # Table 2
+              priority: 8
+            # Take time to decide
+            - type: "wait"
+              params: {"duration": 12.0}      # Menu browsing
+              priority: 7
+            # Relaxed dining
+            - type: "wait"
+              params: {"duration": 45.0}      # Leisurely meal
+              priority: 6
+            # Payment
+            - type: "go_to"
+              params: {"x": -2.0, "y": -1.0}
+              priority: 5
+            - type: "interact"
+              params:
+                location: [-2.0, -1.0]
+                interaction_type: "payment"
+              priority: 4
+            # Exit
+            - type: "go_to"
+              params: {"x": 0.0, "y": -6.0}
+              priority: 3
+          branches:
+            # Restroom visit (30% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 35.0}
+              tasks:
+                - type: "go_to"
+                  params: {"x": -5.0, "y": 3.0}
+                - type: "wait"
+                  params: {"duration": 6.0}
+                - type: "go_to"
+                  params: {"x": -3.0, "y": 2.0}  # Return to table
+              probability: 0.3
+            # Chat with other diners (40% chance)
+            - condition:
+                type: "agent_nearby"
+                params: {"distance": 2.5}
+              tasks:
+                - type: "wait"
+                  params: {"duration": 15.0}
+              probability: 0.4
+            # Ask server questions (20% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 20.0}
+              tasks:
+                - type: "wait"
+                  params: {"duration": 4.0}
+              probability: 0.2
+          temporal_constraints:
+            max_duration: 360.0  # 6-minute maximum
+          repetitions: 1
+          loop: false
+          metadata:
+            customer_type: "casual_dining"
+            expected_tip: 18
+
+        # Server/Waitstaff - Moving between tables
+        3:
+          id: "restaurant_server"
+          description: "Waitstaff serving multiple tables and handling orders"
+          tasks:
+            # Start at service station
+            - type: "go_to"
+              params: {"x": 1.0, "y": -2.0"}  # Service station
+              priority: 10
+            # Check table 1
+            - type: "go_to"
+              params: {"x": 2.0, "y": 1.0"}
+              priority: 9
+            - type: "interact"
+              params:
+                location: [2.0, 1.0]
+                interaction_type: "table_service"
+              priority: 8
+            # Check table 2
+            - type: "go_to"
+              params: {"x": -3.0, "y": 2.0"}
+              priority: 7
+            - type: "interact"
+              params:
+                location: [-3.0, 2.0]
+                interaction_type: "table_service"
+              priority: 6
+            # Return to service station
+            - type: "go_to"
+              params: {"x": 1.0, "y": -2.0"}
+              priority: 5
+            - type: "wait"
+              params: {"duration": 8.0"}       # Prepare orders
+              priority: 4
+          branches:
+            # Kitchen visits for orders (60% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 25.0"}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 4.0, "y": -3.0"}  # Kitchen
+                - type: "interact"
+                  params:
+                    location: [4.0, -3.0]
+                    interaction_type: "kitchen_pickup"
+                - type: "go_to"
+                  params: {"x": 1.0, "y": -2.0"}
+              probability: 0.6
+            # Clean empty tables (50% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 40.0"}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 5.0, "y": 1.0"}   # Table 3 (empty)
+                - type: "interact"
+                  params:
+                    location: [5.0, 1.0]
+                    interaction_type: "table_cleaning"
+                - type: "go_to"
+                  params: {"x": 1.0, "y": -2.0"}
+              probability: 0.5
+            # Help customers at counter (40% chance)
+            - condition:
+                type: "agent_nearby"
+                params:
+                  distance: 3.0
+              tasks:
+                - type: "go_to"
+                  params: {"x": -2.0, "y": -1.0"}
+                - type: "interact"
+                  params:
+                    location: [-2.0, -1.0]
+                    interaction_type: "customer_assistance"
+              probability: 0.4
+          loop: true
+          metadata:
+            staff_type: "server"
+            tables_assigned: [1, 2, 3]
+
+        # Kitchen Staff - Food preparation
+        4:
+          id: "kitchen_staff"
+          description: "Kitchen staff preparing and managing food orders"
+          tasks:
+            # Start at main prep station
+            - type: "go_to"
+              params: {"x": 4.0, "y": -3.0"}   # Kitchen center
+              priority: 10
+            - type: "wait"
+              params: {"duration": 20.0"}      # Food prep
+              priority: 9
+            # Move to cooking station
+            - type: "go_to"
+              params: {"x": 6.0, "y": -2.0"}   # Cooking area
+              priority: 8
+            - type: "interact"
+              params:
+                location: [6.0, -2.0]
+                interaction_type: "cooking"
+              priority: 7
+            # Back to prep for plating
+            - type: "go_to"
+              params: {"x": 4.0, "y": -3.0"}
+              priority: 6
+            - type: "interact"
+              params:
+                location: [4.0, -3.0]
+                interaction_type: "plating"
+              priority: 5
+          branches:
+            # Dishwashing (35% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 30.0"}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 2.0, "y": -4.0"}
+                - type: "interact"
+                  params:
+                    location: [2.0, -4.0]
+                    interaction_type: "dishwashing"
+                - type: "go_to"
+                  params: {"x": 4.0, "y": -3.0"}
+              probability: 0.35
+            # Inventory check (25% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 45.0"}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 7.0, "y": -4.0"}  # Storage
+                - type: "wait"
+                  params: {"duration": 8.0"}
+                - type: "go_to"
+                  params: {"x": 4.0, "y": -3.0"}
+              probability: 0.25
+          repetitions: 2
+          loop: true
+          metadata:
+            staff_type: "kitchen"
+            station: "prep_cook"
+
+      fallback_behavior: "goal_swap"
+  count: 4
+  starts:
+    - [0.0, -4.5]   # Customer 1 at entrance
+    - [0.0, -4.8]   # Customer 2 at entrance
+    - [1.0, -2.5]   # Server at service station
+    - [4.0, -3.5]   # Kitchen staff in kitchen
+  goals:
+    - [0.0, -6.0]   # Customer 1 exit
+    - [0.0, -6.0]   # Customer 2 exit
+    - [1.0, -1.5]   # Server goal area
+    - [4.0, -2.5]   # Kitchen staff goal area
+  radius: 0.16
+  max_speed: 0.7
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 12
+      target_lookahead: 2.5
+      velocity_smoothing: 0.8
+  start: [-6.0, 4.0]   # Cleaning robot
+  goal: [8.0, -5.0]
+  radius: 0.12
+  max_speed: 0.5
+evaluation:
+  intrusion_delta: 0.3
+  max_speed: 1.0
+  max_accel: 3.5
+  teleport_thresh: 0.8
+  deadlock_seconds: 10.0
+  deadlock_resample_attempts: 6
+  wall_clearance_buffer: 0.05
+  near_wall_buffer: 0.15
+  max_wall_proximity_fraction: 0.1
+  max_agent_stop_seconds: 15.0
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 8
+  video: true
+  playback_speed: 4.0
