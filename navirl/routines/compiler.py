@@ -489,6 +489,9 @@ class AvoidArea(ActionNode):
         bb.behavior = "AVOID"
         return Status.RUNNING
 
+    def reset_state(self) -> None:
+        """Reset any internal state (no state to reset)."""
+
 
 # Condition nodes
 

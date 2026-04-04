@@ -152,7 +152,7 @@ class RoutineSpec:
             tasks.append(
                 Task(
                     type=task_type,
-                    params=params,
+                    params=RoutineSpec._convert_lists_to_tuples(params, task_type),
                     duration=duration,
                     completion_condition=completion_condition,
                     priority=priority,
@@ -172,7 +172,9 @@ class RoutineSpec:
                 branch_tasks.append(
                     Task(
                         type=task_type,
-                        params=task_data.get("params", {}),
+                        params=RoutineSpec._convert_lists_to_tuples(
+                            task_data.get("params", {}), task_type
+                        ),
                         duration=task_data.get("duration"),
                         priority=task_data.get("priority", 1),
                     )
@@ -208,6 +210,30 @@ class RoutineSpec:
             metadata=data.get("metadata", {}),
         )
 
+    def _convert_tuples_to_lists(self, obj: Any) -> Any:
+        """Recursively convert tuples to lists for YAML serialization."""
+        if isinstance(obj, tuple):
+            return [self._convert_tuples_to_lists(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {key: self._convert_tuples_to_lists(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_tuples_to_lists(item) for item in obj]
+        return obj
+
+    @staticmethod
+    def _convert_lists_to_tuples(params: dict[str, Any], task_type: TaskType) -> dict[str, Any]:
+        """Convert specific list parameters back to tuples based on task type."""
+        result = dict(params)
+
+        # Convert location lists back to tuples for INTERACT and QUEUE tasks
+        if task_type in (TaskType.INTERACT, TaskType.QUEUE):
+            if "location" in result and isinstance(result["location"], list):
+                result["location"] = tuple(result["location"])
+            if "queue_location" in result and isinstance(result["queue_location"], list):
+                result["queue_location"] = tuple(result["queue_location"])
+
+        return result
+
     def to_dict(self) -> dict[str, Any]:
         """Convert routine specification to dictionary."""
         result = {
@@ -223,7 +249,7 @@ class RoutineSpec:
         for task in self.tasks:
             task_dict = {
                 "type": task.type.name.lower(),
-                "params": task.params,
+                "params": self._convert_tuples_to_lists(task.params),
                 "priority": task.priority,
             }
             if task.duration is not None:
@@ -231,7 +257,7 @@ class RoutineSpec:
             if task.completion_condition is not None:
                 task_dict["completion_condition"] = {
                     "type": task.completion_condition.type.name.lower(),
-                    "params": task.completion_condition.params,
+                    "params": self._convert_tuples_to_lists(task.completion_condition.params),
                 }
             result["tasks"].append(task_dict)
 
@@ -242,7 +268,7 @@ class RoutineSpec:
                 branch_dict = {
                     "condition": {
                         "type": branch.condition.type.name.lower(),
-                        "params": branch.condition.params,
+                        "params": self._convert_tuples_to_lists(branch.condition.params),
                     },
                     "tasks": [],
                     "probability": branch.probability,
@@ -251,7 +277,7 @@ class RoutineSpec:
                     branch_dict["tasks"].append(
                         {
                             "type": task.type.name.lower(),
-                            "params": task.params,
+                            "params": self._convert_tuples_to_lists(task.params),
                             "priority": task.priority,
                         }
                     )
