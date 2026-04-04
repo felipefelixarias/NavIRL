@@ -41,6 +41,15 @@ from navirl.routines.schema import (
 class TestRoutineSchema:
     """Tests for routine schema and validation."""
 
+    def _normalize_tuples_to_lists(self, obj):
+        """Convert tuples to lists recursively for comparison."""
+        if isinstance(obj, (tuple, list)):
+            return [self._normalize_tuples_to_lists(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {key: self._normalize_tuples_to_lists(value) for key, value in obj.items()}
+        else:
+            return obj
+
     def test_task_creation(self):
         """Test creating various task types."""
         # GO_TO task
@@ -123,7 +132,10 @@ class TestRoutineSchema:
         assert len(parsed.tasks) == len(original.tasks)
         for orig_task, parsed_task in zip(original.tasks, parsed.tasks, strict=True):
             assert parsed_task.type == orig_task.type
-            assert parsed_task.params == orig_task.params
+            # Note: tuples are converted to lists in YAML roundtrip
+            assert self._normalize_tuples_to_lists(
+                parsed_task.params
+            ) == self._normalize_tuples_to_lists(orig_task.params)
             assert parsed_task.priority == orig_task.priority
 
         # Verify branches
@@ -176,7 +188,16 @@ class TestRoutineCompiler:
         """Set up test fixtures."""
         self.compiler = RoutineCompiler()
         self.mock_agent = AgentState(
-            agent_id=1, x=0.0, y=0.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=0.0,
+            y=0.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            max_speed=1.0,
+            radius=0.2,
         )
 
     def test_simple_goto_compilation(self):
@@ -335,7 +356,16 @@ class TestBehaviorNodes:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_agent = AgentState(
-            agent_id=1, x=0.0, y=0.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=0.0,
+            y=0.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            max_speed=1.0,
+            radius=0.2,
         )
 
     def test_goto_target_node(self):
@@ -384,7 +414,16 @@ class TestBehaviorNodes:
 
         # Agent at location
         close_agent = AgentState(
-            agent_id=1, x=1.0, y=1.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=1.0,
+            y=1.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            max_speed=1.0,
+            radius=0.2,
         )
         blackboard.agent = close_agent
 
@@ -398,7 +437,16 @@ class TestBehaviorNodes:
 
         # Agent inside avoid radius
         close_agent = AgentState(
-            agent_id=1, x=2.0, y=2.5, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=2.0,
+            y=2.5,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            max_speed=1.0,
+            radius=0.2,
         )
 
         blackboard = Blackboard(agent=close_agent, dt=0.1)
@@ -435,7 +483,16 @@ class TestBehaviorNodes:
 
         # Agent at location
         close_agent = AgentState(
-            agent_id=1, x=1.9, y=3.1, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=1.9,
+            y=3.1,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            max_speed=1.0,
+            radius=0.2,
         )
         blackboard.agent = close_agent
 
@@ -453,7 +510,16 @@ class TestBehaviorNodes:
 
         # Neighbor too far
         far_neighbor = AgentState(
-            agent_id=42, x=10.0, y=10.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=42,
+            kind="human",
+            x=10.0,
+            y=10.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=15.0,
+            goal_y=15.0,
+            max_speed=1.0,
+            radius=0.2,
         )
         blackboard.neighbours = [far_neighbor]
         status = node.tick(blackboard)
@@ -461,7 +527,16 @@ class TestBehaviorNodes:
 
         # Neighbor close enough
         close_neighbor = AgentState(
-            agent_id=42, x=1.0, y=1.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=42,
+            kind="human",
+            x=1.0,
+            y=1.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            max_speed=1.0,
+            radius=0.2,
         )
         blackboard.neighbours = [close_neighbor]
         status = node.tick(blackboard)
@@ -483,17 +558,28 @@ class TestCompiledRoutineController:
 
         self.mock_states = {
             1: AgentState(
-                agent_id=1, x=0.0, y=0.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+                agent_id=1,
+                kind="human",
+                x=0.0,
+                y=0.0,
+                vx=0.0,
+                vy=0.0,
+                goal_x=5.0,
+                goal_y=3.0,
+                max_speed=1.0,
+                radius=0.2,
             ),
             100: AgentState(  # Robot
                 agent_id=100,
+                kind="robot",
                 x=10.0,
                 y=10.0,
                 vx=0.0,
                 vy=0.0,
+                goal_x=0.0,
+                goal_y=0.0,
                 max_speed=1.5,
                 radius=0.3,
-                pref_speed=1.0,
             ),
         }
 

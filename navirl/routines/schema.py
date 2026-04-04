@@ -274,7 +274,16 @@ class RoutineSpec:
 
     def to_yaml(self) -> str:
         """Convert routine specification to YAML string."""
-        return yaml.dump(self.to_dict(), default_flow_style=False)
+        return yaml.dump(self._convert_tuples_to_lists(self.to_dict()), default_flow_style=False)
+
+    def _convert_tuples_to_lists(self, obj: Any) -> Any:
+        """Convert tuples to lists recursively for safe YAML serialization."""
+        if isinstance(obj, (tuple, list)):
+            return [self._convert_tuples_to_lists(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {key: self._convert_tuples_to_lists(value) for key, value in obj.items()}
+        else:
+            return obj
 
 
 # JSON Schema for validation
