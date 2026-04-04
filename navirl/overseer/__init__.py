@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from navirl.overseer.layout import apply_layout_to_scenario, suggest_layout
 from navirl.overseer.provider import (
     ProviderCallError,

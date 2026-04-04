@@ -15,6 +15,8 @@ Available Buffer Types:
 - DemonstrationBuffer: Expert demonstrations for imitation learning (DQfD, DDPGfD)
 """
 
+from __future__ import annotations
+
 from collections import deque
 
 import numpy as np
@@ -306,7 +308,7 @@ class PrioritizedReplayBuffer:
             td_errors: Absolute TD-errors for each sampled transition.
         """
         priorities = (np.abs(td_errors) + self._epsilon) ** self.alpha
-        for tree_idx, priority in zip(tree_indices, priorities, strict=False):
+        for tree_idx, priority in zip(tree_indices, priorities, strict=True):
             self._tree.update(int(tree_idx), priority)
         self._max_priority = max(
             self._max_priority, float(np.max(np.abs(td_errors) + self._epsilon))
