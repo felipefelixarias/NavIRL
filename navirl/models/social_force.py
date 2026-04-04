@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from navirl.core.constants import EPSILON, SFM
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
+from navirl.utils import normalize_vector
 
 __all__ = [
     "SocialForceConfig",
@@ -69,14 +70,6 @@ class SocialForceConfig:
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
-
-
-def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
-    """Return (unit_x, unit_y, magnitude)."""
-    n = math.hypot(vx, vy)
-    if n < EPSILON:
-        return 0.0, 0.0, 0.0
-    return vx / n, vy / n, n
 
 
 def _anisotropy_weight(ex: float, ey: float, nx: float, ny: float, lam: float) -> float:
@@ -143,7 +136,7 @@ class SocialForceModel:
         """
         dx = goal[0] - state.x
         dy = goal[1] - state.y
-        ex, ey, dist = _normalize(dx, dy)
+        ex, ey, dist = normalize_vector(dx, dy)
 
         if dist < EPSILON:
             # Already at goal — decelerate
@@ -176,7 +169,9 @@ class SocialForceModel:
             heading_y = state.vy / speed
         else:
             # Default heading toward goal
-            heading_x, heading_y, _ = _normalize(state.goal_x - state.x, state.goal_y - state.y)
+            heading_x, heading_y, _ = normalize_vector(
+                state.goal_x - state.x, state.goal_y - state.y
+            )
 
         for other in other_states:
             if other.agent_id == state.agent_id:

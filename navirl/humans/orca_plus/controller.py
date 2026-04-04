@@ -5,7 +5,8 @@ import random
 
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink
-from navirl.humans.orca.controller import ORCAHumanController, _normalize
+from navirl.humans.orca.controller import ORCAHumanController
+from navirl.utils import normalize_vector
 
 
 class ORCAPlusHumanController(ORCAHumanController):
@@ -91,7 +92,7 @@ class ORCAPlusHumanController(ORCAHumanController):
             return 1.0
 
         vx, vy = desired
-        ux, uy, speed = _normalize(vx, vy)
+        ux, uy, speed = normalize_vector(vx, vy)
         if speed < 1e-8:
             return 1.0
 
@@ -127,7 +128,7 @@ class ORCAPlusHumanController(ORCAHumanController):
         cy = sum(m.y for m in members) / len(members)
         st = states[hid]
         dx, dy = cx - st.x, cy - st.y
-        ux, uy, _ = _normalize(dx, dy)
+        ux, uy, _ = normalize_vector(dx, dy)
         return ux * self.group_weight, uy * self.group_weight
 
     def step(
@@ -177,7 +178,7 @@ class ORCAPlusHumanController(ORCAHumanController):
                     bounded_speed *= self.hesitation_scale
                     emit_event("hesitation", hid, {"scale": self.hesitation_scale})
 
-                ux, uy, _ = _normalize(vx, vy)
+                ux, uy, _ = normalize_vector(vx, vy)
                 vx, vy = ux * bounded_speed, uy * bounded_speed
                 self.current_speed[hid] = bounded_speed
 

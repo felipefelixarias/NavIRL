@@ -34,6 +34,7 @@ from navirl.core.constants import EPSILON
 from navirl.core.constants import ORCA as ORCA_DEFAULTS
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
+from navirl.utils import normalize_vector
 
 __all__ = [
     "VOConfig",
@@ -98,13 +99,6 @@ class HalfPlane(NamedTuple):
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
-
-
-def _normalize(vx: float, vy: float) -> tuple[float, float, float]:
-    n = math.hypot(vx, vy)
-    if n < EPSILON:
-        return 0.0, 0.0, 0.0
-    return vx / n, vy / n, n
 
 
 def _cross2d(ax: float, ay: float, bx: float, by: float) -> float:
@@ -585,7 +579,7 @@ class VOHumanController(HumanController):
         """Compute preferred velocity directly toward the goal."""
         dx = goal[0] - state.x
         dy = goal[1] - state.y
-        ux, uy, dist = _normalize(dx, dy)
+        ux, uy, dist = normalize_vector(dx, dy)
         if dist < self.goal_tolerance:
             return 0.0, 0.0
         speed = min(state.max_speed, self.cfg.max_speed)

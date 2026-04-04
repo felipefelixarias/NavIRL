@@ -64,7 +64,7 @@ def _run_pytest() -> tuple[bool, str]:
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True, check=False
     )
-    out = proc.stdout + "\n" + proc.stderr
+    out = f"{proc.stdout}\n{proc.stderr}"
     return (proc.returncode == 0), out
 
 
