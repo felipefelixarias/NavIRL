@@ -246,11 +246,11 @@ def performance_monitor(
 
 def safe_plugin_call(
     plugin_method: Callable[..., Any],
-    *args,
+    *args: Any,
     plugin_name: str = "unknown",
     method_name: str = "unknown",
     timeout_s: float = 5.0,
-    **kwargs,
+    **kwargs: Any,
 ) -> Any:
     """
     Safely call a plugin method with error handling and timeouts.
