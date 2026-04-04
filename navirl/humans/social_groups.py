@@ -309,7 +309,7 @@ class SocialGroup:
         if self.formation == FormationType.V_SHAPE:
             return self._v_shape_positions(centroid, heading, n)
 
-        # Default: CLUSTER – members stay near centroid with spacing.
+        # Default: CLUSTER - members stay near centroid with spacing.
         return self._cluster_positions(centroid, n)
 
     def _line_positions(

@@ -282,7 +282,7 @@ class MultiAgentNavEnv:
 
         for name in self.agents:
             if self._terminated[name]:
-                # Already done – provide dummy outputs
+                # Already done - provide dummy outputs
                 observations[name] = np.zeros(
                     self.observation_spaces[name].shape,
                     dtype=np.float32,  # type: ignore[union-attr]
@@ -563,4 +563,4 @@ class MultiAgentNavEnv:
         return self._backend
 
 
-__all__ = ["MultiAgentNavEnv", "MultiAgentNavConfig"]
+__all__ = ["MultiAgentNavConfig", "MultiAgentNavEnv"]

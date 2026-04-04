@@ -27,8 +27,8 @@ from navirl.utils import normalize_vector
 
 __all__ = [
     "SocialForceConfig",
-    "SocialForceModel",
     "SocialForceHumanController",
+    "SocialForceModel",
 ]
 
 

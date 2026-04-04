@@ -465,7 +465,7 @@ class EnvironmentRenderer:
     def _check_cv2_availability() -> bool:
         """Check if OpenCV is available."""
         try:
-            import cv2  # noqa: F401
+            import cv2
 
             return True
         except ImportError:

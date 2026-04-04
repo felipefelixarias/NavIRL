@@ -17,18 +17,18 @@ from typing import Any
 __all__ = [
     "Callback",
     "CallbackList",
-    "EvalCallback",
     "CheckpointCallback",
-    "LoggingCallback",
-    "EarlyStoppingCallback",
     "CurriculumCallback",
-    "WandbCallback",
-    "TensorBoardCallback",
-    "ProgressBarCallback",
-    "VideoRecordCallback",
+    "EarlyStoppingCallback",
+    "EvalCallback",
     "GradientMonitorCallback",
-    "SchedulerCallback",
     "HyperparameterSearchCallback",
+    "LoggingCallback",
+    "ProgressBarCallback",
+    "SchedulerCallback",
+    "TensorBoardCallback",
+    "VideoRecordCallback",
+    "WandbCallback",
 ]
 
 logger = logging.getLogger(__name__)

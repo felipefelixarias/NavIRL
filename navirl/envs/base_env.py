@@ -45,11 +45,11 @@ from navirl.core.env import SceneBackend
 
 _DISCRETE_ACTIONS: np.ndarray = np.array(
     [
-        [0.0, 0.0],  # 0 – stop
-        [1.0, 0.0],  # 1 – forward  (+x)
-        [-1.0, 0.0],  # 2 – backward (-x)
-        [0.0, 1.0],  # 3 – left     (+y)
-        [0.0, -1.0],  # 4 – right    (-y)
+        [0.0, 0.0],  # 0 - stop
+        [1.0, 0.0],  # 1 - forward  (+x)
+        [-1.0, 0.0],  # 2 - backward (-x)
+        [0.0, 1.0],  # 3 - left     (+y)
+        [0.0, -1.0],  # 4 - right    (-y)
     ],
     dtype=np.float32,
 )
@@ -142,7 +142,7 @@ class NavEnvConfig:
 
 
 # ---------------------------------------------------------------------------
-#  Helper – lazy backend construction
+#  Helper - lazy backend construction
 # ---------------------------------------------------------------------------
 
 
@@ -155,7 +155,7 @@ def _build_backend(config: NavEnvConfig) -> SceneBackend:
     from navirl.backends.grid2d.backend import Grid2DBackend
 
     if config.scenario_path is not None:
-        import json  # noqa: E401
+        import json
 
         import yaml
 

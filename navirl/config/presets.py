@@ -47,7 +47,7 @@ class Preset:
 PRESETS: dict[str, Preset] = {
     "debug": Preset(
         name="debug",
-        description="Small network, few steps – fast iteration for debugging.",
+        description="Small network, few steps - fast iteration for debugging.",
         env_config={
             "num_humans": 3,
             "env_size": 6.0,
@@ -67,7 +67,7 @@ PRESETS: dict[str, Preset] = {
     ),
     "fast_train": Preset(
         name="fast_train",
-        description="Medium network, moderate steps – quick experiments.",
+        description="Medium network, moderate steps - quick experiments.",
         env_config={
             "num_humans": 5,
             "env_size": 8.0,

@@ -261,4 +261,4 @@ class CrowdNavEnv(NavEnv):
         return total / len(self._human_ids)
 
 
-__all__ = ["CrowdNavEnv", "CrowdNavConfig"]
+__all__ = ["CrowdNavConfig", "CrowdNavEnv"]

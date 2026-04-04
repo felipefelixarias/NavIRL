@@ -1,4 +1,4 @@
-"""Safety package for NavIRL – hard constraints, shielding, monitoring, and risk."""
+"""Safety package for NavIRL - hard constraints, shielding, monitoring, and risk."""
 
 from __future__ import annotations
 
@@ -21,22 +21,22 @@ from navirl.safety.risk_assessment import PredictiveRiskModel, RiskEstimator
 from navirl.safety.shield import CBFShield, ReachabilityShield, SafetyShield
 
 __all__ = [
-    "SafetyConstraint",
-    "CollisionConstraint",
-    "SpeedConstraint",
     "AccelerationConstraint",
-    "ProxemicsConstraint",
     "BoundaryConstraint",
-    "ConstraintSet",
-    "SafetyShield",
     "CBFShield",
-    "ReachabilityShield",
-    "SafetyMonitor",
-    "SafetyLogger",
-    "SafetyAlert",
-    "RiskEstimator",
-    "PredictiveRiskModel",
-    "LagrangianMultiplier",
     "CPOUpdate",
+    "CollisionConstraint",
+    "ConstraintSet",
+    "LagrangianMultiplier",
     "PIDLagrangian",
+    "PredictiveRiskModel",
+    "ProxemicsConstraint",
+    "ReachabilityShield",
+    "RiskEstimator",
+    "SafetyAlert",
+    "SafetyConstraint",
+    "SafetyLogger",
+    "SafetyMonitor",
+    "SafetyShield",
+    "SpeedConstraint",
 ]

@@ -40,6 +40,9 @@ from navirl.utils.spatial import (
 from navirl.utils.timing import Timer, profile, rate_limiter, throttle
 
 __all__ = [
+    "KDTree2D",
+    "SpatialHashGrid",
+    "Timer",
     "angle_between",
     "angle_diff",
     "angular_velocity",
@@ -54,7 +57,6 @@ __all__ = [
     "find_neighbors_in_radius",
     "gaussian_kernel",
     "heading_from_velocity",
-    "KDTree2D",
     "lerp",
     "line_segment_intersection",
     "normalize_angle",
@@ -69,8 +71,6 @@ __all__ = [
     "running_std",
     "sigmoid",
     "softmax",
-    "SpatialHashGrid",
     "throttle",
-    "Timer",
     "wrap_angle",
 ]

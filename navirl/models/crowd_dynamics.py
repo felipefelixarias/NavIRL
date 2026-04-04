@@ -21,7 +21,7 @@ __all__ = ["CrowdAnalyzer", "FundamentalDiagram", "LevelOfService"]
 
 
 # ---------------------------------------------------------------------------
-#  CrowdAnalyzer – spatial density, flow, pressure, and congestion
+#  CrowdAnalyzer - spatial density, flow, pressure, and congestion
 # ---------------------------------------------------------------------------
 
 
@@ -198,7 +198,7 @@ class CrowdAnalyzer:
 
 
 # ---------------------------------------------------------------------------
-#  FundamentalDiagram – speed-density relationship
+#  FundamentalDiagram - speed-density relationship
 # ---------------------------------------------------------------------------
 
 
@@ -281,7 +281,7 @@ class FundamentalDiagram:
 
 
 # ---------------------------------------------------------------------------
-#  LevelOfService – Fruin walkway LoS classification
+#  LevelOfService - Fruin walkway LoS classification
 # ---------------------------------------------------------------------------
 
 
@@ -305,7 +305,7 @@ class LevelOfService:
 
     @classmethod
     def classify(cls, density: float) -> str:
-        """Return a LoS grade (``'A'`` – ``'F'``) for a density value.
+        """Return a LoS grade (``'A'`` - ``'F'``) for a density value.
 
         Parameters
         ----------

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -57,7 +57,7 @@ class TrajectoryCollection:
     def __getitem__(self, idx: int) -> Trajectory:
         return self.trajectories[idx]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Trajectory]:
         return iter(self.trajectories)
 
     def add(self, traj: Trajectory) -> None:

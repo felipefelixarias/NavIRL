@@ -35,9 +35,9 @@ except ImportError:  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "PreferenceRewardModel",
     "DemonstrationRewardModel",
     "EnsembleRewardModel",
+    "PreferenceRewardModel",
 ]
 
 

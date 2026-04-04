@@ -1,4 +1,4 @@
-"""Configuration package for NavIRL – presets, registry, validation, and serialization."""
+"""Configuration package for NavIRL - presets, registry, validation, and serialization."""
 
 from __future__ import annotations
 
@@ -27,21 +27,21 @@ from navirl.config.validation import (
 )
 
 __all__ = [
-    "Preset",
     "PRESETS",
-    "get_preset",
-    "list_presets",
-    "merge_presets",
     "ComponentRegistry",
     "ConfigValidator",
+    "Preset",
     "SchemaBuilder",
+    "cli_args_to_config",
+    "config_to_cli_args",
+    "diff_configs",
+    "get_preset",
+    "list_presets",
+    "load_config",
+    "merge_configs",
+    "merge_presets",
+    "save_config",
     "validate_agent_config",
     "validate_env_config",
     "validate_training_config",
-    "save_config",
-    "load_config",
-    "config_to_cli_args",
-    "cli_args_to_config",
-    "merge_configs",
-    "diff_configs",
 ]

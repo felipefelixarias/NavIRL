@@ -34,7 +34,7 @@ def _create_safe_factory(
         Wrapped factory function with safe plugin call handling
     """
 
-    def safe_factory(*args, **kwargs):
+    def safe_factory(*args: Any, **kwargs: Any) -> Any:
         call_kwargs = {"plugin_name": name, "method_name": "__init__", **kwargs}
         if timeout_s is not None:
             call_kwargs["timeout_s"] = timeout_s

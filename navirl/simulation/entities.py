@@ -1,7 +1,7 @@
 """Entity system for the NavIRL simulation.
 
-Defines a hierarchy of simulation entities – static and dynamic
-obstacles, walls, doors, regions, waypoints – together with a
+Defines a hierarchy of simulation entities - static and dynamic
+obstacles, walls, doors, regions, waypoints - together with a
 navigation graph and an :class:`EntityManager` supporting spatial
 queries.
 """

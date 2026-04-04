@@ -35,7 +35,7 @@ except ImportError:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["BCConfig", "BCAgent"]
+__all__ = ["BCAgent", "BCConfig"]
 
 
 # ---------------------------------------------------------------------------

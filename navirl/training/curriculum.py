@@ -344,10 +344,10 @@ class CurriculumManager:
 
 
 __all__ = [
+    "CurriculumManager",
     "CurriculumScheduler",
+    "DifficultyDimension",
     "LinearCurriculum",
     "PerformanceCurriculum",
     "StagedCurriculum",
-    "CurriculumManager",
-    "DifficultyDimension",
 ]

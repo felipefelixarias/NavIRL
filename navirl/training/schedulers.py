@@ -12,18 +12,18 @@ from collections.abc import Sequence
 #          CompositeSchedule, ExplorationSchedule
 
 __all__ = [
-    "Schedule",
-    "LinearSchedule",
-    "CosineAnnealingSchedule",
-    "StepSchedule",
-    "ExponentialSchedule",
-    "CyclicSchedule",
-    "WarmupSchedule",
-    "ReduceOnPlateauSchedule",
-    "PolynomialSchedule",
-    "OneCycleSchedule",
     "CompositeSchedule",
+    "CosineAnnealingSchedule",
+    "CyclicSchedule",
     "ExplorationSchedule",
+    "ExponentialSchedule",
+    "LinearSchedule",
+    "OneCycleSchedule",
+    "PolynomialSchedule",
+    "ReduceOnPlateauSchedule",
+    "Schedule",
+    "StepSchedule",
+    "WarmupSchedule",
 ]
 
 
@@ -321,7 +321,7 @@ class ReduceOnPlateauSchedule(Schedule):
             self._current_value = max(self._current_value * self.factor, self.min_value)
             self._no_improvement_count = 0
 
-    def value(self, step: int) -> float:  # noqa: ARG002 (step unused)
+    def value(self, step: int) -> float:
         return self._current_value
 
 
@@ -435,7 +435,7 @@ class CompositeSchedule(Schedule):
             if remaining < n_steps:
                 return schedule.value(remaining)
             remaining -= n_steps
-        # Past the last phase – return the last schedule's terminal value.
+        # Past the last phase - return the last schedule's terminal value.
         if self.phases:
             last_sched, last_n = self.phases[-1]
             return last_sched.value(last_n)

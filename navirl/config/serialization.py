@@ -392,7 +392,7 @@ def _import_toml_read() -> Any:
     try:
         import toml  # type: ignore[import-untyped]
 
-        # toml.load accepts a text file, not binary – wrap it.
+        # toml.load accepts a text file, not binary - wrap it.
         def _load_toml(fh: Any) -> dict[str, Any]:
             return toml.loads(fh.read().decode())
 

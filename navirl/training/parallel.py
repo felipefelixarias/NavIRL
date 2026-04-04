@@ -22,13 +22,13 @@ import numpy as np
 #          VecFrameStack, VecMonitor, AsyncVecEnv
 
 __all__ = [
-    "SubprocVecEnv",
+    "AsyncVecEnv",
     "DummyVecEnv",
+    "SubprocVecEnv",
     "VecEnvWrapper",
-    "VecNormalize",
     "VecFrameStack",
     "VecMonitor",
-    "AsyncVecEnv",
+    "VecNormalize",
 ]
 
 

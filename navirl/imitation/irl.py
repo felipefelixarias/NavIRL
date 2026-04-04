@@ -29,7 +29,7 @@ from navirl.agents.base import HyperParameters
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["MaxEntIRLConfig", "MaxEntIRL"]
+__all__ = ["MaxEntIRL", "MaxEntIRLConfig"]
 
 
 # ---------------------------------------------------------------------------

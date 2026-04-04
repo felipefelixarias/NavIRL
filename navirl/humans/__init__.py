@@ -8,6 +8,6 @@ from navirl.humans.scripted.controller import ScriptedHumanController
 __all__ = [
     "ORCAHumanController",
     "ORCAPlusHumanController",
-    "ScriptedHumanController",
     "ReplayHumanController",
+    "ScriptedHumanController",
 ]

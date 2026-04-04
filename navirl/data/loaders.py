@@ -102,7 +102,7 @@ class ROSBagLoader:
 
     def __init__(self) -> None:
         try:
-            import rosbag  # noqa: F401
+            import rosbag
 
             self._rosbag = rosbag
         except ImportError:

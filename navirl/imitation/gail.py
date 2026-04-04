@@ -31,7 +31,7 @@ try:
 except ImportError:  # pragma: no cover
     _TORCH_AVAILABLE = False
 
-__all__ = ["GAILConfig", "Discriminator", "GAILAgent"]
+__all__ = ["Discriminator", "GAILAgent", "GAILConfig"]
 
 
 # ---------------------------------------------------------------------------
