@@ -310,38 +310,47 @@ class BaseAgent(abc.ABC):
 
     @property
     def config(self) -> HyperParameters:
+        """Agent hyperparameters and configuration."""
         return self._config
 
     @property
     def observation_space(self) -> Any:
+        """Observation space specification from the environment."""
         return self._observation_space
 
     @property
     def action_space(self) -> Any:
+        """Action space specification from the environment."""
         return self._action_space
 
     @property
     def device(self) -> torch.device:
+        """PyTorch device (CPU or CUDA) for tensor operations."""
         return self._device
 
     @property
     def total_steps(self) -> int:
+        """Total number of environment steps taken during training."""
         return self._total_steps
 
     @property
     def total_episodes(self) -> int:
+        """Total number of episodes completed during training."""
         return self._total_episodes
 
     @property
     def is_training(self) -> bool:
+        """Whether the agent is currently in training mode."""
         return self._training
 
     @property
     def metrics(self) -> MetricsLogger:
+        """Logger for recording training metrics and statistics."""
         return self._metrics
 
     @property
     def wall_time(self) -> float:
+        """Wall clock time elapsed since agent initialization (in seconds)."""
         return time.time() - self._start_time
 
     # ------------------------------------------------------------------
