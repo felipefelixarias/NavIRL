@@ -103,12 +103,15 @@ class Grid2DBackend(SceneBackend):
         h, w = self.env.map.shape
         required_px = int(round(self._required_clearance_px(radius, with_buffer=with_buffer)))
 
-        if 0 <= row < h and 0 <= col < w:
-            if (
+        if (
+            0 <= row < h
+            and 0 <= col < w
+            and (
                 self.env.map[row, col] != OBSTACLE_SPACE
                 and self._clearance_px[row, col] >= required_px
-            ):
-                return float(position[0]), float(position[1])
+            )
+        ):
+            return float(position[0]), float(position[1])
 
         candidates = self._clearance_cache.get(required_px)
         if candidates is None:

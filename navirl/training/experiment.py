@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import itertools
 import json
@@ -448,9 +449,7 @@ class ResultsDB:
         self.close()
 
     def __del__(self) -> None:
-        try:
+        # Note: Catching all exceptions is intentional in destructor to prevent
+        # issues during garbage collection. Connection may be in unknown state.
+        with contextlib.suppress(Exception):
             self._conn.close()
-        except Exception:
-            # Note: Catching all exceptions is intentional in destructor to prevent
-            # issues during garbage collection. Connection may be in unknown state.
-            pass

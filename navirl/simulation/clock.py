@@ -179,9 +179,7 @@ class SimulationClock:
         """Return ``True`` when the clock has reached a termination condition."""
         if self._sim_time >= self._max_sim_time:
             return True
-        if 0 < self._max_steps <= self._step:
-            return True
-        return False
+        return 0 < self._max_steps <= self._step
 
     @property
     def wall_elapsed(self) -> float:

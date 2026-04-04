@@ -126,9 +126,7 @@ class StandardMetrics(MetricsCollector):
                     or col_rc < 0
                     or row_rc >= map_img.shape[0]
                     or col_rc >= map_img.shape[1]
-                ):
-                    collisions_agent_obstacle += 1
-                elif map_img[row_rc, col_rc] == OBSTACLE_SPACE:
+                ) or map_img[row_rc, col_rc] == OBSTACLE_SPACE:
                     collisions_agent_obstacle += 1
 
             # pairwise metrics
@@ -143,9 +141,9 @@ class StandardMetrics(MetricsCollector):
                     if d < float(a["radius"]) + float(b["radius"]):
                         collisions_agent_agent += 1
 
-                    if a["kind"] == "robot" and b["kind"] == "human":
-                        robot_human_frame_min = min(robot_human_frame_min, d)
-                    elif a["kind"] == "human" and b["kind"] == "robot":
+                    if (a["kind"] == "robot" and b["kind"] == "human") or (
+                        a["kind"] == "human" and b["kind"] == "robot"
+                    ):
                         robot_human_frame_min = min(robot_human_frame_min, d)
                     elif a["kind"] == "human" and b["kind"] == "human":
                         human_human_frame_min = min(human_human_frame_min, d)

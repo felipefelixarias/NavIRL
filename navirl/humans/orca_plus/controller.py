@@ -152,11 +152,10 @@ class ORCAPlusHumanController(ORCAHumanController):
                 self.enable_doorway_token
                 and self.token_holder is not None
                 and hid != self.token_holder
-            ):
-                if self._in_doorway(st.x, st.y, margin=self.door_approach_margin):
-                    emit_event("doorway_yield", hid, {"to_agent": self.token_holder})
-                    actions[hid] = Action(pref_vx=0.0, pref_vy=0.0, behavior="YIELDING")
-                    continue
+            ) and self._in_doorway(st.x, st.y, margin=self.door_approach_margin):
+                emit_event("doorway_yield", hid, {"to_agent": self.token_holder})
+                actions[hid] = Action(pref_vx=0.0, pref_vy=0.0, behavior="YIELDING")
+                continue
 
             scale = self._apply_anisotropic_scale(hid, st, (act.pref_vx, act.pref_vy), states)
             vx, vy = act.pref_vx * scale, act.pref_vy * scale

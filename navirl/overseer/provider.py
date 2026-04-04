@@ -20,13 +20,9 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB limit for image files
 class ProviderUnavailableError(RuntimeError):
     """Raised when a required AI provider service is not available or configured."""
 
-    pass
-
 
 class ProviderCallError(RuntimeError):
     """Raised when an AI provider call fails due to API errors or invalid responses."""
-
-    pass
 
 
 def _validate_file_path(path: str | Path) -> Path:
@@ -178,7 +174,7 @@ def _strict_json_schema_for_codex(schema: dict) -> dict:
                 if not isinstance(props, dict):
                     props = {}
                 out["properties"] = props
-                out["required"] = [str(k) for k in props.keys()]
+                out["required"] = [str(k) for k in props]
                 out["additionalProperties"] = False
             return out
         if isinstance(node, list):
@@ -267,7 +263,7 @@ def _run_native_json(
         if "{" in cmd_template:
             cmd = shlex.split(cmd_template.format(**fmt))
         else:
-            cmd = shlex.split(cmd_template) + [str(prompt_path)]
+            cmd = [*shlex.split(cmd_template), str(prompt_path)]
 
         try:
             proc = subprocess.run(

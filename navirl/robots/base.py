@@ -217,9 +217,12 @@ class RobotController(ABC):
             )
 
         # Alert if consistently slow (last 10 steps average)
-        if self._step_count % 10 == 0 and self._step_count > 10:
-            if self._last_computation_time > self._max_computation_time * 0.8:
-                logger.info(
-                    "Controller %s consistently approaching performance limit",
-                    self.__class__.__name__,
-                )
+        if (
+            self._step_count % 10 == 0
+            and self._step_count > 10
+            and self._last_computation_time > self._max_computation_time * 0.8
+        ):
+            logger.info(
+                "Controller %s consistently approaching performance limit",
+                self.__class__.__name__,
+            )

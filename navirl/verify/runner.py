@@ -198,7 +198,7 @@ def _format_scenario_row(row: VerifyResult) -> str:
     video_status = (
         ("✅ Pass" if row.video_check_pass else "❌ **Fail**")
         if row.video_check_pass is not None
-        else "➖"
+        else "-"
     )
     overall_status = "✅ **Pass**" if row.overall_pass else "❌ **Fail**"
 

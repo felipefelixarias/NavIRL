@@ -530,10 +530,9 @@ class RRTStarPlanner(Planner):
                     cost[ni] = c
 
             # Check goal.
-            if float(np.linalg.norm(new_pt - goal)) < self.step_size:
-                if best_cost < best_goal_cost:
-                    best_goal_idx = new_idx
-                    best_goal_cost = best_cost
+            if float(np.linalg.norm(new_pt - goal)) < self.step_size and best_cost < best_goal_cost:
+                best_goal_idx = new_idx
+                best_goal_cost = best_cost
 
         if best_goal_idx is not None:
             idx = best_goal_idx
