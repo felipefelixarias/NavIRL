@@ -22,11 +22,70 @@ Before creating a PR, verify:
 
 ### E2E Verification Requirements
 Based on change scope, run appropriate verification:
-- **Any change**: `python -m navirl verify --suite quick` (required)
-- **Core sim/controllers/planners/metrics**: `python -m navirl verify --suite full` (required)
-- **New scenarios**: Test with canonical examples + new scenario
-- **Plugin changes**: Include deterministic test + example scenario
-- **Performance changes**: Include before/after metrics
+
+#### Mandatory for All Changes
+- [ ] `python -m pytest` - All unit tests pass
+- [ ] `ruff check .` - Code style and linting passes
+- [ ] `python -m navirl verify --suite quick` - Basic regression verification
+
+#### Required by Change Scope
+
+**Core Simulation Changes** (backends, physics, collision detection)
+- [ ] `python -m navirl verify --suite full` - Full verification suite
+- [ ] Manual test with 2+ scenarios from different categories (hallway, doorway, open space)
+- [ ] Performance impact assessment (before/after metrics)
+
+**Controller/Planner Changes** (human controllers, robot planners, navigation algorithms)
+- [ ] `python -m navirl verify --suite full` - Full verification suite
+- [ ] Test with both social navigation scenarios and obstacle avoidance
+- [ ] Verify deterministic behavior with same seeds across runs
+
+**Metrics/Evaluation Changes** (aggregation, reporting, benchmark comparisons)
+- [ ] Test metric calculations with known ground-truth scenarios
+- [ ] Verify backward compatibility with existing result formats
+- [ ] Cross-validate against reference implementations where applicable
+
+**New Scenarios/Data** (scenario library additions, new maps, configurations)
+- [ ] Test scenario loads and runs without errors
+- [ ] Verify scenario meets performance and quality standards
+- [ ] Include scenario in appropriate test suite if canonical example
+
+**Plugin/Extension Changes** (new backends, controllers, custom components)
+- [ ] Include deterministic unit test for plugin functionality
+- [ ] Add example scenario demonstrating plugin usage
+- [ ] Document plugin registration and configuration requirements
+
+**Documentation/Infrastructure** (build system, CI, dependencies)
+- [ ] Test installation from scratch in clean environment
+- [ ] Verify all documented commands and examples still work
+- [ ] Check documentation rendering and link validity
+
+**Agent-Driven Development Improvements** (verification, quality gates, automation)
+- [ ] Meta-verification: test the verification tools themselves
+- [ ] Ensure new quality gates don't break existing workflows
+- [ ] Validate automation improvements with historical PR examples
+
+## Regression Prevention and Quality Gates
+
+### Automated CI Requirements
+All PRs must pass these automated checks before merge:
+- **Unit Tests**: Full test suite must pass (`python -m pytest`)
+- **Code Quality**: Style and type checking (`ruff check .`, `ruff format --check .`)
+- **Quick Verification**: Basic scenario regression suite (`python -m navirl verify --suite quick`)
+- **Build Validation**: Package builds successfully (`python -m build`)
+
+### Behavioral Regression Detection
+Changes to core components trigger additional verification:
+- **Deterministic Replay**: Scenario results must be reproducible with same seeds
+- **Metric Stability**: Key performance indicators within acceptable tolerance
+- **Reference Scenario Suite**: Canonical examples continue to pass quality thresholds
+- **Cross-Platform Compatibility**: Results consistent across supported environments
+
+### Quality Gate Enforcement
+- **Pre-commit Hooks**: Style and basic validations run automatically
+- **Branch Protection**: Require passing CI checks and verification evidence
+- **Review Requirements**: Human review mandatory for core algorithm changes
+- **Merge Criteria**: All verification evidence documented in PR description
 
 ## Required annotations
 Every AI-authored PR should include:
@@ -39,11 +98,36 @@ Every AI-authored PR should include:
 
 ## Pre-merge Evidence Requirements
 All AI-authored PRs must demonstrate:
-1. **Functional verification**: Appropriate test suite completion
-2. **Quality verification**: Linting and style checks pass
-3. **Regression verification**: No behavior regressions introduced
-4. **Documentation verification**: Changes reflected in docs/comments
-5. **Reproducibility verification**: Clean environment compatibility
+
+### 1. Functional Verification Evidence
+- [ ] Appropriate test suite completion (see E2E Verification Requirements above)
+- [ ] Test results included in PR description with specific commands run
+- [ ] Any test failures explained and justified
+- [ ] Manual testing described for UI/interactive components
+
+### 2. Quality Verification Evidence
+- [ ] All automated CI checks passing (tests, linting, builds)
+- [ ] Code follows project conventions and style guidelines
+- [ ] No TODO/FIXME introduced without issue tracking
+- [ ] Documentation updated for public API changes
+
+### 3. Regression Verification Evidence
+- [ ] No behavior regressions in verification suites
+- [ ] Performance impact assessed and documented if applicable
+- [ ] Backward compatibility maintained or migration path provided
+- [ ] Deterministic behavior verified across multiple test runs
+
+### 4. Documentation Verification Evidence
+- [ ] Inline code documentation reflects changes
+- [ ] Public API changes documented in appropriate files
+- [ ] Examples updated to reflect new functionality
+- [ ] CHANGELOG.md updated if user-visible changes
+
+### 5. Reproducibility Verification Evidence
+- [ ] No hardcoded paths, credentials, or environment-specific dependencies
+- [ ] Seeds and configurations documented for deterministic components
+- [ ] Installation tested in clean environment (new virtualenv)
+- [ ] Dependencies and versions explicitly specified
 
 ### Auto-merge Eligibility
 AI agents may auto-merge PRs that meet ALL criteria:
@@ -53,6 +137,40 @@ AI agents may auto-merge PRs that meet ALL criteria:
 - [ ] Include tests or documented rationale for omission
 - [ ] Follow PR template with all required sections completed
 - [ ] Demonstrate reproducibility across environments
+
+## Change-Specific Checklists
+
+### Algorithm/Model Changes
+When modifying core algorithms (social forces, ORCA, path planning):
+- [ ] Validate against established literature and reference implementations
+- [ ] Document mathematical assumptions and parameter sensitivities
+- [ ] Test edge cases (zero velocity, boundary conditions, high density)
+- [ ] Verify numerical stability and convergence properties
+- [ ] Assess computational complexity and performance implications
+
+### Data/Configuration Changes
+When adding scenarios, maps, or configuration templates:
+- [ ] Validate scenario realism and physical plausibility
+- [ ] Ensure map scaling and coordinate system consistency
+- [ ] Test configuration parameter ranges and boundary values
+- [ ] Verify scenario difficulty spans (easy, medium, hard examples)
+- [ ] Document data sources and licensing constraints
+
+### Infrastructure Changes
+When modifying build system, CI, or development tools:
+- [ ] Test on multiple platforms and Python versions
+- [ ] Verify backward compatibility with existing developer workflows
+- [ ] Document any new dependencies or installation requirements
+- [ ] Ensure CI changes don't break existing branch protection rules
+- [ ] Test rollback procedures for infrastructure failures
+
+### Performance/Optimization Changes
+When optimizing algorithms or data structures:
+- [ ] Benchmark against baseline with statistical significance tests
+- [ ] Verify algorithmic correctness is preserved
+- [ ] Test performance across different scenario sizes and complexities
+- [ ] Document trade-offs between speed, memory, and accuracy
+- [ ] Include performance regression tests in verification suite
 
 ## Safety and data handling
 - Do not include credentials, private datasets, or personally identifiable
