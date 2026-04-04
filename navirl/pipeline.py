@@ -909,6 +909,39 @@ def run_scenario_file(
     render_override: bool | None = None,
     video_override: bool | None = None,
 ) -> EpisodeLog:
+    """Execute a scenario from a YAML configuration file.
+
+    Loads a scenario configuration from a file and executes it using
+    :func:`run_scenario_dict`. This is a convenience function for file-based
+    scenario execution.
+
+    Parameters
+    ----------
+    scenario_path : str | Path
+        Path to YAML scenario configuration file
+    out_root : str | Path
+        Output directory for results
+    run_id : str, optional
+        Unique run identifier, generated if None
+    render_override : bool, optional
+        Override scenario render setting
+    video_override : bool, optional
+        Override scenario video setting
+
+    Returns
+    -------
+    EpisodeLog
+        Simulation results and metrics
+
+    Raises
+    ------
+    FileNotFoundError
+        If scenario file does not exist
+    yaml.YAMLError
+        If scenario file is malformed YAML
+    ValueError
+        If scenario configuration is invalid
+    """
     scenario = load_scenario(scenario_path)
     return run_scenario_dict(
         scenario=scenario,
@@ -920,6 +953,34 @@ def run_scenario_file(
 
 
 def expand_state_paths(inputs: list[str]) -> list[Path]:
+    """Expand input paths to state.jsonl files with glob and directory support.
+
+    Handles various input formats:
+    - Glob patterns (*, ?, []) are expanded using pathlib.glob()
+    - Directories are searched for state.jsonl files (bundle/state.jsonl or recursive)
+    - File paths are included directly
+    - Results are deduplicated while preserving order
+
+    Parameters
+    ----------
+    inputs : list[str]
+        List of input paths that may contain:
+        - Glob patterns with wildcards
+        - Directory paths (searched for state.jsonl files)
+        - Direct file paths
+
+    Returns
+    -------
+    list[Path]
+        Deduplicated list of resolved Path objects pointing to state files
+
+    Notes
+    -----
+    Directory search prioritizes:
+    1. {dir}/state.jsonl (direct state file)
+    2. {dir}/bundle/state.jsonl (bundle directory structure)
+    3. Recursive search for any state.jsonl files
+    """
     out: list[Path] = []
     for raw in inputs:
         p = Path(raw)
