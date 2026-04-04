@@ -303,10 +303,7 @@ class BaseAgent(abc.ABC):
         self._schedulers: dict[str, _LRScheduler] = {}
 
         self._logger.info(
-            "Initialised %s  |  device=%s  seed=%s",
-            type(self).__name__,
-            self._device,
-            seed,
+            f"Initialised {type(self).__name__}  |  device={self._device}  seed={seed}"
         )
 
     # ------------------------------------------------------------------
@@ -529,7 +526,7 @@ class BaseAgent(abc.ABC):
         with open(meta_path, "w") as f:
             json.dump(asdict(meta), f, indent=2, default=str)
 
-        self._logger.info("Checkpoint saved → %s  (%d steps)", filepath, self._total_steps)
+        self._logger.info(f"Checkpoint saved → {filepath}  ({self._total_steps} steps)")
         return filepath
 
     def _load_checkpoint(
@@ -567,9 +564,7 @@ class BaseAgent(abc.ABC):
         ckpt_version = meta.get("checkpoint_version", 1)
         if ckpt_version > _CHECKPOINT_VERSION:
             logger.warning(
-                "Checkpoint version %d is newer than agent version %d - loading may fail.",
-                ckpt_version,
-                _CHECKPOINT_VERSION,
+                f"Checkpoint version {ckpt_version} is newer than agent version {_CHECKPOINT_VERSION} - loading may fail."
             )
 
         # Restore bookkeeping
@@ -588,10 +583,7 @@ class BaseAgent(abc.ABC):
                 self._schedulers[name].load_state_dict(state)
 
         self._logger.info(
-            "Checkpoint loaded ← %s  (step=%d, episodes=%d)",
-            path,
-            self._total_steps,
-            self._total_episodes,
+            f"Checkpoint loaded ← {path}  (step={self._total_steps}, episodes={self._total_episodes})"
         )
         return payload
 
@@ -604,7 +596,7 @@ class BaseAgent(abc.ABC):
 
     def set_hyperparameter(self, key: str, value: Any) -> None:
         self._config[key] = value
-        self._logger.debug("Hyperparameter %s set to %s", key, value)
+        self._logger.debug(f"Hyperparameter {key} set to {value}")
 
     # ------------------------------------------------------------------
     # Reproducibility
