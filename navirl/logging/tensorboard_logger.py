@@ -705,7 +705,7 @@ class TBLogger:
             config: Configuration dictionary.
             step: Step index.
         """
-        text = "```json\n" + json.dumps(config, indent=2, default=str) + "\n```"
+        text = f"```json\n{json.dumps(config, indent=2, default=str)}\n```"
         self.add_text("config", text, step=step)
 
     # -- Custom metrics ---------------------------------------------------------

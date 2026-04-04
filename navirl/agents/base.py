@@ -270,9 +270,7 @@ class BaseAgent(abc.ABC):
 
         # Device selection -------------------------------------------------
         if _TORCH_AVAILABLE:
-            if isinstance(device, str) and "cuda" in device and not torch.cuda.is_available():
-                logger.warning("CUDA requested but not available - falling back to CPU.")
-                device = "cpu"
+            device = self._validate_device(device)
             self._device = torch.device(device)
         else:
             self._device = device  # type: ignore[assignment]
@@ -608,6 +606,13 @@ class BaseAgent(abc.ABC):
             torch.manual_seed(seed)
             if torch.cuda.is_available():
                 torch.cuda.manual_seed_all(seed)
+
+    def _validate_device(self, device: str | torch.device) -> str | torch.device:
+        """Validate CUDA device availability and return safe device."""
+        if isinstance(device, str) and "cuda" in device and not torch.cuda.is_available():
+            logger.warning("CUDA requested but not available - falling back to CPU.")
+            return "cpu"
+        return device
 
     # ------------------------------------------------------------------
     # Utilities

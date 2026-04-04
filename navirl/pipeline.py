@@ -14,6 +14,7 @@ import multiprocessing as mp
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from navirl.core.registry import get_backend, get_human_controller, get_robot_controller
 from navirl.core.seeds import set_global_seed
@@ -86,7 +87,7 @@ def _ensure_points(
 
 
 def _resolve_human_start_goal_lists(
-    scenario: dict, backend
+    scenario: dict, backend: Any
 ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
     humans = scenario["humans"]
     count = int(humans["count"])
@@ -115,7 +116,7 @@ def _min_anchor_dist(a_radius: float, b_radius: float) -> float:
     return max(_diameter(a_radius), _diameter(b_radius))
 
 
-def _has_obstacle_collision(position: tuple[float, float], radius: float, backend) -> bool:
+def _has_obstacle_collision(position: tuple[float, float], radius: float, backend: Any) -> bool:
     """Check if position collides with obstacles.
 
     Parameters
@@ -195,13 +196,15 @@ def _anchor_ok(
     )
 
 
-def _project_anchor(candidate: tuple[float, float], radius: float, backend) -> tuple[float, float]:
+def _project_anchor(
+    candidate: tuple[float, float], radius: float, backend: Any
+) -> tuple[float, float]:
     projected = backend.nearest_clear_point(candidate, _diameter(radius))
     return float(projected[0]), float(projected[1])
 
 
 def _search_ring_positions(
-    desired: tuple[float, float], radius: float, placed: list[dict], backend, base_step: float
+    desired: tuple[float, float], radius: float, placed: list[dict], backend: Any, base_step: float
 ) -> tuple[float, float] | None:
     """Search for valid anchor position using expanding ring pattern.
 
@@ -430,7 +433,7 @@ def _sanitize_starts_goals(
     }
 
 
-def _resample_human_starts_goals_for_retry(scenario: dict, backend) -> None:
+def _resample_human_starts_goals_for_retry(scenario: dict, backend: Any) -> None:
     humans = scenario.get("humans", {})
     count = int(humans.get("count", 0))
     if count <= 0:

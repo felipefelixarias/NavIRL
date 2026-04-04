@@ -179,8 +179,8 @@ class AgentComparison:
         metric_names = sorted(all_metrics)
 
         # Header row
-        header = "| Metric | " + " | ".join(agent_names) + " |"
-        sep = "|" + "---|" * (len(agent_names) + 1)
+        header = f"| Metric | {' | '.join(agent_names)} |"
+        sep = f"|{'---|' * (len(agent_names) + 1)}"
         lines.extend([header, sep])
 
         for m in metric_names:

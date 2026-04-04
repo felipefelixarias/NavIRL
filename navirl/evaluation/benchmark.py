@@ -99,9 +99,9 @@ class BenchmarkResults:
         metric_names = sorted(self.metrics.keys())
         len(metric_names) + 1
         lines = [
-            r"\begin{tabular}{" + "l" + "r" * len(metric_names) + "}",
+            r"\begin{tabular}{'l' + 'r' * len(metric_names)}",
             r"\toprule",
-            "Scenario & " + " & ".join(metric_names) + r" \\",
+            f"Scenario & {' & '.join(metric_names)} \\\\",
             r"\midrule",
         ]
         for s_idx, s_name in enumerate(self.scenario_names):
@@ -110,13 +110,13 @@ class BenchmarkResults:
                 vals = self.metrics.get(m_name, [])
                 v = vals[s_idx] if s_idx < len(vals) else float("nan")
                 vals_str.append(f"{v:.{precision}f}")
-            lines.append(s_name + " & " + " & ".join(vals_str) + r" \\")
+            lines.append(f"{s_name} & {' & '.join(vals_str)} \\\\")
         lines.append(r"\midrule")
         mean_strs = []
         for m_name in metric_names:
             vals = self.metrics.get(m_name, [])
             mean_strs.append(f"{float(np.mean(vals)):.{precision}f}" if vals else "---")
-        lines.append("Mean & " + " & ".join(mean_strs) + r" \\")
+        lines.append(f"Mean & {' & '.join(mean_strs)} \\\\")
         lines.append(r"\bottomrule")
         lines.append(r"\end{tabular}")
         return "\n".join(lines)
