@@ -11,22 +11,19 @@ import math
 import random
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
-from navirl.core.types import Action, AgentState
 from navirl.models.behavior_tree import (
     ActionNode,
     Blackboard,
     Condition,
     FollowGroup,
     GoToGoal,
-    MaintainDistance,
     Node,
     Selector,
     Sequence,
     Status,
     WaitInQueue,
-    YieldAtDoorway,
 )
 from navirl.routines.schema import Branch, ConditionType, RoutineSpec, Task, TaskType
 from navirl.routines.schema import Condition as RoutineCondition

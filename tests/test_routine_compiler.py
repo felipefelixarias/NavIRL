@@ -4,11 +4,9 @@ This module contains comprehensive tests for routine schema, compilation,
 and behavior tree integration.
 """
 
-import math
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
-import yaml
 from jsonschema import ValidationError
 
 from navirl.core.types import Action, AgentState
@@ -17,8 +15,6 @@ from navirl.routines.behavior_integration import CompiledRoutineController, Rout
 from navirl.routines.compiler import (
     AgentNearbyCondition,
     AvoidArea,
-    CompilationContext,
-    CompiledBehaviorPlan,
     GoToTarget,
     InteractAtLocation,
     LocationReachedCondition,
