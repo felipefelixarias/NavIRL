@@ -45,6 +45,15 @@ extensions = [
 ]
 
 setup(
-    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives={
+            "language_level": "3",
+            "boundscheck": False,
+            "wraparound": False,
+            "cdivision": True,
+            "embedsignature": True,
+        },
+    ),
     cmdclass={"build_ext": BuildRvo2Ext},
 )

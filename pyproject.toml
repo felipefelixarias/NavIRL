@@ -50,6 +50,7 @@ navirl = "navirl.cli:main"
 dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1",
+  "pytest-xdist>=3.0",  # Parallel test execution
   "ruff>=0.3",
   "black>=24.3",
   "pre-commit>=3.6",
@@ -74,7 +75,7 @@ version = { attr = "navirl._version.__version__" }
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra -n auto --strict-markers"
 
 [tool.ruff]
 line-length = 100
