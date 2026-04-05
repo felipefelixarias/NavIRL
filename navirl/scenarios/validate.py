@@ -31,7 +31,7 @@ def _is_point(v) -> bool:
 
 
 def _validate_humans(h: dict, errors: list[str]) -> None:
-    allowed_ctrl = {"orca", "orca_plus", "scripted", "replay", "policy"}
+    allowed_ctrl = {"orca", "orca_plus", "scripted", "replay", "policy", "compiled_routine"}
     _require(isinstance(h, dict), "humans must be an object", errors)
     if not isinstance(h, dict):
         return

@@ -1,0 +1,219 @@
+id: office_daily_routines
+description: Office workers following realistic daily routine patterns using compiled routines
+scene:
+  backend: grid2d
+  map:
+    source: builtin
+    id: office_layout
+seed: 42
+horizon:
+  steps: 800  # Longer simulation for routine cycles
+  dt: 0.1
+humans:
+  controller:
+    type: compiled_routine
+    params:
+      routines:
+        # Office Worker 1 - Morning person, frequent coffee breaks
+        1:
+          id: "early_bird_worker"
+          description: "Morning person with frequent coffee breaks"
+          tasks:
+            - type: "go_to"
+              params: {"x": 2.0, "y": 3.0}  # Desk location
+              priority: 10
+            - type: "wait"
+              params: {"duration": 20.0}     # Work session
+              priority: 9
+            - type: "go_to"
+              params: {"x": -4.0, "y": 1.0} # Coffee area
+              priority: 8
+            - type: "interact"
+              params:
+                location: [-4.0, 1.0]
+                interaction_type: "coffee_machine"
+              priority: 7
+            - type: "go_to"
+              params: {"x": 2.0, "y": 3.0}  # Back to desk
+              priority: 6
+          branches:
+            # Printer visits (25% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 30.0}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 6.0, "y": -1.0}
+                - type: "interact"
+                  params:
+                    location: [6.0, -1.0]
+                    interaction_type: "printer"
+                - type: "go_to"
+                  params: {"x": 2.0, "y": 3.0}
+              probability: 0.25
+            # Social interactions
+            - condition:
+                type: "agent_nearby"
+                params: {"distance": 2.0}
+              tasks:
+                - type: "wait"
+                  params: {"duration": 5.0}
+              probability: 0.4
+          repetitions: 3
+          loop: true
+          metadata:
+            worker_type: "early_bird"
+            coffee_frequency: "high"
+
+        # Office Worker 2 - Focused worker, fewer breaks
+        2:
+          id: "focused_worker"
+          description: "Focused worker with longer work sessions"
+          tasks:
+            - type: "go_to"
+              params: {"x": -1.0, "y": 4.0} # Different desk
+              priority: 10
+            - type: "wait"
+              params: {"duration": 45.0}     # Longer work session
+              priority: 9
+            - type: "go_to"
+              params: {"x": -4.0, "y": 1.0} # Coffee break
+              priority: 8
+            - type: "wait"
+              params: {"duration": 8.0}      # Quick coffee
+              priority: 7
+            - type: "go_to"
+              params: {"x": -1.0, "y": 4.0} # Back to desk
+              priority: 6
+          branches:
+            # Meeting room visits (40% chance after work session)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 50.0}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 4.0, "y": 5.0}
+                - type: "wait"
+                  params: {"duration": 15.0}  # Meeting
+                - type: "go_to"
+                  params: {"x": -1.0, "y": 4.0}
+              probability: 0.4
+            # Bathroom break
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 75.0}
+              tasks:
+                - type: "go_to"
+                  params: {"x": -3.0, "y": -2.0}
+                - type: "wait"
+                  params: {"duration": 4.0}
+                - type: "go_to"
+                  params: {"x": -1.0, "y": 4.0}
+              probability: 0.3
+          temporal_constraints:
+            max_duration: 200.0
+          repetitions: 2
+          loop: true
+          metadata:
+            worker_type: "focused"
+            meeting_frequency: "medium"
+
+        # Office Worker 3 - Social worker, moves around frequently
+        3:
+          id: "social_worker"
+          description: "Social worker who interacts frequently with colleagues"
+          tasks:
+            - type: "go_to"
+              params: {"x": 0.0, "y": -1.0}  # Central desk
+              priority: 10
+            - type: "wait"
+              params: {"duration": 15.0}      # Short work burst
+              priority: 9
+          branches:
+            # Visit colleague desks (60% chance)
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 20.0}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 2.0, "y": 3.0}  # Visit worker 1
+                - type: "wait"
+                  params: {"duration": 8.0}
+                - type: "go_to"
+                  params: {"x": -1.0, "y": 4.0} # Visit worker 2
+                - type: "wait"
+                  params: {"duration": 6.0}
+                - type: "go_to"
+                  params: {"x": 0.0, "y": -1.0}  # Return
+              probability: 0.6
+            # Group coffee break (40% chance)
+            - condition:
+                type: "agent_nearby"
+                params: {"distance": 3.0}
+              tasks:
+                - type: "follow"
+                  params: {"group_radius": 2.5}
+                - type: "go_to"
+                  params: {"x": -4.0, "y": 1.0}
+                - type: "wait"
+                  params: {"duration": 12.0}
+              probability: 0.4
+            # Copy machine visits
+            - condition:
+                type: "time_elapsed"
+                params: {"seconds": 40.0}
+              tasks:
+                - type: "go_to"
+                  params: {"x": 7.0, "y": 2.0}
+                - type: "interact"
+                  params:
+                    location: [7.0, 2.0]
+                    interaction_type: "copy_machine"
+                - type: "go_to"
+                  params: {"x": 0.0, "y": -1.0}
+              probability: 0.35
+          loop: true
+          metadata:
+            worker_type: "social"
+            collaboration_level: "high"
+
+      fallback_behavior: "goal_swap"
+  count: 3
+  starts:
+    - [1.5, 2.5]   # Near worker 1's desk
+    - [-1.5, 3.5]  # Near worker 2's desk
+    - [0.0, -1.5]  # Near worker 3's desk
+  goals:
+    - [2.5, 3.5]   # Worker 1's goal area
+    - [-0.5, 4.5]  # Worker 2's goal area
+    - [0.5, -0.5]  # Worker 3's goal area
+  radius: 0.18
+  max_speed: 0.8
+robot:
+  controller:
+    type: baseline_astar
+    params:
+      replan_interval: 8
+      target_lookahead: 2
+      velocity_smoothing: 0.7
+  start: [-5.0, -3.0]  # Cleaning robot start
+  goal: [8.0, 6.0]     # Cleaning robot goal
+  radius: 0.15
+  max_speed: 0.6
+evaluation:
+  intrusion_delta: 0.35
+  max_speed: 1.2
+  max_accel: 4.0
+  teleport_thresh: 0.85
+  deadlock_seconds: 8.0
+  deadlock_resample_attempts: 5
+  wall_clearance_buffer: 0.1
+  near_wall_buffer: 0.2
+  max_wall_proximity_fraction: 0.12
+  max_agent_stop_seconds: 12.0
+  expected_high_interaction: true
+render:
+  enabled: true
+  fps: 10
+  video: true
+  playback_speed: 3.0

@@ -257,6 +257,9 @@ class GoToGoal(ActionNode):
         bb.behavior = "GO_TO"
         return Status.RUNNING
 
+    def reset_state(self) -> None:
+        """Reset any internal state (stateless, so no action needed)."""
+
 
 class AvoidCollision(ActionNode):
     """Adjust velocity to avoid the closest threatening neighbour."""
@@ -292,6 +295,9 @@ class AvoidCollision(ActionNode):
         bb.behavior = "AVOID"
         return Status.SUCCESS
 
+    def reset_state(self) -> None:
+        """Reset any internal state (stateless, so no action needed)."""
+
 
 class MaintainDistance(ActionNode):
     """Keep at least *min_distance* from all neighbours."""
@@ -320,6 +326,9 @@ class MaintainDistance(ActionNode):
         bb.pref_vx += fx
         bb.pref_vy += fy
         return Status.SUCCESS
+
+    def reset_state(self) -> None:
+        """Reset any internal state (stateless, so no action needed)."""
 
 
 class YieldAtDoorway(ActionNode):
@@ -359,6 +368,9 @@ class YieldAtDoorway(ActionNode):
                 return Status.SUCCESS
 
         return Status.FAILURE
+
+    def reset_state(self) -> None:
+        """Reset any internal state (stateless, so no action needed)."""
 
 
 class FollowGroup(ActionNode):
@@ -404,6 +416,9 @@ class FollowGroup(ActionNode):
         bb.behavior = "GROUP_FOLLOW"
         return Status.SUCCESS
 
+    def reset_state(self) -> None:
+        """Reset any internal state (stateless, so no action needed)."""
+
 
 class WaitInQueue(ActionNode):
     """Stop and wait behind the agent directly ahead."""
@@ -446,6 +461,9 @@ class WaitInQueue(ActionNode):
                     return Status.SUCCESS
 
         return Status.FAILURE
+
+    def reset_state(self) -> None:
+        """Reset any internal state (stateless, so no action needed)."""
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,136 @@
+id: "shopping_group_member"
+description: "Member of a shopping group with social coordination behaviors"
+
+tasks:
+  # Meet at entrance/gathering point
+  - type: "go_to"
+    params:
+      x: 0.0
+      y: 0.0
+    priority: 10
+
+  # Wait for group to assemble
+  - type: "wait"
+    params:
+      duration: 8.0
+    priority: 9
+
+  # Maintain group cohesion while moving to first store
+  - type: "group"
+    params:
+      max_separation: 2.5
+    priority: 8
+
+  # Browse electronics section
+  - type: "go_to"
+    params:
+      x: 6.0
+      y: 3.0
+    priority: 7
+
+  - type: "interact"
+    params:
+      location: [6.0, 3.0]
+      interaction_type: "browsing"
+    priority: 6
+
+  # Move to clothing section (maintaining group)
+  - type: "group"
+    params:
+      max_separation: 3.0
+    priority: 5
+
+  - type: "go_to"
+    params:
+      x: -4.0
+      y: 5.0
+    priority: 4
+
+  - type: "interact"
+    params:
+      location: [-4.0, 5.0]
+      interaction_type: "trying_clothes"
+    priority: 3
+
+  # Head to food court
+  - type: "group"
+    params:
+      max_separation: 2.0
+    priority: 2
+
+  - type: "go_to"
+    params:
+      x: 2.0
+      y: -6.0
+    priority: 1
+
+branches:
+  # Split from group occasionally for individual browsing (40% chance)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 30.0
+    tasks:
+      - type: "go_to"
+        params:
+          x: 8.0
+          y: -2.0  # Individual browsing location
+      - type: "wait"
+        params:
+          duration: 15.0
+      - type: "group"  # Rejoin group
+        params:
+          max_separation: 4.0
+    probability: 0.4
+
+  # Stop to check phone/messages (50% chance)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 45.0
+    tasks:
+      - type: "wait"
+        params:
+          duration: 4.0
+    probability: 0.5
+
+  # Follow if group member moves far away (high priority)
+  - condition:
+      type: "agent_nearby"
+      params:
+        distance: 4.0  # If any group member is this far
+    tasks:
+      - type: "group"
+        params:
+          max_separation: 2.0
+    probability: 0.9
+
+  # Window shopping detour (30% chance)
+  - condition:
+      type: "time_elapsed"
+      params:
+        seconds: 60.0
+    tasks:
+      - type: "go_to"
+        params:
+          x: -6.0
+          y: 2.0
+      - type: "wait"
+        params:
+          duration: 10.0  # Looking at window display
+      - type: "group"  # Return to group
+        params:
+          max_separation: 3.0
+    probability: 0.3
+
+temporal_constraints:
+  max_duration: 240.0  # 4 minutes maximum
+
+repetitions: 2  # Do this shopping pattern twice
+loop: true      # Then loop indefinitely
+
+metadata:
+  shopper_type: "group_member"
+  group_size: 3
+  shopping_budget: 150
+  interests: ["electronics", "clothing", "food"]
