@@ -8,7 +8,7 @@ used in scenarios.
 from __future__ import annotations
 
 import math
-from typing import Any, Optional
+from typing import Any
 
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
