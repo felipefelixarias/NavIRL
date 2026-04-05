@@ -12,7 +12,7 @@ name = "navirl"
 description = "NavIRL: indoor social-navigation simulation, evaluation, and debugging toolkit"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
-license = { file = "LICENSE" }
+license = "Apache-2.0"
 authors = [
   { name = "IndoorORCA Contributors" }
 ]
@@ -21,7 +21,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
