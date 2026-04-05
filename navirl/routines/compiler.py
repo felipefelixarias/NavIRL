@@ -354,17 +354,19 @@ class GoToTarget(ActionNode):
         super().__init__()
         self.target_x = target_x
         self.target_y = target_y
+        # Cache the GoToGoal instance to improve performance
+        self._go_to_goal = GoToGoal()
 
     def tick(self, bb: Blackboard) -> Status:
         # Override the goal in the blackboard
         bb.goal = (self.target_x, self.target_y)
 
-        # Use the standard go-to-goal behavior
-        go_to_goal = GoToGoal()
-        return go_to_goal.tick(bb)
+        # Use the cached go-to-goal behavior
+        return self._go_to_goal.tick(bb)
 
     def reset_state(self) -> None:
-        pass
+        # Reset the cached go-to-goal behavior when this node is reset
+        self._go_to_goal.reset_state()
 
 
 class WaitForDuration(ActionNode):

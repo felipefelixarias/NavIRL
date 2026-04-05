@@ -8,6 +8,8 @@ used in scenarios.
 from __future__ import annotations
 
 import math
+import os
+from pathlib import Path
 from typing import Any
 
 from navirl.core.types import Action, AgentState
@@ -350,6 +352,45 @@ class CompiledRoutineController(HumanController):
             raise ValueError(f"Unknown fallback behavior: {self.fallback_behavior}")
 
 
+def _validate_file_path(file_path: str) -> Path:
+    """Validate file path to prevent path traversal attacks.
+
+    Args:
+        file_path: File path to validate.
+
+    Returns:
+        Validated Path object.
+
+    Raises:
+        ValueError: If path is unsafe or doesn't exist.
+    """
+    try:
+        # Convert to Path object and resolve to absolute path
+        path = Path(file_path).resolve()
+
+        # Check if file exists
+        if not path.exists():
+            raise ValueError(f"File does not exist: {file_path}")
+
+        # Check if it's actually a file (not a directory)
+        if not path.is_file():
+            raise ValueError(f"Path is not a file: {file_path}")
+
+        # Prevent path traversal by checking the original path contains ".."
+        # This prevents attacks like "../../../etc/passwd" without being overly restrictive
+        if ".." in os.path.normpath(file_path):
+            raise ValueError(f"Path traversal detected: {file_path}")
+
+        # Additional security: ensure it's a YAML file
+        if path.suffix.lower() not in {".yaml", ".yml"}:
+            raise ValueError(f"Only YAML files are allowed: {file_path}")
+
+        return path
+
+    except (OSError, ValueError) as e:
+        raise ValueError(f"Invalid file path: {file_path} - {e}") from e
+
+
 class RoutineControllerFactory:
     """Factory for creating routine controllers with different configurations."""
 
@@ -367,7 +408,10 @@ class RoutineControllerFactory:
 
         for agent_id, file_path in routine_files.items():
             try:
-                with open(file_path) as f:
+                # Validate file path to prevent path traversal attacks
+                validated_path = _validate_file_path(file_path)
+
+                with open(validated_path) as f:
                     content = f.read()
                 routine_spec = RoutineSpec.from_yaml(content)
                 routines[agent_id] = routine_spec
