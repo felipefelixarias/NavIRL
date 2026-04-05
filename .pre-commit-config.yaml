@@ -13,3 +13,14 @@ repos:
       - id: ruff
         args: ["--fix"]
       - id: ruff-format
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.2
+    hooks:
+      - id: bandit
+        args: ["--skip", "B101,B601,B404,B603"]  # Skip assert tests, shell usage in known safe contexts
+        exclude: ^tests/
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.4.0
+    hooks:
+      - id: python-safety-dependencies-check
+        files: requirements.txt

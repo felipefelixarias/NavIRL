@@ -36,9 +36,20 @@ project(RVO LANGUAGES CXX)
 include(CTest)
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Security and optimization flags
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra -Wformat=2 -Wformat-security)
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_compile_options(-O3 -DNDEBUG)
+    endif()
+    # Security hardening
+    add_compile_options(-fstack-protector-strong -D_FORTIFY_SOURCE=2)
+    add_link_options(-Wl,-z,relro,-z,now)
+endif()
 
 option(RVO_BUILD_EXAMPLES "Build RVO2 examples" OFF)
 
