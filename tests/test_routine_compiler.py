@@ -88,6 +88,17 @@ class TestRoutineSchema:
         assert agent_cond.params["agent_id"] == 42
         assert agent_cond.params["distance"] == 1.5
 
+    def _normalize_for_yaml_comparison(self, obj):
+        """Normalize objects for YAML comparison (tuples become lists)."""
+        if isinstance(obj, tuple):
+            return list(obj)
+        elif isinstance(obj, dict):
+            return {k: self._normalize_for_yaml_comparison(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._normalize_for_yaml_comparison(item) for item in obj]
+        else:
+            return obj
+
     def test_routine_spec_yaml_roundtrip(self):
         """Test converting routine spec to/from YAML."""
         # Create a routine with various task types
@@ -119,11 +130,11 @@ class TestRoutineSchema:
         assert parsed.loop == original.loop
         assert parsed.metadata == original.metadata
 
-        # Verify tasks
+        # Verify tasks (normalize for YAML comparison - tuples become lists)
         assert len(parsed.tasks) == len(original.tasks)
         for orig_task, parsed_task in zip(original.tasks, parsed.tasks, strict=True):
             assert parsed_task.type == orig_task.type
-            assert parsed_task.params == orig_task.params
+            assert parsed_task.params == self._normalize_for_yaml_comparison(orig_task.params)
             assert parsed_task.priority == orig_task.priority
 
         # Verify branches
@@ -131,7 +142,9 @@ class TestRoutineSchema:
         orig_branch = original.branches[0]
         parsed_branch = parsed.branches[0]
         assert parsed_branch.condition.type == orig_branch.condition.type
-        assert parsed_branch.condition.params == orig_branch.condition.params
+        assert parsed_branch.condition.params == self._normalize_for_yaml_comparison(
+            orig_branch.condition.params
+        )
         assert len(parsed_branch.tasks) == len(orig_branch.tasks)
 
         # Verify temporal constraints
@@ -176,7 +189,16 @@ class TestRoutineCompiler:
         """Set up test fixtures."""
         self.compiler = RoutineCompiler()
         self.mock_agent = AgentState(
-            agent_id=1, x=0.0, y=0.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=0.0,
+            y=0.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            radius=0.2,
+            max_speed=1.0,
         )
 
     def test_simple_goto_compilation(self):
@@ -335,7 +357,16 @@ class TestBehaviorNodes:
     def setup_method(self):
         """Set up test fixtures."""
         self.mock_agent = AgentState(
-            agent_id=1, x=0.0, y=0.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=0.0,
+            y=0.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            radius=0.2,
+            max_speed=1.0,
         )
 
     def test_goto_target_node(self):
@@ -384,7 +415,16 @@ class TestBehaviorNodes:
 
         # Agent at location
         close_agent = AgentState(
-            agent_id=1, x=1.0, y=1.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=1.0,
+            y=1.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            radius=0.2,
+            max_speed=1.0,
         )
         blackboard.agent = close_agent
 
@@ -398,7 +438,16 @@ class TestBehaviorNodes:
 
         # Agent inside avoid radius
         close_agent = AgentState(
-            agent_id=1, x=2.0, y=2.5, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=2.0,
+            y=2.5,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            radius=0.2,
+            max_speed=1.0,
         )
 
         blackboard = Blackboard(agent=close_agent, dt=0.1)
@@ -435,7 +484,16 @@ class TestBehaviorNodes:
 
         # Agent at location
         close_agent = AgentState(
-            agent_id=1, x=1.9, y=3.1, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=1,
+            kind="human",
+            x=1.9,
+            y=3.1,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            radius=0.2,
+            max_speed=1.0,
         )
         blackboard.agent = close_agent
 
@@ -453,7 +511,16 @@ class TestBehaviorNodes:
 
         # Neighbor too far
         far_neighbor = AgentState(
-            agent_id=42, x=10.0, y=10.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=42,
+            kind="human",
+            x=10.0,
+            y=10.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=15.0,
+            goal_y=15.0,
+            radius=0.2,
+            max_speed=1.0,
         )
         blackboard.neighbours = [far_neighbor]
         status = node.tick(blackboard)
@@ -461,7 +528,16 @@ class TestBehaviorNodes:
 
         # Neighbor close enough
         close_neighbor = AgentState(
-            agent_id=42, x=1.0, y=1.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+            agent_id=42,
+            kind="human",
+            x=1.0,
+            y=1.0,
+            vx=0.0,
+            vy=0.0,
+            goal_x=5.0,
+            goal_y=5.0,
+            radius=0.2,
+            max_speed=1.0,
         )
         blackboard.neighbours = [close_neighbor]
         status = node.tick(blackboard)
@@ -483,17 +559,28 @@ class TestCompiledRoutineController:
 
         self.mock_states = {
             1: AgentState(
-                agent_id=1, x=0.0, y=0.0, vx=0.0, vy=0.0, max_speed=1.0, radius=0.2, pref_speed=0.8
+                agent_id=1,
+                kind="human",
+                x=0.0,
+                y=0.0,
+                vx=0.0,
+                vy=0.0,
+                goal_x=5.0,
+                goal_y=5.0,
+                radius=0.2,
+                max_speed=1.0,
             ),
             100: AgentState(  # Robot
                 agent_id=100,
+                kind="robot",
                 x=10.0,
                 y=10.0,
                 vx=0.0,
                 vy=0.0,
-                max_speed=1.5,
+                goal_x=15.0,
+                goal_y=15.0,
                 radius=0.3,
-                pref_speed=1.0,
+                max_speed=1.5,
             ),
         }
 

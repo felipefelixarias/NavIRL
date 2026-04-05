@@ -208,6 +208,17 @@ class RoutineSpec:
             metadata=data.get("metadata", {}),
         )
 
+    def _convert_for_yaml(self, obj: Any) -> Any:
+        """Convert objects to YAML-safe representations."""
+        if isinstance(obj, tuple):
+            return list(obj)
+        elif isinstance(obj, dict):
+            return {k: self._convert_for_yaml(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_for_yaml(item) for item in obj]
+        else:
+            return obj
+
     def to_dict(self) -> dict[str, Any]:
         """Convert routine specification to dictionary."""
         result = {
@@ -216,14 +227,14 @@ class RoutineSpec:
             "tasks": [],
             "repetitions": self.repetitions,
             "loop": self.loop,
-            "metadata": self.metadata,
+            "metadata": self._convert_for_yaml(self.metadata),
         }
 
         # Convert tasks
         for task in self.tasks:
             task_dict = {
                 "type": task.type.name.lower(),
-                "params": task.params,
+                "params": self._convert_for_yaml(task.params),
                 "priority": task.priority,
             }
             if task.duration is not None:
@@ -231,7 +242,7 @@ class RoutineSpec:
             if task.completion_condition is not None:
                 task_dict["completion_condition"] = {
                     "type": task.completion_condition.type.name.lower(),
-                    "params": task.completion_condition.params,
+                    "params": self._convert_for_yaml(task.completion_condition.params),
                 }
             result["tasks"].append(task_dict)
 
@@ -242,7 +253,7 @@ class RoutineSpec:
                 branch_dict = {
                     "condition": {
                         "type": branch.condition.type.name.lower(),
-                        "params": branch.condition.params,
+                        "params": self._convert_for_yaml(branch.condition.params),
                     },
                     "tasks": [],
                     "probability": branch.probability,
@@ -251,7 +262,7 @@ class RoutineSpec:
                     branch_dict["tasks"].append(
                         {
                             "type": task.type.name.lower(),
-                            "params": task.params,
+                            "params": self._convert_for_yaml(task.params),
                             "priority": task.priority,
                         }
                     )
