@@ -25,7 +25,6 @@ from navirl.simulation.entities import (
 from navirl.simulation.events import EventBus, EventFilter, EventRecord, EventType
 from navirl.simulation.world import AABB, SpatialGrid, World, WorldBuilder
 
-
 # ===================================================================
 # AABB
 # ===================================================================

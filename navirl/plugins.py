@@ -28,6 +28,7 @@ from navirl.robots.baselines import (
     SocialCostAStarRobotController,
 )
 
+
 def _make_policy_human(cfg: dict):
     """Lazy factory so that torch is only imported when 'policy' type is used."""
     from navirl.models.learned_policy import PolicyHumanController

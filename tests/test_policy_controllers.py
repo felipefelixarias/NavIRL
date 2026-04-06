@@ -22,7 +22,6 @@ from navirl.models.learned_robot_policy import (
     _build_robot_observation,
 )
 
-
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
@@ -142,7 +141,7 @@ class TestRobotObservationBuilder:
 
 def _torch_available() -> bool:
     try:
-        import torch  # noqa: F401
+        import torch
         return True
     except ImportError:
         return False
