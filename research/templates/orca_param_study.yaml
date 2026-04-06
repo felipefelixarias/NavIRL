@@ -1,0 +1,14 @@
+# ORCA parameter study: sweep neighbor_dist and time_horizon across
+# two representative scenarios to find sensitivity thresholds.
+name: orca_param_study
+description: Grid search over ORCA planner parameters on hallway and kitchen scenarios
+scenarios:
+  - hallway_pass.yaml
+  - kitchen_congestion.yaml
+seeds: [42, 99]
+param_grid:
+  scene.orca.neighbor_dist: [2.0, 4.0, 6.0]
+  scene.orca.time_horizon: [3.0, 5.0, 10.0]
+tags:
+  - parameter_study
+  - orca

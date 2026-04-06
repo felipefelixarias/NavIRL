@@ -1,0 +1,14 @@
+# Seed sweep template: run all canonical scenarios across multiple seeds
+# to measure variance in metrics and ensure deterministic replay.
+name: seed_sweep
+description: Run canonical scenarios across 5 seeds to measure metric variance
+scenarios:
+  - hallway_pass.yaml
+  - doorway_token_yield.yaml
+  - kitchen_congestion.yaml
+  - group_cohesion.yaml
+  - robot_comfort_avoidance.yaml
+seeds: [7, 42, 99, 123, 256]
+tags:
+  - reproducibility
+  - baseline
