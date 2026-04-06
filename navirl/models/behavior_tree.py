@@ -191,6 +191,9 @@ class Condition(Node):
             return Status.SUCCESS if self._predicate(bb) else Status.FAILURE
         return Status.FAILURE
 
+    def reset_state(self) -> None:
+        """Conditions are stateless — nothing to reset."""
+
 
 class IsNearGoal(Condition):
     """Succeeds if the agent is within *radius* of its goal."""
