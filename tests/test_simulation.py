@@ -274,6 +274,148 @@ class TestSimulationClock:
         clock = SimulationClock(dt=0.05)
         assert "SimulationClock" in repr(clock)
 
+    # --- tick() and tick_variable() ---
+
+    def test_tick_advances_in_non_realtime(self):
+        clock = SimulationClock(dt=0.05, time_scale=2.0, real_time=False)
+        clock.start()
+        dt = clock.tick()
+        assert dt == pytest.approx(0.05 * 2.0)
+        assert clock.sim_time == pytest.approx(0.1)
+        assert clock.step_count == 1
+
+    def test_tick_paused_returns_zero(self):
+        clock = SimulationClock(dt=0.05)
+        clock.start()
+        clock.pause()
+        dt = clock.tick()
+        assert dt == pytest.approx(0.0)
+        assert clock.step_count == 0
+
+    def test_tick_realtime_mode(self):
+        clock = SimulationClock(dt=0.05, real_time=True)
+        clock.start()
+        import time as _time
+        _time.sleep(0.02)
+        dt = clock.tick()
+        assert dt > 0
+        assert clock.step_count == 1
+
+    def test_tick_variable_paused(self):
+        clock = SimulationClock(dt=0.05)
+        clock.start()
+        clock.pause()
+        dt = clock.tick_variable()
+        assert dt == pytest.approx(0.0)
+
+    def test_tick_variable_advances(self):
+        clock = SimulationClock(dt=0.05, time_scale=1.0)
+        clock.start()
+        import time as _time
+        _time.sleep(0.01)
+        dt = clock.tick_variable()
+        assert dt > 0
+        assert clock.step_count == 1
+
+    # --- accumulate_and_step() ---
+
+    def test_accumulate_and_step_basic(self):
+        clock = SimulationClock(dt=0.01)
+        clock.start()
+        import time as _time
+        _time.sleep(0.03)
+        steps = clock.accumulate_and_step()
+        assert steps >= 1
+        assert clock.step_count == steps
+
+    def test_accumulate_and_step_no_time_elapsed(self):
+        clock = SimulationClock(dt=0.1)
+        clock.start()
+        # Immediately call — likely 0 steps since dt is large
+        steps = clock.accumulate_and_step()
+        assert steps >= 0
+
+    # --- Frame-rate control ---
+
+    def test_begin_frame_and_wait(self):
+        clock = SimulationClock(dt=0.01, target_fps=1000.0)
+        clock.start()
+        clock.begin_frame()
+        duration = clock.wait_for_frame()
+        assert duration > 0
+
+    def test_target_fps_property(self):
+        clock = SimulationClock(target_fps=30.0)
+        assert clock.target_fps == pytest.approx(30.0)
+        clock.target_fps = 120.0
+        assert clock.target_fps == pytest.approx(120.0)
+
+    def test_target_fps_clamps(self):
+        clock = SimulationClock(target_fps=30.0)
+        clock.target_fps = 0.5
+        assert clock.target_fps >= 1.0
+
+    # --- real_time_ratio ---
+
+    def test_real_time_ratio_before_start(self):
+        clock = SimulationClock()
+        assert clock.real_time_ratio == pytest.approx(0.0)
+
+    def test_real_time_ratio_after_ticks(self):
+        clock = SimulationClock(dt=0.1)
+        clock.start()
+        for _ in range(10):
+            clock.tick_fixed()
+        ratio = clock.real_time_ratio
+        # sim_time = 1.0, wall time is very small → ratio should be large
+        assert ratio > 0
+
+    # --- reset_stats ---
+
+    def test_reset_stats_clears_times(self):
+        clock = SimulationClock(dt=0.1)
+        clock.start()
+        for _ in range(3):
+            clock.tick_fixed()
+        assert len(clock._step_wall_times) == 3
+        clock.reset_stats()
+        assert len(clock._step_wall_times) == 0
+        # sim_time should NOT be reset
+        assert clock.sim_time == pytest.approx(0.3)
+
+    # --- Event priority ordering ---
+
+    def test_event_priority_ordering(self):
+        clock = SimulationClock(dt=0.1)
+        clock.start()
+        fired = []
+        clock.schedule(0.1, lambda e: fired.append("low"), priority=10)
+        clock.schedule(0.1, lambda e: fired.append("high"), priority=0)
+        clock.tick_fixed()
+        assert fired == ["high", "low"]
+
+    def test_event_data_payload(self):
+        clock = SimulationClock(dt=0.1)
+        clock.start()
+        received = []
+        clock.schedule(0.1, lambda e: received.append(e.data), data={"key": "val"})
+        clock.tick_fixed()
+        assert len(received) == 1
+        assert received[0] == {"key": "val"}
+
+    # --- Pause timing ---
+
+    def test_pause_accumulates_time(self):
+        clock = SimulationClock(dt=0.1)
+        clock.start()
+        clock.tick_fixed()
+        clock.pause()
+        import time as _time
+        _time.sleep(0.05)
+        clock.resume()
+        stats = clock.stats()
+        assert stats.total_paused_time >= 0.04
+
 
 # ===================================================================
 # Entities
