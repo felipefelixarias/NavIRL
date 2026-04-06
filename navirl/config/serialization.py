@@ -83,7 +83,12 @@ def save_config(
         elif fmt == "toml":
             try:
                 toml_mod = _import_toml_write()
-                with open(path, "w", encoding="utf-8") as fh:
+                # tomli_w requires binary mode; toml uses text mode
+                mode = "wb" if toml_mod.__name__ == "tomli_w" else "w"
+                open_kwargs: dict[str, Any] = (
+                    {} if mode == "wb" else {"encoding": "utf-8"}
+                )
+                with open(path, mode, **open_kwargs) as fh:
                     toml_mod.dump(config, fh)
             except OSError as e:
                 raise OSError(f"Cannot write TOML to {path}: {e}") from e
