@@ -14,6 +14,7 @@ from pathlib import Path
 import yaml
 
 from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
+from navirl.experiments import BatchTemplate, run_batch_template
 from navirl.metrics import aggregate_reports, compute_metrics_from_bundle
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
@@ -56,6 +57,22 @@ def _cmd_run_batch(args: argparse.Namespace) -> int:
     logs = run_batch(args)
     for log in logs:
         print(log.bundle_dir)
+    return 0
+
+
+def _cmd_experiment(args: argparse.Namespace) -> int:
+    template = BatchTemplate.from_yaml(args.template)
+    summary = run_batch_template(
+        template,
+        out_root=args.out,
+        render=args.render,
+        video=args.video,
+    )
+    print(
+        f"Completed {summary.completed_runs}/{summary.total_runs} runs "
+        f"({summary.failed_runs} failed)"
+    )
+    print(f"Report: {args.out}/REPORT.md")
     return 0
 
 
@@ -317,6 +334,19 @@ def _create_tune_parser(subparsers) -> None:
     p_tune.set_defaults(func=_cmd_tune)
 
 
+def _create_experiment_parser(subparsers) -> None:
+    """Create the 'experiment' command parser."""
+    p_exp = subparsers.add_parser(
+        "experiment",
+        help="Run a batch experiment from a YAML template",
+    )
+    p_exp.add_argument("template", type=str, help="Path to a batch template YAML file")
+    _add_common_arguments(p_exp, out_default="out/experiment")
+    p_exp.add_argument("--render", action=argparse.BooleanOptionalAction, default=False)
+    p_exp.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
+    p_exp.set_defaults(func=_cmd_experiment)
+
+
 def _create_layout_parser(subparsers) -> None:
     """Create the 'overseer-layout' command parser."""
     p_layout = subparsers.add_parser(
@@ -355,6 +385,7 @@ def build_parser() -> argparse.ArgumentParser:
     _create_validate_parser(subparsers)
     _create_verify_parser(subparsers)
     _create_tune_parser(subparsers)
+    _create_experiment_parser(subparsers)
     _create_layout_parser(subparsers)
 
     return parser

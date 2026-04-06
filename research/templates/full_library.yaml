@@ -1,0 +1,10 @@
+# Full library template: run every built-in scenario with a single seed
+# for a quick regression check across the entire scenario library.
+name: full_library
+description: Run all built-in scenarios with a single seed for quick regression check
+scenarios:
+  - library
+seeds: [42]
+tags:
+  - regression
+  - full
