@@ -28,6 +28,20 @@ from navirl.robots.baselines import (
     SocialCostAStarRobotController,
 )
 
+def _make_policy_human(cfg: dict):
+    """Lazy factory so that torch is only imported when 'policy' type is used."""
+    from navirl.models.learned_policy import PolicyHumanController
+
+    return PolicyHumanController(cfg=cfg)
+
+
+def _make_policy_robot(cfg: dict):
+    """Lazy factory so that torch is only imported when 'policy' type is used."""
+    from navirl.models.learned_robot_policy import PolicyRobotController
+
+    return PolicyRobotController(cfg=cfg)
+
+
 _REGISTERED = False
 
 
@@ -52,7 +66,10 @@ def register_default_plugins() -> None:
     )
     register_human_controller("scripted", lambda cfg, seed=0: ScriptedHumanController(cfg=cfg))
     register_human_controller("replay", lambda cfg, seed=0: ReplayHumanController(cfg=cfg))
-    register_human_controller("policy", lambda cfg, seed=0: ORCAHumanController(cfg=cfg))
+    register_human_controller(
+        "policy",
+        lambda cfg, seed=0: _make_policy_human(cfg),
+    )
 
     register_robot_controller(
         "baseline_astar",
@@ -73,6 +90,10 @@ def register_default_plugins() -> None:
     register_robot_controller(
         "user",
         lambda cfg: BaselineAStarRobotController(cfg=cfg),
+    )
+    register_robot_controller(
+        "policy",
+        lambda cfg: _make_policy_robot(cfg),
     )
 
     _REGISTERED = True
