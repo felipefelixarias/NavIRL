@@ -470,15 +470,25 @@ class CSVLogger(BaseFileLogger):
             return
 
         with self._lock:
-            if self._columns is None:
-                self._columns = list(fields.keys())
-                self._write_header()
+            self._log_row_unlocked(**fields)
 
-            self._buffer.append(fields)
-            self._row_count += 1
+    def _log_row_unlocked(self, **fields: Any) -> None:
+        """Internal row logging without lock acquisition.
 
-            if len(self._buffer) >= self._buffer_size:
-                self._flush_buffer()
+        Must be called while ``self._lock`` is already held.
+        """
+        if self._closed:
+            return
+
+        if self._columns is None:
+            self._columns = list(fields.keys())
+            self._write_header()
+
+        self._buffer.append(fields)
+        self._row_count += 1
+
+        if len(self._buffer) >= self._buffer_size:
+            self._flush_buffer()
 
     def log_dict(self, data: dict[str, Any]) -> None:
         """Log a row from a dictionary.
@@ -498,14 +508,18 @@ class CSVLogger(BaseFileLogger):
             self.log_row(**row)
 
     def _write_record(self, record: LogRecord) -> None:
-        """Write a log record as a CSV row (level-based methods)."""
+        """Write a log record as a CSV row (level-based methods).
+
+        Note: called with ``self._lock`` already held by ``_log()``, so we
+        must not call ``log_row()`` (which also acquires the lock).
+        """
         data = {
             "timestamp": record.iso_timestamp,
             "level": record.level_name,
             "message": record.message,
         }
         data.update(record.context)
-        self.log_row(**data)
+        self._log_row_unlocked(**data)
 
     def _flush_buffer(self) -> None:
         """Flush buffered rows to disk."""
@@ -626,10 +640,17 @@ class JSONLLogger(BaseFileLogger):
             return
         line = json.dumps(data, default=str, ensure_ascii=self._ensure_ascii) + "\n"
         with self._lock:
-            self._buffer.append(line)
-            self._entry_count += 1
-            if len(self._buffer) >= self._buffer_size:
-                self._flush_buffer()
+            self._log_entry_unlocked(line)
+
+    def _log_entry_unlocked(self, line: str) -> None:
+        """Internal entry logging without lock acquisition.
+
+        Must be called while ``self._lock`` is already held.
+        """
+        self._buffer.append(line)
+        self._entry_count += 1
+        if len(self._buffer) >= self._buffer_size:
+            self._flush_buffer()
 
     def log_entries(self, entries: list[dict[str, Any]]) -> None:
         """Append multiple JSON objects.
@@ -641,8 +662,13 @@ class JSONLLogger(BaseFileLogger):
             self.log_entry(entry)
 
     def _write_record(self, record: LogRecord) -> None:
-        """Write a ``LogRecord`` as a JSON line."""
-        self.log_entry(record.to_dict())
+        """Write a ``LogRecord`` as a JSON line.
+
+        Note: called with ``self._lock`` already held by ``_log()``, so we
+        must not call ``log_entry()`` (which also acquires the lock).
+        """
+        line = json.dumps(record.to_dict(), default=str, ensure_ascii=self._ensure_ascii) + "\n"
+        self._log_entry_unlocked(line)
 
     def _flush_buffer(self) -> None:
         """Flush the in-memory buffer to disk."""
