@@ -1,0 +1,47 @@
+name: social-nav-baseline
+version: "1.0"
+description: >
+  Baseline social navigation evaluation pack covering core indoor scenarios.
+  Includes hallway passing, doorway yielding, kitchen congestion, group
+  cohesion, and robot comfort avoidance with three seeds each for
+  statistical robustness.  Designed for cross-lab reproducibility.
+
+scenarios:
+  - id: hallway_pass
+    path: hallway_pass.yaml
+    seeds: [7, 17, 42]
+
+  - id: doorway_token_yield
+    path: doorway_token_yield.yaml
+    seeds: [7, 17, 42]
+
+  - id: kitchen_congestion
+    path: kitchen_congestion.yaml
+    seeds: [7, 17, 42]
+
+  - id: group_cohesion
+    path: group_cohesion.yaml
+    seeds: [7, 17, 42]
+
+  - id: robot_comfort_avoidance
+    path: robot_comfort_avoidance.yaml
+    seeds: [7, 17, 42]
+
+metrics:
+  - success_rate
+  - collisions_agent_agent
+  - collisions_agent_obstacle
+  - intrusion_rate
+  - min_dist_robot_human_min
+  - min_dist_robot_human_mean
+  - oscillation_score
+  - path_length_robot
+  - time_to_goal_robot
+  - deadlock_count
+
+metadata:
+  authors: NavIRL Team
+  purpose: Cross-lab reproducibility baseline for indoor social navigation
+  notes: >
+    Keep this pack small enough for CI sanity runs.  All scenarios use
+    built-in maps and deterministic ORCA/A* controllers.

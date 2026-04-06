@@ -17,6 +17,7 @@ from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
 from navirl.experiments import BatchTemplate, run_batch_template
 from navirl.metrics import aggregate_reports, compute_metrics_from_bundle
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
+from navirl.packs import load_pack, run_pack, write_pack_json, write_pack_markdown
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
 from navirl.scenarios import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
@@ -347,6 +348,65 @@ def _create_experiment_parser(subparsers) -> None:
     p_exp.set_defaults(func=_cmd_experiment)
 
 
+def _cmd_pack_run(args: argparse.Namespace) -> int:
+    manifest = load_pack(args.manifest)
+    result = run_pack(
+        manifest,
+        out_root=args.out,
+        render=args.render,
+        video=args.video,
+    )
+    completed = sum(1 for r in result.runs if r.status == "completed")
+    failed = sum(1 for r in result.runs if r.status == "failed")
+
+    out_dir = Path(args.out)
+    write_pack_json(result, out_dir / "pack_results.json")
+    write_pack_markdown(result, out_dir / "PACK_REPORT.md", manifest.metrics)
+
+    print(
+        f"Pack '{manifest.name}' v{manifest.version}: "
+        f"{completed}/{len(result.runs)} completed ({failed} failed)"
+    )
+    print(f"Checksum: {result.manifest_checksum[:16]}...")
+    print(f"Report:   {out_dir / 'PACK_REPORT.md'}")
+    return 0
+
+
+def _cmd_pack_validate(args: argparse.Namespace) -> int:
+    manifest = load_pack(args.manifest)
+    print(f"Pack '{manifest.name}' v{manifest.version}")
+    print(f"  Scenarios: {len(manifest.scenarios)}")
+    print(f"  Total runs: {manifest.total_runs}")
+    print(f"  Metrics: {len(manifest.metrics)}")
+    print(f"  Checksum: {manifest.checksum()[:16]}...")
+    for entry in manifest.scenarios:
+        print(f"  - {entry.id}: {len(entry.seeds)} seeds, path={entry.path}")
+    print("valid")
+    return 0
+
+
+def _create_pack_parser(subparsers) -> None:
+    """Create the 'pack' command parser with run/validate subcommands."""
+    p_pack = subparsers.add_parser(
+        "pack",
+        help="Work with standardized experiment packs",
+    )
+    pack_sub = p_pack.add_subparsers(dest="pack_command", required=True)
+
+    # pack run
+    p_run = pack_sub.add_parser("run", help="Execute an experiment pack")
+    p_run.add_argument("manifest", type=str, help="Path to pack manifest YAML")
+    _add_common_arguments(p_run, out_default="out/pack")
+    p_run.add_argument("--render", action=argparse.BooleanOptionalAction, default=False)
+    p_run.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
+    p_run.set_defaults(func=_cmd_pack_run)
+
+    # pack validate
+    p_val = pack_sub.add_parser("validate", help="Validate a pack manifest")
+    p_val.add_argument("manifest", type=str, help="Path to pack manifest YAML")
+    p_val.set_defaults(func=_cmd_pack_validate)
+
+
 def _create_layout_parser(subparsers) -> None:
     """Create the 'overseer-layout' command parser."""
     p_layout = subparsers.add_parser(
@@ -386,6 +446,7 @@ def build_parser() -> argparse.ArgumentParser:
     _create_verify_parser(subparsers)
     _create_tune_parser(subparsers)
     _create_experiment_parser(subparsers)
+    _create_pack_parser(subparsers)
     _create_layout_parser(subparsers)
 
     return parser
