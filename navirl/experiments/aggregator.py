@@ -16,7 +16,6 @@ from typing import Any
 
 import numpy as np
 
-
 # Metric keys that are always aggregated when present.
 DEFAULT_METRIC_KEYS: list[str] = [
     "success_rate",
@@ -195,8 +194,8 @@ def write_markdown_summary(summary: BatchSummary, path: str | Path) -> None:
     lines.append("")
     lines.append("## Overview")
     lines.append("")
-    lines.append(f"| Metric | Value |")
-    lines.append(f"|--------|-------|")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
     lines.append(f"| Total runs | {summary.total_runs} |")
     lines.append(f"| Completed | {summary.completed_runs} |")
     lines.append(f"| Failed | {summary.failed_runs} |")

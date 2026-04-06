@@ -13,9 +13,9 @@ document synchronized: mark an item done only after its issue is closed.
 ## Mid-term
 
 - [x] Add routine compiler from structured routine specs to executable behaviors ([#5](https://github.com/felipefelixarias/NavIRL/issues/5))
-- [ ] Add policy-controller hooks for learned human and robot policies ([#6](https://github.com/felipefelixarias/NavIRL/issues/6))
+- [x] Add policy-controller hooks for learned human and robot policies ([#6](https://github.com/felipefelixarias/NavIRL/issues/6))
 - [x] Add large-scale batch experiment templates and aggregated study reports ([#7](https://github.com/felipefelixarias/NavIRL/issues/7))
-- [ ] Add standardized experiment packs for cross-lab reproducibility ([#8](https://github.com/felipefelixarias/NavIRL/issues/8))
+- [x] Add standardized experiment packs for cross-lab reproducibility ([#8](https://github.com/felipefelixarias/NavIRL/issues/8))
 
 ## Long-term
 

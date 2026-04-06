@@ -18,7 +18,6 @@ from navirl.experiments.aggregator import (
 )
 from navirl.experiments.templates import BatchTemplate
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
