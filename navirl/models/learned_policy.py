@@ -93,11 +93,19 @@ class PolicyHumanController(HumanController):
 
     def __init__(
         self,
-        model_path: str | Path,
+        model_path: str | Path | None = None,
         device: str = "cpu",
         max_neighbours: int = 6,
+        *,
+        cfg: dict | None = None,
     ) -> None:
-        self.model_path = Path(model_path)
+        # Support both direct args and cfg-dict style (used by plugin registry).
+        if cfg is not None:
+            model_path = cfg.get("model_path", model_path or "")
+            device = str(cfg.get("device", device))
+            max_neighbours = int(cfg.get("max_neighbours", max_neighbours))
+
+        self.model_path = Path(model_path) if model_path else Path("")
         self.device_str = device
         self.max_neighbours = max_neighbours
 
@@ -125,6 +133,12 @@ class PolicyHumanController(HumanController):
                 "PolicyHumanController requires PyTorch.  Install it with: pip install torch"
             ) from exc
 
+        if not str(self.model_path):
+            raise FileNotFoundError(
+                "PolicyHumanController requires 'model_path' in config "
+                "pointing to a .pt/.pth file or directory of checkpoints."
+            )
+
         self._device = torch.device(self.device_str)
 
         paths: list[Path] = []
@@ -133,6 +147,8 @@ class PolicyHumanController(HumanController):
             if not paths:
                 raise FileNotFoundError(f"No .pt/.pth files found in {self.model_path}")
         else:
+            if not self.model_path.exists():
+                raise FileNotFoundError(f"Model file not found: {self.model_path}")
             paths = [self.model_path]
 
         for p in paths:

@@ -48,6 +48,9 @@ from navirl.models.group_behavior import (
 from navirl.models.learned_policy import (
     PolicyHumanController,
 )
+from navirl.models.learned_robot_policy import (
+    PolicyRobotController,
+)
 from navirl.models.power_law import (
     PowerLawConfig,
     PowerLawHumanController,
@@ -93,6 +96,7 @@ __all__ = [
     "GroupHumanController",
     # Learned Policy
     "PolicyHumanController",
+    "PolicyRobotController",
     # Behavior Tree
     "BehaviorTree",
     "BehaviorTreeHumanController",
