@@ -21,9 +21,8 @@ import cv2
 import numpy as np
 import yaml
 
-from navirl.backends.grid2d.constants import OBSTACLE_SPACE
 from navirl.backends.grid2d.environment import GridEnvironment
-from navirl.backends.grid2d.maps import load_map_info
+from navirl.core.maps import OBSTACLE_SPACE, load_map_info
 from navirl.utils.geometry import normalize_angle
 
 # Security constants

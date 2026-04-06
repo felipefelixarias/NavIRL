@@ -93,7 +93,11 @@ def _validate_scene(scene: dict, errors: list[str]) -> None:
     if not isinstance(scene, dict):
         return
 
-    _require(scene.get("backend") == "grid2d", "scene.backend must be 'grid2d'", errors)
+    _require(
+        isinstance(scene.get("backend"), str) and len(scene.get("backend", "")) > 0,
+        "scene.backend is required and must be a non-empty string",
+        errors,
+    )
     map_cfg = scene.get("map")
     _require(isinstance(map_cfg, dict), "scene.map must be an object", errors)
     if isinstance(map_cfg, dict):

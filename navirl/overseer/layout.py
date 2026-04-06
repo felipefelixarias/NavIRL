@@ -20,8 +20,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from navirl.backends.grid2d.constants import FREE_SPACE
-from navirl.backends.grid2d.maps import load_map_info
+from navirl.core.maps import FREE_SPACE, load_map_info
 
 
 def _world_from_rc(

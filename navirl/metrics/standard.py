@@ -7,8 +7,6 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from navirl.backends.grid2d.constants import OBSTACLE_SPACE
-from navirl.backends.grid2d.maps import load_map_info
 from navirl.core.constants import (
     ANGLE_EPSILON,
     DEADLOCK_SPEED_THRESHOLD,
@@ -16,6 +14,7 @@ from navirl.core.constants import (
     GOAL_TOLERANCE,
     INTRUSION_DISTANCE_THRESHOLD,
 )
+from navirl.core.maps import OBSTACLE_SPACE, load_map_info
 from navirl.metrics.base import MetricsCollector
 
 

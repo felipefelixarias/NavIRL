@@ -8,7 +8,22 @@ if TYPE_CHECKING:
 
 
 class SceneBackend(ABC):
-    """Abstract backend interface used by NavIRL runners/controllers."""
+    """Abstract backend interface used by NavIRL runners/controllers.
+
+    Every concrete backend must implement all ``@abstractmethod`` members.
+    Optional hooks (``nearest_clear_point``, ``map_metadata``, ``dt``) have
+    sensible defaults so that minimal backends can skip them.
+    """
+
+    @property
+    def dt(self) -> float:
+        """Physics time-step in seconds.
+
+        Backends that support variable time-steps should return the value
+        that was active during the most recent ``step()`` call.  The default
+        returns ``0.1`` so callers always get a safe fallback.
+        """
+        return 0.1
 
     @abstractmethod
     def add_agent(

@@ -147,12 +147,16 @@ class NavEnvConfig:
 
 
 def _build_backend(config: NavEnvConfig) -> SceneBackend:
-    """Instantiate a Grid2DBackend from *config*.
+    """Instantiate a simulation backend from *config* via the plugin registry.
 
-    If *scenario_path* is set the YAML is loaded; otherwise a procedural
-    empty-world configuration is synthesised from the inline parameters.
+    If *scenario_path* is set the YAML is loaded and the backend name is
+    read from ``scene.backend``; otherwise a procedural ``grid2d``
+    configuration is synthesised from the inline parameters.
     """
-    from navirl.backends.grid2d.backend import Grid2DBackend
+    from navirl.core.registry import get_backend
+    from navirl.plugins import register_default_plugins
+
+    register_default_plugins()
 
     if config.scenario_path is not None:
         import json
@@ -167,16 +171,20 @@ def _build_backend(config: NavEnvConfig) -> SceneBackend:
             cfg = json.loads(text)
         scene_cfg = cfg.get("scene", cfg)
         horizon_cfg = cfg.get("horizon", {"dt": config.dt})
-        return Grid2DBackend(scene_cfg, horizon_cfg, base_dir=path.parent)
+        backend_name = scene_cfg.get("backend", "grid2d")
+        factory = get_backend(backend_name)
+        return factory(scene_cfg, horizon_cfg, base_dir=path.parent)
 
-    # Procedural / inline configuration
+    # Procedural / inline configuration — defaults to grid2d
     scene_cfg: dict[str, Any] = {
         "id": config.map_name,
+        "backend": "grid2d",
         "map": {"name": config.map_name},
         "orca": {"units": "meters"},
     }
     horizon_cfg: dict[str, Any] = {"dt": config.dt}
-    return Grid2DBackend(scene_cfg, horizon_cfg)
+    factory = get_backend("grid2d")
+    return factory(scene_cfg, horizon_cfg)
 
 
 # ---------------------------------------------------------------------------
