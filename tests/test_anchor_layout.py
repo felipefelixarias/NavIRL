@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+rvo2 = pytest.importorskip("rvo2", reason="rvo2 not installed")
+
 from navirl.pipeline import run_scenario_dict
 from navirl.scenarios.load import load_scenario
 from navirl.verify.validators import run_numeric_invariants

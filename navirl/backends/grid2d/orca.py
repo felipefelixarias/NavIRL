@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-import rvo2
+try:
+    import rvo2
+except ImportError:
+    rvo2 = None
 
 
 class IndoorORCASimConfig(NamedTuple):
@@ -19,6 +22,11 @@ class IndoorORCASim:
     """Thin wrapper over rvo2.PyRVOSimulator."""
 
     def __init__(self, config: IndoorORCASimConfig):
+        if rvo2 is None:
+            raise ImportError(
+                "rvo2 is required for IndoorORCASim. "
+                "Install it with: pip install rvo2"
+            )
         self.config = config
         self.sim = rvo2.PyRVOSimulator(
             config.time_step,
