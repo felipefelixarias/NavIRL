@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Tests for the routine compiler system.
 
 This module contains comprehensive tests for routine schema, compilation,

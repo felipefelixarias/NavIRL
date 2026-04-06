@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Tests for richer baseline robot planners (Issue #4)."""
 
 import math
