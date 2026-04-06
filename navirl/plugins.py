@@ -21,6 +21,7 @@ from navirl.humans.orca import ORCAHumanController
 from navirl.humans.orca_plus import ORCAPlusHumanController
 from navirl.humans.replay import ReplayHumanController
 from navirl.humans.scripted import ScriptedHumanController
+from navirl.models.learned_policy import PolicyHumanController, PolicyRobotController
 from navirl.robots.baselines import (
     BaselineAStarRobotController,
     PRMRobotController,
@@ -52,7 +53,14 @@ def register_default_plugins() -> None:
     )
     register_human_controller("scripted", lambda cfg, seed=0: ScriptedHumanController(cfg=cfg))
     register_human_controller("replay", lambda cfg, seed=0: ReplayHumanController(cfg=cfg))
-    register_human_controller("policy", lambda cfg, seed=0: ORCAHumanController(cfg=cfg))
+    register_human_controller(
+        "policy",
+        lambda cfg, seed=0: PolicyHumanController(
+            model_path=cfg.get("model_path", ""),
+            device=cfg.get("device", "cpu"),
+            max_neighbours=cfg.get("max_neighbours", 6),
+        ),
+    )
 
     register_robot_controller(
         "baseline_astar",
@@ -69,6 +77,10 @@ def register_default_plugins() -> None:
     register_robot_controller(
         "rrt_star",
         lambda cfg: RRTStarRobotController(cfg=cfg),
+    )
+    register_robot_controller(
+        "policy",
+        lambda cfg: PolicyRobotController(cfg=cfg),
     )
     register_robot_controller(
         "user",

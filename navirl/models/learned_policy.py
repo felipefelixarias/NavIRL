@@ -1,9 +1,9 @@
-"""Wrappers for neural-network pedestrian policies.
+"""Wrappers for neural-network policies.
 
-Provides ``PolicyHumanController``, which loads one or more trained PyTorch
-models and uses them to compute pedestrian actions from local observations.
-Ensemble inference (averaging over multiple checkpoints) is supported for
-improved robustness.
+Provides ``PolicyHumanController`` and ``PolicyRobotController``, which load
+one or more trained PyTorch models and use them to compute actions from local
+observations.  Ensemble inference (averaging over multiple checkpoints) is
+supported for improved robustness.
 """
 
 from __future__ import annotations
@@ -18,8 +18,10 @@ import numpy as np
 from navirl.core.constants import EPSILON
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
+from navirl.robots.base import EventSink as RobotEventSink
+from navirl.robots.base import RobotController
 
-__all__ = ["PolicyHumanController"]
+__all__ = ["PolicyHumanController", "PolicyRobotController"]
 
 logger = logging.getLogger(__name__)
 
@@ -227,3 +229,190 @@ class PolicyHumanController(HumanController):
             )
 
         return actions
+
+
+# ---------------------------------------------------------------------------
+#  Robot observation helper
+# ---------------------------------------------------------------------------
+
+
+def _build_robot_observation(
+    robot: AgentState,
+    neighbours: list[AgentState],
+    max_neighbours: int = 6,
+) -> np.ndarray:
+    """Construct a flat observation vector for a robot agent.
+
+    Layout (robot self):
+        [dx_goal, dy_goal, vx, vy, speed, radius]
+    followed by up to *max_neighbours* nearest-neighbour blocks:
+        [dx, dy, dvx, dvy, radius_other]
+    Unoccupied slots are zero-padded.
+    """
+    own_dim = 6
+    neigh_dim = 5
+    obs = np.zeros(own_dim + max_neighbours * neigh_dim, dtype=np.float32)
+
+    obs[0] = robot.goal_x - robot.x
+    obs[1] = robot.goal_y - robot.y
+    obs[2] = robot.vx
+    obs[3] = robot.vy
+    obs[4] = math.hypot(robot.vx, robot.vy)
+    obs[5] = robot.radius
+
+    dists: list[tuple[float, AgentState]] = []
+    for n in neighbours:
+        d = math.hypot(n.x - robot.x, n.y - robot.y)
+        dists.append((d, n))
+    dists.sort(key=lambda t: t[0])
+
+    for idx, (_, n) in enumerate(dists[:max_neighbours]):
+        base = own_dim + idx * neigh_dim
+        obs[base + 0] = n.x - robot.x
+        obs[base + 1] = n.y - robot.y
+        obs[base + 2] = n.vx - robot.vx
+        obs[base + 3] = n.vy - robot.vy
+        obs[base + 4] = n.radius
+
+    return obs
+
+
+# ---------------------------------------------------------------------------
+#  PolicyRobotController
+# ---------------------------------------------------------------------------
+
+
+class PolicyRobotController(RobotController):
+    """Robot controller that delegates action selection to a trained model.
+
+    Parameters
+    ----------
+    cfg:
+        Configuration dictionary.  Must contain ``model_path`` (path to a
+        saved PyTorch model or directory of checkpoints).  Optional keys:
+        ``device`` (default ``'cpu'``), ``max_neighbours`` (default ``6``).
+    """
+
+    def __init__(self, cfg: dict | None = None, **kwargs) -> None:
+        super().__init__(cfg=cfg, **kwargs)
+
+        model_path = self.cfg.get("model_path", "")
+        if not model_path:
+            raise ValueError("PolicyRobotController requires 'model_path' in cfg")
+
+        self.model_path = Path(model_path)
+        self.device_str = str(self.cfg.get("device", "cpu"))
+        self.max_neighbours = int(self.cfg.get("max_neighbours", 6))
+
+        self._models: list[Any] = []
+        self._device: Any = None
+        self._loaded = False
+
+        self.robot_id: int = -1
+        self.start: tuple[float, float] = (0.0, 0.0)
+        self.goal: tuple[float, float] = (0.0, 0.0)
+        self.backend: Any = None
+
+    # -- lazy model loading -------------------------------------------------
+
+    def _ensure_loaded(self) -> None:
+        """Load PyTorch model(s) on first use."""
+        if self._loaded:
+            return
+
+        try:
+            import torch  # type: ignore[import-untyped]
+        except ImportError as exc:
+            raise ImportError(
+                "PolicyRobotController requires PyTorch.  "
+                "Install it with: pip install torch"
+            ) from exc
+
+        self._device = torch.device(self.device_str)
+
+        paths: list[Path] = []
+        if self.model_path.is_dir():
+            paths = sorted(self.model_path.glob("*.pt")) + sorted(
+                self.model_path.glob("*.pth")
+            )
+            if not paths:
+                raise FileNotFoundError(
+                    f"No .pt/.pth files found in {self.model_path}"
+                )
+        else:
+            paths = [self.model_path]
+
+        for p in paths:
+            model = torch.jit.load(str(p), map_location=self._device)  # type: ignore[attr-defined]
+            model.eval()
+            self._models.append(model)
+            logger.info("Loaded robot policy model: %s", p)
+
+        self._loaded = True
+
+    # -- RobotController interface ------------------------------------------
+
+    def reset(
+        self,
+        robot_id: int,
+        start: tuple[float, float],
+        goal: tuple[float, float],
+        backend=None,
+    ) -> None:
+        super().reset(robot_id, start, goal, backend)
+        self.robot_id = robot_id
+        self.start = tuple(start)
+        self.goal = tuple(goal)
+        self.backend = backend
+
+    def step(
+        self,
+        step: int,
+        time_s: float,
+        dt: float,
+        states: dict[int, AgentState],
+        emit_event: RobotEventSink,
+    ) -> Action:
+        import torch  # type: ignore[import-untyped]
+
+        super().step(step, time_s, dt, states, emit_event)
+        self._ensure_loaded()
+
+        robot = states[self.robot_id]
+
+        # Build observation from surrounding agents.
+        neighbours = [s for aid, s in states.items() if aid != self.robot_id]
+        obs = _build_robot_observation(robot, neighbours, self.max_neighbours)
+        obs_tensor = torch.tensor(
+            obs, dtype=torch.float32, device=self._device
+        ).unsqueeze(0)
+
+        # Ensemble forward pass.
+        vx_sum, vy_sum = 0.0, 0.0
+        with torch.no_grad():
+            for model in self._models:
+                output = model(obs_tensor)
+                out_np = output.cpu().numpy().flatten()
+                vx_sum += float(out_np[0])
+                vy_sum += float(out_np[1])
+
+        n_models = len(self._models)
+        pvx = vx_sum / n_models
+        pvy = vy_sum / n_models
+
+        # Clamp to max speed.
+        speed = math.hypot(pvx, pvy)
+        if speed > robot.max_speed and speed > EPSILON:
+            scale = robot.max_speed / speed
+            pvx *= scale
+            pvy *= scale
+
+        return Action(
+            pref_vx=pvx,
+            pref_vy=pvy,
+            behavior="LEARNED",
+            metadata={
+                "ensemble_size": n_models,
+                "raw_speed": speed,
+            },
+        )
