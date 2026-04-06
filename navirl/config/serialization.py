@@ -83,7 +83,7 @@ def save_config(
         elif fmt == "toml":
             try:
                 toml_mod = _import_toml_write()
-                with open(path, "w", encoding="utf-8") as fh:
+                with open(path, "wb") as fh:
                     toml_mod.dump(config, fh)
             except OSError as e:
                 raise OSError(f"Cannot write TOML to {path}: {e}") from e
