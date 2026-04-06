@@ -186,7 +186,8 @@ class TestKalmanPredictor:
         assert result.trajectories.shape == (10, 5, 2)
 
     def test_constant_velocity_input(self, straight_obs):
-        pred = KalmanPredictor(horizon=3, dt=1.0, num_samples=1)
+        np.random.seed(42)
+        pred = KalmanPredictor(horizon=3, dt=1.0, num_samples=50)
         result = pred.predict(straight_obs)
         # Mean trajectory should roughly continue linearly
         mean = result.mean_trajectory()
