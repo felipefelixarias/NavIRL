@@ -1,0 +1,33 @@
+name: social-nav-baseline
+version: "1.0"
+description: >
+  Baseline social navigation evaluation pack. Covers hallway passing,
+  doorway yielding, kitchen congestion, and group cohesion with three
+  seeds each for statistical robustness. Suitable for CI sanity runs.
+
+scenarios:
+  - id: hallway_pass
+    path: ../../scenarios/library/hallway_pass.yaml
+    seeds: [7, 17, 42]
+
+  - id: doorway_token_yield
+    path: ../../scenarios/library/doorway_token_yield.yaml
+    seeds: [7, 17, 42]
+
+  - id: kitchen_congestion
+    path: ../../scenarios/library/kitchen_congestion.yaml
+    seeds: [7, 17, 42]
+
+  - id: group_cohesion
+    path: ../../scenarios/library/group_cohesion.yaml
+    seeds: [7, 17, 42]
+
+metrics:
+  - success_rate
+  - collision_count
+  - intrusion_rate
+  - avg_robot_human_min_dist
+
+metadata:
+  authors: NavIRL Team
+  purpose: Cross-lab reproducibility baseline

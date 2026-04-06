@@ -16,6 +16,7 @@ import yaml
 from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
 from navirl.metrics import aggregate_reports, compute_metrics_from_bundle
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
+from navirl.packs import generate_pack_report, load_pack, run_pack, validate_pack
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
 from navirl.scenarios import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
@@ -194,6 +195,30 @@ def _cmd_overseer_layout(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_pack_run(args: argparse.Namespace) -> int:
+    manifest = load_pack(args.pack)
+    result = run_pack(
+        manifest=manifest,
+        out_root=args.out,
+        render=args.render,
+        video=args.video,
+    )
+    report_path = generate_pack_report(
+        result, out_dir=args.report, metric_names=manifest.metrics
+    )
+    print(str(report_path))
+    return 0
+
+
+def _cmd_pack_validate(args: argparse.Namespace) -> int:
+    manifest = load_pack(args.pack)
+    print(
+        f"valid: {manifest.name} v{manifest.version} "
+        f"({len(manifest.scenarios)} scenarios)"
+    )
+    return 0
+
+
 def _add_judge_arguments(
     parser: argparse.ArgumentParser,
     *,
@@ -335,6 +360,24 @@ def _create_layout_parser(subparsers) -> None:
     p_layout.set_defaults(func=_cmd_overseer_layout)
 
 
+def _create_pack_parser(subparsers) -> None:
+    """Create the 'pack' command parser with sub-subcommands."""
+    p_pack = subparsers.add_parser("pack", help="Manage and run experiment packs")
+    pack_sub = p_pack.add_subparsers(dest="pack_command", required=True)
+
+    p_run = pack_sub.add_parser("run", help="Execute an experiment pack")
+    p_run.add_argument("pack", type=str, help="Path to pack manifest YAML")
+    p_run.add_argument("--out", type=str, default="out/packs")
+    p_run.add_argument("--report", type=str, default="out/packs/report")
+    p_run.add_argument("--render", action=argparse.BooleanOptionalAction, default=False)
+    p_run.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
+    p_run.set_defaults(func=_cmd_pack_run)
+
+    p_validate = pack_sub.add_parser("validate", help="Validate a pack manifest")
+    p_validate.add_argument("pack", type=str, help="Path to pack manifest YAML")
+    p_validate.set_defaults(func=_cmd_pack_validate)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the complete NavIRL command-line argument parser.
 
@@ -356,6 +399,7 @@ def build_parser() -> argparse.ArgumentParser:
     _create_verify_parser(subparsers)
     _create_tune_parser(subparsers)
     _create_layout_parser(subparsers)
+    _create_pack_parser(subparsers)
 
     return parser
 
