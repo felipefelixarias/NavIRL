@@ -16,6 +16,7 @@ import yaml
 from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
 from navirl.experiments import BatchTemplate, run_batch_template
 from navirl.metrics import aggregate_reports, compute_metrics_from_bundle
+from navirl.orchestration import Orchestrator, OrchestratorConfig
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
 from navirl.packs import load_pack, run_pack, write_pack_json, write_pack_markdown
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
@@ -407,6 +408,65 @@ def _create_pack_parser(subparsers) -> None:
     p_val.set_defaults(func=_cmd_pack_validate)
 
 
+def _cmd_orchestrate(args: argparse.Namespace) -> int:
+    template = BatchTemplate.from_yaml(args.template)
+    config = OrchestratorConfig(
+        num_shards=args.shards,
+        max_retries=args.retries,
+        max_workers=args.workers if args.workers > 0 else None,
+        render=args.render,
+        video=args.video,
+    )
+    orch = Orchestrator(template=template, out_root=args.out, config=config)
+    if args.resume:
+        summary = orch.resume()
+    else:
+        summary = orch.run()
+    print(
+        f"Completed {summary.completed_runs}/{summary.total_runs} runs "
+        f"({summary.failed_runs} failed)"
+    )
+    print(f"Report: {args.out}/REPORT.md")
+    return 0
+
+
+def _create_orchestrate_parser(subparsers) -> None:
+    """Create the 'orchestrate' command parser."""
+    p_orch = subparsers.add_parser(
+        "orchestrate",
+        help="Run a batch experiment with distributed orchestration and resumability",
+    )
+    p_orch.add_argument("template", type=str, help="Path to a batch template YAML file")
+    _add_common_arguments(p_orch, out_default="out/orchestrate")
+    p_orch.add_argument(
+        "--shards",
+        type=int,
+        default=4,
+        help="Number of shards to partition work into (default: 4)",
+    )
+    p_orch.add_argument(
+        "--workers",
+        type=int,
+        default=0,
+        help="Max concurrent workers (default: 0 = one per shard)",
+    )
+    p_orch.add_argument(
+        "--retries",
+        type=int,
+        default=2,
+        help="Max retry attempts per shard (default: 2)",
+    )
+    p_orch.add_argument("--render", action=argparse.BooleanOptionalAction, default=False)
+    p_orch.add_argument("--video", action=argparse.BooleanOptionalAction, default=False)
+    p_orch.add_argument(
+        "--resume",
+        action="store_true",
+        default=False,
+        help="Resume a previously interrupted run",
+    )
+    p_orch.set_defaults(func=_cmd_orchestrate)
+
+
 def _create_layout_parser(subparsers) -> None:
     """Create the 'overseer-layout' command parser."""
     p_layout = subparsers.add_parser(
@@ -447,6 +507,7 @@ def build_parser() -> argparse.ArgumentParser:
     _create_tune_parser(subparsers)
     _create_experiment_parser(subparsers)
     _create_pack_parser(subparsers)
+    _create_orchestrate_parser(subparsers)
     _create_layout_parser(subparsers)
 
     return parser
