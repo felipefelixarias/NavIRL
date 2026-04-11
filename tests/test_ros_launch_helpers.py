@@ -59,16 +59,12 @@ class TestGenerateLaunchDescription:
 
     def test_output_log(self):
         """Non-default output mode is reflected."""
-        src = generate_launch_description(
-            {"agent_type": "irl"}, output="log"
-        )
+        src = generate_launch_description({"agent_type": "irl"}, output="log")
         assert 'output="log"' in src
 
     def test_namespace(self):
         """Namespace argument appears in the Node constructor."""
-        src = generate_launch_description(
-            {"agent_type": "irl"}, namespace="robot1"
-        )
+        src = generate_launch_description({"agent_type": "irl"}, namespace="robot1")
         assert 'namespace="robot1"' in src
 
     def test_no_namespace_by_default(self):
@@ -79,9 +75,7 @@ class TestGenerateLaunchDescription:
     def test_extra_remappings(self):
         """Extra remappings are rendered as tuples in the Node call."""
         remaps = {"/cmd_vel": "/robot1/cmd_vel", "/scan": "/robot1/scan"}
-        src = generate_launch_description(
-            {"agent_type": "irl"}, extra_remappings=remaps
-        )
+        src = generate_launch_description({"agent_type": "irl"}, extra_remappings=remaps)
         assert "remappings=" in src
         assert '("/cmd_vel", "/robot1/cmd_vel")' in src
         assert '("/scan", "/robot1/scan")' in src

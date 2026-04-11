@@ -7,10 +7,23 @@ import tempfile
 from pathlib import Path
 
 os.environ.setdefault("MPLBACKEND", "Agg")
-_MPLCONFIGDIR = Path(tempfile.mkdtemp(prefix="navirl-mplconfig-"))
-atexit.register(shutil.rmtree, _MPLCONFIGDIR, ignore_errors=True)
-os.environ["MPLCONFIGDIR"] = str(_MPLCONFIGDIR)
-os.environ["NAVIRL_MPLCONFIGDIR"] = str(_MPLCONFIGDIR)
+
+
+def _make_mplconfigdir() -> Path:
+    """Create a per-process matplotlib config directory.
+
+    Each process (controller and every xdist worker) gets its own directory so
+    that atexit cleanup in one process does not remove the directory while
+    another process still needs it.
+    """
+    d = Path(tempfile.mkdtemp(prefix="navirl-mplconfig-"))
+    atexit.register(shutil.rmtree, d, ignore_errors=True)
+    os.environ["MPLCONFIGDIR"] = str(d)
+    os.environ["NAVIRL_MPLCONFIGDIR"] = str(d)
+    return d
+
+
+_MPLCONFIGDIR = _make_mplconfigdir()
 
 import matplotlib
 import pytest
@@ -19,9 +32,31 @@ import pytest
 matplotlib.use("Agg", force=True)
 
 
+def _is_xdist_worker(config) -> bool:
+    """Return True if running inside a pytest-xdist worker process."""
+    return hasattr(config, "workerinput")
+
+
+def pytest_configure(config) -> None:
+    """Give each xdist worker its own matplotlib config directory.
+
+    Module-level ``_make_mplconfigdir()`` only runs once in the controller.
+    Forked workers inherit the same path and atexit handler, so the first
+    worker to exit would delete the directory for all others.  Re-creating
+    the directory here ensures each worker has an independent copy.
+    """
+    if _is_xdist_worker(config):
+        _make_mplconfigdir()
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_sessionstart(session) -> None:
-    _ = session
+    # Only prune artifact directories from the controller process (or when
+    # running without xdist). Workers inherit the cleaned state and should not
+    # race on directory removal.
+    if _is_xdist_worker(session.config):
+        return
+
     from navirl.artifacts import prune_old_run_dirs, resolve_retention_hours
 
     ttl_hours = resolve_retention_hours(

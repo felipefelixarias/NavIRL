@@ -140,9 +140,7 @@ class TestLaserScanToLidarObs:
         assert result[0] == pytest.approx(7.5)
 
     def test_all_invalid(self):
-        msg = _make_laser_scan(
-            [float("inf"), float("nan"), float("-inf")], range_max=5.0
-        )
+        msg = _make_laser_scan([float("inf"), float("nan"), float("-inf")], range_max=5.0)
         result = laser_scan_to_lidar_obs(msg)
         np.testing.assert_array_almost_equal(result, [5.0, 5.0, 5.0])
 
@@ -302,13 +300,13 @@ class TestActionToTwist:
     @pytest.mark.parametrize(
         "idx, expected_linear, expected_angular",
         [
-            (0, 0.0, 0.0),    # stop
-            (1, 0.5, 0.0),    # forward
-            (2, -0.3, 0.0),   # backward
-            (3, 0.2, 0.5),    # turn left
-            (4, 0.2, -0.5),   # turn right
-            (5, 0.5, 0.3),    # forward-left
-            (6, 0.5, -0.3),   # forward-right
+            (0, 0.0, 0.0),  # stop
+            (1, 0.5, 0.0),  # forward
+            (2, -0.3, 0.0),  # backward
+            (3, 0.2, 0.5),  # turn left
+            (4, 0.2, -0.5),  # turn right
+            (5, 0.5, 0.3),  # forward-left
+            (6, 0.5, -0.3),  # forward-right
         ],
     )
     def test_discrete_actions(self, idx, expected_linear, expected_angular):
@@ -355,9 +353,7 @@ class TestActionToTwist:
 class TestPoseToGoal:
     def test_pose_stamped_style(self):
         # PoseStamped: msg.pose.position.x
-        msg = SimpleNamespace(
-            pose=SimpleNamespace(position=SimpleNamespace(x=3.0, y=4.0))
-        )
+        msg = SimpleNamespace(pose=SimpleNamespace(position=SimpleNamespace(x=3.0, y=4.0)))
         result = pose_to_goal(msg)
         assert result == (pytest.approx(3.0), pytest.approx(4.0))
 
@@ -485,10 +481,18 @@ class TestImageToNumpy:
         # 4 BGR pixels
         data = bytes(
             [
-                10, 20, 30,  # (0,0)
-                40, 50, 60,  # (0,1)
-                70, 80, 90,  # (1,0)
-                100, 110, 120,  # (1,1)
+                10,
+                20,
+                30,  # (0,0)
+                40,
+                50,
+                60,  # (0,1)
+                70,
+                80,
+                90,  # (1,0)
+                100,
+                110,
+                120,  # (1,1)
             ]
         )
         msg = _make_image(height, width, data, encoding="bgr8")
