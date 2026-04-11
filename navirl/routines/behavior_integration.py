@@ -7,10 +7,13 @@ used in scenarios.
 
 from __future__ import annotations
 
+import logging
 import math
 import os
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from navirl.core.types import Action, AgentState
 from navirl.humans.base import EventSink, HumanController
@@ -71,7 +74,7 @@ class CompiledRoutineController(HumanController):
                 plan = self.compiler.compile(routine_spec)
                 self.compiled_plans[agent_id] = plan
             except Exception as e:
-                print(f"Warning: Failed to compile routine for agent {agent_id}: {e}")
+                logger.warning("Failed to compile routine for agent %d: %s", agent_id, e)
                 # Agent will fall back to default behavior
 
     def add_routine(self, agent_id: int, routine_spec: RoutineSpec) -> None:
@@ -416,7 +419,9 @@ class RoutineControllerFactory:
                 routine_spec = RoutineSpec.from_yaml(content)
                 routines[agent_id] = routine_spec
             except Exception as e:
-                print(f"Warning: Failed to load routine for agent {agent_id} from {file_path}: {e}")
+                logger.warning(
+                    "Failed to load routine for agent %d from %s: %s", agent_id, file_path, e
+                )
 
         return CompiledRoutineController(routines)
 
@@ -456,7 +461,7 @@ class RoutineControllerFactory:
                 routine_spec = RoutineSpec.from_dict(routine_config)
                 routines[agent_id] = routine_spec
             except Exception as e:
-                print(f"Warning: Failed to parse routine for agent {agent_id_str}: {e}")
+                logger.warning("Failed to parse routine for agent %s: %s", agent_id_str, e)
 
         fallback_behavior = config.get("fallback_behavior", "goal_swap")
 

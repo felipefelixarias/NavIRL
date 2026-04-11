@@ -136,7 +136,13 @@ class RoutineSpec:
         # Convert tasks
         tasks = []
         for task_data in data.get("tasks", []):
-            task_type = TaskType[task_data["type"].upper()]
+            try:
+                task_type = TaskType[task_data["type"].upper()]
+            except KeyError:
+                valid = ", ".join(t.name.lower() for t in TaskType)
+                raise ValueError(
+                    f"Unknown task type '{task_data.get('type')}'. Valid types: {valid}"
+                ) from None
             params = task_data.get("params", {})
             duration = task_data.get("duration")
             priority = task_data.get("priority", 1)
@@ -145,7 +151,13 @@ class RoutineSpec:
             completion_condition = None
             if "completion_condition" in task_data:
                 cc_data = task_data["completion_condition"]
-                condition_type = ConditionType[cc_data["type"].upper()]
+                try:
+                    condition_type = ConditionType[cc_data["type"].upper()]
+                except KeyError:
+                    valid = ", ".join(c.name.lower() for c in ConditionType)
+                    raise ValueError(
+                        f"Unknown condition type '{cc_data.get('type')}'. Valid types: {valid}"
+                    ) from None
                 completion_condition = Condition(condition_type, cc_data.get("params", {}))
 
             tasks.append(
@@ -162,12 +174,24 @@ class RoutineSpec:
         branches = []
         for branch_data in data.get("branches", []):
             condition_data = branch_data["condition"]
-            condition_type = ConditionType[condition_data["type"].upper()]
+            try:
+                condition_type = ConditionType[condition_data["type"].upper()]
+            except KeyError:
+                valid = ", ".join(c.name.lower() for c in ConditionType)
+                raise ValueError(
+                    f"Unknown condition type '{condition_data.get('type')}'. Valid types: {valid}"
+                ) from None
             condition = Condition(condition_type, condition_data.get("params", {}))
 
             branch_tasks = []
             for task_data in branch_data.get("tasks", []):
-                task_type = TaskType[task_data["type"].upper()]
+                try:
+                    task_type = TaskType[task_data["type"].upper()]
+                except KeyError:
+                    valid = ", ".join(t.name.lower() for t in TaskType)
+                    raise ValueError(
+                        f"Unknown task type '{task_data.get('type')}'. Valid types: {valid}"
+                    ) from None
                 branch_tasks.append(
                     Task(
                         type=task_type,

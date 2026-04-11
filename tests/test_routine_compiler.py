@@ -348,6 +348,138 @@ class TestRoutineCompiler:
         with pytest.raises(ValueError, match="must have 'x' and 'y' parameters"):
             self.compiler.compile(invalid_goto)
 
+    def test_condition_validation_time_elapsed_missing_seconds(self):
+        """TIME_ELAPSED condition without 'seconds' param raises ValueError."""
+        from navirl.routines.schema import Condition as RoutineCondition
+
+        routine = RoutineSpec(
+            id="bad_cond",
+            description="Bad condition",
+            tasks=[Task.go_to(1.0, 2.0)],
+            branches=[
+                Branch(
+                    condition=RoutineCondition(ConditionType.TIME_ELAPSED, {}),
+                    tasks=[Task.go_to(3.0, 4.0)],
+                )
+            ],
+        )
+        with pytest.raises(ValueError, match="TIME_ELAPSED condition requires 'seconds'"):
+            self.compiler.compile(routine)
+
+    def test_condition_validation_location_reached_missing_coords(self):
+        """LOCATION_REACHED condition without x/y raises ValueError."""
+        from navirl.routines.schema import Condition as RoutineCondition
+
+        routine = RoutineSpec(
+            id="bad_loc",
+            description="Bad location condition",
+            tasks=[Task.go_to(1.0, 2.0)],
+            branches=[
+                Branch(
+                    condition=RoutineCondition(ConditionType.LOCATION_REACHED, {}),
+                    tasks=[Task.go_to(3.0, 4.0)],
+                )
+            ],
+        )
+        with pytest.raises(ValueError, match="LOCATION_REACHED condition requires 'x' and 'y'"):
+            self.compiler.compile(routine)
+
+    def test_condition_validation_custom_missing_handler(self):
+        """CUSTOM condition without 'handler' param raises ValueError."""
+        from navirl.routines.schema import Condition as RoutineCondition
+
+        routine = RoutineSpec(
+            id="bad_custom",
+            description="Bad custom condition",
+            tasks=[Task.go_to(1.0, 2.0)],
+            branches=[
+                Branch(
+                    condition=RoutineCondition(ConditionType.CUSTOM, {}),
+                    tasks=[Task.go_to(3.0, 4.0)],
+                )
+            ],
+        )
+        with pytest.raises(ValueError, match="CUSTOM condition requires 'handler'"):
+            self.compiler.compile(routine)
+
+    def test_condition_validation_custom_unregistered_handler(self):
+        """CUSTOM condition with unregistered handler raises ValueError."""
+        from navirl.routines.schema import Condition as RoutineCondition
+
+        routine = RoutineSpec(
+            id="unreg_handler",
+            description="Unregistered handler",
+            tasks=[Task.go_to(1.0, 2.0)],
+            branches=[
+                Branch(
+                    condition=RoutineCondition(
+                        ConditionType.CUSTOM, {"handler": "nonexistent"}
+                    ),
+                    tasks=[Task.go_to(3.0, 4.0)],
+                )
+            ],
+        )
+        with pytest.raises(ValueError, match=r"No registered handler.*nonexistent"):
+            self.compiler.compile(routine)
+
+    def test_schema_from_dict_invalid_task_type(self):
+        """from_dict with unknown task type raises ValueError."""
+        data = {
+            "id": "bad",
+            "description": "Bad type",
+            "tasks": [{"type": "fly_to", "params": {}}],
+        }
+        with pytest.raises(ValueError, match="Unknown task type 'fly_to'"):
+            RoutineSpec.from_dict(data)
+
+    def test_schema_from_dict_invalid_condition_type(self):
+        """from_dict with unknown condition type raises ValueError."""
+        data = {
+            "id": "bad",
+            "description": "Bad condition",
+            "tasks": [
+                {
+                    "type": "go_to",
+                    "params": {"x": 1, "y": 2},
+                    "completion_condition": {"type": "magic_detected", "params": {}},
+                }
+            ],
+        }
+        with pytest.raises(ValueError, match="Unknown condition type 'magic_detected'"):
+            RoutineSpec.from_dict(data)
+
+    def test_schema_from_dict_invalid_branch_condition_type(self):
+        """from_dict with unknown branch condition type raises ValueError."""
+        data = {
+            "id": "bad",
+            "description": "Bad branch",
+            "tasks": [{"type": "go_to", "params": {"x": 1, "y": 2}}],
+            "branches": [
+                {
+                    "condition": {"type": "telepathy", "params": {}},
+                    "tasks": [{"type": "wait", "params": {"duration": 1}}],
+                }
+            ],
+        }
+        with pytest.raises(ValueError, match="Unknown condition type 'telepathy'"):
+            RoutineSpec.from_dict(data)
+
+    def test_schema_from_dict_invalid_branch_task_type(self):
+        """from_dict with unknown branch task type raises ValueError."""
+        data = {
+            "id": "bad",
+            "description": "Bad branch task",
+            "tasks": [{"type": "go_to", "params": {"x": 1, "y": 2}}],
+            "branches": [
+                {
+                    "condition": {"type": "time_elapsed", "params": {"seconds": 5}},
+                    "tasks": [{"type": "teleport", "params": {}}],
+                }
+            ],
+        }
+        with pytest.raises(ValueError, match="Unknown task type 'teleport'"):
+            RoutineSpec.from_dict(data)
+
 
 class TestBehaviorNodes:
     """Tests for individual behavior tree nodes created by the compiler."""
