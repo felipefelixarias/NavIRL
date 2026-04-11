@@ -56,7 +56,7 @@ def _finite_diff(arr: np.ndarray, dt: float = 1.0) -> np.ndarray:
 
 def _default_colors(n: int) -> list[str]:
     """Return *n* distinguishable colour hex codes."""
-    cmap = cm.get_cmap("tab10") if n <= 10 else cm.get_cmap("tab20")
+    cmap = matplotlib.colormaps["tab10"] if n <= 10 else matplotlib.colormaps["tab20"]
     return [mcolors.rgb2hex(cmap(i % cmap.N)) for i in range(n)]
 
 
@@ -644,7 +644,7 @@ def plot_trajectory_3d(
         vx_arr = _finite_diff(xa, dt)
         vy_arr = _finite_diff(ya, dt)
         speed = np.hypot(vx_arr, vy_arr)
-        cmap = cm.get_cmap(cmap_name)
+        cmap = matplotlib.colormaps[cmap_name]
         norm = plt.Normalize(speed.min(), speed.max())
         for i in range(len(xa) - 1):
             ax.plot(
@@ -820,7 +820,7 @@ def plot_social_distances_over_time(
     else:
         fig = ax.get_figure()
 
-    cmap = cm.get_cmap(cmap_name)
+    cmap = matplotlib.colormaps[cmap_name]
     n_plot = min(len(pairs), max_pairs)
     for pidx in range(n_plot):
         c = cmap(pidx % 10)
@@ -828,8 +828,12 @@ def plot_social_distances_over_time(
         ax.plot(t, pair_distances[pidx], color=c, linewidth=0.8, alpha=0.6, label=f"{id_a}-{id_b}")
 
     if show_min_envelope and pair_distances:
+        import warnings
+
         all_dists = np.stack(pair_distances, axis=0)
-        min_dist = np.nanmin(all_dists, axis=0)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice", category=RuntimeWarning)
+            min_dist = np.nanmin(all_dists, axis=0)
         ax.plot(t, min_dist, color="black", linewidth=2.0, label="Min distance", zorder=5)
 
     if min_distance_line is not None:
