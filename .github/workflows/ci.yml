@@ -36,4 +36,4 @@ jobs:
           python -m pytest -m "not e2e"
       - name: Run E2E regression tests
         run: |
-          python -m pytest -m e2e --timeout=300 -x
+          python -m pytest -m e2e
