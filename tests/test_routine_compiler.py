@@ -683,15 +683,15 @@ class TestTemporalConstraintValidation:
         TemporalConstraint(start_time=0.0, end_time=10.0, min_duration=1.0, max_duration=5.0)
 
     def test_start_time_after_end_time_raises(self):
-        with pytest.raises(ValueError, match="start_time.*must be less than end_time"):
+        with pytest.raises(ValueError, match=r"start_time.*must be less than end_time"):
             TemporalConstraint(start_time=10.0, end_time=5.0)
 
     def test_start_time_equals_end_time_raises(self):
-        with pytest.raises(ValueError, match="start_time.*must be less than end_time"):
+        with pytest.raises(ValueError, match=r"start_time.*must be less than end_time"):
             TemporalConstraint(start_time=5.0, end_time=5.0)
 
     def test_min_duration_exceeds_max_duration_raises(self):
-        with pytest.raises(ValueError, match="min_duration.*must not exceed max_duration"):
+        with pytest.raises(ValueError, match=r"min_duration.*must not exceed max_duration"):
             TemporalConstraint(min_duration=10.0, max_duration=5.0)
 
     def test_equal_min_max_duration_allowed(self):
