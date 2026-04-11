@@ -111,7 +111,7 @@ class TestValidatePluginInterfaceExtended:
     def test_no_abstract_methods(self):
         """Base with no abstractmethods should pass."""
 
-        class PlainBase(ABC):
+        class PlainBase:
             pass
 
         class PlainImpl(PlainBase):
@@ -343,7 +343,7 @@ class TestSafeFactoryBehavior:
 
         register_backend("safe_test", factory)
         safe_factory = get_backend("safe_test")
-        result = safe_factory()
+        safe_factory()
         assert "called" in call_log
 
     def test_human_controller_factory_exception_wrapped(self):

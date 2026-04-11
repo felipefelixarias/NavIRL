@@ -19,7 +19,6 @@ from navirl.backends.continuous.environment import (
 )
 from navirl.backends.continuous.physics import AgentState
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -160,7 +159,7 @@ class TestPedestrianPatterns:
         r = 5.0
         backend.add_pedestrian_circle(center, r, 4)
         obs = backend.reset()
-        for aid, ob in obs.items():
+        for _aid, ob in obs.items():
             dist = np.linalg.norm(ob["position"] - center)
             assert dist == pytest.approx(r, abs=0.5)
 
@@ -415,7 +414,7 @@ class TestContinuousEnvironment:
         ))
         obs = env.reset()
         assert len(obs) == 1
-        assert "position" in list(obs.values())[0]
+        assert "position" in next(iter(obs.values()))
 
     def test_step_updates_state(self):
         env = ContinuousEnvironment()

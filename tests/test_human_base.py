@@ -7,7 +7,6 @@ import pytest
 from navirl.core.types import Action
 from navirl.humans.base import HumanController
 
-
 # ---------------------------------------------------------------------------
 # Concrete subclass for testing the ABC
 # ---------------------------------------------------------------------------

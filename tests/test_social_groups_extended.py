@@ -16,7 +16,6 @@ from navirl.humans.social_groups import (
     SocialGroup,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -165,7 +164,7 @@ class TestFormationTargets:
         g = SocialGroup(member_ids=[1, 2, 3], formation=FormationType.CLUSTER)
         targets = g.formation_targets(states)
         assert len(targets) == 3
-        for mid, pos in targets.items():
+        for _mid, pos in targets.items():
             assert pos.shape == (2,)
 
     def test_cluster_single_member(self):
@@ -250,7 +249,7 @@ class TestForces:
         """Member at centroid should have zero cohesion force."""
         s1 = _make_state(1, 1.0, 0.0)
         s2 = _make_state(2, -1.0, 0.0)
-        states = _states_dict(s1, s2)
+        _states_dict(s1, s2)
         g = SocialGroup(member_ids=[1, 2], cohesion_strength=1.0)
         # Make a state exactly at centroid
         s_mid = _make_state(99, 0.0, 0.0)

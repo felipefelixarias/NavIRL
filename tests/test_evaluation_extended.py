@@ -19,7 +19,6 @@ from navirl.evaluation.analysis import (
 from navirl.evaluation.benchmark import BenchmarkResults
 from navirl.evaluation.comparisons import AgentComparison
 
-
 # ---------------------------------------------------------------------------
 # _kmeans internal
 # ---------------------------------------------------------------------------
@@ -196,7 +195,7 @@ class TestAttentionVisualization:
             model = FakeModel()
 
         try:
-            import torch  # noqa: F401
+            import torch
 
             result = attention_visualization(Agent(), np.zeros(4))
             np.testing.assert_array_equal(result, [1.0])

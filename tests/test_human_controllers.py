@@ -10,9 +10,8 @@ from pathlib import Path
 import pytest
 
 from navirl.core.types import Action, AgentState
-from navirl.humans.scripted.controller import ScriptedHumanController
 from navirl.humans.replay.controller import ReplayHumanController
-
+from navirl.humans.scripted.controller import ScriptedHumanController
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -43,7 +42,6 @@ def _make_state(
 
 def _noop_emit(event_name, agent_id, data):
     """No-op event sink."""
-    pass
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +122,7 @@ class TestScriptedHumanController:
         def capture_emit(name, aid, data):
             events.append((name, aid, data))
 
-        actions = ctrl.step(0, 0.0, 0.1, states, robot_id=0, emit_event=capture_emit)
+        ctrl.step(0, 0.0, 0.1, states, robot_id=0, emit_event=capture_emit)
         # Waypoint should be reached and event emitted
         assert len(events) == 1
         assert events[0][0] == "script_waypoint_reached"

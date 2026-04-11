@@ -18,7 +18,6 @@ from navirl.data.augmentation import (
 )
 from navirl.data.trajectory import Trajectory
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

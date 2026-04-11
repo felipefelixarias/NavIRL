@@ -19,7 +19,6 @@ from navirl.prediction.goal_conditioned import (
     _CandidateGoal,
 )
 
-
 # ---------------------------------------------------------------------------
 # GoalConditionedPredictor — construction
 # ---------------------------------------------------------------------------

@@ -20,12 +20,12 @@ from navirl.pipeline import (
     MAX_SEARCH_RINGS,
     MIN_BASE_STEP,
     RING_POINT_INCREMENT,
+    _anchor_ok,
     _diameter,
     _enforce_anchor_layout,
     _ensure_points,
     _has_agent_collision,
     _has_obstacle_collision,
-    _anchor_ok,
     _min_anchor_dist,
     _project_anchor,
     _resolve_human_start_goal_lists,
@@ -34,7 +34,6 @@ from navirl.pipeline import (
     _search_ring_points,
     _search_ring_positions,
 )
-
 
 # ---------------------------------------------------------------------------
 # _run_id
@@ -280,8 +279,6 @@ class TestEnforceAnchorLayout:
         backend = MagicMock()
         backend.nearest_clear_point.side_effect = lambda pos, _: pos
         backend.sample_free_point.return_value = (10.0, 10.0)
-
-        call_count = [0]
 
         def obstacle_check(pos, diam):
             return False

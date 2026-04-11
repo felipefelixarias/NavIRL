@@ -8,7 +8,6 @@ import pytest
 from navirl.backends.grid2d.constants import FREE_SPACE, OBSTACLE_SPACE
 from navirl.backends.grid2d.environment import GridEnvironment
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

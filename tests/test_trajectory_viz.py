@@ -18,11 +18,11 @@ from navirl.viz.trajectory_viz import (
     plot_curvature,
     plot_heading_profile,
     plot_social_distances_over_time,
+    plot_trajectories_comparison,
     plot_trajectory,
     plot_trajectory_3d,
     plot_trajectory_heatmap,
     plot_trajectory_uncertainty,
-    plot_trajectories_comparison,
     plot_velocity_profile,
 )
 

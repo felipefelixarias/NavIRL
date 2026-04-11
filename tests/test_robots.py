@@ -92,7 +92,6 @@ from navirl.robots.sensors_config import (
     simulate_range_scan,
 )
 
-
 # ===================================================================
 # Tests for navirl.robots.ackermann
 # ===================================================================
