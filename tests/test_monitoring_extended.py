@@ -15,7 +15,6 @@ import pytest
 
 from navirl.safety.monitoring import SafetyAlert, SafetyLogger, SafetyMonitor, Severity
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

@@ -19,7 +19,6 @@ from navirl.logging.episode_log import (
     episode_context,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -515,7 +514,6 @@ class TestEpisodeContext:
         assert logger.is_closed
 
     def test_closes_on_exception(self, tmp_path):
-        with pytest.raises(ValueError):
-            with episode_context(tmp_path / "ep") as logger:
-                raise ValueError("test error")
+        with pytest.raises(ValueError), episode_context(tmp_path / "ep") as logger:
+            raise ValueError("test error")
         assert logger.is_closed

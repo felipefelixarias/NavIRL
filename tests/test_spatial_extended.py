@@ -21,7 +21,6 @@ from navirl.utils.spatial import (
     pairwise_distances,
 )
 
-
 # ===================================================================
 # SpatialHashGrid — density_map
 # ===================================================================

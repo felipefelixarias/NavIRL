@@ -14,7 +14,6 @@ import pytest
 from navirl.core.constants import GRAVITY, SIM
 from navirl.sensors.imu import IMUConfig, IMUSensor
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

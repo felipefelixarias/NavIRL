@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import importlib.util
 import pathlib
+import sys
 import tempfile
 
 import numpy as np
 import pytest
-
-import importlib.util
-import sys
 
 # Import dataset module directly to avoid navirl.imitation.__init__ pulling in
 # torch-dependent siblings (AIRL, BC, GAIL).
@@ -159,9 +158,8 @@ class TestLoadFromNavirlLogs:
         assert len(ds) == 30  # 3 episodes * 10
 
     def test_empty_dir_raises(self):
-        with tempfile.TemporaryDirectory() as td:
-            with pytest.raises(FileNotFoundError, match="No episode"):
-                DemonstrationDataset.load_from_navirl_logs(td)
+        with tempfile.TemporaryDirectory() as td, pytest.raises(FileNotFoundError, match="No episode"):
+            DemonstrationDataset.load_from_navirl_logs(td)
 
     def test_with_optional_fields(self):
         with tempfile.TemporaryDirectory() as td:
@@ -306,7 +304,7 @@ class TestSplit:
         assert test is None
 
     def test_invalid_ratios(self, dataset):
-        with pytest.raises(ValueError, match="<= 1.0"):
+        with pytest.raises(ValueError, match=r"<= 1.0"):
             dataset.split(train_ratio=0.9, test_ratio=0.2)
 
     def test_no_shuffle(self, dataset):

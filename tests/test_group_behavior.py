@@ -23,10 +23,10 @@ from navirl.models.group_behavior import (
 
 
 def _state(aid: int, x: float, y: float, vx: float = 0.0, vy: float = 0.0, **kw) -> AgentState:
-    defaults = dict(
-        agent_id=aid, kind="human", x=x, y=y, vx=vx, vy=vy,
-        goal_x=0.0, goal_y=0.0, radius=0.25, max_speed=1.5,
-    )
+    defaults = {
+        "agent_id": aid, "kind": "human", "x": x, "y": y, "vx": vx, "vy": vy,
+        "goal_x": 0.0, "goal_y": 0.0, "radius": 0.25, "max_speed": 1.5,
+    }
     defaults.update(kw)
     return AgentState(**defaults)
 

@@ -15,8 +15,13 @@ from navirl.data.trajectory_dataset import (
     SplitConfig,
     TrajectoryDatasetPipeline,
     TrajectoryWindow,
+    _add_noise,
     _compute_velocities,
     _flip,
+    _load_csv,
+    _load_json,
+    _load_protobuf,
+    _perturb_speed,
     _rotate,
     _scale,
     augment_dataset,
@@ -26,13 +31,7 @@ from navirl.data.trajectory_dataset import (
     find_neighbors,
     split_trajectories,
     split_windows,
-    _add_noise,
-    _load_csv,
-    _load_json,
-    _load_protobuf,
-    _perturb_speed,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -311,7 +310,7 @@ class TestSplitConfig:
         assert abs(cfg.train_ratio + cfg.val_ratio + cfg.test_ratio - 1.0) < 1e-6
 
     def test_invalid_ratios_raises(self):
-        with pytest.raises(ValueError, match="must sum to 1.0"):
+        with pytest.raises(ValueError, match=r"must sum to 1.0"):
             SplitConfig(train_ratio=0.5, val_ratio=0.5, test_ratio=0.5)
 
 

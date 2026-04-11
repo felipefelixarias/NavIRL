@@ -7,19 +7,6 @@ import math
 import numpy as np
 import pytest
 
-from navirl.humans.pedestrian_state import (
-    Activity,
-    GazeDirection,
-    PedestrianState,
-    PersonalityTag,
-    StateHistory,
-    StatePredictor,
-    compute_centroid,
-    filter_by_activity,
-    filter_by_group,
-    pairwise_distances,
-    states_to_array,
-)
 from navirl.humans.behavior_model import (
     AttentionModel,
     BehaviorModel,
@@ -40,6 +27,19 @@ from navirl.humans.crowd_generator import (
     estimate_density,
     flow_rate,
 )
+from navirl.humans.pedestrian_state import (
+    Activity,
+    GazeDirection,
+    PedestrianState,
+    PersonalityTag,
+    StateHistory,
+    StatePredictor,
+    compute_centroid,
+    filter_by_activity,
+    filter_by_group,
+    pairwise_distances,
+    states_to_array,
+)
 from navirl.humans.social_groups import (
     FFormation,
     FormationType,
@@ -47,7 +47,6 @@ from navirl.humans.social_groups import (
     GroupRole,
     SocialGroup,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -682,7 +681,7 @@ class TestGroupManager:
 
     def test_step_triggers_split(self):
         gm = GroupManager(split_spread=2.0)
-        g = gm.create_group([0, 1])
+        gm.create_group([0, 1])
         s0 = _ped(pid=0, x=0.0, y=0.0)
         s1 = _ped(pid=1, x=50.0, y=0.0)
         events = gm.step({0: s0, 1: s1})

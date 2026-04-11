@@ -18,15 +18,14 @@ import pytest
 
 from navirl.logging.file_logger import (
     BaseFileLogger,
-    CSVLogger,
     CompositeFileLogger,
+    CSVLogger,
     HDF5Logger,
     JSONLLogger,
     LogLevel,
     LogRecord,
     RotatingFileLogger,
 )
-
 
 # ===================================================================
 # LogLevel tests

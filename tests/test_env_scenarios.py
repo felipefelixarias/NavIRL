@@ -21,7 +21,6 @@ from navirl.envs.scenarios import (
     ScenarioDifficultyScaler,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -132,7 +131,7 @@ class TestCircleCrossing:
         cfg = sc.generate(_rng())
         all_starts = [cfg["robot_start"]] + cfg["human_starts"]
         all_goals = [cfg["robot_goal"]] + cfg["human_goals"]
-        for (sx, sy), (gx, gy) in zip(all_starts, all_goals):
+        for (sx, sy), (gx, gy) in zip(all_starts, all_goals, strict=True):
             assert math.isclose(sx + gx, 0.0, abs_tol=1e-9)
             assert math.isclose(sy + gy, 0.0, abs_tol=1e-9)
 
@@ -167,7 +166,7 @@ class TestRandomGoal:
         # Robot
         assert math.dist(cfg["robot_start"], cfg["robot_goal"]) >= 2.0
         # Humans
-        for hs, hg in zip(cfg["human_starts"], cfg["human_goals"]):
+        for hs, hg in zip(cfg["human_starts"], cfg["human_goals"], strict=True):
             assert math.dist(hs, hg) >= 2.0
 
     def test_custom_params(self):
@@ -204,7 +203,7 @@ class TestCorridorPassing:
         sc = CorridorPassing(corridor_length=10.0, num_humans=4)
         cfg = sc.generate(_rng())
         # Even-index humans go left-to-right, odd go right-to-left
-        for i, (hs, hg) in enumerate(zip(cfg["human_starts"], cfg["human_goals"])):
+        for i, (hs, hg) in enumerate(zip(cfg["human_starts"], cfg["human_goals"], strict=True)):
             if i % 2 == 0:
                 assert hs[0] <= 0  # starts left
                 assert hg[0] == 5.0  # goal right

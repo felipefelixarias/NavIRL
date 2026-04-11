@@ -5,9 +5,9 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import math
+import pathlib as _pathlib
 import sys
 import types
-import pathlib as _pathlib
 
 import numpy as np
 import pytest

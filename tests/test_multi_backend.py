@@ -295,7 +295,7 @@ class TestContinuousAdapterSpecific:
         assert len(path) >= 2
         # Path should go around the obstacle (y > ~15 or different route)
         # At minimum, it should not be a straight line through the wall
-        has_detour = any(pt[1] > 10.0 or pt[0] < 9.0 or pt[0] > 11.0 for pt in path[1:-1]) or len(path) > 2
+        assert any(pt[1] > 10.0 or pt[0] < 9.0 or pt[0] > 11.0 for pt in path[1:-1]) or len(path) > 2
 
     def test_shortest_path_direct_line_of_sight(self) -> None:
         backend = ContinuousSceneBackend({}, {"dt": 0.1})
@@ -326,8 +326,8 @@ class TestPluginRegistry:
     """Test that the continuous backend is properly registered."""
 
     def test_continuous_backend_registered(self) -> None:
-        from navirl.plugins import register_default_plugins
         from navirl.core.registry import registry_snapshot
+        from navirl.plugins import register_default_plugins
 
         register_default_plugins()
         snap = registry_snapshot()
@@ -335,8 +335,8 @@ class TestPluginRegistry:
         assert "grid2d" in snap["backends"]
 
     def test_get_backend_continuous(self) -> None:
-        from navirl.plugins import register_default_plugins
         from navirl.core.registry import get_backend
+        from navirl.plugins import register_default_plugins
 
         register_default_plugins()
         factory = get_backend("continuous")
@@ -348,24 +348,24 @@ class TestPluginRegistry:
         assert isinstance(backend, ContinuousSceneBackend)
 
     def test_get_backend_grid2d_still_works(self) -> None:
-        from navirl.plugins import register_default_plugins
         from navirl.core.registry import get_backend
+        from navirl.plugins import register_default_plugins
 
         register_default_plugins()
         factory = get_backend("grid2d")
         assert factory is not None
 
     def test_unknown_backend_raises(self) -> None:
-        from navirl.plugins import register_default_plugins
         from navirl.core.registry import get_backend
+        from navirl.plugins import register_default_plugins
 
         register_default_plugins()
         with pytest.raises(KeyError, match="nonexistent"):
             get_backend("nonexistent")
 
     def test_plugin_info_continuous(self) -> None:
-        from navirl.plugins import register_default_plugins
         from navirl.core.registry import get_plugin_info
+        from navirl.plugins import register_default_plugins
 
         register_default_plugins()
         info = get_plugin_info("backend", "continuous")
@@ -486,7 +486,7 @@ class TestCrossBackendCompatibility:
 
 _has_gymnasium = True
 try:
-    import gymnasium  # noqa: F401
+    import gymnasium
 except ImportError:
     _has_gymnasium = False
 
