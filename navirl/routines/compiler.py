@@ -306,9 +306,7 @@ class RoutineCompiler:
 
         elif condition.type == ConditionType.LOCATION_REACHED:
             if "x" not in condition.params or "y" not in condition.params:
-                raise ValueError(
-                    "LOCATION_REACHED condition requires 'x' and 'y' parameters"
-                )
+                raise ValueError("LOCATION_REACHED condition requires 'x' and 'y' parameters")
             x = condition.params["x"]
             y = condition.params["y"]
             radius = condition.params.get("radius", 0.5)
@@ -324,9 +322,7 @@ class RoutineCompiler:
                 raise ValueError("CUSTOM condition requires 'handler' parameter")
             handler_name = condition.params["handler"]
             if handler_name not in self._custom_condition_handlers:
-                raise ValueError(
-                    f"No registered handler for custom condition '{handler_name}'"
-                )
+                raise ValueError(f"No registered handler for custom condition '{handler_name}'")
             handler = self._custom_condition_handlers[handler_name]
             predicate = handler(condition)
             return Condition(predicate)

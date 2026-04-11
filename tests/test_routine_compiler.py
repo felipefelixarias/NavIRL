@@ -412,9 +412,7 @@ class TestRoutineCompiler:
             tasks=[Task.go_to(1.0, 2.0)],
             branches=[
                 Branch(
-                    condition=RoutineCondition(
-                        ConditionType.CUSTOM, {"handler": "nonexistent"}
-                    ),
+                    condition=RoutineCondition(ConditionType.CUSTOM, {"handler": "nonexistent"}),
                     tasks=[Task.go_to(3.0, 4.0)],
                 )
             ],
