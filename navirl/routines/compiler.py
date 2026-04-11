@@ -25,7 +25,14 @@ from navirl.models.behavior_tree import (
     Status,
     WaitInQueue,
 )
-from navirl.routines.schema import Branch, ConditionType, RoutineSpec, Task, TaskType
+from navirl.routines.schema import (
+    Branch,
+    ConditionType,
+    RoutineSpec,
+    Task,
+    TaskType,
+    TemporalConstraint,
+)
 from navirl.routines.schema import Condition as RoutineCondition
 
 
@@ -314,7 +321,11 @@ class RoutineCompiler:
             return AgentNearbyCondition(agent_id, distance)
 
         elif condition.type == ConditionType.CUSTOM:
+            if "handler" not in condition.params:
+                raise ValueError("CUSTOM condition must have a 'handler' parameter")
             handler_name = condition.params["handler"]
+            if handler_name not in self._custom_condition_handlers:
+                raise ValueError(f"CUSTOM condition handler '{handler_name}' is not registered")
             handler = self._custom_condition_handlers[handler_name]
             predicate = handler(condition)
             return Condition(predicate)
@@ -323,7 +334,7 @@ class RoutineCompiler:
             raise ValueError(f"Unsupported condition type: {condition.type}")
 
     def _apply_temporal_constraints(
-        self, node: Node, constraints, context: CompilationContext
+        self, node: Node, constraints: TemporalConstraint, context: CompilationContext
     ) -> Node:
         """Apply temporal constraints to a node.
 
@@ -335,10 +346,16 @@ class RoutineCompiler:
         Returns:
             A node with temporal constraints applied.
         """
-        if constraints.max_duration:
+        if constraints.min_duration is not None:
+            node = MinDurationDecorator(node, constraints.min_duration)
+
+        if constraints.max_duration is not None:
             node = TimeoutDecorator(node, constraints.max_duration)
 
-        if constraints.start_time:
+        if constraints.end_time is not None:
+            node = EndTimeDecorator(node, constraints.end_time)
+
+        if constraints.start_time is not None:
             node = DelayedStartDecorator(node, constraints.start_time)
 
         return node
@@ -632,6 +649,73 @@ class DelayedStartDecorator(Node):
         return self.child.tick(bb)
 
     def reset_state(self) -> None:
+        self.child.reset_state()
+
+
+class EndTimeDecorator(Node):
+    """Decorator that fails execution after a wall-clock end time."""
+
+    def __init__(self, child: Node, end_time: float) -> None:
+        self.child = child
+        self.end_time = end_time
+
+    def tick(self, bb: Blackboard) -> Status:
+        current_time = bb.metadata.get("sim_time", 0.0)
+
+        if current_time >= self.end_time:
+            return Status.FAILURE  # Past end time
+
+        return self.child.tick(bb)
+
+    def reset_state(self) -> None:
+        self.child.reset_state()
+
+
+class MinDurationDecorator(Node):
+    """Decorator that enforces a minimum execution time.
+
+    If the child succeeds before min_duration has elapsed, this decorator
+    keeps returning RUNNING until the minimum time is met, then returns SUCCESS.
+    """
+
+    def __init__(self, child: Node, min_duration: float) -> None:
+        self.child = child
+        self.min_duration = min_duration
+        self._start_time: float | None = None
+        self._child_done = False
+
+    def tick(self, bb: Blackboard) -> Status:
+        if self._start_time is None:
+            self._start_time = bb.metadata.get("sim_time", 0.0)
+
+        current_time = bb.metadata.get("sim_time", 0.0)
+        elapsed = current_time - self._start_time
+
+        if not self._child_done:
+            result = self.child.tick(bb)
+            if result == Status.FAILURE:
+                return Status.FAILURE  # Propagate failure immediately
+            if result == Status.SUCCESS:
+                self._child_done = True
+
+        if elapsed >= self.min_duration:
+            if self._child_done:
+                return Status.SUCCESS
+            # min_duration met but child still running — delegate to child
+            return self.child.tick(bb)
+
+        # min_duration not yet met
+        if self._child_done:
+            # Child done but we need to wait — hold position
+            bb.pref_vx = 0.0
+            bb.pref_vy = 0.0
+            return Status.RUNNING
+
+        return Status.RUNNING
+
+    def reset_state(self) -> None:
+        self._start_time = None
+        self._child_done = False
         self.child.reset_state()
 
 
