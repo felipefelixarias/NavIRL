@@ -51,6 +51,9 @@ dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1",
   "pytest-xdist>=3.0",  # Parallel test execution
+  "pytest-mock>=3.10",
+  "pytest-asyncio>=0.21",
+  "Faker>=18.0",
   "ruff>=0.3",
   "black>=24.3",
   "pre-commit>=3.6",
@@ -78,7 +81,7 @@ version = { attr = "navirl._version.__version__" }
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
-addopts = "-ra -n auto --strict-markers"
+addopts = "-ra -n auto --dist loadscope --strict-markers"
 markers = [
     "e2e: end-to-end regression tests that run full scenario pipelines",
 ]
