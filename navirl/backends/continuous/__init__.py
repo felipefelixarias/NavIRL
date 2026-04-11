@@ -6,6 +6,7 @@ move in floating-point coordinates with realistic kinematics.
 
 from __future__ import annotations
 
+from navirl.backends.continuous.adapter import ContinuousSceneBackend
 from navirl.backends.continuous.backend import ContinuousBackend
 from navirl.backends.continuous.environment import ContinuousEnvironment
 from navirl.backends.continuous.obstacles import (
@@ -21,6 +22,7 @@ __all__ = [
     "CircleObstacle",
     "ContinuousBackend",
     "ContinuousEnvironment",
+    "ContinuousSceneBackend",
     "LineObstacle",
     "Obstacle",
     "PhysicsEngine",

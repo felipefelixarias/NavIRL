@@ -11,6 +11,7 @@ register_default_plugins -- Register all built-in components once
 
 from __future__ import annotations
 
+from navirl.backends.continuous.adapter import ContinuousSceneBackend
 from navirl.backends.grid2d import Grid2DBackend
 from navirl.core.registry import (
     register_backend,
@@ -54,6 +55,15 @@ def register_default_plugins() -> None:
     register_backend(
         "grid2d",
         lambda scene_cfg, horizon_cfg, base_dir=None: Grid2DBackend(
+            scene_cfg=scene_cfg,
+            horizon_cfg=horizon_cfg,
+            base_dir=base_dir,
+        ),
+    )
+
+    register_backend(
+        "continuous",
+        lambda scene_cfg, horizon_cfg, base_dir=None: ContinuousSceneBackend(
             scene_cfg=scene_cfg,
             horizon_cfg=horizon_cfg,
             base_dir=base_dir,

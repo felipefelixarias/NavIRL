@@ -19,7 +19,7 @@ document synchronized: mark an item done only after its issue is closed.
 
 ## Long-term
 
-- [ ] Add optional multi-backend support beyond `grid2d` ([#9](https://github.com/felipefelixarias/NavIRL/issues/9))
+- [x] Add optional multi-backend support beyond `grid2d` ([#9](https://github.com/felipefelixarias/NavIRL/issues/9))
 - [ ] Add distributed simulation orchestration for large parameter sweeps ([#10](https://github.com/felipefelixarias/NavIRL/issues/10))
 - [ ] Release formal reproducibility package tied to published studies ([#11](https://github.com/felipefelixarias/NavIRL/issues/11))
 - [ ] Continue agent-driven development with stricter E2E verification depth ([#12](https://github.com/felipefelixarias/NavIRL/issues/12))
