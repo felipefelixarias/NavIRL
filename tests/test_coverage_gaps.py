@@ -26,14 +26,18 @@ class TestResolveRetentionHoursEdgeCases:
             resolve_retention_hours(-1.0, env_var="X", default_hours=24.0)
 
     def test_env_var_non_numeric_raises(self):
-        with mock.patch.dict(os.environ, {"TEST_RET": "abc"}):
-            with pytest.raises(ValueError, match="must be a number of hours"):
-                resolve_retention_hours(None, env_var="TEST_RET", default_hours=24.0)
+        with (
+            mock.patch.dict(os.environ, {"TEST_RET": "abc"}),
+            pytest.raises(ValueError, match="must be a number of hours"),
+        ):
+            resolve_retention_hours(None, env_var="TEST_RET", default_hours=24.0)
 
     def test_env_var_negative_raises(self):
-        with mock.patch.dict(os.environ, {"TEST_RET": "-5"}):
-            with pytest.raises(ValueError, match="must be >= 0"):
-                resolve_retention_hours(None, env_var="TEST_RET", default_hours=24.0)
+        with (
+            mock.patch.dict(os.environ, {"TEST_RET": "-5"}),
+            pytest.raises(ValueError, match="must be >= 0"),
+        ):
+            resolve_retention_hours(None, env_var="TEST_RET", default_hours=24.0)
 
     def test_env_var_valid(self):
         with mock.patch.dict(os.environ, {"TEST_RET": "48"}):
@@ -331,7 +335,6 @@ class TestRobotControllerPerformance:
             # Should get both warning (> max) and info (consistently slow)
             # Actually 0.9 * max < max, so no warning; check info
             # 0.9 * 0.1 = 0.09, which is < 0.1, so no warning
-            pass
         # Force consistently slow condition: step_count=20, comp_time > 0.8*max
         r._step_count = 20
         with mock.patch("navirl.robots.base.logger") as mock_logger:
@@ -341,12 +344,14 @@ class TestRobotControllerPerformance:
     def test_config_validation_error(self):
         from navirl.core.plugin_validation import ConfigValidationError
 
-        with mock.patch(
-            "navirl.robots.base.validate_controller_config",
-            side_effect=ConfigValidationError("bad config"),
+        with (
+            mock.patch(
+                "navirl.robots.base.validate_controller_config",
+                side_effect=ConfigValidationError("bad config"),
+            ),
+            pytest.raises(ConfigValidationError),
         ):
-            with pytest.raises(ConfigValidationError):
-                DummyRobot()
+            DummyRobot()
 
 
 # ---------------------------------------------------------------------------

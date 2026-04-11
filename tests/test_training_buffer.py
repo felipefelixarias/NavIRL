@@ -344,9 +344,7 @@ class TestRolloutBuffer:
         buf.compute_returns_and_advantages(last_val, gamma=1.0, gae_lambda=1.0)
         # With gamma=1, lambda=1, values=0, rewards=[1,1,1], last_value=0
         # advantages should be [3, 2, 1] (MC returns)
-        np.testing.assert_array_almost_equal(
-            buf.advantages[:, 0], [3.0, 2.0, 1.0]
-        )
+        np.testing.assert_array_almost_equal(buf.advantages[:, 0], [3.0, 2.0, 1.0])
 
     def test_reset(self):
         buf = RolloutBuffer(5, OBS_SHAPE, ACT_SHAPE, n_envs=1)

@@ -33,9 +33,7 @@ class TestMessageProtocol:
         assert msg.receiver is None
 
     def test_metadata(self):
-        msg = MessageProtocol(
-            sender="a", receiver="b", content=42, metadata={"priority": "high"}
-        )
+        msg = MessageProtocol(sender="a", receiver="b", content=42, metadata={"priority": "high"})
         assert msg.metadata["priority"] == "high"
 
     def test_default_metadata_empty(self):

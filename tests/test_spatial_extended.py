@@ -83,7 +83,9 @@ class TestSpatialHashGridEdgeCases:
         grid.insert(1, np.array([1.0, 0.0]))
         grid.insert(2, np.array([100.0, 0.0]))
         results = grid.query_k_nearest(
-            np.array([0.0, 0.0]), k=2, max_radius=5.0,
+            np.array([0.0, 0.0]),
+            k=2,
+            max_radius=5.0,
         )
         ids = [r[0] for r in results]
         assert 0 in ids
@@ -102,7 +104,9 @@ class TestSpatialHashGridEdgeCases:
         grid = SpatialHashGrid(cell_size=1.0)
         grid.insert(0, np.array([0.0, 0.0]))
         results = grid.query_k_nearest(
-            np.array([0.0, 0.0]), k=5, max_radius=100.0,
+            np.array([0.0, 0.0]),
+            k=5,
+            max_radius=100.0,
         )
         assert len(results) == 1
 
@@ -203,20 +207,33 @@ class TestComputeVoronoiNeighbors:
         assert 0 in neighbors[1]
 
     def test_triangle(self):
-        positions = np.array([
-            [0.0, 0.0], [2.0, 0.0], [1.0, 2.0],
-        ])
+        positions = np.array(
+            [
+                [0.0, 0.0],
+                [2.0, 0.0],
+                [1.0, 2.0],
+            ]
+        )
         neighbors = compute_voronoi_neighbors(positions)
         # Each point should neighbor the other two
         for i in range(3):
             assert len(neighbors[i]) == 2
 
     def test_grid_pattern(self):
-        positions = np.array([
-            [0, 0], [1, 0], [2, 0],
-            [0, 1], [1, 1], [2, 1],
-            [0, 2], [1, 2], [2, 2],
-        ], dtype=float)
+        positions = np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [2, 0],
+                [0, 1],
+                [1, 1],
+                [2, 1],
+                [0, 2],
+                [1, 2],
+                [2, 2],
+            ],
+            dtype=float,
+        )
         neighbors = compute_voronoi_neighbors(positions)
         # Center point (index 4) should have many neighbors
         assert len(neighbors[4]) >= 4

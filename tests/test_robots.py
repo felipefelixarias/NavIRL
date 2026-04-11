@@ -6,6 +6,7 @@ Covers:
   - navirl.robots.holonomic
   - navirl.robots.sensors_config
 """
+
 from __future__ import annotations
 
 import math
@@ -496,9 +497,7 @@ class TestWaypointFollower:
 class TestGenerateSmoothTrajectory:
     def test_same_start_goal(self):
         cfg = HolonomicConfig()
-        pos, vel, t = generate_smooth_trajectory(
-            np.array([1.0, 2.0]), np.array([1.0, 2.0]), cfg
-        )
+        pos, vel, t = generate_smooth_trajectory(np.array([1.0, 2.0]), np.array([1.0, 2.0]), cfg)
         assert pos.shape == (1, 2)
         assert vel.shape == (1, 2)
 
@@ -639,9 +638,7 @@ class TestSensorSuite:
         assert len(suite.enabled_mounts()) == 1
 
     def test_any_sensor_sees(self):
-        m = SensorMount(
-            name="lidar", fov_horizontal=2 * np.pi, max_range=10.0, min_range=0.1
-        )
+        m = SensorMount(name="lidar", fov_horizontal=2 * np.pi, max_range=10.0, min_range=0.1)
         suite = SensorSuite([m])
         assert suite.any_sensor_sees(0, 0, 0, np.array([5.0, 0.0]))
         assert not suite.any_sensor_sees(0, 0, 0, np.array([50.0, 0.0]))
@@ -659,9 +656,7 @@ class TestFusePositionEstimates:
         np.testing.assert_allclose(result, [3.0, 4.0])
 
     def test_weighted_average(self):
-        cfg = SensorFusionConfig(
-            weights=[FusionWeight("a", 1.0), FusionWeight("b", 3.0)]
-        )
+        cfg = SensorFusionConfig(weights=[FusionWeight("a", 1.0), FusionWeight("b", 3.0)])
         estimates = {"a": np.array([0.0, 0.0]), "b": np.array([4.0, 4.0])}
         result = fuse_position_estimates(estimates, cfg)
         np.testing.assert_allclose(result, [3.0, 3.0])

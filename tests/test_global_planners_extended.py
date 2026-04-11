@@ -181,9 +181,7 @@ class TestRRTPlanner:
         assert idx == 1
 
     def test_collision_free_no_obstacles(self):
-        assert RRTPlanner._collision_free(
-            np.array([0.0, 0.0]), np.array([1.0, 1.0]), None
-        ) is True
+        assert RRTPlanner._collision_free(np.array([0.0, 0.0]), np.array([1.0, 1.0]), None) is True
 
     def test_collision_free_with_obstacle(self):
         obstacles = np.array([[0.5, 0.0, 0.2]])
@@ -194,9 +192,7 @@ class TestRRTPlanner:
 
     def test_collision_free_clear_path(self):
         obstacles = np.array([[5.0, 5.0, 0.2]])
-        result = RRTPlanner._collision_free(
-            np.array([0.0, 0.0]), np.array([1.0, 0.0]), obstacles
-        )
+        result = RRTPlanner._collision_free(np.array([0.0, 0.0]), np.array([1.0, 0.0]), obstacles)
         assert result is True
 
     def test_sample_goal_bias(self):
@@ -285,9 +281,7 @@ class TestRRTStarPlanner:
 class TestPRMPlanner:
     def test_plan_open_space(self, config_sampling):
         np.random.seed(42)
-        planner = PRMPlanner(
-            config=config_sampling, num_samples=200, k_neighbors=10
-        )
+        planner = PRMPlanner(config=config_sampling, num_samples=200, k_neighbors=10)
         start = np.array([0.0, 0.0])
         goal = np.array([3.0, 3.0])
         path = planner.plan(start, goal)

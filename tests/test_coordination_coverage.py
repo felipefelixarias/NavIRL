@@ -211,16 +211,11 @@ class TestDirectChannelExtended:
         def writer(sender, receiver, count):
             try:
                 for i in range(count):
-                    ch.send(
-                        MessageProtocol(sender=sender, receiver=receiver, content=i)
-                    )
+                    ch.send(MessageProtocol(sender=sender, receiver=receiver, content=i))
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=writer, args=(f"s{i}", "target", 50))
-            for i in range(5)
-        ]
+        threads = [threading.Thread(target=writer, args=(f"s{i}", "target", 50)) for i in range(5)]
         for t in threads:
             t.start()
         for t in threads:
@@ -295,9 +290,7 @@ class TestSharedMemoryExtended:
             except Exception as e:
                 errors.append(e)
 
-        threads = [
-            threading.Thread(target=writer, args=(f"t{i}", 50)) for i in range(5)
-        ]
+        threads = [threading.Thread(target=writer, args=(f"t{i}", 50)) for i in range(5)]
         for t in threads:
             t.start()
         for t in threads:

@@ -23,6 +23,7 @@ from navirl.prediction.goal_conditioned import (
 # GoalConditionedPredictor — construction
 # ---------------------------------------------------------------------------
 
+
 class TestGoalConditionedPredictorConstruction:
     def test_default_params(self):
         p = GoalConditionedPredictor()
@@ -49,15 +50,18 @@ class TestGoalConditionedPredictorConstruction:
 # GoalConditionedPredictor — _estimate_goals
 # ---------------------------------------------------------------------------
 
+
 class TestEstimateGoals:
     def test_velocity_extrapolation(self):
         """With 2+ observations, goals should be extrapolated from velocity."""
         p = GoalConditionedPredictor(num_goals=5)
-        observed = np.array([
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [2.0, 0.0],
-        ])
+        observed = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [2.0, 0.0],
+            ]
+        )
         goals = p._estimate_goals(observed)
         assert len(goals) >= 1
         # Goals should be ahead in the x direction
@@ -112,6 +116,7 @@ class TestEstimateGoals:
 # GoalConditionedPredictor — _plan_path_to_goal
 # ---------------------------------------------------------------------------
 
+
 class TestPlanPathToGoal:
     def test_output_shape(self):
         p = GoalConditionedPredictor(horizon=12, dt=0.4)
@@ -152,6 +157,7 @@ class TestPlanPathToGoal:
 # GoalConditionedPredictor — predict
 # ---------------------------------------------------------------------------
 
+
 class TestGoalConditionedPredict:
     def test_predict_output_type(self):
         p = GoalConditionedPredictor(horizon=8, num_goals=3, num_samples_per_goal=2)
@@ -164,7 +170,9 @@ class TestGoalConditionedPredict:
         num_goals = 3
         samples_per = 2
         p = GoalConditionedPredictor(
-            horizon=horizon, num_goals=num_goals, num_samples_per_goal=samples_per,
+            horizon=horizon,
+            num_goals=num_goals,
+            num_samples_per_goal=samples_per,
         )
         observed = np.array([[0.0, 0.0], [1.0, 0.5], [2.0, 1.0]])
         result = p.predict(observed)
@@ -212,6 +220,7 @@ class TestGoalConditionedPredict:
 # IntentPredictor — construction
 # ---------------------------------------------------------------------------
 
+
 class TestIntentPredictorConstruction:
     def test_default_params(self):
         ip = IntentPredictor()
@@ -233,6 +242,7 @@ class TestIntentPredictorConstruction:
 # IntentPredictor — classify
 # ---------------------------------------------------------------------------
 
+
 class TestIntentClassify:
     def test_too_few_observations_returns_unknown(self):
         ip = IntentPredictor()
@@ -245,13 +255,15 @@ class TestIntentClassify:
         """Agent moving in a straight line at constant speed."""
         ip = IntentPredictor(dt=0.1)
         # Constant velocity to the right
-        obs = np.array([
-            [0.0, 0.0],
-            [0.5, 0.0],
-            [1.0, 0.0],
-            [1.5, 0.0],
-            [2.0, 0.0],
-        ])
+        obs = np.array(
+            [
+                [0.0, 0.0],
+                [0.5, 0.0],
+                [1.0, 0.0],
+                [1.5, 0.0],
+                [2.0, 0.0],
+            ]
+        )
         intent, probs = ip.classify(obs)
         assert intent == PedestrianIntent.WALKING_STRAIGHT
         assert probs[PedestrianIntent.WALKING_STRAIGHT.value] > 0
@@ -260,25 +272,29 @@ class TestIntentClassify:
         """Agent decelerating to a stop."""
         ip = IntentPredictor(dt=0.1, stop_speed_threshold=0.5)
         # Decelerating
-        obs = np.array([
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [1.5, 0.0],
-            [1.7, 0.0],
-            [1.72, 0.0],  # Nearly stopped, decelerating
-        ])
+        obs = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [1.5, 0.0],
+                [1.7, 0.0],
+                [1.72, 0.0],  # Nearly stopped, decelerating
+            ]
+        )
         intent, probs = ip.classify(obs)
         assert intent in (PedestrianIntent.STOPPING, PedestrianIntent.WAITING)
 
     def test_waiting(self):
         """Agent that is stationary (not decelerating, just standing)."""
         ip = IntentPredictor(dt=0.1, stop_speed_threshold=0.5)
-        obs = np.array([
-            [5.0, 5.0],
-            [5.0, 5.0],
-            [5.0, 5.0],
-            [5.0, 5.0],
-        ])
+        obs = np.array(
+            [
+                [5.0, 5.0],
+                [5.0, 5.0],
+                [5.0, 5.0],
+                [5.0, 5.0],
+            ]
+        )
         intent, probs = ip.classify(obs)
         assert intent == PedestrianIntent.WAITING
 
@@ -306,24 +322,28 @@ class TestIntentClassify:
         """Agent crossing laterally relative to road direction."""
         ip = IntentPredictor(dt=0.1, crossing_lateral_threshold=0.3)
         # Road goes in x direction, agent crosses in y direction
-        obs = np.array([
-            [5.0, 0.0],
-            [5.0, 1.0],
-            [5.0, 2.0],
-            [5.0, 3.0],
-        ])
+        obs = np.array(
+            [
+                [5.0, 0.0],
+                [5.0, 1.0],
+                [5.0, 2.0],
+                [5.0, 3.0],
+            ]
+        )
         context = {"road_direction": np.array([1.0, 0.0])}
         intent, probs = ip.classify(obs, context)
         assert intent == PedestrianIntent.CROSSING
 
     def test_classify_probabilities_sum_to_one(self):
         ip = IntentPredictor(dt=0.1)
-        obs = np.array([
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [2.0, 0.0],
-            [3.0, 0.0],
-        ])
+        obs = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [2.0, 0.0],
+                [3.0, 0.0],
+            ]
+        )
         _, probs = ip.classify(obs)
         total = sum(probs.values())
         assert total == pytest.approx(1.0, abs=1e-6)
@@ -348,11 +368,17 @@ class TestIntentClassify:
 # PedestrianIntent enum
 # ---------------------------------------------------------------------------
 
+
 class TestPedestrianIntentEnum:
     def test_all_intents(self):
         expected = {
-            "crossing", "waiting", "turning_left", "turning_right",
-            "stopping", "walking_straight", "unknown",
+            "crossing",
+            "waiting",
+            "turning_left",
+            "turning_right",
+            "stopping",
+            "walking_straight",
+            "unknown",
         }
         actual = {i.value for i in PedestrianIntent}
         assert actual == expected
@@ -365,6 +391,7 @@ class TestPedestrianIntentEnum:
 # ---------------------------------------------------------------------------
 # _CandidateGoal
 # ---------------------------------------------------------------------------
+
 
 class TestCandidateGoal:
     def test_default_probability(self):

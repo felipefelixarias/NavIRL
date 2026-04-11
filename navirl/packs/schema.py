@@ -73,10 +73,7 @@ class PackManifest:
         obj = {
             "name": self.name,
             "version": self.version,
-            "scenarios": [
-                {"id": e.id, "path": e.path, "seeds": e.seeds}
-                for e in self.scenarios
-            ],
+            "scenarios": [{"id": e.id, "path": e.path, "seeds": e.seeds} for e in self.scenarios],
             "metrics": self.metrics,
         }
         blob = json.dumps(obj, sort_keys=True, separators=(",", ":"))
@@ -120,7 +117,8 @@ class PackResult:
             vals = [
                 float(r.metrics[key])
                 for r in completed
-                if key in r.metrics and isinstance(r.metrics[key], (int, float))
+                if key in r.metrics
+                and isinstance(r.metrics[key], (int, float))
                 and math.isfinite(float(r.metrics[key]))
             ]
             if vals:

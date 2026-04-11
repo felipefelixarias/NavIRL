@@ -90,9 +90,7 @@ class TestSceneBackendContract:
         # Agent should have moved in +x direction
         assert pos[0] > 5.0
 
-    def test_get_velocity_returns_tuple(
-        self, continuous_backend: ContinuousSceneBackend
-    ) -> None:
+    def test_get_velocity_returns_tuple(self, continuous_backend: ContinuousSceneBackend) -> None:
         continuous_backend.add_agent(0, (5.0, 5.0), 0.3, 1.5, "robot")
         continuous_backend.set_preferred_velocity(0, (1.0, 0.5))
         continuous_backend.step()
@@ -100,9 +98,7 @@ class TestSceneBackendContract:
         assert isinstance(vel, tuple)
         assert len(vel) == 2
 
-    def test_step_updates_position(
-        self, continuous_backend: ContinuousSceneBackend
-    ) -> None:
+    def test_step_updates_position(self, continuous_backend: ContinuousSceneBackend) -> None:
         continuous_backend.add_agent(0, (5.0, 5.0), 0.3, 1.5, "robot")
         continuous_backend.set_preferred_velocity(0, (0.0, 1.0))
         pos_before = continuous_backend.get_position(0)
@@ -130,9 +126,7 @@ class TestSceneBackendContract:
         assert math.isclose(path[-1][0], goal[0], abs_tol=0.5)
         assert math.isclose(path[-1][1], goal[1], abs_tol=0.5)
 
-    def test_sample_free_point(
-        self, continuous_backend: ContinuousSceneBackend
-    ) -> None:
+    def test_sample_free_point(self, continuous_backend: ContinuousSceneBackend) -> None:
         pt = continuous_backend.sample_free_point()
         assert isinstance(pt, tuple)
         assert len(pt) == 2
@@ -156,17 +150,13 @@ class TestSceneBackendContract:
         self, continuous_backend_with_obstacles: ContinuousSceneBackend
     ) -> None:
         # Circle obstacle at (10, 10) r=2 → point (10, 10) should collide
-        assert continuous_backend_with_obstacles.check_obstacle_collision(
-            (10.0, 10.0), 0.3
-        )
+        assert continuous_backend_with_obstacles.check_obstacle_collision((10.0, 10.0), 0.3)
 
     def test_check_obstacle_collision_outside(
         self, continuous_backend_with_obstacles: ContinuousSceneBackend
     ) -> None:
         # Well outside any obstacle
-        assert not continuous_backend_with_obstacles.check_obstacle_collision(
-            (18.0, 18.0), 0.3
-        )
+        assert not continuous_backend_with_obstacles.check_obstacle_collision((18.0, 18.0), 0.3)
 
     def test_world_to_map(self, continuous_backend: ContinuousSceneBackend) -> None:
         result = continuous_backend.world_to_map((10.0, 10.0))
@@ -295,7 +285,9 @@ class TestContinuousAdapterSpecific:
         assert len(path) >= 2
         # Path should go around the obstacle (y > ~15 or different route)
         # At minimum, it should not be a straight line through the wall
-        assert any(pt[1] > 10.0 or pt[0] < 9.0 or pt[0] > 11.0 for pt in path[1:-1]) or len(path) > 2
+        assert (
+            any(pt[1] > 10.0 or pt[0] < 9.0 or pt[0] > 11.0 for pt in path[1:-1]) or len(path) > 2
+        )
 
     def test_shortest_path_direct_line_of_sight(self) -> None:
         backend = ContinuousSceneBackend({}, {"dt": 0.1})
@@ -304,9 +296,7 @@ class TestContinuousAdapterSpecific:
         assert len(path) == 2
 
     def test_world_to_map_corners(self) -> None:
-        backend = ContinuousSceneBackend(
-            {"width": 10.0, "height": 10.0}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 10.0, "height": 10.0}, {"dt": 0.1})
         # Origin should map to bottom-left of the image
         r, c = backend.world_to_map((0.0, 0.0))
         assert r >= 0 and c >= 0
@@ -383,9 +373,7 @@ class TestCrossBackendCompatibility:
 
     def test_both_backends_add_agent_and_query(self) -> None:
         """Both backends support the same add_agent → get_position flow."""
-        backend = ContinuousSceneBackend(
-            {"width": 20, "height": 20}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 20, "height": 20}, {"dt": 0.1})
         backend.add_agent(0, (5.0, 5.0), 0.3, 1.5, "robot")
         backend.add_agent(1, (15.0, 15.0), 0.3, 1.2, "human")
 
@@ -397,9 +385,7 @@ class TestCrossBackendCompatibility:
 
     def test_step_velocity_movement(self) -> None:
         """Setting preferred velocity and stepping produces motion."""
-        backend = ContinuousSceneBackend(
-            {"width": 20, "height": 20}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 20, "height": 20}, {"dt": 0.1})
         backend.add_agent(0, (5.0, 5.0), 0.3, 1.5, "robot")
         backend.set_preferred_velocity(0, (1.0, 0.0))
         backend.step()
@@ -408,9 +394,7 @@ class TestCrossBackendCompatibility:
 
     def test_shortest_path_contract(self) -> None:
         """shortest_path returns a valid path for both backends."""
-        backend = ContinuousSceneBackend(
-            {"width": 20, "height": 20}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 20, "height": 20}, {"dt": 0.1})
         path = backend.shortest_path((1.0, 1.0), (19.0, 19.0))
         assert len(path) >= 2
         # First and last points should be near start/goal
@@ -419,9 +403,7 @@ class TestCrossBackendCompatibility:
 
     def test_sample_free_point_returns_valid(self) -> None:
         """sample_free_point returns a point inside the world."""
-        backend = ContinuousSceneBackend(
-            {"width": 20, "height": 20}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 20, "height": 20}, {"dt": 0.1})
         for _ in range(10):
             pt = backend.sample_free_point()
             assert 0 <= pt[0] <= 20.0
@@ -443,26 +425,20 @@ class TestCrossBackendCompatibility:
 
     def test_map_image_valid_format(self) -> None:
         """map_image returns a 2D uint8 ndarray for both backends."""
-        backend = ContinuousSceneBackend(
-            {"width": 10, "height": 10}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 10, "height": 10}, {"dt": 0.1})
         img = backend.map_image()
         assert isinstance(img, np.ndarray)
         assert img.ndim == 2
         assert img.dtype == np.uint8
 
     def test_world_to_map_valid_format(self) -> None:
-        backend = ContinuousSceneBackend(
-            {"width": 20, "height": 20}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 20, "height": 20}, {"dt": 0.1})
         r, c = backend.world_to_map((10.0, 10.0))
         assert isinstance(r, int)
         assert isinstance(c, int)
 
     def test_map_metadata_valid_format(self) -> None:
-        backend = ContinuousSceneBackend(
-            {"width": 20, "height": 20}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 20, "height": 20}, {"dt": 0.1})
         meta = backend.map_metadata()
         assert isinstance(meta, dict)
 
@@ -517,9 +493,7 @@ class TestScenarioPortability:
     """Document which scenario features are portable and which are not."""
 
     def test_empty_world_works(self) -> None:
-        backend = ContinuousSceneBackend(
-            {"width": 10, "height": 10}, {"dt": 0.1}
-        )
+        backend = ContinuousSceneBackend({"width": 10, "height": 10}, {"dt": 0.1})
         backend.add_agent(0, (5.0, 5.0), 0.3, 1.5, "robot")
         backend.step()
         pos = backend.get_position(0)

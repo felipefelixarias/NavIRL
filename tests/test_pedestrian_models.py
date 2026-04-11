@@ -459,9 +459,7 @@ class TestCrowdAnalyzer:
         assert grid[0, 1] == 0.0
 
     def test_flow_field_empty(self):
-        flow = CrowdAnalyzer.compute_flow_field(
-            np.empty((0, 2)), np.empty((0, 2)), (0, 0, 10, 10)
-        )
+        flow = CrowdAnalyzer.compute_flow_field(np.empty((0, 2)), np.empty((0, 2)), (0, 0, 10, 10))
         assert np.all(flow == 0.0)
 
     def test_flow_field_single_agent(self):

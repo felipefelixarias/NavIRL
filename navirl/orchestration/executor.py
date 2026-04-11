@@ -180,9 +180,7 @@ class LocalExecutor(TaskExecutor):
         else:
             # Parallel execution
             num_procs = min(self.max_workers, len(tasks))
-            logger.info(
-                "Launching %d workers for %d tasks", num_procs, len(tasks)
-            )
+            logger.info("Launching %d workers for %d tasks", num_procs, len(tasks))
             with mp.Pool(processes=num_procs) as pool:
                 for i, result_dict in enumerate(
                     pool.imap(  # preserves order

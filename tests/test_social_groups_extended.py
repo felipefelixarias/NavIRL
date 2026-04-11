@@ -21,9 +21,17 @@ from navirl.humans.social_groups import (
 # ---------------------------------------------------------------------------
 
 
-def _make_state(pid: int, x: float, y: float, vx: float = 0.0, vy: float = 0.0,
-                heading: float = 0.0, goal_x: float = 10.0, goal_y: float = 10.0,
-                radius: float = 0.3) -> PedestrianState:
+def _make_state(
+    pid: int,
+    x: float,
+    y: float,
+    vx: float = 0.0,
+    vy: float = 0.0,
+    heading: float = 0.0,
+    goal_x: float = 10.0,
+    goal_y: float = 10.0,
+    radius: float = 0.3,
+) -> PedestrianState:
     return PedestrianState(
         pid=pid,
         position=np.array([x, y], dtype=np.float64),
@@ -78,7 +86,9 @@ class TestFFormation:
     def test_compute_positions_start_angle(self):
         ff = FFormation()
         pos_default = ff.compute_positions(np.array([0.0, 0.0]), n_members=2, start_angle=0.0)
-        pos_rotated = ff.compute_positions(np.array([0.0, 0.0]), n_members=2, start_angle=math.pi/2)
+        pos_rotated = ff.compute_positions(
+            np.array([0.0, 0.0]), n_members=2, start_angle=math.pi / 2
+        )
         # Rotated positions should differ
         assert not np.allclose(pos_default[0], pos_rotated[0])
 
@@ -596,8 +606,8 @@ class TestIntersectionDecision:
 
     def test_leader_extra_vote(self):
         s1 = _make_state(1, 0, 0, goal_x=10, goal_y=0)  # wants right
-        s2 = _make_state(2, 0, 0, goal_x=0, goal_y=10)   # wants up
-        s3 = _make_state(3, 0, 0, goal_x=0, goal_y=10)   # wants up
+        s2 = _make_state(2, 0, 0, goal_x=0, goal_y=10)  # wants up
+        s3 = _make_state(3, 0, 0, goal_x=0, goal_y=10)  # wants up
         states = _states_dict(s1, s2, s3)
         g = SocialGroup(member_ids=[1, 2, 3], leader_id=1)
         rng = np.random.default_rng(42)
@@ -712,10 +722,7 @@ class TestGroupManager:
 
     def test_create_group_with_kwargs(self):
         mgr = GroupManager()
-        g = mgr.create_group(
-            [1, 2], leader_id=1, goal=np.array([5.0, 5.0]),
-            cohesion_strength=2.0
-        )
+        g = mgr.create_group([1, 2], leader_id=1, goal=np.array([5.0, 5.0]), cohesion_strength=2.0)
         assert g.leader_id == 1
         assert g.cohesion_strength == 2.0
         np.testing.assert_allclose(g.goal, [5.0, 5.0])

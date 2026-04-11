@@ -41,7 +41,9 @@ class TestLogLevel:
         assert LogLevel.CRITICAL == 50
 
     def test_ordering(self):
-        assert LogLevel.DEBUG < LogLevel.INFO < LogLevel.WARNING < LogLevel.ERROR < LogLevel.CRITICAL
+        assert (
+            LogLevel.DEBUG < LogLevel.INFO < LogLevel.WARNING < LogLevel.ERROR < LogLevel.CRITICAL
+        )
 
     def test_from_string_valid(self):
         assert LogLevel.from_string("INFO") is LogLevel.INFO

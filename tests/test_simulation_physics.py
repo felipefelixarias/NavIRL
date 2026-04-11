@@ -83,9 +83,7 @@ class TestEulerStep:
         np.testing.assert_allclose(vel, [1.0, 0.0])
 
     def test_constant_acceleration(self):
-        pos, vel = _euler_step(
-            np.zeros(2), np.zeros(2), np.array([2.0, 0.0]), 1.0
-        )
+        pos, vel = _euler_step(np.zeros(2), np.zeros(2), np.array([2.0, 0.0]), 1.0)
         # v_new = 0 + 2*1 = 2; x_new = 0 + 2*1 = 2
         np.testing.assert_allclose(vel, [2.0, 0.0])
         np.testing.assert_allclose(pos, [2.0, 0.0])

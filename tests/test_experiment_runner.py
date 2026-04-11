@@ -41,11 +41,14 @@ class TestApplyOverrides:
             "horizon": {"dt": 0.1, "max_steps": 100},
             "scene": {"map": {"id": "hallway"}},
         }
-        result = _apply_overrides(scenario, {
-            "horizon.dt": 0.05,
-            "horizon.max_steps": 200,
-            "scene.map.id": "doorway",
-        })
+        result = _apply_overrides(
+            scenario,
+            {
+                "horizon.dt": 0.05,
+                "horizon.max_steps": 200,
+                "scene.map.id": "doorway",
+            },
+        )
         assert result["horizon"]["dt"] == 0.05
         assert result["horizon"]["max_steps"] == 200
         assert result["scene"]["map"]["id"] == "doorway"

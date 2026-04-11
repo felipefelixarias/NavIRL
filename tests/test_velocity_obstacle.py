@@ -26,14 +26,27 @@ from navirl.models.velocity_obstacle import (
 
 
 def _agent(
-    aid=0, x=0.0, y=0.0, vx=0.0, vy=0.0, radius=0.25, max_speed=1.5,
-    gx=10.0, gy=0.0,
+    aid=0,
+    x=0.0,
+    y=0.0,
+    vx=0.0,
+    vy=0.0,
+    radius=0.25,
+    max_speed=1.5,
+    gx=10.0,
+    gy=0.0,
 ):
     return AgentState(
-        agent_id=aid, kind="human",
-        x=x, y=y, vx=vx, vy=vy,
-        goal_x=gx, goal_y=gy,
-        radius=radius, max_speed=max_speed,
+        agent_id=aid,
+        kind="human",
+        x=x,
+        y=y,
+        vx=vx,
+        vy=vy,
+        goal_x=gx,
+        goal_y=gy,
+        radius=radius,
+        max_speed=max_speed,
     )
 
 

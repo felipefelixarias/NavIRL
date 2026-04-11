@@ -168,9 +168,7 @@ class TestPlotTrajectory:
 
     def test_with_title_and_label(self, straight_xy):
         x, y = straight_xy
-        fig, ax = plot_trajectory(
-            x, y, title="Test", label="robot", xlabel="X", ylabel="Y"
-        )
+        fig, ax = plot_trajectory(x, y, title="Test", label="robot", xlabel="X", ylabel="Y")
         assert ax.get_title() == "Test"
 
     def test_no_equal_aspect(self, straight_xy):
@@ -464,9 +462,7 @@ class TestPlotTrajectoryUncertainty:
         sigma_x = np.ones(n) * 0.2
         sigma_y = np.ones(n) * 0.15
         rho = np.ones(n) * 0.5
-        fig, ax = plot_trajectory_uncertainty(
-            x, y, sigma_x, sigma_y, correlation=rho
-        )
+        fig, ax = plot_trajectory_uncertainty(x, y, sigma_x, sigma_y, correlation=rho)
         assert isinstance(fig, plt.Figure)
 
     def test_few_ellipses(self, straight_xy):
@@ -489,9 +485,7 @@ class TestPlotTrajectoryUncertainty:
         x, y = straight_xy
         n = len(x)
         _, ax0 = plt.subplots()
-        fig, ax = plot_trajectory_uncertainty(
-            x, y, np.ones(n) * 0.1, np.ones(n) * 0.1, ax=ax0
-        )
+        fig, ax = plot_trajectory_uncertainty(x, y, np.ones(n) * 0.1, np.ones(n) * 0.1, ax=ax0)
         assert ax is ax0
 
 
@@ -520,9 +514,7 @@ class TestPlotSocialDistances:
 
     def test_no_min_distance_line(self):
         positions = [{0: (0.0, 0.0), 1: (1.0, 0.0)}]
-        fig, ax = plot_social_distances_over_time(
-            positions, min_distance_line=None
-        )
+        fig, ax = plot_social_distances_over_time(positions, min_distance_line=None)
         assert isinstance(fig, plt.Figure)
 
     def test_no_min_envelope(self):
@@ -530,9 +522,7 @@ class TestPlotSocialDistances:
             {0: (0.0, 0.0), 1: (1.0, 0.0)},
             {0: (0.5, 0.0), 1: (1.5, 0.0)},
         ]
-        fig, ax = plot_social_distances_over_time(
-            positions, show_min_envelope=False
-        )
+        fig, ax = plot_social_distances_over_time(positions, show_min_envelope=False)
         assert isinstance(fig, plt.Figure)
 
     def test_single_agent_no_pairs(self):

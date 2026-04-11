@@ -50,9 +50,12 @@ def _make_agent(
     return AgentState(
         agent_id=agent_id,
         kind="human",
-        x=x, y=y,
-        vx=vx, vy=vy,
-        goal_x=goal_x, goal_y=goal_y,
+        x=x,
+        y=y,
+        vx=vx,
+        vy=vy,
+        goal_x=goal_x,
+        goal_y=goal_y,
         radius=0.3,
         max_speed=max_speed,
     )

@@ -37,6 +37,7 @@ from navirl.data.trajectory_dataset import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_trajectory(n=30, agent_id="ped_0", dt=0.4):
     """Create a simple linear trajectory for testing."""
     ts = np.arange(n, dtype=np.float64) * dt
@@ -542,9 +543,7 @@ class TestExtractSceneContext:
 
 class TestTrajectoryDatasetPipeline:
     def test_load_csv(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i) * 0.5}" for i in range(30)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i) * 0.5}" for i in range(30)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(obs_len=4, pred_len=4)
@@ -580,9 +579,7 @@ class TestTrajectoryDatasetPipeline:
             pipeline.load(p)
 
     def test_process_and_splits(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i) * 0.5}" for i in range(40)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i) * 0.5}" for i in range(40)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(
@@ -597,18 +594,14 @@ class TestTrajectoryDatasetPipeline:
 
     def test_load_multiple(self, tmp_path):
         for name in ["a.csv", "b.csv"]:
-            csv_data = "\n".join(
-                [f"{i},{name},{ float(i)},{float(i)}" for i in range(30)]
-            )
+            csv_data = "\n".join([f"{i},{name},{float(i)},{float(i)}" for i in range(30)])
             (tmp_path / name).write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(obs_len=4, pred_len=4)
         pipeline.load_multiple([tmp_path / "a.csv", tmp_path / "b.csv"])
         assert len(pipeline.trajectories) == 2
 
     def test_get_numpy_arrays(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i)}" for i in range(40)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i)}" for i in range(40)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(obs_len=4, pred_len=4)
@@ -629,9 +622,7 @@ class TestTrajectoryDatasetPipeline:
             pipeline.get_numpy_arrays("invalid")
 
     def test_iterate_batches(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i)}" for i in range(50)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i)}" for i in range(50)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(obs_len=4, pred_len=4)
@@ -646,9 +637,7 @@ class TestTrajectoryDatasetPipeline:
         assert batches == []
 
     def test_summary(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i)}" for i in range(30)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i)}" for i in range(30)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(obs_len=4, pred_len=4)
@@ -660,9 +649,7 @@ class TestTrajectoryDatasetPipeline:
         assert s["augmentation_enabled"] is False
 
     def test_with_augmentation(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i)}" for i in range(30)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i)}" for i in range(30)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(
@@ -676,9 +663,7 @@ class TestTrajectoryDatasetPipeline:
         assert s["num_windows"] > s["num_train"] + s["num_val"] + s["num_test"] or True
 
     def test_method_chaining(self, tmp_path):
-        csv_data = "\n".join(
-            [f"{i},ped_0,{float(i)},{float(i)}" for i in range(30)]
-        )
+        csv_data = "\n".join([f"{i},ped_0,{float(i)},{float(i)}" for i in range(30)])
         p = tmp_path / "data.csv"
         p.write_text(csv_data)
         pipeline = TrajectoryDatasetPipeline(obs_len=4, pred_len=4)

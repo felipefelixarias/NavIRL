@@ -15,6 +15,7 @@ import pytest
 # Build a fake wandb module so the real import succeeds with mocks
 # ---------------------------------------------------------------------------
 
+
 def _make_mock_wandb() -> types.ModuleType:
     """Create a mock ``wandb`` module with the attributes the logger needs."""
     mod = types.ModuleType("wandb")
@@ -67,6 +68,7 @@ else:
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 def _make_mock_run() -> MagicMock:
     """Return a mock W&B run object."""
     run = MagicMock(name="wandb_run")
@@ -86,21 +88,27 @@ def mock_run():
 @pytest.fixture()
 def enabled_logger(mock_run):
     """Return a WandbLogger that believes it is enabled, with mocked wandb."""
-    with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-         patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+    with (
+        patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+        patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+    ):
         _mock_wandb.init.return_value = mock_run
         lg = WandbLogger(project="test", run_name="unit", enabled=True)
     # Ensure subsequent calls also see the mock
-    with patch("navirl.logging.wandb_logger.wandb", _mock_wandb), \
-         patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True):
+    with (
+        patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+    ):
         yield lg
 
 
 @pytest.fixture()
 def disabled_logger():
     """Return a disabled WandbLogger."""
-    with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-         patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+    with (
+        patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+        patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+    ):
         lg = WandbLogger(project="test", enabled=False)
     yield lg
 
@@ -108,6 +116,7 @@ def disabled_logger():
 # ---------------------------------------------------------------------------
 # is_wandb_available
 # ---------------------------------------------------------------------------
+
 
 class TestIsWandbAvailable:
     def test_returns_true_when_available(self):
@@ -122,6 +131,7 @@ class TestIsWandbAvailable:
 # ---------------------------------------------------------------------------
 # SweepConfig
 # ---------------------------------------------------------------------------
+
 
 class TestSweepConfig:
     def test_build_minimal(self):
@@ -196,10 +206,13 @@ class TestSweepConfig:
 # AlertManager
 # ---------------------------------------------------------------------------
 
+
 class TestAlertManager:
     def test_send_info(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -212,8 +225,10 @@ class TestAlertManager:
             )
 
     def test_send_warn(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -224,8 +239,10 @@ class TestAlertManager:
             assert call_kwargs["wait_duration"] == 5.0
 
     def test_send_error(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -242,8 +259,10 @@ class TestAlertManager:
             _mock_wandb.alert.assert_not_called()
 
     def test_on_metric_threshold_above_triggered(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -252,8 +271,10 @@ class TestAlertManager:
             assert "loss" in _mock_wandb.alert.call_args.kwargs["title"]
 
     def test_on_metric_threshold_above_not_triggered(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -261,8 +282,10 @@ class TestAlertManager:
             _mock_wandb.alert.assert_not_called()
 
     def test_on_metric_threshold_below_triggered(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -270,8 +293,10 @@ class TestAlertManager:
             _mock_wandb.alert.assert_called_once()
 
     def test_on_metric_threshold_below_not_triggered(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="t", enabled=True)
             _mock_wandb.alert.reset_mock()
@@ -283,25 +308,32 @@ class TestAlertManager:
 # WandbLogger
 # ---------------------------------------------------------------------------
 
+
 class TestWandbLoggerConstruction:
     def test_enabled_construction(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             assert lg.enabled is True
             assert lg.run is mock_run
 
     def test_disabled_construction(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = WandbLogger(project="p", enabled=False)
             assert lg.enabled is False
             assert lg.run is None
 
     def test_raises_import_error_when_wandb_unavailable_and_not_disabled(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", False), \
-             pytest.raises(ImportError, match="wandb is not installed"):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", False),
+            pytest.raises(ImportError, match="wandb is not installed"),
+        ):
             WandbLogger(project="p", enabled=True, mode="online")
 
     def test_no_error_when_mode_disabled_and_wandb_unavailable(self):
@@ -312,41 +344,53 @@ class TestWandbLoggerConstruction:
 
 class TestWandbLoggerProperties:
     def test_run_id(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             assert lg.run_id == "run-abc123"
 
     def test_run_id_none_when_disabled(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = WandbLogger(project="p", enabled=False)
             assert lg.run_id is None
 
     def test_run_url(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             assert lg.run_url == "https://wandb.ai/test/run-abc123"
 
     def test_run_url_none_when_disabled(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = WandbLogger(project="p", enabled=False)
             assert lg.run_url is None
 
     def test_alerts_property(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             assert isinstance(lg.alerts, AlertManager)
 
     def test_is_closed_initially_false(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             assert lg.is_closed is False
@@ -354,8 +398,10 @@ class TestWandbLoggerProperties:
 
 class TestWandbLoggerContextManager:
     def test_context_manager_returns_self_and_finishes(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             with lg as ctx:
@@ -367,8 +413,10 @@ class TestWandbLoggerContextManager:
 
 class TestWandbLoggerConfig:
     def test_update_config(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.config = MagicMock()
             lg = WandbLogger(project="p", enabled=True)
@@ -376,15 +424,19 @@ class TestWandbLoggerConfig:
             mock_run.config.update.assert_called_with({"lr": 0.001})
 
     def test_update_config_disabled_is_noop(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = WandbLogger(project="p", enabled=False)
             # Should not raise
             lg.update_config({"lr": 0.001})
 
     def test_set_config(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.config = {}
             lg = WandbLogger(project="p", enabled=True)
@@ -395,16 +447,20 @@ class TestWandbLoggerConfig:
 
 class TestWandbLoggerLog:
     def test_log_with_step(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log({"loss": 0.5}, step=10)
             mock_run.log.assert_called_with({"loss": 0.5}, step=10, commit=True)
 
     def test_log_auto_step_increments(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log({"a": 1})  # step=0
@@ -414,8 +470,10 @@ class TestWandbLoggerLog:
             assert calls[1][1]["step"] == 1
 
     def test_log_commit_false_does_not_increment(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log({"a": 1}, commit=False)  # step=0, no increment
@@ -425,22 +483,28 @@ class TestWandbLoggerLog:
             assert calls[1][1]["step"] == 0
 
     def test_log_disabled_is_noop(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = WandbLogger(project="p", enabled=False)
             lg.log({"x": 1})  # should not raise
 
     def test_log_scalar(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_scalar("metric", 3.14, step=5)
             mock_run.log.assert_called_with({"metric": 3.14}, step=5, commit=True)
 
     def test_log_scalars_with_prefix(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_scalars({"a": 1.0, "b": 2.0}, step=0, prefix="train")
@@ -449,8 +513,10 @@ class TestWandbLoggerLog:
             assert "train/b" in call_data
 
     def test_log_scalars_without_prefix(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_scalars({"x": 5.0}, step=0)
@@ -460,8 +526,10 @@ class TestWandbLoggerLog:
 
 class TestWandbLoggerTrainingHelpers:
     def test_log_training_step_basic(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_training_step(step=1, loss=0.5)
@@ -471,8 +539,10 @@ class TestWandbLoggerTrainingHelpers:
             assert "train/grad_norm" not in call_data
 
     def test_log_training_step_with_optional_params(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_training_step(step=2, loss=0.3, lr=1e-4, grad_norm=0.1, extra={"entropy": 0.9})
@@ -483,8 +553,10 @@ class TestWandbLoggerTrainingHelpers:
             assert call_data["train/entropy"] == 0.9
 
     def test_log_evaluation(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_evaluation(step=10, metrics={"reward": 5.0, "success": 0.8})
@@ -493,8 +565,10 @@ class TestWandbLoggerTrainingHelpers:
             assert "eval/success" in call_data
 
     def test_log_episode_basic(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_episode(episode=5, reward=10.0, length=100)
@@ -504,8 +578,10 @@ class TestWandbLoggerTrainingHelpers:
             assert "episode/success" not in call_data
 
     def test_log_episode_with_success_and_extra(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.log_episode(episode=5, reward=10.0, length=100, success=True, extra={"col": 3.0})
@@ -516,8 +592,10 @@ class TestWandbLoggerTrainingHelpers:
 
 class TestWandbLoggerHistogram:
     def test_log_histogram(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Histogram.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -527,8 +605,10 @@ class TestWandbLoggerHistogram:
             assert call_kwargs[1]["num_bins"] == 32
 
     def test_log_reward_distribution(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Histogram.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -538,8 +618,10 @@ class TestWandbLoggerHistogram:
 
 class TestWandbLoggerTable:
     def test_log_table(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Table.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -547,8 +629,10 @@ class TestWandbLoggerTable:
             _mock_wandb.Table.assert_called_once_with(columns=["a", "b"], data=[[1, 2], [3, 4]])
 
     def test_log_trajectory_table(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Table.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -556,8 +640,11 @@ class TestWandbLoggerTable:
             velocities = np.array([[1.0, 0.0], [0.6, 0.8]])
             rewards = np.array([1.0, 2.0])
             lg.log_trajectory_table(
-                step=0, agent_id=1, positions=positions,
-                velocities=velocities, rewards=rewards,
+                step=0,
+                agent_id=1,
+                positions=positions,
+                velocities=velocities,
+                rewards=rewards,
             )
             _mock_wandb.Table.assert_called_once()
             call_kwargs = _mock_wandb.Table.call_args[1]
@@ -571,8 +658,10 @@ class TestWandbLoggerTable:
             assert rows[1][speed_idx] == pytest.approx(1.0)
 
     def test_log_trajectory_table_positions_only(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Table.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -585,8 +674,10 @@ class TestWandbLoggerTable:
 
 class TestWandbLoggerImages:
     def test_log_image(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Image.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -595,8 +686,10 @@ class TestWandbLoggerImages:
             _mock_wandb.Image.assert_called_once_with(img, caption="frame 0")
 
     def test_log_images_with_captions(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Image.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -605,8 +698,10 @@ class TestWandbLoggerImages:
             assert _mock_wandb.Image.call_count == 3
 
     def test_log_images_without_captions(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Image.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -617,8 +712,10 @@ class TestWandbLoggerImages:
 
 class TestWandbLoggerArtifacts:
     def test_log_artifact_file(self, mock_run, tmp_path):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             art = MagicMock()
             _mock_wandb.Artifact.return_value = art
@@ -632,8 +729,10 @@ class TestWandbLoggerArtifacts:
             mock_run.log_artifact.assert_called_once()
 
     def test_log_artifact_directory(self, mock_run, tmp_path):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             art = MagicMock()
             _mock_wandb.Artifact.return_value = art
@@ -646,8 +745,10 @@ class TestWandbLoggerArtifacts:
             art.add_dir.assert_called_once_with(str(d))
 
     def test_log_model_checkpoint_adds_latest_alias(self, mock_run, tmp_path):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             art = MagicMock()
             _mock_wandb.Artifact.return_value = art
@@ -660,8 +761,10 @@ class TestWandbLoggerArtifacts:
             assert "latest" in call_kwargs["aliases"]
 
     def test_log_model_checkpoint_preserves_existing_aliases(self, mock_run, tmp_path):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             art = MagicMock()
             _mock_wandb.Artifact.return_value = art
@@ -675,8 +778,10 @@ class TestWandbLoggerArtifacts:
             assert "latest" in call_kwargs["aliases"]
 
     def test_use_artifact(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             art_mock = MagicMock()
             art_mock.download.return_value = "/tmp/artifacts/model"
@@ -688,8 +793,10 @@ class TestWandbLoggerArtifacts:
             assert result == Path("/tmp/artifacts/model")
 
     def test_use_artifact_with_version(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             art_mock = MagicMock()
             art_mock.download.return_value = "/tmp/art"
@@ -700,16 +807,20 @@ class TestWandbLoggerArtifacts:
             mock_run.use_artifact.assert_called_with("model:v3", type=None)
 
     def test_use_artifact_disabled_returns_none(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = WandbLogger(project="p", enabled=False)
             assert lg.use_artifact("x") is None
 
 
 class TestWandbLoggerSummary:
     def test_set_summary(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.summary = {}
             lg = WandbLogger(project="p", enabled=True)
@@ -717,8 +828,10 @@ class TestWandbLoggerSummary:
             assert mock_run.summary["best_reward"] == 99.0
 
     def test_set_summaries(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.summary = {}
             lg = WandbLogger(project="p", enabled=True)
@@ -729,8 +842,10 @@ class TestWandbLoggerSummary:
 
 class TestWandbLoggerTags:
     def test_add_tags(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.tags = ("existing",)
             lg = WandbLogger(project="p", enabled=True)
@@ -738,8 +853,10 @@ class TestWandbLoggerTags:
             assert set(mock_run.tags) == {"existing", "new1", "new2"}
 
     def test_remove_tags(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.tags = ("a", "b", "c")
             lg = WandbLogger(project="p", enabled=True)
@@ -750,8 +867,10 @@ class TestWandbLoggerTags:
 
 class TestWandbLoggerSweep:
     def test_create_sweep_with_dict(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.sweep.reset_mock()
             _mock_wandb.sweep.return_value = "sweep-id"
             result = WandbLogger.create_sweep({"method": "random"}, project="p")
@@ -759,8 +878,10 @@ class TestWandbLoggerSweep:
             _mock_wandb.sweep.assert_called_once()
 
     def test_create_sweep_with_sweep_config(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.sweep.reset_mock()
             _mock_wandb.sweep.return_value = "sweep-id-2"
             sc = SweepConfig("bayes", "loss", "minimize").add_uniform("lr", 0.0, 1.0)
@@ -779,8 +900,10 @@ class TestWandbLoggerSweep:
 
 class TestWandbLoggerCustomCharts:
     def test_define_and_log_custom_chart(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Table.reset_mock()
             _mock_wandb.plot_table.reset_mock()
@@ -790,8 +913,10 @@ class TestWandbLoggerCustomCharts:
             _mock_wandb.plot_table.assert_called_once()
 
     def test_log_custom_chart_without_definition_falls_back_to_table(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.Table.reset_mock()
             _mock_wandb.plot_table.reset_mock()
@@ -801,8 +926,10 @@ class TestWandbLoggerCustomCharts:
             _mock_wandb.plot_table.assert_not_called()
 
     def test_log_custom_chart_empty_data_is_noop(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             mock_run.log.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
@@ -812,8 +939,10 @@ class TestWandbLoggerCustomCharts:
 
 class TestWandbLoggerContextManagers:
     def test_train_step_context(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             with lg.train_step_context(step=5) as m:
@@ -824,8 +953,10 @@ class TestWandbLoggerContextManagers:
             assert call_data["train/loss"] == 0.1
 
     def test_eval_context(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             with lg.eval_context(step=10) as m:
@@ -837,20 +968,27 @@ class TestWandbLoggerContextManagers:
 
 class TestWandbLoggerWatchModel:
     def test_watch_model(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             _mock_wandb.watch.reset_mock()
             lg = WandbLogger(project="p", enabled=True)
             fake_model = MagicMock()
             lg.watch_model(fake_model, log="gradients", log_freq=50, log_graph=True)
             _mock_wandb.watch.assert_called_once_with(
-                fake_model, log="gradients", log_freq=50, log_graph=True,
+                fake_model,
+                log="gradients",
+                log_freq=50,
+                log_graph=True,
             )
 
     def test_watch_model_disabled_is_noop(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.watch.reset_mock()
             lg = WandbLogger(project="p", enabled=False)
             lg.watch_model(MagicMock())
@@ -859,8 +997,10 @@ class TestWandbLoggerWatchModel:
 
 class TestWandbLoggerFinish:
     def test_finish(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.finish(exit_code=0, quiet=True)
@@ -868,8 +1008,10 @@ class TestWandbLoggerFinish:
             assert lg.is_closed is True
 
     def test_double_finish_is_safe(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.finish()
@@ -877,8 +1019,10 @@ class TestWandbLoggerFinish:
             mock_run.finish.assert_called_once()
 
     def test_finish_without_args(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = WandbLogger(project="p", enabled=True)
             lg.finish()
@@ -889,10 +1033,13 @@ class TestWandbLoggerFinish:
 # Factory
 # ---------------------------------------------------------------------------
 
+
 class TestCreateWandbLogger:
     def test_creates_enabled_logger(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.return_value = mock_run
             lg = create_wandb_logger(project="test", enabled=True)
             assert lg.enabled is True
@@ -904,8 +1051,10 @@ class TestCreateWandbLogger:
             assert lg.enabled is False
 
     def test_disabled_explicitly(self):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             lg = create_wandb_logger(project="test", enabled=False, mode="disabled")
             assert lg.enabled is False
 
@@ -921,8 +1070,10 @@ class TestWandbLoggerInitKwargs:
     """Verify that optional init kwargs (entity, dir, resume, run_id) are passed through."""
 
     def test_entity_passed(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.reset_mock()
             _mock_wandb.init.return_value = mock_run
             WandbLogger(project="p", entity="myteam", enabled=True)
@@ -930,8 +1081,10 @@ class TestWandbLoggerInitKwargs:
             assert call_kwargs["entity"] == "myteam"
 
     def test_dir_passed(self, mock_run, tmp_path):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.reset_mock()
             _mock_wandb.init.return_value = mock_run
             WandbLogger(project="p", dir=tmp_path, enabled=True)
@@ -939,8 +1092,10 @@ class TestWandbLoggerInitKwargs:
             assert call_kwargs["dir"] == str(tmp_path)
 
     def test_resume_and_run_id_passed(self, mock_run):
-        with patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True), \
-             patch("navirl.logging.wandb_logger.wandb", _mock_wandb):
+        with (
+            patch("navirl.logging.wandb_logger._WANDB_AVAILABLE", True),
+            patch("navirl.logging.wandb_logger.wandb", _mock_wandb),
+        ):
             _mock_wandb.init.reset_mock()
             _mock_wandb.init.return_value = mock_run
             WandbLogger(project="p", resume="must", run_id="abc", enabled=True)

@@ -27,6 +27,7 @@ FeatureStatistics = _mod.FeatureStatistics
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_data():
     """Return arrays for 50 transitions with obs_dim=4, act_dim=2."""
@@ -158,7 +159,10 @@ class TestLoadFromNavirlLogs:
         assert len(ds) == 30  # 3 episodes * 10
 
     def test_empty_dir_raises(self):
-        with tempfile.TemporaryDirectory() as td, pytest.raises(FileNotFoundError, match="No episode"):
+        with (
+            tempfile.TemporaryDirectory() as td,
+            pytest.raises(FileNotFoundError, match="No episode"),
+        ):
             DemonstrationDataset.load_from_navirl_logs(td)
 
     def test_with_optional_fields(self):
@@ -279,7 +283,10 @@ class TestFilterByReward:
         dones = np.zeros(n, dtype=np.float32)
         dones[9] = 1.0  # episode boundary at 9, then 10-19 is trailing
         ds = DemonstrationDataset(
-            observations=obs, actions=actions, rewards=rewards, dones=dones,
+            observations=obs,
+            actions=actions,
+            rewards=rewards,
+            dones=dones,
         )
         filtered = ds.filter_by_reward(min_return=1.0)
         assert len(filtered) == 20  # both chunks pass

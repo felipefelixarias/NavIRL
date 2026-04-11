@@ -180,8 +180,11 @@ class TestEvalCallback:
         model = MagicMock()
         model.predict.return_value = (0, None)
         cb = EvalCallback(
-            eval_env=env, eval_freq=1, n_eval_episodes=1,
-            best_model_save_path=str(tmp_path), verbose=1,
+            eval_env=env,
+            eval_freq=1,
+            n_eval_episodes=1,
+            best_model_save_path=str(tmp_path),
+            verbose=1,
         )
         cb.on_step({"self": model})
         assert model.save.called

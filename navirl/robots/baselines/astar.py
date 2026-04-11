@@ -122,8 +122,11 @@ class BaselineAStarRobotController(RobotController):
                 self._grace_steps = self.stuck_window  # grace period before re-checking
                 # Replan after waiting — humans likely moved
                 self._plan((st.x, st.y))
-                emit_event("robot_replan", self.robot_id,
-                           {"reason": "post_wait", "wait_cycle": self._wait_cycles})
+                emit_event(
+                    "robot_replan",
+                    self.robot_id,
+                    {"reason": "post_wait", "wait_cycle": self._wait_cycles},
+                )
             # Emit tiny velocity toward goal so deadlock detector doesn't
             # flag a full stop, but ORCA will override to near-zero anyway
             dx = self.goal[0] - st.x
@@ -146,8 +149,9 @@ class BaselineAStarRobotController(RobotController):
             self._is_waiting = True
             self._wait_counter = self.wait_duration
             self._wait_cycles += 1
-            emit_event("robot_yield", self.robot_id,
-                       {"wait_cycle": self._wait_cycles, "pos": (st.x, st.y)})
+            emit_event(
+                "robot_yield", self.robot_id, {"wait_cycle": self._wait_cycles, "pos": (st.x, st.y)}
+            )
             return Action(pref_vx=0.0, pref_vy=0.0, behavior="YIELD")
 
         # --- Normal path following ---

@@ -66,8 +66,7 @@ def _clean_registries():
 
 class _DummyBase(ABC):
     @abstractmethod
-    def step(self):
-        ...
+    def step(self): ...
 
 
 class _GoodPlugin(_DummyBase):
@@ -255,9 +254,7 @@ class TestSafePluginCall:
         assert result == 42
 
     def test_call_with_args(self):
-        result = safe_plugin_call(
-            lambda x, y: x + y, 3, 4, plugin_name="test", method_name="fn"
-        )
+        result = safe_plugin_call(lambda x, y: x + y, 3, 4, plugin_name="test", method_name="fn")
         assert result == 7
 
     def test_exception_wrapped(self):
@@ -273,9 +270,7 @@ class TestSafePluginCall:
             return "done"
 
         # This tests the timeout check after execution
-        result = safe_plugin_call(
-            slow, plugin_name="test", method_name="fn", timeout_s=10.0
-        )
+        result = safe_plugin_call(slow, plugin_name="test", method_name="fn", timeout_s=10.0)
         assert result == "done"
 
 
@@ -340,9 +335,7 @@ class TestHumanControllerRegistry:
         assert callable(factory)
 
     def test_register_class(self):
-        register_human_controller(
-            "hc_class", _GoodPlugin, enable_security_validation=True
-        )
+        register_human_controller("hc_class", _GoodPlugin, enable_security_validation=True)
         factory = get_human_controller("hc_class")
         assert callable(factory)
 
@@ -355,9 +348,7 @@ class TestHumanControllerRegistry:
             get_human_controller("nonexistent")
 
     def test_skip_security_validation(self):
-        register_human_controller(
-            "hc_nosec", _GoodPlugin, enable_security_validation=False
-        )
+        register_human_controller("hc_nosec", _GoodPlugin, enable_security_validation=False)
         assert "hc_nosec" in registry_snapshot()["human_controllers"]
 
 

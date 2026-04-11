@@ -39,11 +39,13 @@ def tmp_dir(tmp_path):
 def _has_toml_write():
     try:
         import tomli_w
+
         return True
     except ImportError:
         pass
     try:
         import toml
+
         return True
     except ImportError:
         return False

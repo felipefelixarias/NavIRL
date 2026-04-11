@@ -231,7 +231,9 @@ class TestHeuristicJudgeIntrusion:
         summary["metrics"]["intrusion_rate"] = 0.85
         result = _heuristic_judge(summary, [], 0.6, False)
         # 0.85 < 0.92 major threshold for high interaction
-        intrusion_violations = [v for v in result["violations"] if v["type"] == "high_intrusion_rate"]
+        intrusion_violations = [
+            v for v in result["violations"] if v["type"] == "high_intrusion_rate"
+        ]
         assert not any(v["severity"] in ("blocker", "major") for v in intrusion_violations)
 
 

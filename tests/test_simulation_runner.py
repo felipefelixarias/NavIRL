@@ -94,8 +94,13 @@ class TestProgressInfo:
 
     def test_custom_fields(self):
         p = ProgressInfo(
-            episode=3, total_episodes=10, step=100, sim_time=5.0, wall_time=2.0,
-            done=True, message="completed",
+            episode=3,
+            total_episodes=10,
+            step=100,
+            sim_time=5.0,
+            wall_time=2.0,
+            done=True,
+            message="completed",
         )
         assert p.done is True
         assert p.message == "completed"
@@ -118,8 +123,12 @@ class TestSimulationRunnerInit:
         physics = SimplePhysics()
         bus = EventBus()
         runner = SimulationRunner(
-            world=basic_world, clock=clock, physics=physics,
-            event_bus=bus, headless=False, seed=123,
+            world=basic_world,
+            clock=clock,
+            physics=physics,
+            event_bus=bus,
+            headless=False,
+            seed=123,
         )
         assert runner.clock is clock
         assert runner.physics is physics

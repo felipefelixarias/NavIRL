@@ -135,22 +135,14 @@ class TestValidateUnitsMetadata:
 
     def test_nonpositive_ppm(self):
         scenario = {
-            "scene": {
-                "map": {
-                    "resolved": {"pixels_per_meter": -1.0, "meters_per_pixel": -1.0}
-                }
-            }
+            "scene": {"map": {"resolved": {"pixels_per_meter": -1.0, "meters_per_pixel": -1.0}}}
         }
         result = validate_units_metadata(scenario)
         assert result["pass"] is False
 
     def test_inconsistent_scale(self):
         scenario = {
-            "scene": {
-                "map": {
-                    "resolved": {"pixels_per_meter": 40.0, "meters_per_pixel": 0.1}
-                }
-            }
+            "scene": {"map": {"resolved": {"pixels_per_meter": 40.0, "meters_per_pixel": 0.1}}}
         }
         result = validate_units_metadata(scenario)
         assert result["pass"] is False
@@ -188,9 +180,7 @@ class TestValidateUnitsMetadata:
         assert "height_m_nonpositive" in reasons
 
     def test_fallback_to_top_level_map_keys(self):
-        scenario = {
-            "scene": {"map": {"pixels_per_meter": 20.0, "meters_per_pixel": 0.05}}
-        }
+        scenario = {"scene": {"map": {"pixels_per_meter": 20.0, "meters_per_pixel": 0.05}}}
         result = validate_units_metadata(scenario)
         assert result["pass"] is True
         assert result["pixels_per_meter"] == 20.0
@@ -347,10 +337,7 @@ class TestValidateSpeedAccelBounds:
 class TestValidateMotionJitter:
     def test_no_jitter(self, tmp_dir):
         # Constant heading (positive x)
-        rows = [
-            {"step": i, "agents": [{"id": 0, "vx": 1.0, "vy": 0.0}]}
-            for i in range(10)
-        ]
+        rows = [{"step": i, "agents": [{"id": 0, "vx": 1.0, "vy": 0.0}]} for i in range(10)]
         p = _write_jsonl(tmp_dir / "state.jsonl", rows)
         result = validate_motion_jitter(p, min_speed=0.5, max_flip_rate=0.5)
         assert result["pass"] is True

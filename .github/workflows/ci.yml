@@ -6,6 +6,21 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: python -m pip install ruff>=0.3
+      - name: Ruff lint
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+
   tests:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -31,9 +46,15 @@ jobs:
             echo "Retry $i: pip install failed, retrying in 5s..."
             sleep 5
           done
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: |
-          python -m pytest -m "not e2e"
+          python -m pytest -m "not e2e" --cov=navirl --cov-report=term-missing --cov-report=xml
       - name: Run E2E regression tests
         run: |
           python -m pytest -m e2e
+      - name: Upload coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml

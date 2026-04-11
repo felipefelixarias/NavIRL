@@ -494,9 +494,7 @@ class TestAddImage:
     def test_basic(self, enabled_logger, mock_writer):
         img = np.zeros((64, 64, 3), dtype=np.uint8)
         enabled_logger.add_image("img", img, step=1)
-        mock_writer.add_image.assert_called_once_with(
-            "img", img, global_step=1, dataformats="HWC"
-        )
+        mock_writer.add_image.assert_called_once_with("img", img, global_step=1, dataformats="HWC")
 
     def test_disabled_noop(self, disabled_logger):
         disabled_logger.add_image("img", np.zeros((4, 4, 3)), step=0)
@@ -528,7 +526,12 @@ class TestLogTrajectoryImage:
         enabled_logger.log_trajectory_image(step=1, positions=positions)
         mock_writer.add_image.assert_called_once()
         call_args = mock_writer.add_image.call_args
-        assert call_args.kwargs.get("dataformats", call_args.args[3] if len(call_args.args) > 3 else None) or True
+        assert (
+            call_args.kwargs.get(
+                "dataformats", call_args.args[3] if len(call_args.args) > 3 else None
+            )
+            or True
+        )
         img = call_args.args[1]
         assert img.shape == (256, 256, 3)
 

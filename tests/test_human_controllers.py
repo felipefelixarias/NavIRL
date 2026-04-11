@@ -279,12 +279,14 @@ class TestReplayHumanController:
         """Only 'human' agents should be loaded from replay."""
         replay_file = tmp_path / "replay.jsonl"
         lines = [
-            json.dumps({
-                "agents": [
-                    {"id": 1, "kind": "human", "x": 1.0, "y": 0.0},
-                    {"id": 2, "kind": "robot", "x": 99.0, "y": 99.0},
-                ]
-            }),
+            json.dumps(
+                {
+                    "agents": [
+                        {"id": 1, "kind": "human", "x": 1.0, "y": 0.0},
+                        {"id": 2, "kind": "robot", "x": 99.0, "y": 99.0},
+                    ]
+                }
+            ),
         ]
         replay_file.write_text("\n".join(lines) + "\n")
 
@@ -298,7 +300,9 @@ class TestReplayHumanController:
 
     def test_replay_empty_lines_skipped(self, tmp_path):
         replay_file = tmp_path / "replay.jsonl"
-        content = "\n" + json.dumps({"agents": [{"id": 1, "kind": "human", "x": 1.0, "y": 2.0}]}) + "\n\n"
+        content = (
+            "\n" + json.dumps({"agents": [{"id": 1, "kind": "human", "x": 1.0, "y": 2.0}]}) + "\n\n"
+        )
         replay_file.write_text(content)
 
         ctrl = ReplayHumanController({"path": str(replay_file)})
@@ -308,18 +312,22 @@ class TestReplayHumanController:
     def test_multiple_humans_replay(self, tmp_path):
         replay_file = tmp_path / "replay.jsonl"
         lines = [
-            json.dumps({
-                "agents": [
-                    {"id": 1, "kind": "human", "x": 0.0, "y": 0.0},
-                    {"id": 2, "kind": "human", "x": 5.0, "y": 5.0},
-                ]
-            }),
-            json.dumps({
-                "agents": [
-                    {"id": 1, "kind": "human", "x": 1.0, "y": 0.0},
-                    {"id": 2, "kind": "human", "x": 6.0, "y": 5.0},
-                ]
-            }),
+            json.dumps(
+                {
+                    "agents": [
+                        {"id": 1, "kind": "human", "x": 0.0, "y": 0.0},
+                        {"id": 2, "kind": "human", "x": 5.0, "y": 5.0},
+                    ]
+                }
+            ),
+            json.dumps(
+                {
+                    "agents": [
+                        {"id": 1, "kind": "human", "x": 1.0, "y": 0.0},
+                        {"id": 2, "kind": "human", "x": 6.0, "y": 5.0},
+                    ]
+                }
+            ),
         ]
         replay_file.write_text("\n".join(lines) + "\n")
 

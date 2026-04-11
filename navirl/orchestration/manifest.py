@@ -104,10 +104,7 @@ class ShardManifest:
         for i, task in enumerate(tasks):
             shard_lists[i % num_shards].append(task)
 
-        shards = [
-            TaskShard(shard_id=i, tasks=shard_lists[i])
-            for i in range(num_shards)
-        ]
+        shards = [TaskShard(shard_id=i, tasks=shard_lists[i]) for i in range(num_shards)]
 
         manifest = cls(template_name=template_name, shards=shards)
         manifest.manifest_id = manifest._compute_id()

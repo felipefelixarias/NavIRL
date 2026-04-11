@@ -120,9 +120,7 @@ class TestTrainerConfig:
         assert cfg.seed == 99
 
     def test_from_dict_ignores_unknown_keys(self):
-        cfg = TrainerConfig.from_dict(
-            {"total_timesteps": 10, "unknown_key": "ignored"}
-        )
+        cfg = TrainerConfig.from_dict({"total_timesteps": 10, "unknown_key": "ignored"})
         assert cfg.total_timesteps == 10
         assert not hasattr(cfg, "unknown_key")
 
@@ -173,9 +171,7 @@ class TestTrainingLogger:
 
     def test_tensorboard_import_failure(self):
         """If tensorboard is not installed, logging still works."""
-        logger = TrainingLogger(
-            log_dir="/tmp/test_logger_tb", use_tensorboard=True
-        )
+        logger = TrainingLogger(log_dir="/tmp/test_logger_tb", use_tensorboard=True)
         assert logger._tb_writer is None  # torch.utils.tensorboard not available
         logger.log_scalar("x", 1.0, 0)
         logger.close()
@@ -219,9 +215,7 @@ class TestEvalResult:
         assert d["per_episode_rewards"] == [4.0, 6.0]
 
     def test_default_fields(self):
-        result = EvalResult(
-            mean_reward=0.0, std_reward=0.0, mean_length=0.0, success_rate=0.0
-        )
+        result = EvalResult(mean_reward=0.0, std_reward=0.0, mean_length=0.0, success_rate=0.0)
         assert result.per_episode_rewards == []
         assert result.per_episode_lengths == []
 

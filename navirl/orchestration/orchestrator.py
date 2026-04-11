@@ -167,10 +167,7 @@ class Orchestrator:
         )
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(self._run_shard, shard_id): shard_id
-                for shard_id in pending
-            }
+            futures = {executor.submit(self._run_shard, shard_id): shard_id for shard_id in pending}
             for future in concurrent.futures.as_completed(futures):
                 shard_id = futures[future]
                 try:
@@ -217,10 +214,7 @@ class Orchestrator:
         max_workers = self.config.max_workers or len(pending)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(self._run_shard, shard_id): shard_id
-                for shard_id in pending
-            }
+            futures = {executor.submit(self._run_shard, shard_id): shard_id for shard_id in pending}
             for future in concurrent.futures.as_completed(futures):
                 shard_id = futures[future]
                 try:

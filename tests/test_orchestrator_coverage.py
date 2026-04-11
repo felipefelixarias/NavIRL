@@ -25,9 +25,7 @@ from navirl.orchestration.result_store import ResultStore, ShardResult
 def _make_template(name: str = "test_template", num_tasks: int = 4) -> MagicMock:
     template = MagicMock(spec=BatchTemplate)
     template.name = name
-    template.expand_tasks.return_value = [
-        MagicMock(task_id=f"task_{i}") for i in range(num_tasks)
-    ]
+    template.expand_tasks.return_value = [MagicMock(task_id=f"task_{i}") for i in range(num_tasks)]
     return template
 
 

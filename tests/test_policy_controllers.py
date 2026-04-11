@@ -26,6 +26,7 @@ from navirl.models.learned_robot_policy import (
 #  Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_state(
     agent_id: int,
     kind: str = "human",
@@ -60,6 +61,7 @@ def _noop_emit(event_type, agent_id, payload):
 #  Observation builder tests
 # ---------------------------------------------------------------------------
 
+
 class TestHumanObservationBuilder:
     def test_shape_no_neighbours(self):
         agent = _make_state(0)
@@ -76,12 +78,12 @@ class TestHumanObservationBuilder:
     def test_ego_encoding(self):
         agent = _make_state(0, x=1.0, y=2.0, vx=0.3, vy=0.4, goal_x=4.0, goal_y=6.0, radius=0.2)
         obs = _build_observation(agent, [], max_neighbours=4)
-        assert obs[0] == pytest.approx(3.0)   # dx_goal
-        assert obs[1] == pytest.approx(4.0)   # dy_goal
-        assert obs[2] == pytest.approx(0.3)   # vx
-        assert obs[3] == pytest.approx(0.4)   # vy
-        assert obs[4] == pytest.approx(0.5)   # speed
-        assert obs[5] == pytest.approx(0.2)   # radius
+        assert obs[0] == pytest.approx(3.0)  # dx_goal
+        assert obs[1] == pytest.approx(4.0)  # dy_goal
+        assert obs[2] == pytest.approx(0.3)  # vx
+        assert obs[3] == pytest.approx(0.4)  # vy
+        assert obs[4] == pytest.approx(0.5)  # speed
+        assert obs[5] == pytest.approx(0.2)  # radius
 
     def test_neighbours_sorted_by_distance(self):
         agent = _make_state(0, x=0.0, y=0.0)
@@ -104,7 +106,7 @@ class TestHumanObservationBuilder:
         agent = _make_state(0)
         obs = _build_observation(agent, [_make_state(1, x=2.0)], max_neighbours=4)
         # Slots 2 and 3 should be zero
-        assert obs[6 + 2 * 5: 6 + 4 * 5].sum() == 0.0
+        assert obs[6 + 2 * 5 : 6 + 4 * 5].sum() == 0.0
 
 
 class TestRobotObservationBuilder:
@@ -125,10 +127,12 @@ class TestRobotObservationBuilder:
         assert obs[6 + 6 + 5] == pytest.approx(0.0)
 
     def test_ego_encoding(self):
-        robot = _make_state(0, kind="robot", x=1.0, y=2.0, vx=0.1, vy=0.2, goal_x=3.0, goal_y=4.0, radius=0.2)
+        robot = _make_state(
+            0, kind="robot", x=1.0, y=2.0, vx=0.1, vy=0.2, goal_x=3.0, goal_y=4.0, radius=0.2
+        )
         obs = _build_robot_observation(robot, [], max_neighbours=4)
-        assert obs[0] == pytest.approx(2.0)   # dx_goal
-        assert obs[1] == pytest.approx(2.0)   # dy_goal
+        assert obs[0] == pytest.approx(2.0)  # dx_goal
+        assert obs[1] == pytest.approx(2.0)  # dy_goal
         assert obs[2] == pytest.approx(0.1)
         assert obs[3] == pytest.approx(0.2)
         assert obs[4] == pytest.approx(math.hypot(0.1, 0.2))
@@ -139,9 +143,11 @@ class TestRobotObservationBuilder:
 #  PolicyHumanController unit tests (no torch needed)
 # ---------------------------------------------------------------------------
 
+
 def _torch_available() -> bool:
     try:
         import torch
+
         return True
     except ImportError:
         return False
@@ -155,11 +161,13 @@ class TestPolicyHumanControllerInit:
         assert ctrl.max_neighbours == 4
 
     def test_cfg_dict(self):
-        ctrl = PolicyHumanController(cfg={
-            "model_path": "/tmp/model_dir",
-            "device": "cuda:0",
-            "max_neighbours": 8,
-        })
+        ctrl = PolicyHumanController(
+            cfg={
+                "model_path": "/tmp/model_dir",
+                "device": "cuda:0",
+                "max_neighbours": 8,
+            }
+        )
         assert str(ctrl.model_path) == "/tmp/model_dir"
         assert ctrl.device_str == "cuda:0"
         assert ctrl.max_neighbours == 8
@@ -183,9 +191,7 @@ class TestPolicyHumanControllerInit:
         assert ctrl.human_ids == [1, 2]
         assert ctrl.goals[1] == (5.0, 5.0)
 
-    @pytest.mark.skipif(
-        not _torch_available(), reason="PyTorch not installed"
-    )
+    @pytest.mark.skipif(not _torch_available(), reason="PyTorch not installed")
     def test_missing_model_path_raises(self):
         ctrl = PolicyHumanController(cfg={"model_path": "/tmp/nonexistent_model.pt"})
         ctrl.reset([1], {1: (0.0, 0.0)}, {1: (5.0, 5.0)})
@@ -197,6 +203,7 @@ class TestPolicyHumanControllerInit:
 #  PolicyRobotController unit tests (no torch needed)
 # ---------------------------------------------------------------------------
 
+
 class TestPolicyRobotControllerInit:
     def test_cfg_defaults(self):
         ctrl = PolicyRobotController(cfg={})
@@ -206,13 +213,15 @@ class TestPolicyRobotControllerInit:
         assert ctrl.max_speed == pytest.approx(0.8)
 
     def test_cfg_custom(self):
-        ctrl = PolicyRobotController(cfg={
-            "model_path": "/tmp/robot_policy.pt",
-            "device": "cuda:1",
-            "max_neighbours": 10,
-            "goal_tolerance": 0.3,
-            "max_speed": 1.2,
-        })
+        ctrl = PolicyRobotController(
+            cfg={
+                "model_path": "/tmp/robot_policy.pt",
+                "device": "cuda:1",
+                "max_neighbours": 10,
+                "goal_tolerance": 0.3,
+                "max_speed": 1.2,
+            }
+        )
         assert ctrl.model_path_str == "/tmp/robot_policy.pt"
         assert ctrl.device_str == "cuda:1"
         assert ctrl.max_neighbours == 10
@@ -241,10 +250,12 @@ class TestPolicyRobotControllerInit:
 #  Plugin registration tests
 # ---------------------------------------------------------------------------
 
+
 class TestPolicyPluginRegistration:
     def test_human_policy_registered(self):
         from navirl.core.registry import get_human_controller
         from navirl.plugins import register_default_plugins
+
         register_default_plugins()
         factory = get_human_controller("policy")
         assert factory is not None
@@ -252,6 +263,7 @@ class TestPolicyPluginRegistration:
     def test_robot_policy_registered(self):
         from navirl.core.registry import get_robot_controller
         from navirl.plugins import register_default_plugins
+
         register_default_plugins()
         factory = get_robot_controller("policy")
         assert factory is not None
@@ -259,6 +271,7 @@ class TestPolicyPluginRegistration:
     def test_human_policy_creates_correct_type(self):
         from navirl.core.registry import get_human_controller
         from navirl.plugins import register_default_plugins
+
         register_default_plugins()
         factory = get_human_controller("policy")
         ctrl = factory({"model_path": "/tmp/fake.pt"})
@@ -267,6 +280,7 @@ class TestPolicyPluginRegistration:
     def test_robot_policy_creates_correct_type(self):
         from navirl.core.registry import get_robot_controller
         from navirl.plugins import register_default_plugins
+
         register_default_plugins()
         factory = get_robot_controller("policy")
         ctrl = factory({"model_path": "/tmp/fake.pt"})
@@ -277,9 +291,11 @@ class TestPolicyPluginRegistration:
 #  Scenario validation accepts policy type
 # ---------------------------------------------------------------------------
 
+
 class TestScenarioValidationPolicyType:
     def test_human_policy_type_accepted(self):
         from navirl.scenarios.validate import _validate_humans
+
         errors: list[str] = []
         humans = {
             "count": 3,
@@ -292,6 +308,7 @@ class TestScenarioValidationPolicyType:
 
     def test_robot_policy_type_accepted(self):
         from navirl.scenarios.validate import _validate_robot
+
         errors: list[str] = []
         robot = {
             "controller": {"type": "policy", "params": {"model_path": "/tmp/m.pt"}},
@@ -303,6 +320,7 @@ class TestScenarioValidationPolicyType:
 
     def test_robot_social_astar_accepted(self):
         from navirl.scenarios.validate import _validate_robot
+
         errors: list[str] = []
         robot = {
             "controller": {"type": "social_astar", "params": {}},

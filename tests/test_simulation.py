@@ -247,9 +247,7 @@ class TestSimulationClock:
         clock = SimulationClock(dt=0.1)
         clock.start()
         count = []
-        clock.schedule(
-            0.1, lambda e: count.append(1), repeat_interval=0.1
-        )
+        clock.schedule(0.1, lambda e: count.append(1), repeat_interval=0.1)
         for _ in range(5):
             clock.tick_fixed()
         assert len(count) == 5
@@ -296,6 +294,7 @@ class TestSimulationClock:
         clock = SimulationClock(dt=0.05, real_time=True)
         clock.start()
         import time as _time
+
         _time.sleep(0.02)
         dt = clock.tick()
         assert dt > 0
@@ -312,6 +311,7 @@ class TestSimulationClock:
         clock = SimulationClock(dt=0.05, time_scale=1.0)
         clock.start()
         import time as _time
+
         _time.sleep(0.01)
         dt = clock.tick_variable()
         assert dt > 0
@@ -323,6 +323,7 @@ class TestSimulationClock:
         clock = SimulationClock(dt=0.01)
         clock.start()
         import time as _time
+
         _time.sleep(0.03)
         steps = clock.accumulate_and_step()
         assert steps >= 1
@@ -411,6 +412,7 @@ class TestSimulationClock:
         clock.tick_fixed()
         clock.pause()
         import time as _time
+
         _time.sleep(0.05)
         clock.resume()
         stats = clock.stats()
@@ -450,9 +452,7 @@ class TestStaticObstacle:
 
 class TestDynamicObstacle:
     def test_creation(self):
-        obs = DynamicObstacle(
-            entity_id=2, position=(0, 0), velocity=(1, 0), radius=0.3, mass=2.0
-        )
+        obs = DynamicObstacle(entity_id=2, position=(0, 0), velocity=(1, 0), radius=0.3, mass=2.0)
         assert obs.kind() == "dynamic_obstacle"
         assert obs.mass == pytest.approx(2.0)
 
@@ -871,12 +871,8 @@ class TestEventFilter:
 
     def test_data_key_filter(self):
         filt = EventFilter(data_key="tag", data_value="important")
-        rec1 = EventRecord(
-            event_type=EventType.CUSTOM, data={"tag": "important"}
-        )
-        rec2 = EventRecord(
-            event_type=EventType.CUSTOM, data={"tag": "other"}
-        )
+        rec1 = EventRecord(event_type=EventType.CUSTOM, data={"tag": "important"})
+        rec2 = EventRecord(event_type=EventType.CUSTOM, data={"tag": "other"})
         assert filt.matches(rec1)
         assert not filt.matches(rec2)
 
@@ -1194,27 +1190,13 @@ class TestWorldBuilder:
         assert len(world.walls) == 1
 
     def test_boundary_walls(self):
-        world = (
-            WorldBuilder()
-            .set_size(10, 10)
-            .add_boundary_walls()
-            .build()
-        )
+        world = WorldBuilder().set_size(10, 10).add_boundary_walls().build()
         assert len(world.walls) == 4
 
     def test_metadata(self):
-        world = (
-            WorldBuilder()
-            .set_metadata("test_key", "test_value")
-            .build()
-        )
+        world = WorldBuilder().set_metadata("test_key", "test_value").build()
         assert world.get_metadata("test_key") == "test_value"
 
     def test_wrap(self):
-        world = (
-            WorldBuilder()
-            .set_size(10, 10)
-            .enable_wrap()
-            .build()
-        )
+        world = WorldBuilder().set_size(10, 10).enable_wrap().build()
         assert world.wrap is True

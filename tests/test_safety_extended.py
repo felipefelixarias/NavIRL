@@ -278,10 +278,12 @@ class TestPredictiveRiskModel:
 
     def test_assess_risk_shape(self, model):
         agent_traj = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]])
-        obs_traj = np.array([
-            [[5.0, 5.0], [5.0, 5.0], [5.0, 5.0], [5.0, 5.0]],
-            [[10.0, 10.0], [10.0, 10.0], [10.0, 10.0], [10.0, 10.0]],
-        ])
+        obs_traj = np.array(
+            [
+                [[5.0, 5.0], [5.0, 5.0], [5.0, 5.0], [5.0, 5.0]],
+                [[10.0, 10.0], [10.0, 10.0], [10.0, 10.0], [10.0, 10.0]],
+            ]
+        )
         risks = model.assess_risk(agent_traj, obs_traj)
         assert risks.shape == (4,)
         assert np.all(risks >= 0.0)

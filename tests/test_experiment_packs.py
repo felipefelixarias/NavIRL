@@ -174,21 +174,15 @@ class TestPackResult:
         assert agg["intrusion_rate"]["std"] == pytest.approx(0.0)
 
     def test_aggregate_with_nan_values(self):
-        result = PackResult(
-            manifest_name="t", manifest_version="1", manifest_checksum="x"
-        )
+        result = PackResult(manifest_name="t", manifest_version="1", manifest_checksum="x")
         result.runs.append(
-            PackRunResult(
-                entry_id="a", seed=1, metrics={"m": float("inf")}, status="completed"
-            )
+            PackRunResult(entry_id="a", seed=1, metrics={"m": float("inf")}, status="completed")
         )
         agg = result.aggregate(["m"])
         assert math.isnan(agg["m"]["mean"])
 
     def test_aggregate_missing_metric(self):
-        result = PackResult(
-            manifest_name="t", manifest_version="1", manifest_checksum="x"
-        )
+        result = PackResult(manifest_name="t", manifest_version="1", manifest_checksum="x")
         result.runs.append(
             PackRunResult(entry_id="a", seed=1, metrics={"other": 1.0}, status="completed")
         )
@@ -196,15 +190,11 @@ class TestPackResult:
         assert math.isnan(agg["missing_metric"]["mean"])
 
     def test_aggregate_skips_failed_runs(self, sample_metrics):
-        result = PackResult(
-            manifest_name="t", manifest_version="1", manifest_checksum="x"
-        )
+        result = PackResult(manifest_name="t", manifest_version="1", manifest_checksum="x")
         result.runs.append(
             PackRunResult(entry_id="a", seed=1, metrics=sample_metrics, status="completed")
         )
-        result.runs.append(
-            PackRunResult(entry_id="a", seed=2, status="failed", error="boom")
-        )
+        result.runs.append(PackRunResult(entry_id="a", seed=2, status="failed", error="boom"))
         agg = result.aggregate(["success_rate"])
         assert agg["success_rate"]["mean"] == pytest.approx(1.0)
 
@@ -415,9 +405,7 @@ class TestMarkdownReporter:
         assert out.exists()
 
     def test_markdown_empty_result(self, tmp_path):
-        result = PackResult(
-            manifest_name="empty", manifest_version="1.0", manifest_checksum="x"
-        )
+        result = PackResult(manifest_name="empty", manifest_version="1.0", manifest_checksum="x")
         out = tmp_path / "report.md"
         write_pack_markdown(result, out, ["success_rate"])
         content = out.read_text()

@@ -57,6 +57,9 @@ dev = [
   "build>=1.0",
   "twine>=4.0",
 ]
+agents = [
+  "torch>=2.0",
+]
 notebooks = [
   "jupyter>=1.0",
   "jupytext>=1.15",
