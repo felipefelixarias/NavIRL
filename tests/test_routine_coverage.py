@@ -962,7 +962,7 @@ class TestPathValidation:
 
     def test_path_traversal_raises(self):
         """Path traversal attempt raises ValueError."""
-        with pytest.raises(ValueError, match="Path traversal"):
+        with pytest.raises(ValueError, match="Invalid file path"):
             _validate_file_path("../../../etc/passwd")
 
     def test_non_yaml_raises(self):
