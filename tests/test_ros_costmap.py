@@ -412,10 +412,12 @@ class TestSocialCostmapLayer:
 
     def test_multiple_pedestrians(self) -> None:
         mgr, layer = self._make_manager_with_social()
-        peds = np.array([
-            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
-            [2.0, 2.0, 0.0, 0.0, 0.0, 2.0, 1.0],
-        ])
+        peds = np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+                [2.0, 2.0, 0.0, 0.0, 0.0, 2.0, 1.0],
+            ]
+        )
         mgr.update(pedestrians=peds)
         master = mgr.master
         # Both pedestrian locations should have cost

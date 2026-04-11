@@ -12,6 +12,7 @@ from navirl.robots.baselines.social_astar import SocialCostAStarRobotController
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_backend(path=None, collision=False):
     """Return a mock backend with configurable shortest_path and collision."""
     backend = MagicMock()
@@ -195,7 +196,7 @@ class TestComputeSocialCost:
         states = {1: _make_state(agent_id=1, x=0.4, y=0.0)}
         cost = self.ctrl._compute_social_cost((0.0, 0.0), states)
         expected_prox = 3.0 * (0.8 - 0.4) / 0.8
-        assert cost == pytest.approx(expected_prox ** 2)
+        assert cost == pytest.approx(expected_prox**2)
 
     def test_human_at_same_position(self):
         # Human at (0, 0) -> dist = 0, inside personal_space
@@ -244,7 +245,7 @@ class TestComputeSocialCost:
         cost = self.ctrl._compute_social_cost((0.0, 0.0), states)
         # Only proximity cost, dist = 0.5 < personal_space = 0.8
         prox = 3.0 * (0.8 - 0.5) / 0.8
-        assert cost == pytest.approx(prox ** 2)
+        assert cost == pytest.approx(prox**2)
 
 
 # ---------------------------------------------------------------------------
