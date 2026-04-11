@@ -110,6 +110,25 @@ class TemporalConstraint:
     max_duration: float | None = None
     min_duration: float | None = None
 
+    def __post_init__(self) -> None:
+        """Validate semantic consistency of temporal constraints."""
+        if (
+            self.start_time is not None
+            and self.end_time is not None
+            and self.start_time >= self.end_time
+        ):
+            raise ValueError(
+                f"start_time ({self.start_time}) must be less than end_time ({self.end_time})"
+            )
+        if (
+            self.min_duration is not None
+            and self.max_duration is not None
+            and self.min_duration > self.max_duration
+        ):
+            raise ValueError(
+                f"min_duration ({self.min_duration}) must not exceed max_duration ({self.max_duration})"
+            )
+
 
 @dataclass
 class RoutineSpec:

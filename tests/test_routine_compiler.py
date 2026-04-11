@@ -17,9 +17,11 @@ from navirl.routines.behavior_integration import CompiledRoutineController, Rout
 from navirl.routines.compiler import (
     AgentNearbyCondition,
     AvoidArea,
+    EndTimeDecorator,
     GoToTarget,
     InteractAtLocation,
     LocationReachedCondition,
+    MinDurationDecorator,
     RoutineCompiler,
     TimeElapsedCondition,
     WaitForDuration,
@@ -669,3 +671,200 @@ class TestRoutineControllerFactory:
         assert isinstance(controller, CompiledRoutineController)
         assert len(controller.routines) == 2
         assert all(spec.loop for spec in controller.routines.values())
+
+
+class TestTemporalConstraintValidation:
+    """Tests for semantic validation of temporal constraints."""
+
+    def test_valid_constraints(self):
+        """Valid constraints should not raise."""
+        TemporalConstraint(start_time=0.0, end_time=10.0)
+        TemporalConstraint(min_duration=1.0, max_duration=5.0)
+        TemporalConstraint(start_time=0.0, end_time=10.0, min_duration=1.0, max_duration=5.0)
+
+    def test_start_time_after_end_time_raises(self):
+        with pytest.raises(ValueError, match="start_time.*must be less than end_time"):
+            TemporalConstraint(start_time=10.0, end_time=5.0)
+
+    def test_start_time_equals_end_time_raises(self):
+        with pytest.raises(ValueError, match="start_time.*must be less than end_time"):
+            TemporalConstraint(start_time=5.0, end_time=5.0)
+
+    def test_min_duration_exceeds_max_duration_raises(self):
+        with pytest.raises(ValueError, match="min_duration.*must not exceed max_duration"):
+            TemporalConstraint(min_duration=10.0, max_duration=5.0)
+
+    def test_equal_min_max_duration_allowed(self):
+        tc = TemporalConstraint(min_duration=5.0, max_duration=5.0)
+        assert tc.min_duration == 5.0
+        assert tc.max_duration == 5.0
+
+
+class TestEndTimeDecorator:
+    """Tests for the EndTimeDecorator."""
+
+    def _make_bb(self, sim_time: float) -> Blackboard:
+        agent = Mock()
+        agent.x, agent.y = 0.0, 0.0
+        agent.max_speed = 1.0
+        bb = Blackboard(agent=agent)
+        bb.neighbours = []
+        bb.metadata = {"sim_time": sim_time}
+        return bb
+
+    def test_before_end_time_delegates_to_child(self):
+        child = Mock()
+        child.tick.return_value = Status.RUNNING
+        node = EndTimeDecorator(child, end_time=10.0)
+        bb = self._make_bb(5.0)
+        assert node.tick(bb) == Status.RUNNING
+        child.tick.assert_called_once_with(bb)
+
+    def test_at_end_time_returns_failure(self):
+        child = Mock()
+        node = EndTimeDecorator(child, end_time=10.0)
+        bb = self._make_bb(10.0)
+        assert node.tick(bb) == Status.FAILURE
+        child.tick.assert_not_called()
+
+    def test_past_end_time_returns_failure(self):
+        child = Mock()
+        node = EndTimeDecorator(child, end_time=10.0)
+        bb = self._make_bb(15.0)
+        assert node.tick(bb) == Status.FAILURE
+        child.tick.assert_not_called()
+
+    def test_reset_resets_child(self):
+        child = Mock()
+        node = EndTimeDecorator(child, end_time=10.0)
+        node.reset_state()
+        child.reset_state.assert_called_once()
+
+
+class TestMinDurationDecorator:
+    """Tests for the MinDurationDecorator."""
+
+    def _make_bb(self, sim_time: float) -> Blackboard:
+        agent = Mock()
+        agent.x, agent.y = 0.0, 0.0
+        agent.max_speed = 1.0
+        bb = Blackboard(agent=agent)
+        bb.neighbours = []
+        bb.metadata = {"sim_time": sim_time}
+        bb.pref_vx = 1.0
+        bb.pref_vy = 1.0
+        return bb
+
+    def test_child_running_within_min_duration(self):
+        child = Mock()
+        child.tick.return_value = Status.RUNNING
+        node = MinDurationDecorator(child, min_duration=5.0)
+        bb = self._make_bb(0.0)
+        assert node.tick(bb) == Status.RUNNING
+
+    def test_child_succeeds_before_min_duration_holds(self):
+        child = Mock()
+        child.tick.return_value = Status.SUCCESS
+        node = MinDurationDecorator(child, min_duration=5.0)
+
+        bb = self._make_bb(0.0)
+        result = node.tick(bb)
+        assert result == Status.RUNNING  # Must wait for min_duration
+
+        # Now advance past min_duration
+        bb2 = self._make_bb(6.0)
+        result2 = node.tick(bb2)
+        assert result2 == Status.SUCCESS
+
+    def test_child_failure_propagates_immediately(self):
+        child = Mock()
+        child.tick.return_value = Status.FAILURE
+        node = MinDurationDecorator(child, min_duration=5.0)
+        bb = self._make_bb(0.0)
+        assert node.tick(bb) == Status.FAILURE
+
+    def test_child_succeeds_after_min_duration(self):
+        child = Mock()
+        child.tick.return_value = Status.SUCCESS
+        node = MinDurationDecorator(child, min_duration=1.0)
+        bb = self._make_bb(0.0)
+        node.tick(bb)  # Start timer at t=0, child succeeds
+
+        bb2 = self._make_bb(2.0)
+        assert node.tick(bb2) == Status.SUCCESS
+
+    def test_reset_clears_state(self):
+        child = Mock()
+        child.tick.return_value = Status.SUCCESS
+        node = MinDurationDecorator(child, min_duration=5.0)
+
+        bb = self._make_bb(0.0)
+        node.tick(bb)
+        node.reset_state()
+
+        assert node._start_time is None
+        assert node._child_done is False
+        child.reset_state.assert_called_once()
+
+
+class TestCustomConditionValidation:
+    """Tests for custom condition parameter validation in the compiler."""
+
+    def test_custom_condition_missing_handler_raises(self):
+        compiler = RoutineCompiler()
+        condition = Condition(ConditionType.CUSTOM, params={})
+        with pytest.raises(ValueError, match="must have a 'handler' parameter"):
+            compiler._compile_condition(condition)
+
+    def test_custom_condition_unregistered_handler_raises(self):
+        compiler = RoutineCompiler()
+        condition = Condition(ConditionType.CUSTOM, params={"handler": "nonexistent"})
+        with pytest.raises(ValueError, match="not registered"):
+            compiler._compile_condition(condition)
+
+
+class TestTemporalConstraintCompilation:
+    """Tests for full compilation with end_time and min_duration constraints."""
+
+    def test_compile_with_end_time(self):
+        spec = RoutineSpec(
+            id="test",
+            description="test",
+            tasks=[Task.go_to(1.0, 1.0)],
+            temporal_constraints=TemporalConstraint(end_time=100.0),
+        )
+        compiler = RoutineCompiler()
+        plan = compiler.compile(spec)
+        assert isinstance(plan.root_node, EndTimeDecorator)
+        assert plan.root_node.end_time == 100.0
+
+    def test_compile_with_min_duration(self):
+        spec = RoutineSpec(
+            id="test",
+            description="test",
+            tasks=[Task.go_to(1.0, 1.0)],
+            temporal_constraints=TemporalConstraint(min_duration=5.0),
+        )
+        compiler = RoutineCompiler()
+        plan = compiler.compile(spec)
+        assert isinstance(plan.root_node, MinDurationDecorator)
+        assert plan.root_node.min_duration == 5.0
+
+    def test_compile_with_all_temporal_constraints(self):
+        spec = RoutineSpec(
+            id="test",
+            description="test",
+            tasks=[Task.go_to(1.0, 1.0)],
+            temporal_constraints=TemporalConstraint(
+                start_time=1.0, end_time=100.0, min_duration=2.0, max_duration=50.0
+            ),
+        )
+        compiler = RoutineCompiler()
+        plan = compiler.compile(spec)
+        # Outermost should be DelayedStart (applied last)
+        from navirl.routines.compiler import DelayedStartDecorator, TimeoutDecorator
+
+        assert isinstance(plan.root_node, DelayedStartDecorator)
+        assert isinstance(plan.root_node.child, EndTimeDecorator)
+        assert isinstance(plan.root_node.child.child, TimeoutDecorator)
+        assert isinstance(plan.root_node.child.child.child, MinDurationDecorator)
