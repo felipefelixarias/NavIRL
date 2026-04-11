@@ -76,6 +76,9 @@ version = { attr = "navirl._version.__version__" }
 minversion = "7.0"
 testpaths = ["tests"]
 addopts = "-ra -n auto --strict-markers"
+markers = [
+    "e2e: end-to-end regression tests that run full scenario pipelines",
+]
 
 [tool.ruff]
 line-length = 100
