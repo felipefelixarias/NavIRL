@@ -325,9 +325,7 @@ class RoutineCompiler:
                 raise ValueError("CUSTOM condition must have a 'handler' parameter")
             handler_name = condition.params["handler"]
             if handler_name not in self._custom_condition_handlers:
-                raise ValueError(
-                    f"CUSTOM condition handler '{handler_name}' is not registered"
-                )
+                raise ValueError(f"CUSTOM condition handler '{handler_name}' is not registered")
             handler = self._custom_condition_handlers[handler_name]
             predicate = handler(condition)
             return Condition(predicate)
