@@ -101,6 +101,9 @@ class NavEnvConfig:
         ``(env, action, info) -> float`` used when *reward_type* = ``"custom"``.
     """
 
+    # Backend selection (default keeps backward compat with grid2d)
+    backend: str = "grid2d"
+
     # Scenario source
     scenario_path: str | None = None
     map_name: str = "empty_30x30"
@@ -147,12 +150,19 @@ class NavEnvConfig:
 
 
 def _build_backend(config: NavEnvConfig) -> SceneBackend:
-    """Instantiate a Grid2DBackend from *config*.
+    """Instantiate a backend from *config* using the plugin registry.
 
     If *scenario_path* is set the YAML is loaded; otherwise a procedural
     empty-world configuration is synthesised from the inline parameters.
+    The ``config.backend`` field selects which registered backend factory to
+    use (default ``"grid2d"`` preserves backward compatibility).
     """
-    from navirl.backends.grid2d.backend import Grid2DBackend
+    from navirl.core.registry import get_backend
+    from navirl.plugins import register_default_plugins
+
+    register_default_plugins()
+
+    backend_name = config.backend
 
     if config.scenario_path is not None:
         import json
@@ -167,16 +177,20 @@ def _build_backend(config: NavEnvConfig) -> SceneBackend:
             cfg = json.loads(text)
         scene_cfg = cfg.get("scene", cfg)
         horizon_cfg = cfg.get("horizon", {"dt": config.dt})
-        return Grid2DBackend(scene_cfg, horizon_cfg, base_dir=path.parent)
+        factory = get_backend(backend_name)
+        return factory(scene_cfg, horizon_cfg, base_dir=path.parent)
 
     # Procedural / inline configuration
     scene_cfg: dict[str, Any] = {
         "id": config.map_name,
         "map": {"name": config.map_name},
         "orca": {"units": "meters"},
+        "width": config.world_width,
+        "height": config.world_height,
     }
     horizon_cfg: dict[str, Any] = {"dt": config.dt}
-    return Grid2DBackend(scene_cfg, horizon_cfg)
+    factory = get_backend(backend_name)
+    return factory(scene_cfg, horizon_cfg)
 
 
 # ---------------------------------------------------------------------------
