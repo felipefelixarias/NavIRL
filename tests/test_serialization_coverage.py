@@ -63,9 +63,11 @@ class TestSaveConfigErrors:
         """OSError writing YAML file."""
         path = tmp_path / "config.yaml"
         mock_yaml = MagicMock()
-        with patch("builtins.open", side_effect=OSError("disk full")), patch(
-            "navirl.config.serialization._import_yaml", return_value=mock_yaml
-        ), pytest.raises(OSError, match="Cannot write YAML"):
+        with (
+            patch("builtins.open", side_effect=OSError("disk full")),
+            patch("navirl.config.serialization._import_yaml", return_value=mock_yaml),
+            pytest.raises(OSError, match="Cannot write YAML"),
+        ):
             save_config({"key": "val"}, path)
 
     def test_yaml_write_value_error(self, tmp_path):
@@ -73,9 +75,10 @@ class TestSaveConfigErrors:
         path = tmp_path / "config.yaml"
         mock_yaml = MagicMock()
         mock_yaml.dump.side_effect = ValueError("bad value")
-        with patch(
-            "navirl.config.serialization._import_yaml", return_value=mock_yaml
-        ), pytest.raises(ValueError, match="cannot be serialized to YAML"):
+        with (
+            patch("navirl.config.serialization._import_yaml", return_value=mock_yaml),
+            pytest.raises(ValueError, match="cannot be serialized to YAML"),
+        ):
             save_config({"key": "val"}, path)
 
     def test_yaml_write_generic_error(self, tmp_path):
@@ -83,19 +86,24 @@ class TestSaveConfigErrors:
         path = tmp_path / "config.yaml"
         mock_yaml = MagicMock()
         mock_yaml.dump.side_effect = RuntimeError("yaml internal error")
-        with patch(
-            "navirl.config.serialization._import_yaml", return_value=mock_yaml
-        ), pytest.raises(ValueError, match="cannot be serialized to YAML"):
+        with (
+            patch("navirl.config.serialization._import_yaml", return_value=mock_yaml),
+            pytest.raises(ValueError, match="cannot be serialized to YAML"),
+        ):
             save_config({"key": "val"}, path)
 
     def test_toml_write_os_error(self, tmp_path):
         """OSError writing TOML file."""
         path = tmp_path / "config.toml"
         mock_toml = MagicMock()
-        with patch("builtins.open", side_effect=OSError("disk full")), patch(
-            "navirl.config.serialization._import_toml_write",
-            return_value=mock_toml,
-        ), pytest.raises(OSError, match="Cannot write TOML"):
+        with (
+            patch("builtins.open", side_effect=OSError("disk full")),
+            patch(
+                "navirl.config.serialization._import_toml_write",
+                return_value=mock_toml,
+            ),
+            pytest.raises(OSError, match="Cannot write TOML"),
+        ):
             save_config({"key": "val"}, path)
 
     def test_toml_write_type_error(self, tmp_path):
@@ -103,10 +111,13 @@ class TestSaveConfigErrors:
         path = tmp_path / "config.toml"
         mock_toml = MagicMock()
         mock_toml.dump.side_effect = TypeError("not serializable")
-        with patch(
-            "navirl.config.serialization._import_toml_write",
-            return_value=mock_toml,
-        ), pytest.raises(ValueError, match="cannot be serialized to TOML"):
+        with (
+            patch(
+                "navirl.config.serialization._import_toml_write",
+                return_value=mock_toml,
+            ),
+            pytest.raises(ValueError, match="cannot be serialized to TOML"),
+        ):
             save_config({"key": "val"}, path)
 
     def test_toml_write_generic_error(self, tmp_path):
@@ -114,10 +125,13 @@ class TestSaveConfigErrors:
         path = tmp_path / "config.toml"
         mock_toml = MagicMock()
         mock_toml.dump.side_effect = RuntimeError("toml internal error")
-        with patch(
-            "navirl.config.serialization._import_toml_write",
-            return_value=mock_toml,
-        ), pytest.raises(ValueError, match="cannot be serialized to TOML"):
+        with (
+            patch(
+                "navirl.config.serialization._import_toml_write",
+                return_value=mock_toml,
+            ),
+            pytest.raises(ValueError, match="cannot be serialized to TOML"),
+        ):
             save_config({"key": "val"}, path)
 
 
@@ -150,10 +164,14 @@ class TestLoadConfigErrors:
         """OSError reading YAML file."""
         path = tmp_path / "config.yaml"
         path.write_text("key: val")
-        with patch("builtins.open", side_effect=OSError("read error")), patch(
-            "navirl.config.serialization._import_yaml",
-            return_value=MagicMock(),
-        ), pytest.raises(OSError, match="Cannot read YAML"):
+        with (
+            patch("builtins.open", side_effect=OSError("read error")),
+            patch(
+                "navirl.config.serialization._import_yaml",
+                return_value=MagicMock(),
+            ),
+            pytest.raises(OSError, match="Cannot read YAML"),
+        ):
             load_config(path)
 
     def test_yaml_read_value_error(self, tmp_path):
@@ -162,9 +180,10 @@ class TestLoadConfigErrors:
         path.write_text("key: val")
         mock_yaml = MagicMock()
         mock_yaml.safe_load.side_effect = ValueError("bad yaml")
-        with patch(
-            "navirl.config.serialization._import_yaml", return_value=mock_yaml
-        ), pytest.raises(ValueError, match="Invalid YAML"):
+        with (
+            patch("navirl.config.serialization._import_yaml", return_value=mock_yaml),
+            pytest.raises(ValueError, match="Invalid YAML"),
+        ):
             load_config(path)
 
     def test_yaml_read_generic_yaml_error(self, tmp_path):
@@ -173,9 +192,10 @@ class TestLoadConfigErrors:
         path.write_text("key: val")
         mock_yaml = MagicMock()
         mock_yaml.safe_load.side_effect = RuntimeError("yaml parse failed")
-        with patch(
-            "navirl.config.serialization._import_yaml", return_value=mock_yaml
-        ), pytest.raises(ValueError, match="Invalid YAML"):
+        with (
+            patch("navirl.config.serialization._import_yaml", return_value=mock_yaml),
+            pytest.raises(ValueError, match="Invalid YAML"),
+        ):
             load_config(path)
 
     def test_yaml_read_generic_non_yaml_error(self, tmp_path):
@@ -184,9 +204,10 @@ class TestLoadConfigErrors:
         path.write_text("key: val")
         mock_yaml = MagicMock()
         mock_yaml.safe_load.side_effect = RuntimeError("unknown failure")
-        with patch(
-            "navirl.config.serialization._import_yaml", return_value=mock_yaml
-        ), pytest.raises(OSError, match="Cannot read YAML"):
+        with (
+            patch("navirl.config.serialization._import_yaml", return_value=mock_yaml),
+            pytest.raises(OSError, match="Cannot read YAML"),
+        ):
             load_config(path)
 
     def test_toml_non_dict(self, tmp_path):
@@ -194,20 +215,27 @@ class TestLoadConfigErrors:
         path = tmp_path / "config.toml"
         path.write_bytes(b"key = 'val'")
         mock_loader = MagicMock(return_value=["not", "a", "dict"])
-        with patch(
-            "navirl.config.serialization._import_toml_read",
-            return_value=mock_loader,
-        ), pytest.raises(ValueError, match="must contain a dictionary"):
+        with (
+            patch(
+                "navirl.config.serialization._import_toml_read",
+                return_value=mock_loader,
+            ),
+            pytest.raises(ValueError, match="must contain a dictionary"),
+        ):
             load_config(path)
 
     def test_toml_read_os_error(self, tmp_path):
         """OSError reading TOML file."""
         path = tmp_path / "config.toml"
         path.write_bytes(b"key = 'val'")
-        with patch("builtins.open", side_effect=OSError("read error")), patch(
-            "navirl.config.serialization._import_toml_read",
-            return_value=MagicMock(),
-        ), pytest.raises(OSError, match="Cannot read TOML"):
+        with (
+            patch("builtins.open", side_effect=OSError("read error")),
+            patch(
+                "navirl.config.serialization._import_toml_read",
+                return_value=MagicMock(),
+            ),
+            pytest.raises(OSError, match="Cannot read TOML"),
+        ):
             load_config(path)
 
     def test_toml_read_value_error(self, tmp_path):
@@ -215,10 +243,13 @@ class TestLoadConfigErrors:
         path = tmp_path / "config.toml"
         path.write_bytes(b"key = 'val'")
         mock_loader = MagicMock(side_effect=ValueError("bad toml"))
-        with patch(
-            "navirl.config.serialization._import_toml_read",
-            return_value=mock_loader,
-        ), pytest.raises(ValueError, match="Invalid TOML"):
+        with (
+            patch(
+                "navirl.config.serialization._import_toml_read",
+                return_value=mock_loader,
+            ),
+            pytest.raises(ValueError, match="Invalid TOML"),
+        ):
             load_config(path)
 
     def test_toml_read_generic_toml_error(self, tmp_path):
@@ -226,10 +257,13 @@ class TestLoadConfigErrors:
         path = tmp_path / "config.toml"
         path.write_bytes(b"key = 'val'")
         mock_loader = MagicMock(side_effect=RuntimeError("toml parse failed"))
-        with patch(
-            "navirl.config.serialization._import_toml_read",
-            return_value=mock_loader,
-        ), pytest.raises(ValueError, match="Invalid TOML"):
+        with (
+            patch(
+                "navirl.config.serialization._import_toml_read",
+                return_value=mock_loader,
+            ),
+            pytest.raises(ValueError, match="Invalid TOML"),
+        ):
             load_config(path)
 
     def test_toml_read_generic_non_toml_error(self, tmp_path):
@@ -237,10 +271,13 @@ class TestLoadConfigErrors:
         path = tmp_path / "config.toml"
         path.write_bytes(b"key = 'val'")
         mock_loader = MagicMock(side_effect=RuntimeError("unknown"))
-        with patch(
-            "navirl.config.serialization._import_toml_read",
-            return_value=mock_loader,
-        ), pytest.raises(OSError, match="Cannot read TOML"):
+        with (
+            patch(
+                "navirl.config.serialization._import_toml_read",
+                return_value=mock_loader,
+            ),
+            pytest.raises(OSError, match="Cannot read TOML"),
+        ):
             load_config(path)
 
 
@@ -256,9 +293,7 @@ class TestImportHelpers:
         """Missing yaml should raise ImportError."""
         import sys
 
-        with patch.dict(sys.modules, {"yaml": None}), pytest.raises(
-            ImportError, match="PyYAML"
-        ):
+        with patch.dict(sys.modules, {"yaml": None}), pytest.raises(ImportError, match="PyYAML"):
             _import_yaml()
 
     def test_import_toml_write_fallback_to_toml(self):
@@ -266,9 +301,7 @@ class TestImportHelpers:
         import sys
 
         mock_toml = MagicMock()
-        with patch.dict(
-            sys.modules, {"tomli_w": None, "toml": mock_toml}
-        ):
+        with patch.dict(sys.modules, {"tomli_w": None, "toml": mock_toml}):
             result = _import_toml_write()
             assert result is mock_toml
 
@@ -276,8 +309,9 @@ class TestImportHelpers:
         """When all toml writers are missing, raise ImportError."""
         import sys
 
-        with patch.dict(sys.modules, {"tomli_w": None, "toml": None}), pytest.raises(
-            ImportError, match="tomli-w or toml"
+        with (
+            patch.dict(sys.modules, {"tomli_w": None, "toml": None}),
+            pytest.raises(ImportError, match="tomli-w or toml"),
         ):
             _import_toml_write()
 
@@ -286,9 +320,7 @@ class TestImportHelpers:
         import sys
 
         mock_tomli = MagicMock()
-        with patch.dict(
-            sys.modules, {"tomllib": None, "tomli": mock_tomli}
-        ):
+        with patch.dict(sys.modules, {"tomllib": None, "tomli": mock_tomli}):
             result = _import_toml_read()
             assert result is mock_tomli.load
 
@@ -298,9 +330,7 @@ class TestImportHelpers:
 
         mock_toml = MagicMock()
         mock_toml.loads.return_value = {"key": "val"}
-        with patch.dict(
-            sys.modules, {"tomllib": None, "tomli": None, "toml": mock_toml}
-        ):
+        with patch.dict(sys.modules, {"tomllib": None, "tomli": None, "toml": mock_toml}):
             loader = _import_toml_read()
             # The loader should be a wrapper function
             assert callable(loader)
@@ -314,9 +344,10 @@ class TestImportHelpers:
         """When all toml readers are missing, raise ImportError."""
         import sys
 
-        with patch.dict(
-            sys.modules, {"tomllib": None, "tomli": None, "toml": None}
-        ), pytest.raises(ImportError, match="tomllib"):
+        with (
+            patch.dict(sys.modules, {"tomllib": None, "tomli": None, "toml": None}),
+            pytest.raises(ImportError, match="tomllib"),
+        ):
             _import_toml_read()
 
 

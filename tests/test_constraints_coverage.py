@@ -303,28 +303,34 @@ class TestConstraintSet:
         assert cs.constraints[0] is sc
 
     def test_is_safe_all_pass(self):
-        cs = ConstraintSet(constraints=[
-            SpeedConstraint(max_speed=2.0),
-            BoundaryConstraint(x_min=-10, x_max=10, y_min=-10, y_max=10),
-        ])
+        cs = ConstraintSet(
+            constraints=[
+                SpeedConstraint(max_speed=2.0),
+                BoundaryConstraint(x_min=-10, x_max=10, y_min=-10, y_max=10),
+            ]
+        )
         state = np.array([0.0, 0.0])
         action = np.array([0.5, 0.0])
         assert cs.is_safe(state, action)
 
     def test_is_safe_one_fails(self):
-        cs = ConstraintSet(constraints=[
-            SpeedConstraint(max_speed=0.1),  # will fail
-            BoundaryConstraint(x_min=-10, x_max=10, y_min=-10, y_max=10),
-        ])
+        cs = ConstraintSet(
+            constraints=[
+                SpeedConstraint(max_speed=0.1),  # will fail
+                BoundaryConstraint(x_min=-10, x_max=10, y_min=-10, y_max=10),
+            ]
+        )
         state = np.array([0.0, 0.0])
         action = np.array([1.0, 0.0])
         assert not cs.is_safe(state, action)
 
     def test_project_satisfies_all(self):
-        cs = ConstraintSet(constraints=[
-            SpeedConstraint(max_speed=0.5),
-            BoundaryConstraint(x_min=-1, x_max=1, y_min=-1, y_max=1, dt=0.1),
-        ])
+        cs = ConstraintSet(
+            constraints=[
+                SpeedConstraint(max_speed=0.5),
+                BoundaryConstraint(x_min=-1, x_max=1, y_min=-1, y_max=1, dt=0.1),
+            ]
+        )
         state = np.array([0.0, 0.0])
         action = np.array([10.0, 10.0])
 
