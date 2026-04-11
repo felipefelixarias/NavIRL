@@ -50,9 +50,15 @@ from navirl.routines.schema import (
 
 
 def _make_agent(agent_id=1, x=0.0, y=0.0, **kw):
-    defaults = dict(
-        kind="human", vx=0.0, vy=0.0, goal_x=5.0, goal_y=5.0, radius=0.2, max_speed=1.0
-    )
+    defaults = {
+        "kind": "human",
+        "vx": 0.0,
+        "vy": 0.0,
+        "goal_x": 5.0,
+        "goal_y": 5.0,
+        "radius": 0.2,
+        "max_speed": 1.0,
+    }
     defaults.update(kw)
     return AgentState(agent_id=agent_id, x=x, y=y, **defaults)
 
@@ -60,7 +66,7 @@ def _make_agent(agent_id=1, x=0.0, y=0.0, **kw):
 def _make_bb(agent=None, **kw):
     if agent is None:
         agent = _make_agent()
-    defaults = dict(dt=0.1, metadata={"sim_time": 0.0})
+    defaults = {"dt": 0.1, "metadata": {"sim_time": 0.0}}
     defaults.update(kw)
     return Blackboard(agent=agent, **defaults)
 
@@ -81,7 +87,12 @@ class TestCompilerTaskTypes:
         spec = RoutineSpec(
             id="interact",
             description="Interact",
-            tasks=[Task(type=TaskType.INTERACT, params={"location": (1.0, 2.0), "interaction_type": "vending"})],
+            tasks=[
+                Task(
+                    type=TaskType.INTERACT,
+                    params={"location": (1.0, 2.0), "interaction_type": "vending"},
+                )
+            ],
         )
         plan = self.compiler.compile(spec)
         assert isinstance(plan.root_node, InteractAtLocation)
@@ -707,13 +718,13 @@ class TestControllerEventEmission:
             tasks=[Task.wait(0.0)],
         )
         controller = CompiledRoutineController({1: spec})
-        controller.reset(
-            human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 3.0)}, backend=None
-        )
+        controller.reset(human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 3.0)}, backend=None)
 
         emit = Mock()
         # At time_s=1.0, the WaitForDuration with duration 0.0 should complete
-        controller.step(step=0, time_s=1.0, dt=0.1, states=self.states, robot_id=100, emit_event=emit)
+        controller.step(
+            step=0, time_s=1.0, dt=0.1, states=self.states, robot_id=100, emit_event=emit
+        )
 
         # Check routine_completed event was emitted
         event_names = [call[0][0] for call in emit.call_args_list]
@@ -727,9 +738,7 @@ class TestControllerEventEmission:
             tasks=[Task.go_to(1.0, 1.0)],
         )
         controller = CompiledRoutineController({1: spec})
-        controller.reset(
-            human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 3.0)}, backend=None
-        )
+        controller.reset(human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 3.0)}, backend=None)
 
         # Sabotage the behavior plan to cause an error
         plan = controller.compiled_plans[1]
@@ -758,9 +767,7 @@ class TestFallbackBehaviors:
     def test_static_fallback(self):
         """Static fallback keeps agent in place."""
         controller = CompiledRoutineController({}, fallback_behavior="static")
-        controller.reset(
-            human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None
-        )
+        controller.reset(human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None)
 
         emit = Mock()
         actions = controller.step(
@@ -774,9 +781,7 @@ class TestFallbackBehaviors:
     def test_goal_swap_fallback(self):
         """Goal swap fallback moves agent toward goal."""
         controller = CompiledRoutineController({}, fallback_behavior="goal_swap")
-        controller.reset(
-            human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None
-        )
+        controller.reset(human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None)
 
         emit = Mock()
         actions = controller.step(
@@ -793,14 +798,10 @@ class TestFallbackBehaviors:
         states = {1: agent_at_goal, 100: self.robot}
 
         controller = CompiledRoutineController({}, fallback_behavior="goal_swap")
-        controller.reset(
-            human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None
-        )
+        controller.reset(human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None)
 
         emit = Mock()
-        controller.step(
-            step=0, time_s=0.0, dt=0.1, states=states, robot_id=100, emit_event=emit
-        )
+        controller.step(step=0, time_s=0.0, dt=0.1, states=states, robot_id=100, emit_event=emit)
 
         # Should have emitted goal_swap event
         event_names = [call[0][0] for call in emit.call_args_list]
@@ -834,9 +835,7 @@ class TestFallbackBehaviors:
     def test_unknown_fallback_raises(self):
         """Unknown fallback behavior raises ValueError."""
         controller = CompiledRoutineController({}, fallback_behavior="unknown")
-        controller.reset(
-            human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None
-        )
+        controller.reset(human_ids=[1], starts={1: (0.0, 0.0)}, goals={1: (5.0, 5.0)}, backend=None)
 
         emit = Mock()
         with pytest.raises(ValueError, match="Unknown fallback behavior"):
@@ -866,9 +865,7 @@ class TestControllerRoutineManagement:
     def test_compile_routines_failure(self):
         """_compile_routines handles individual routine compile failures."""
         bad_spec = RoutineSpec(id="bad", description="Bad", tasks=[])
-        good_spec = RoutineSpec(
-            id="good", description="Good", tasks=[Task.go_to(1.0, 1.0)]
-        )
+        good_spec = RoutineSpec(id="good", description="Good", tasks=[Task.go_to(1.0, 1.0)])
 
         controller = CompiledRoutineController({1: bad_spec, 2: good_spec})
         # Good spec should compile, bad should be skipped
@@ -956,9 +953,8 @@ class TestPathValidation:
 
     def test_directory_path_raises(self):
         """Directory path raises ValueError."""
-        with tempfile.TemporaryDirectory() as d:
-            with pytest.raises(ValueError, match="not a file"):
-                _validate_file_path(d)
+        with tempfile.TemporaryDirectory() as d, pytest.raises(ValueError, match="not a file"):
+            _validate_file_path(d)
 
     def test_path_traversal_raises(self):
         """Path traversal attempt raises ValueError."""

@@ -24,8 +24,7 @@ class IndoorORCASim:
     def __init__(self, config: IndoorORCASimConfig):
         if rvo2 is None:
             raise ImportError(
-                "rvo2 is required for IndoorORCASim. "
-                "Install it with: pip install rvo2"
+                "rvo2 is required for IndoorORCASim. Install it with: pip install rvo2"
             )
         self.config = config
         self.sim = rvo2.PyRVOSimulator(

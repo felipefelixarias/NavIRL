@@ -32,6 +32,7 @@ from navirl.overseer.provider import (
 # ProviderConfig
 # ---------------------------------------------------------------------------
 
+
 class TestProviderConfig:
     def test_defaults(self):
         cfg = ProviderConfig()
@@ -44,7 +45,10 @@ class TestProviderConfig:
     def test_normalized_provider(self):
         assert ProviderConfig(provider="Codex").normalized_provider() == "codex"
         assert ProviderConfig(provider="  Claude  ").normalized_provider() == "claude"
-        assert ProviderConfig(provider="OPENAI_COMPATIBLE").normalized_provider() == "openai_compatible"
+        assert (
+            ProviderConfig(provider="OPENAI_COMPATIBLE").normalized_provider()
+            == "openai_compatible"
+        )
 
     def test_normalized_provider_none(self):
         cfg = ProviderConfig(provider=None)
@@ -54,6 +58,7 @@ class TestProviderConfig:
 # ---------------------------------------------------------------------------
 # _validate_file_path
 # ---------------------------------------------------------------------------
+
 
 class TestValidateFilePath:
     def test_valid_file(self, tmp_path):
@@ -74,19 +79,31 @@ class TestValidateFilePath:
         f = tmp_path / "big.bin"
         f.write_bytes(b"\0")
         real_stat = f.stat()
-        fake_stat = os.stat_result((
-            real_stat.st_mode, real_stat.st_ino, real_stat.st_dev,
-            real_stat.st_nlink, real_stat.st_uid, real_stat.st_gid,
-            MAX_FILE_SIZE + 1,  # st_size
-            real_stat.st_atime, real_stat.st_mtime, real_stat.st_ctime,
-        ))
-        with mock.patch("navirl.overseer.provider.Path.stat", return_value=fake_stat), pytest.raises(ProviderCallError, match="too large"):
+        fake_stat = os.stat_result(
+            (
+                real_stat.st_mode,
+                real_stat.st_ino,
+                real_stat.st_dev,
+                real_stat.st_nlink,
+                real_stat.st_uid,
+                real_stat.st_gid,
+                MAX_FILE_SIZE + 1,  # st_size
+                real_stat.st_atime,
+                real_stat.st_mtime,
+                real_stat.st_ctime,
+            )
+        )
+        with (
+            mock.patch("navirl.overseer.provider.Path.stat", return_value=fake_stat),
+            pytest.raises(ProviderCallError, match="too large"),
+        ):
             _validate_file_path(str(f))
 
 
 # ---------------------------------------------------------------------------
 # _extract_json_text
 # ---------------------------------------------------------------------------
+
 
 class TestExtractJsonText:
     def test_plain_json_object(self):
@@ -124,6 +141,7 @@ class TestExtractJsonText:
 # _parse_json_object
 # ---------------------------------------------------------------------------
 
+
 class TestParseJsonObject:
     def test_valid_json(self):
         result = _parse_json_object('{"a": 1, "b": [2, 3]}')
@@ -144,6 +162,7 @@ class TestParseJsonObject:
 # ---------------------------------------------------------------------------
 # _strict_json_schema_for_codex
 # ---------------------------------------------------------------------------
+
 
 class TestStrictJsonSchema:
     def test_adds_additional_properties_false(self):
@@ -214,6 +233,7 @@ class TestStrictJsonSchema:
 # _resolve_native_command
 # ---------------------------------------------------------------------------
 
+
 class TestResolveNativeCommand:
     def test_explicit_native_cmd(self):
         cfg = ProviderConfig(native_cmd="/usr/bin/my-tool")
@@ -274,6 +294,7 @@ class TestResolveNativeCommand:
 # run_structured_vlm — dispatch
 # ---------------------------------------------------------------------------
 
+
 class TestRunStructuredVlm:
     def test_unsupported_provider_raises(self):
         cfg = ProviderConfig(provider="nonexistent_provider")
@@ -287,7 +308,10 @@ class TestRunStructuredVlm:
 
     def test_native_provider_no_cmd_raises(self):
         cfg = ProviderConfig(provider="codex", native_cmd=None)
-        with mock.patch.dict(os.environ, {"NAVIRL_CODEX_CMD": ""}, clear=False), pytest.raises(ProviderUnavailableError, match="No native command"):
+        with (
+            mock.patch.dict(os.environ, {"NAVIRL_CODEX_CMD": ""}, clear=False),
+            pytest.raises(ProviderUnavailableError, match="No native command"),
+        ):
             run_structured_vlm(
                 prompt="test",
                 image_paths=[],
@@ -311,17 +335,29 @@ class TestRunStructuredVlm:
     def test_codex_routes_to_native(self):
         """Codex provider should route to _run_native_json."""
         cfg = ProviderConfig(provider="codex", native_cmd=None)
-        with mock.patch.dict(os.environ, {"NAVIRL_CODEX_CMD": ""}, clear=False), pytest.raises(ProviderUnavailableError, match="No native command"):
+        with (
+            mock.patch.dict(os.environ, {"NAVIRL_CODEX_CMD": ""}, clear=False),
+            pytest.raises(ProviderUnavailableError, match="No native command"),
+        ):
             run_structured_vlm(
-                prompt="test", image_paths=[], schema={}, config=cfg,
+                prompt="test",
+                image_paths=[],
+                schema={},
+                config=cfg,
             )
 
     def test_claude_routes_to_native(self):
         """Claude provider should route to _run_native_json."""
         cfg = ProviderConfig(provider="claude", native_cmd=None)
-        with mock.patch.dict(os.environ, {"NAVIRL_CLAUDE_CMD": ""}, clear=False), pytest.raises(ProviderUnavailableError, match="No native command"):
+        with (
+            mock.patch.dict(os.environ, {"NAVIRL_CLAUDE_CMD": ""}, clear=False),
+            pytest.raises(ProviderUnavailableError, match="No native command"),
+        ):
             run_structured_vlm(
-                prompt="test", image_paths=[], schema={}, config=cfg,
+                prompt="test",
+                image_paths=[],
+                schema={},
+                config=cfg,
             )
 
     def test_kimi_routes_to_openai_compatible(self):
@@ -330,13 +366,17 @@ class TestRunStructuredVlm:
         os.environ.pop("NONEXISTENT_KEY_12345", None)
         with pytest.raises(ProviderUnavailableError, match="Missing API key"):
             run_structured_vlm(
-                prompt="test", image_paths=[], schema={}, config=cfg,
+                prompt="test",
+                image_paths=[],
+                schema={},
+                config=cfg,
             )
 
 
 # ---------------------------------------------------------------------------
 # ProviderCallError and ProviderUnavailableError
 # ---------------------------------------------------------------------------
+
 
 class TestExceptions:
     def test_provider_call_error_is_runtime_error(self):

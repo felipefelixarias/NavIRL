@@ -91,7 +91,13 @@ def _compute_stats(values: list[float]) -> dict[str, float]:
     """Compute summary statistics for a list of finite values."""
     finite = [v for v in values if math.isfinite(v)]
     if not finite:
-        return {"mean": float("nan"), "std": float("nan"), "min": float("nan"), "max": float("nan"), "median": float("nan")}
+        return {
+            "mean": float("nan"),
+            "std": float("nan"),
+            "min": float("nan"),
+            "max": float("nan"),
+            "median": float("nan"),
+        }
     arr = np.asarray(finite, dtype=np.float64)
     return {
         "mean": float(arr.mean()),

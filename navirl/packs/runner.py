@@ -60,7 +60,10 @@ def run_pack(
             task_num += 1
             logger.info(
                 "Pack run %d/%d: %s seed=%d",
-                task_num, total, entry.id, seed,
+                task_num,
+                total,
+                entry.id,
+                seed,
             )
 
             try:

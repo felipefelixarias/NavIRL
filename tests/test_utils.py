@@ -593,12 +593,14 @@ class TestSpatialHashGrid:
 
 class TestKDTree2D:
     def _make_tree(self):
-        points = np.array([
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [5.0, 5.0],
-            [10.0, 10.0],
-        ])
+        points = np.array(
+            [
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [5.0, 5.0],
+                [10.0, 10.0],
+            ]
+        )
         return KDTree2D(points, entity_ids=[10, 20, 30, 40])
 
     def test_size(self):

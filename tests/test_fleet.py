@@ -26,11 +26,21 @@ from navirl.robots.fleet import (
 # Helper to create AgentState instances
 # ---------------------------------------------------------------------------
 
-def _state(agent_id: int, x: float, y: float, vx: float = 0.0, vy: float = 0.0,
-           radius: float = 0.3) -> AgentState:
+
+def _state(
+    agent_id: int, x: float, y: float, vx: float = 0.0, vy: float = 0.0, radius: float = 0.3
+) -> AgentState:
     return AgentState(
-        agent_id=agent_id, kind="robot", x=x, y=y, vx=vx, vy=vy,
-        goal_x=0.0, goal_y=0.0, radius=radius, max_speed=1.0,
+        agent_id=agent_id,
+        kind="robot",
+        x=x,
+        y=y,
+        vx=vx,
+        vy=vy,
+        goal_x=0.0,
+        goal_y=0.0,
+        radius=radius,
+        max_speed=1.0,
     )
 
 
@@ -336,9 +346,12 @@ class TestFleetPlanner:
         assert result[1] == 1
 
     def test_compute_formation_targets(self):
-        planner = FleetPlanner(FormationConfig(
-            formation_type=FormationType.LINE, spacing=2.0,
-        ))
+        planner = FleetPlanner(
+            FormationConfig(
+                formation_type=FormationType.LINE,
+                spacing=2.0,
+            )
+        )
         centroid = np.array([5.0, 5.0])
         targets = planner.compute_formation_targets(centroid, 0.0, 3)
         assert targets.shape == (3, 2)
@@ -487,7 +500,8 @@ class TestRobotFleet:
         fleet = RobotFleet(
             controllers={0: ctrl0, 1: ctrl1},
             formation_config=FormationConfig(
-                formation_type=FormationType.LINE, spacing=2.0,
+                formation_type=FormationType.LINE,
+                spacing=2.0,
             ),
         )
         # Place robots at ideal formation positions

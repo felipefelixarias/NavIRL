@@ -279,7 +279,8 @@ class TestCollisionResolution:
     def test_boundary_collision_restitution(self):
         engine = PhysicsEngine(
             config=PhysicsConfig(
-                damping=0.0, restitution=1.0,
+                damping=0.0,
+                restitution=1.0,
                 enable_collision_response=True,
                 integration_method=IntegrationMethod.EULER,
             ),

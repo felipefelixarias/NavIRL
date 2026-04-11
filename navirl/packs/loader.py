@@ -117,6 +117,5 @@ def _resolve_scenario_path(entry_path: str, pack_dir: Path) -> Path:
                 return candidate.resolve()
 
     raise FileNotFoundError(
-        f"Cannot resolve scenario path '{entry_path}': "
-        f"checked {pack_dir}, {_LIBRARY_DIR}"
+        f"Cannot resolve scenario path '{entry_path}': checked {pack_dir}, {_LIBRARY_DIR}"
     )

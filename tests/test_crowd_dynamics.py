@@ -51,9 +51,7 @@ class TestComputeDensity:
 
 class TestComputeFlowField:
     def test_empty(self):
-        flow = CrowdAnalyzer.compute_flow_field(
-            np.empty((0, 2)), np.empty((0, 2)), (0, 0, 10, 10)
-        )
+        flow = CrowdAnalyzer.compute_flow_field(np.empty((0, 2)), np.empty((0, 2)), (0, 0, 10, 10))
         assert flow.sum() == 0.0
 
     def test_single_agent(self):

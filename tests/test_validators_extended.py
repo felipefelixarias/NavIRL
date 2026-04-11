@@ -62,9 +62,12 @@ def _make_agent_entry(
 ) -> dict:
     return {
         "id": aid,
-        "x": x, "y": y,
-        "vx": vx, "vy": vy,
-        "goal_x": goal_x, "goal_y": goal_y,
+        "x": x,
+        "y": y,
+        "vx": vx,
+        "vy": vy,
+        "goal_x": goal_x,
+        "goal_y": goal_y,
         "kind": kind,
         "behavior": behavior,
         "max_speed": max_speed,
@@ -126,14 +129,20 @@ class TestValidateNoTeleport:
 
     def test_multiple_agents(self, tmp_path):
         rows = [
-            _make_state_row(0, [
-                _make_agent_entry(aid=0, x=0.0),
-                _make_agent_entry(aid=1, x=5.0),
-            ]),
-            _make_state_row(1, [
-                _make_agent_entry(aid=0, x=0.1),
-                _make_agent_entry(aid=1, x=50.0),  # teleport
-            ]),
+            _make_state_row(
+                0,
+                [
+                    _make_agent_entry(aid=0, x=0.0),
+                    _make_agent_entry(aid=1, x=5.0),
+                ],
+            ),
+            _make_state_row(
+                1,
+                [
+                    _make_agent_entry(aid=0, x=0.1),
+                    _make_agent_entry(aid=1, x=50.0),  # teleport
+                ],
+            ),
         ]
         fp = _write_state(tmp_path, rows)
         result = validate_no_teleport(fp, teleport_thresh=1.0)
@@ -184,8 +193,7 @@ class TestValidateMotionJitter:
     def test_smooth_motion_passes(self, tmp_path):
         # Constant heading, no jitter
         rows = [
-            _make_state_row(i, [_make_agent_entry(x=float(i), vx=1.0, vy=0.0)])
-            for i in range(20)
+            _make_state_row(i, [_make_agent_entry(x=float(i), vx=1.0, vy=0.0)]) for i in range(20)
         ]
         fp = _write_state(tmp_path, rows)
         result = validate_motion_jitter(fp, min_speed=0.1, max_flip_rate=0.5)
@@ -204,10 +212,7 @@ class TestValidateMotionJitter:
         assert result["worst_flip_rate"] > 0.3
 
     def test_low_speed_ignored(self, tmp_path):
-        rows = [
-            _make_state_row(i, [_make_agent_entry(vx=0.001, vy=0.0)])
-            for i in range(10)
-        ]
+        rows = [_make_state_row(i, [_make_agent_entry(vx=0.001, vy=0.0)]) for i in range(10)]
         fp = _write_state(tmp_path, rows)
         result = validate_motion_jitter(fp, min_speed=0.1, max_flip_rate=0.5)
         assert result["pass"] is True
@@ -293,9 +298,9 @@ class TestValidateDeadlockBounded:
 
     def test_done_behavior_resets_streak(self, tmp_path):
         rows = [
-            _make_state_row(i, [
-                _make_agent_entry(x=0.0, vx=0.0, vy=0.0, goal_x=10.0, behavior="DONE")
-            ])
+            _make_state_row(
+                i, [_make_agent_entry(x=0.0, vx=0.0, vy=0.0, goal_x=10.0, behavior="DONE")]
+            )
             for i in range(100)
         ]
         fp = _write_state(tmp_path, rows)
@@ -304,9 +309,9 @@ class TestValidateDeadlockBounded:
 
     def test_yielding_not_flagged(self, tmp_path):
         rows = [
-            _make_state_row(i, [
-                _make_agent_entry(x=0.0, vx=0.0, vy=0.0, goal_x=10.0, behavior="YIELDING")
-            ])
+            _make_state_row(
+                i, [_make_agent_entry(x=0.0, vx=0.0, vy=0.0, goal_x=10.0, behavior="YIELDING")]
+            )
             for i in range(100)
         ]
         fp = _write_state(tmp_path, rows)
@@ -327,7 +332,10 @@ class TestValidateAgentStopDuration:
         ]
         fp = _write_state(tmp_path, rows)
         result = validate_agent_stop_duration(
-            fp, dt=0.04, max_stop_seconds=1.0, stop_speed_thresh=0.1,
+            fp,
+            dt=0.04,
+            max_stop_seconds=1.0,
+            stop_speed_thresh=0.1,
         )
         assert result["pass"] is True
 
@@ -338,34 +346,41 @@ class TestValidateAgentStopDuration:
         ]
         fp = _write_state(tmp_path, rows)
         result = validate_agent_stop_duration(
-            fp, dt=0.04, max_stop_seconds=1.0, stop_speed_thresh=0.1,
+            fp,
+            dt=0.04,
+            max_stop_seconds=1.0,
+            stop_speed_thresh=0.1,
         )
         assert result["pass"] is False
         assert result["num_violations"] > 0
 
     def test_wait_behavior_excluded(self, tmp_path):
         rows = [
-            _make_state_row(i, [
-                _make_agent_entry(x=0.0, vx=0.0, vy=0.0, goal_x=10.0, behavior="WAIT")
-            ])
+            _make_state_row(
+                i, [_make_agent_entry(x=0.0, vx=0.0, vy=0.0, goal_x=10.0, behavior="WAIT")]
+            )
             for i in range(200)
         ]
         fp = _write_state(tmp_path, rows)
         result = validate_agent_stop_duration(
-            fp, dt=0.04, max_stop_seconds=1.0, stop_speed_thresh=0.1,
+            fp,
+            dt=0.04,
+            max_stop_seconds=1.0,
+            stop_speed_thresh=0.1,
         )
         assert result["pass"] is True
 
     def test_near_goal_not_flagged(self, tmp_path):
         # Agent stopped but at goal (within goal_tol=0.2)
         rows = [
-            _make_state_row(i, [
-                _make_agent_entry(x=10.0, vx=0.0, vy=0.0, goal_x=10.0, goal_y=0.0)
-            ])
+            _make_state_row(i, [_make_agent_entry(x=10.0, vx=0.0, vy=0.0, goal_x=10.0, goal_y=0.0)])
             for i in range(200)
         ]
         fp = _write_state(tmp_path, rows)
         result = validate_agent_stop_duration(
-            fp, dt=0.04, max_stop_seconds=1.0, stop_speed_thresh=0.1,
+            fp,
+            dt=0.04,
+            max_stop_seconds=1.0,
+            stop_speed_thresh=0.1,
         )
         assert result["pass"] is True

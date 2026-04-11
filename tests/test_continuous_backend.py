@@ -23,6 +23,7 @@ from navirl.backends.continuous.physics import AgentState
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_backend_with_agents() -> ContinuousBackend:
     """Create a backend with one robot and one pedestrian for reuse."""
     cfg = EnvironmentConfig(width=20.0, height=20.0, dt=0.1, max_steps=50)
@@ -35,6 +36,7 @@ def _make_backend_with_agents() -> ContinuousBackend:
 # ---------------------------------------------------------------------------
 # ContinuousBackend — construction & agent management
 # ---------------------------------------------------------------------------
+
 
 class TestContinuousBackendConstruction:
     def test_default_construction(self):
@@ -90,6 +92,7 @@ class TestContinuousBackendConstruction:
 # ContinuousBackend — from_scenario
 # ---------------------------------------------------------------------------
 
+
 class TestContinuousBackendFromScenario:
     def test_from_scenario_robots_and_pedestrians(self):
         scenario = ScenarioConfig(
@@ -142,6 +145,7 @@ class TestContinuousBackendFromScenario:
 # ContinuousBackend — pedestrian circle and flow
 # ---------------------------------------------------------------------------
 
+
 class TestPedestrianPatterns:
     def test_pedestrian_circle(self):
         backend = ContinuousBackend()
@@ -187,6 +191,7 @@ class TestPedestrianPatterns:
 # ---------------------------------------------------------------------------
 # ContinuousBackend — reset / step loop
 # ---------------------------------------------------------------------------
+
 
 class TestContinuousBackendSimulation:
     def test_step_before_reset_raises(self):
@@ -240,6 +245,7 @@ class TestContinuousBackendSimulation:
 # ---------------------------------------------------------------------------
 # ContinuousBackend — query methods
 # ---------------------------------------------------------------------------
+
 
 class TestContinuousBackendQueries:
     def test_get_robot_observation(self):
@@ -299,6 +305,7 @@ class TestContinuousBackendQueries:
 # ContinuousBackend — run_episode
 # ---------------------------------------------------------------------------
 
+
 class TestRunEpisode:
     def test_run_episode_no_policy(self):
         backend = _make_backend_with_agents()
@@ -332,6 +339,7 @@ class TestRunEpisode:
 # ---------------------------------------------------------------------------
 # ContinuousBackend — _compute_pedestrian_action
 # ---------------------------------------------------------------------------
+
 
 class TestComputePedestrianAction:
     def test_at_goal_returns_zero(self):
@@ -369,23 +377,28 @@ class TestComputePedestrianAction:
 # ContinuousEnvironment — core operations
 # ---------------------------------------------------------------------------
 
+
 class TestContinuousEnvironment:
     def test_add_agent(self):
         env = ContinuousEnvironment()
-        aid = env.add_agent(AgentConfig(
-            position=np.array([1.0, 1.0]),
-            goal=np.array([10.0, 10.0]),
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([1.0, 1.0]),
+                goal=np.array([10.0, 10.0]),
+            )
+        )
         assert isinstance(aid, int)
 
     def test_add_multiple_agents_unique_ids(self):
         env = ContinuousEnvironment()
         ids = []
         for i in range(5):
-            aid = env.add_agent(AgentConfig(
-                position=np.array([float(i), 0.0]),
-                goal=np.array([float(i), 10.0]),
-            ))
+            aid = env.add_agent(
+                AgentConfig(
+                    position=np.array([float(i), 0.0]),
+                    goal=np.array([float(i), 10.0]),
+                )
+            )
             ids.append(aid)
         assert len(set(ids)) == 5
 
@@ -408,20 +421,24 @@ class TestContinuousEnvironment:
 
     def test_reset_initializes_states(self):
         env = ContinuousEnvironment()
-        env.add_agent(AgentConfig(
-            position=np.array([1.0, 1.0]),
-            goal=np.array([10.0, 10.0]),
-        ))
+        env.add_agent(
+            AgentConfig(
+                position=np.array([1.0, 1.0]),
+                goal=np.array([10.0, 10.0]),
+            )
+        )
         obs = env.reset()
         assert len(obs) == 1
         assert "position" in next(iter(obs.values()))
 
     def test_step_updates_state(self):
         env = ContinuousEnvironment()
-        aid = env.add_agent(AgentConfig(
-            position=np.array([1.0, 1.0]),
-            goal=np.array([10.0, 10.0]),
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([1.0, 1.0]),
+                goal=np.array([10.0, 10.0]),
+            )
+        )
         env.reset()
         obs, rewards, dones, info = env.step({aid: np.array([1.0, 0.5])})
         assert aid in obs
@@ -431,10 +448,12 @@ class TestContinuousEnvironment:
 
     def test_get_agent_state(self):
         env = ContinuousEnvironment()
-        aid = env.add_agent(AgentConfig(
-            position=np.array([3.0, 4.0]),
-            goal=np.array([10.0, 10.0]),
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([3.0, 4.0]),
+                goal=np.array([10.0, 10.0]),
+            )
+        )
         env.reset()
         state = env.get_agent_state(aid)
         assert state is not None
@@ -447,10 +466,12 @@ class TestContinuousEnvironment:
 
     def test_get_agent_goal(self):
         env = ContinuousEnvironment()
-        aid = env.add_agent(AgentConfig(
-            position=np.array([0.0, 0.0]),
-            goal=np.array([8.0, 8.0]),
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([0.0, 0.0]),
+                goal=np.array([8.0, 8.0]),
+            )
+        )
         env.reset()
         goal = env.get_agent_goal(aid)
         assert goal is not None
@@ -463,10 +484,12 @@ class TestContinuousEnvironment:
 
     def test_set_agent_goal(self):
         env = ContinuousEnvironment()
-        aid = env.add_agent(AgentConfig(
-            position=np.array([0.0, 0.0]),
-            goal=np.array([5.0, 5.0]),
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([0.0, 0.0]),
+                goal=np.array([5.0, 5.0]),
+            )
+        )
         env.reset()
         env.set_agent_goal(aid, np.array([15.0, 15.0]))
         new_goal = env.get_agent_goal(aid)
@@ -528,16 +551,19 @@ class TestContinuousEnvironment:
 # ContinuousEnvironment — rewards and dones
 # ---------------------------------------------------------------------------
 
+
 class TestEnvironmentRewardsAndDones:
     def test_goal_reached_gives_bonus(self):
         """Agent placed very close to goal should get goal bonus."""
         cfg = EnvironmentConfig(dt=0.1, goal_radius=2.0, max_steps=100)
         env = ContinuousEnvironment(cfg)
-        aid = env.add_agent(AgentConfig(
-            position=np.array([9.0, 9.0]),
-            goal=np.array([10.0, 10.0]),
-            max_speed=5.0,
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([9.0, 9.0]),
+                goal=np.array([10.0, 10.0]),
+                max_speed=5.0,
+            )
+        )
         env.reset()
         # Move toward goal
         _, rewards, dones, _ = env.step({aid: np.array([2.0, 2.0])})
@@ -549,10 +575,12 @@ class TestEnvironmentRewardsAndDones:
     def test_timeout_done(self):
         cfg = EnvironmentConfig(dt=0.1, max_steps=3)
         env = ContinuousEnvironment(cfg)
-        aid = env.add_agent(AgentConfig(
-            position=np.array([0.0, 0.0]),
-            goal=np.array([100.0, 100.0]),
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([0.0, 0.0]),
+                goal=np.array([100.0, 100.0]),
+            )
+        )
         env.reset()
         for _ in range(3):
             _, _, dones, _ = env.step({aid: np.array([0.1, 0.0])})
@@ -561,11 +589,13 @@ class TestEnvironmentRewardsAndDones:
     def test_progress_reward_positive_when_approaching_goal(self):
         cfg = EnvironmentConfig(dt=0.1, max_steps=100, goal_radius=0.5)
         env = ContinuousEnvironment(cfg)
-        aid = env.add_agent(AgentConfig(
-            position=np.array([0.0, 0.0]),
-            goal=np.array([10.0, 0.0]),
-            max_speed=5.0,
-        ))
+        aid = env.add_agent(
+            AgentConfig(
+                position=np.array([0.0, 0.0]),
+                goal=np.array([10.0, 0.0]),
+                max_speed=5.0,
+            )
+        )
         env.reset()
         _, rewards, _, _ = env.step({aid: np.array([2.0, 0.0])})
         # Moving toward goal should give positive progress reward (minus time penalty)
@@ -575,6 +605,7 @@ class TestEnvironmentRewardsAndDones:
 # ---------------------------------------------------------------------------
 # ContinuousEnvironment — statistics and snapshots
 # ---------------------------------------------------------------------------
+
 
 class TestEnvironmentStatisticsAndSnapshots:
     def test_get_statistics(self):
@@ -624,7 +655,9 @@ class TestEnvironmentStatisticsAndSnapshots:
         env.load_snapshot(snap)
         state = env.get_agent_state(0)
         np.testing.assert_allclose(
-            state.position, snap["agents"][0]["position"], atol=1e-6,
+            state.position,
+            snap["agents"][0]["position"],
+            atol=1e-6,
         )
 
     def test_load_snapshot_string_keys(self):
@@ -693,6 +726,7 @@ class TestEnvironmentStatisticsAndSnapshots:
 # ---------------------------------------------------------------------------
 # ScenarioConfig
 # ---------------------------------------------------------------------------
+
 
 class TestScenarioConfig:
     def test_defaults(self):

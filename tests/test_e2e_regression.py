@@ -82,9 +82,7 @@ def test_canonical_scenario_invariants_pass(scenario_name: str, tmp_path: Path) 
     """Run *scenario_name* through the full pipeline and verify all invariants."""
     invariants = _run_and_validate(scenario_name, tmp_path)
 
-    failed_checks = [
-        c["name"] for c in invariants.get("checks", []) if not c.get("pass", False)
-    ]
+    failed_checks = [c["name"] for c in invariants.get("checks", []) if not c.get("pass", False)]
     assert invariants["overall_pass"], (
         f"Scenario {scenario_name!r} failed invariant checks: {failed_checks}"
     )
@@ -106,9 +104,7 @@ def test_complex_scenario_invariants_pass(scenario_name: str, tmp_path: Path) ->
             pytest.xfail(f"Scenario {scenario_name!r} hit deadlock: {exc}")
         raise
 
-    failed_checks = [
-        c["name"] for c in invariants.get("checks", []) if not c.get("pass", False)
-    ]
+    failed_checks = [c["name"] for c in invariants.get("checks", []) if not c.get("pass", False)]
     if not invariants["overall_pass"]:
         pytest.xfail(
             f"Scenario {scenario_name!r} failed invariant checks "
@@ -125,9 +121,7 @@ def test_complex_scenario_invariants_pass(scenario_name: str, tmp_path: Path) ->
 def test_hallway_pass_no_teleport(tmp_path: Path) -> None:
     """Hallway scenario must not produce any teleportation violations."""
     invariants = _run_and_validate("hallway_pass.yaml", tmp_path)
-    teleport = next(
-        (c for c in invariants["checks"] if c["name"] == "no_teleport"), None
-    )
+    teleport = next((c for c in invariants["checks"] if c["name"] == "no_teleport"), None)
     assert teleport is not None, "no_teleport check missing"
     assert teleport["pass"], f"Teleport violations: {teleport.get('violations', [])}"
 
@@ -136,9 +130,7 @@ def test_hallway_pass_no_teleport(tmp_path: Path) -> None:
 def test_doorway_token_exclusivity(tmp_path: Path) -> None:
     """Doorway scenario must enforce token-based exclusivity if check is present."""
     invariants = _run_and_validate("doorway_token_yield.yaml", tmp_path)
-    token_check = next(
-        (c for c in invariants["checks"] if c["name"] == "token_exclusivity"), None
-    )
+    token_check = next((c for c in invariants["checks"] if c["name"] == "token_exclusivity"), None)
     if token_check is not None:
         assert token_check["pass"], (
             f"Token exclusivity violated: {token_check.get('violations', [])}"
@@ -149,13 +141,10 @@ def test_doorway_token_exclusivity(tmp_path: Path) -> None:
 def test_hallway_no_wall_penetration(tmp_path: Path) -> None:
     """Hallway scenario must have zero wall penetration."""
     invariants = _run_and_validate("hallway_pass.yaml", tmp_path)
-    wall_check = next(
-        (c for c in invariants["checks"] if c["name"] == "no_wall_penetration"), None
-    )
+    wall_check = next((c for c in invariants["checks"] if c["name"] == "no_wall_penetration"), None)
     assert wall_check is not None, "no_wall_penetration check missing"
     assert wall_check["pass"], (
-        f"Wall penetration in hallway_pass: "
-        f"{wall_check.get('num_violations', '?')} violations"
+        f"Wall penetration in hallway_pass: {wall_check.get('num_violations', '?')} violations"
     )
 
 
@@ -176,9 +165,7 @@ def test_all_reliable_scenarios_produce_events_file(tmp_path: Path) -> None:
             video_override=False,
         )
         bundle_dir = Path(episode.bundle_dir)
-        assert (bundle_dir / "events.jsonl").exists(), (
-            f"{name}: events.jsonl not produced"
-        )
+        assert (bundle_dir / "events.jsonl").exists(), f"{name}: events.jsonl not produced"
 
 
 @pytest.mark.e2e

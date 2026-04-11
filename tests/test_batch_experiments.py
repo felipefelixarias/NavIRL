@@ -151,9 +151,7 @@ class TestBatchAggregator:
 
     def test_single_run(self, sample_metrics):
         agg = BatchAggregator(template_name="single")
-        agg.add_record(
-            RunRecord(scenario="hallway_pass", seed=42, metrics=sample_metrics)
-        )
+        agg.add_record(RunRecord(scenario="hallway_pass", seed=42, metrics=sample_metrics))
         summary = agg.summarize()
         assert summary.total_runs == 1
         assert summary.completed_runs == 1
@@ -193,9 +191,7 @@ class TestBatchAggregator:
     def test_failed_runs_tracked(self, sample_metrics):
         agg = BatchAggregator(template_name="with_failures")
         agg.add_record(RunRecord(scenario="hallway_pass", seed=42, metrics=sample_metrics))
-        agg.add_record(
-            RunRecord(scenario="hallway_pass", seed=99, status="failed", error="boom")
-        )
+        agg.add_record(RunRecord(scenario="hallway_pass", seed=99, status="failed", error="boom"))
 
         summary = agg.summarize()
         assert summary.total_runs == 2
@@ -204,9 +200,7 @@ class TestBatchAggregator:
 
     def test_global_metrics_aggregated(self, sample_metrics):
         agg = BatchAggregator(template_name="global")
-        agg.add_record(
-            RunRecord(scenario="hallway_pass", seed=42, metrics=sample_metrics)
-        )
+        agg.add_record(RunRecord(scenario="hallway_pass", seed=42, metrics=sample_metrics))
         agg.add_record(
             RunRecord(
                 scenario="kitchen_congestion",
@@ -305,7 +299,10 @@ class TestResearchTemplates:
 
     def test_orca_param_study_loads(self):
         path = (
-            Path(__file__).resolve().parent.parent / "research" / "templates" / "orca_param_study.yaml"
+            Path(__file__).resolve().parent.parent
+            / "research"
+            / "templates"
+            / "orca_param_study.yaml"
         )
         if not path.exists():
             pytest.skip("orca_param_study.yaml not found")

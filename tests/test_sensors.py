@@ -307,7 +307,9 @@ class TestCameraSensor:
         assert img.dtype == np.uint8
 
     def test_perspective_output_shape(self):
-        cam = CameraSensor(CameraConfig(resolution_x=64, resolution_y=48, render_mode="perspective"))
+        cam = CameraSensor(
+            CameraConfig(resolution_x=64, resolution_y=48, render_mode="perspective")
+        )
         ws = _basic_world_state()
         img = cam.observe(ws)
         assert img.shape == (48, 64, 3)

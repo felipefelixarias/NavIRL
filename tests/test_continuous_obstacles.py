@@ -34,9 +34,7 @@ def _unit_circle() -> CircleObstacle:
 
 def _triangle() -> PolygonObstacle:
     """CCW triangle centred near origin."""
-    return PolygonObstacle(
-        vertices=np.array([[0.0, 2.0], [-1.0, 0.0], [1.0, 0.0]])
-    )
+    return PolygonObstacle(vertices=np.array([[0.0, 2.0], [-1.0, 0.0], [1.0, 0.0]]))
 
 
 def _horizontal_wall() -> LineObstacle:
@@ -460,9 +458,7 @@ class TestPolygonObstacle:
 
     def test_polygon_square(self):
         """Test polygon with a square shape for more predictable geometry."""
-        sq = PolygonObstacle(
-            vertices=np.array([[0, 0], [2, 0], [2, 2], [0, 2]], dtype=float)
-        )
+        sq = PolygonObstacle(vertices=np.array([[0, 0], [2, 0], [2, 2], [0, 2]], dtype=float))
         assert sq.contains_point(np.array([1.0, 1.0]))
         assert not sq.contains_point(np.array([3.0, 1.0]))
 
@@ -475,16 +471,32 @@ class TestPolygonObstacle:
 class TestObstacleABC:
     def test_inflate_raises(self):
         """Default inflate raises NotImplementedError on a subclass that doesn't override it."""
+
         # Create a minimal concrete subclass without inflate
         class _BareObstacle(Obstacle):
-            def contains_point(self, p): return False
-            def distance_to_point(self, p): return 0.0
-            def intersects_circle(self, c, r): return False
-            def ray_cast(self, o, d): return None
-            def closest_point(self, p): return np.zeros(2)
-            def normal_at(self, p): return np.array([1.0, 0.0])
-            def get_bounding_box(self): return np.zeros(2), np.ones(2)
-            def get_vertices(self): return None
+            def contains_point(self, p):
+                return False
+
+            def distance_to_point(self, p):
+                return 0.0
+
+            def intersects_circle(self, c, r):
+                return False
+
+            def ray_cast(self, o, d):
+                return None
+
+            def closest_point(self, p):
+                return np.zeros(2)
+
+            def normal_at(self, p):
+                return np.array([1.0, 0.0])
+
+            def get_bounding_box(self):
+                return np.zeros(2), np.ones(2)
+
+            def get_vertices(self):
+                return None
 
         with pytest.raises(NotImplementedError):
             _BareObstacle().inflate(1.0)

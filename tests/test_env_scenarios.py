@@ -26,7 +26,14 @@ from navirl.envs.scenarios import (
 # ---------------------------------------------------------------------------
 
 SEED = 42
-REQUIRED_KEYS = {"map_name", "robot_start", "robot_goal", "human_starts", "human_goals", "num_humans"}
+REQUIRED_KEYS = {
+    "map_name",
+    "robot_start",
+    "robot_goal",
+    "human_starts",
+    "human_goals",
+    "num_humans",
+}
 
 
 def _rng(seed: int = SEED) -> np.random.Generator:
@@ -156,7 +163,9 @@ class TestRandomGoal:
     def test_positions_within_world(self):
         sc = RandomGoal(world_size=4.0)
         cfg = sc.generate(_rng())
-        for pos in [cfg["robot_start"], cfg["robot_goal"]] + cfg["human_starts"] + cfg["human_goals"]:
+        for pos in (
+            [cfg["robot_start"], cfg["robot_goal"]] + cfg["human_starts"] + cfg["human_goals"]
+        ):
             assert -4.0 <= pos[0] <= 4.0
             assert -4.0 <= pos[1] <= 4.0
 
@@ -358,9 +367,7 @@ class TestOpenField:
         sc = OpenField(field_size=10.0, num_humans=5)
         cfg = sc.generate(_rng())
         for pos in (
-            [cfg["robot_start"], cfg["robot_goal"]]
-            + cfg["human_starts"]
-            + cfg["human_goals"]
+            [cfg["robot_start"], cfg["robot_goal"]] + cfg["human_starts"] + cfg["human_goals"]
         ):
             assert -10.0 <= pos[0] <= 10.0
             assert -10.0 <= pos[1] <= 10.0
@@ -483,4 +490,7 @@ class TestProceduralScenarioGenerator:
         cfg1 = gen.generate(_rng(1))
         cfg2 = gen.generate(_rng(2))
         # Very unlikely to be identical
-        assert cfg1["robot_start"] != cfg2["robot_start"] or cfg1["scenario_index"] != cfg2["scenario_index"]
+        assert (
+            cfg1["robot_start"] != cfg2["robot_start"]
+            or cfg1["scenario_index"] != cfg2["scenario_index"]
+        )

@@ -78,9 +78,7 @@ class TestMessageProtocol:
         assert msg.receiver is None
 
     def test_metadata(self):
-        msg = MessageProtocol(
-            sender="a1", receiver="a2", content="x", metadata={"priority": 5}
-        )
+        msg = MessageProtocol(sender="a1", receiver="a2", content="x", metadata={"priority": 5})
         assert msg.metadata["priority"] == 5
 
 
@@ -722,9 +720,7 @@ class TestVelocityObstaclePlanner:
         assert new_pos[0] > 0.0
 
     def test_two_agents_avoid_collision(self):
-        planner = VelocityObstaclePlanner(
-            time_horizon=5.0, max_speed=1.5, agent_radius=0.3
-        )
+        planner = VelocityObstaclePlanner(time_horizon=5.0, max_speed=1.5, agent_radius=0.3)
         # Two agents heading toward each other
         positions = np.array([[0.0, 0.0], [5.0, 0.0]])
         velocities = np.array([[1.0, 0.0], [-1.0, 0.0]])

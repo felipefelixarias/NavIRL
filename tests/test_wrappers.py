@@ -178,6 +178,7 @@ from navirl.envs.wrappers import (
 # Helpers: a simple mock environment
 # ---------------------------------------------------------------------------
 
+
 class MockEnv(_gym_mod.Env):
     """Deterministic environment for testing wrappers."""
 
@@ -308,19 +309,23 @@ class TestFlattenObservation:
     def test_flattens_dict_observation(self):
         env = MockEnv(obs_shape=(4,))
         # Replace observation_space with a Dict space
-        env.observation_space = _spaces_mod.Dict({
-            "pos": _spaces_mod.Box(low=-1, high=1, shape=(2,)),
-            "vel": _spaces_mod.Box(low=-1, high=1, shape=(3,)),
-        })
+        env.observation_space = _spaces_mod.Dict(
+            {
+                "pos": _spaces_mod.Box(low=-1, high=1, shape=(2,)),
+                "vel": _spaces_mod.Box(low=-1, high=1, shape=(3,)),
+            }
+        )
         wrapped = FlattenObservation(env)
         assert wrapped.observation_space.shape == (5,)
 
     def test_observation_returns_flat_array(self):
         env = MockEnv(obs_shape=(4,))
-        env.observation_space = _spaces_mod.Dict({
-            "a": _spaces_mod.Box(low=0, high=1, shape=(2,)),
-            "b": _spaces_mod.Box(low=0, high=1, shape=(2,)),
-        })
+        env.observation_space = _spaces_mod.Dict(
+            {
+                "a": _spaces_mod.Box(low=0, high=1, shape=(2,)),
+                "b": _spaces_mod.Box(low=0, high=1, shape=(2,)),
+            }
+        )
         wrapped = FlattenObservation(env)
         obs_dict = {"a": np.array([1.0, 2.0]), "b": np.array([3.0, 4.0])}
         result = wrapped.observation(obs_dict)
@@ -532,8 +537,10 @@ class TestInferShapingFnArity:
         class Opaque:
             def __call__(self, *args):
                 return 0.0
+
             # Make inspect.signature fail
             __signature__ = None
+
         opaque = Opaque()
         # inspect.signature raises TypeError for __signature__=None in some versions;
         # if it doesn't, the VAR_POSITIONAL path gives 6 anyway
@@ -741,8 +748,10 @@ class TestMonitorWrapper:
 class TestCurriculumWrapper:
     def test_scheduler_sets_difficulty(self):
         env = MockEnv()
+
         def scheduler(steps):
             return min(steps / 100, 1.0)
+
         wrapped = CurriculumWrapper(env, scheduler=scheduler)
         wrapped.reset()
         assert env.difficulty == 0.0  # 0 steps so far
@@ -847,9 +856,11 @@ class TestVecEnvWrapper:
         def make_env():
             e = MockEnv()
             original_close = e.close
+
             def tracked_close():
                 envs_closed.append(True)
                 original_close()
+
             e.close = tracked_close
             return e
 

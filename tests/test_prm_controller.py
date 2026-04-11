@@ -42,9 +42,12 @@ def _make_state(robot_id=0, x=0.0, y=0.0, goal_x=10.0, goal_y=10.0):
     return AgentState(
         agent_id=robot_id,
         kind="robot",
-        x=x, y=y,
-        vx=0.0, vy=0.0,
-        goal_x=goal_x, goal_y=goal_y,
+        x=x,
+        y=y,
+        vx=0.0,
+        vy=0.0,
+        goal_x=goal_x,
+        goal_y=goal_y,
         radius=0.3,
         max_speed=1.0,
     )
@@ -202,11 +205,13 @@ class TestPRMStep:
         assert speed <= ctrl.max_speed + 0.01
 
     def test_velocity_smoothing(self):
-        ctrl = PRMRobotController({
-            "num_samples": 10,
-            "velocity_smoothing": 0.5,
-            "replan_interval": 100,
-        })
+        ctrl = PRMRobotController(
+            {
+                "num_samples": 10,
+                "velocity_smoothing": 0.5,
+                "replan_interval": 100,
+            }
+        )
         backend = _MockBackend()
         ctrl.reset(0, (0.0, 0.0), (10.0, 0.0), backend)
         states = {0: _make_state(0, x=0.0, y=0.0, goal_x=10.0, goal_y=0.0)}
@@ -222,18 +227,22 @@ class TestPRMStep:
         states = {0: _make_state(0, x=1.0, y=1.0)}
         # Step 5 should trigger replan
         events = []
+
         def capture_event(etype, aid, payload):
             events.append(etype)
+
         ctrl.step(5, 0.2, 0.04, states, capture_event)
         assert "robot_prm_replan" in events
 
     def test_slowdown_near_target(self):
-        ctrl = PRMRobotController({
-            "num_samples": 10,
-            "slowdown_dist": 1.0,
-            "max_speed": 2.0,
-            "replan_interval": 100,
-        })
+        ctrl = PRMRobotController(
+            {
+                "num_samples": 10,
+                "slowdown_dist": 1.0,
+                "max_speed": 2.0,
+                "replan_interval": 100,
+            }
+        )
         backend = _MockBackend()
         ctrl.reset(0, (0.0, 0.0), (0.5, 0.0), backend)
         states = {0: _make_state(0, x=0.0, y=0.0, goal_x=0.5, goal_y=0.0)}

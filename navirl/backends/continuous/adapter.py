@@ -126,9 +126,7 @@ class ContinuousSceneBackend(SceneBackend):
         self._preferred_velocities[agent_id] = (0.0, 0.0)
         self._needs_reset = True
 
-    def set_preferred_velocity(
-        self, agent_id: int, velocity: tuple[float, float]
-    ) -> None:
+    def set_preferred_velocity(self, agent_id: int, velocity: tuple[float, float]) -> None:
         self._preferred_velocities[agent_id] = (float(velocity[0]), float(velocity[1]))
 
     def step(self) -> None:
@@ -192,12 +190,8 @@ class ContinuousSceneBackend(SceneBackend):
         # Fallback – centre of the world.
         return (self._width / 2, self._height / 2)
 
-    def check_obstacle_collision(
-        self, position: tuple[float, float], radius: float
-    ) -> bool:
-        return self._env.obstacles.check_collision(
-            np.array(position, dtype=float), radius
-        )
+    def check_obstacle_collision(self, position: tuple[float, float], radius: float) -> bool:
+        return self._env.obstacles.check_collision(np.array(position, dtype=float), radius)
 
     def world_to_map(self, position: tuple[float, float]) -> tuple[int, int]:
         res = self._map_resolution

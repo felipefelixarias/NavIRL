@@ -68,12 +68,10 @@ def _clean_registries():
 
 class _Base(ABC):
     @abstractmethod
-    def step(self):
-        ...
+    def step(self): ...
 
     @abstractmethod
-    def reset(self):
-        ...
+    def reset(self): ...
 
 
 class _FullImpl(_Base):
@@ -260,7 +258,10 @@ class TestSafePluginCallExtended:
 
         with pytest.raises(PluginPerformanceError, match="exceeded timeout"):
             safe_plugin_call(
-                slow, plugin_name="test", method_name="fn", timeout_s=0.001,
+                slow,
+                plugin_name="test",
+                method_name="fn",
+                timeout_s=0.001,
             )
 
     def test_performance_error_passthrough(self):
@@ -269,7 +270,9 @@ class TestSafePluginCallExtended:
 
         with pytest.raises(PluginPerformanceError, match="custom perf error"):
             safe_plugin_call(
-                raises_perf, plugin_name="test", method_name="fn",
+                raises_perf,
+                plugin_name="test",
+                method_name="fn",
             )
 
     def test_kwargs_forwarded(self):
@@ -277,7 +280,11 @@ class TestSafePluginCallExtended:
             return a + b
 
         result = safe_plugin_call(
-            fn, 5, plugin_name="test", method_name="fn", b=20,
+            fn,
+            5,
+            plugin_name="test",
+            method_name="fn",
+            b=20,
         )
         assert result == 25
 
@@ -444,7 +451,9 @@ class TestGetPluginInfoExtended:
                 pass
 
         register_robot_controller(
-            "doc_rc", DocPlugin, enable_security_validation=False,
+            "doc_rc",
+            DocPlugin,
+            enable_security_validation=False,
         )
         info = get_plugin_info("robot_controller", "doc_rc")
         assert "A documented plugin" in info["doc"]
@@ -453,7 +462,9 @@ class TestGetPluginInfoExtended:
 
     def test_class_without_docstring(self):
         register_human_controller(
-            "nodoc_hc", _FullImpl, enable_security_validation=False,
+            "nodoc_hc",
+            _FullImpl,
+            enable_security_validation=False,
         )
         info = get_plugin_info("human_controller", "nodoc_hc")
         assert "init_parameters" in info

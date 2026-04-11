@@ -77,37 +77,47 @@ class TestNormalizeVector:
 class TestCircleCircleIntersection:
     def test_no_intersection_far_apart(self):
         pts = circle_circle_intersection(
-            np.array([0.0, 0.0]), 1.0,
-            np.array([10.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
+            np.array([10.0, 0.0]),
+            1.0,
         )
         assert pts == []
 
     def test_no_intersection_concentric(self):
         pts = circle_circle_intersection(
-            np.array([0.0, 0.0]), 1.0,
-            np.array([0.0, 0.0]), 2.0,
+            np.array([0.0, 0.0]),
+            1.0,
+            np.array([0.0, 0.0]),
+            2.0,
         )
         assert pts == []
 
     def test_no_intersection_one_inside_other(self):
         pts = circle_circle_intersection(
-            np.array([0.0, 0.0]), 5.0,
-            np.array([1.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            5.0,
+            np.array([1.0, 0.0]),
+            1.0,
         )
         assert pts == []
 
     def test_tangent_externally(self):
         pts = circle_circle_intersection(
-            np.array([0.0, 0.0]), 1.0,
-            np.array([2.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
+            np.array([2.0, 0.0]),
+            1.0,
         )
         assert len(pts) == 1
         np.testing.assert_allclose(pts[0], [1.0, 0.0], atol=1e-10)
 
     def test_two_intersections(self):
         pts = circle_circle_intersection(
-            np.array([0.0, 0.0]), 1.0,
-            np.array([1.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
+            np.array([1.0, 0.0]),
+            1.0,
         )
         assert len(pts) == 2
         # Both points should be at distance 1 from each center
@@ -118,8 +128,10 @@ class TestCircleCircleIntersection:
     def test_identical_circles(self):
         # Same center, same radius -> concentric check returns empty
         pts = circle_circle_intersection(
-            np.array([1.0, 1.0]), 2.0,
-            np.array([1.0, 1.0]), 2.0,
+            np.array([1.0, 1.0]),
+            2.0,
+            np.array([1.0, 1.0]),
+            2.0,
         )
         assert pts == []
 
@@ -132,7 +144,8 @@ class TestCircleCircleIntersection:
 class TestCircleLineIntersection:
     def test_line_through_center(self):
         pts = circle_line_intersection(
-            np.array([0.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
             np.array([-2.0, 0.0]),
             np.array([2.0, 0.0]),
         )
@@ -143,7 +156,8 @@ class TestCircleLineIntersection:
 
     def test_line_tangent(self):
         pts = circle_line_intersection(
-            np.array([0.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
             np.array([-2.0, 1.0]),
             np.array([2.0, 1.0]),
         )
@@ -155,7 +169,8 @@ class TestCircleLineIntersection:
 
     def test_line_misses(self):
         pts = circle_line_intersection(
-            np.array([0.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
             np.array([-2.0, 5.0]),
             np.array([2.0, 5.0]),
         )
@@ -164,7 +179,8 @@ class TestCircleLineIntersection:
     def test_segment_partially_inside(self):
         # Segment from center to outside — one intersection
         pts = circle_line_intersection(
-            np.array([0.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
             np.array([0.0, 0.0]),
             np.array([2.0, 0.0]),
         )
@@ -174,7 +190,8 @@ class TestCircleLineIntersection:
     def test_degenerate_segment(self):
         # Zero-length segment
         pts = circle_line_intersection(
-            np.array([0.0, 0.0]), 1.0,
+            np.array([0.0, 0.0]),
+            1.0,
             np.array([0.5, 0.0]),
             np.array([0.5, 0.0]),
         )
@@ -188,9 +205,16 @@ class TestCircleLineIntersection:
 
 class TestConvexHull:
     def test_square(self):
-        points = np.array([
-            [0, 0], [1, 0], [1, 1], [0, 1], [0.5, 0.5],
-        ], dtype=float)
+        points = np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [1, 1],
+                [0, 1],
+                [0.5, 0.5],
+            ],
+            dtype=float,
+        )
         hull = convex_hull(points)
         # Interior point should be excluded
         assert len(hull) == 4
@@ -242,9 +266,15 @@ class TestMinimumBoundingRectangle:
         assert height == 0.0
 
     def test_rectangle_axis_aligned(self):
-        points = np.array([
-            [0, 0], [4, 0], [4, 2], [0, 2],
-        ], dtype=float)
+        points = np.array(
+            [
+                [0, 0],
+                [4, 0],
+                [4, 2],
+                [0, 2],
+            ],
+            dtype=float,
+        )
         corners, width, height, angle = minimum_bounding_rectangle(points)
         dims = sorted([width, height])
         assert dims[0] == pytest.approx(2.0, abs=1e-6)
@@ -280,7 +310,10 @@ class TestTransform2D:
     def test_combined(self):
         pt = np.array([1.0, 0.0])
         result = transform_2d(
-            pt, translation=np.array([5.0, 0.0]), rotation=math.pi / 2, scale=2.0,
+            pt,
+            translation=np.array([5.0, 0.0]),
+            rotation=math.pi / 2,
+            scale=2.0,
         )
         # scale(1,0)*2 = (2,0), rotate 90° -> (0,2), translate -> (5,2)
         np.testing.assert_allclose(result, [5.0, 2.0], atol=1e-10)
@@ -400,18 +433,32 @@ class TestComputeArcLength:
 class TestSimplifyTrajectory:
     def test_straight_line(self):
         # Points on a line should simplify to just endpoints
-        positions = np.array([
-            [0, 0], [1, 0], [2, 0], [3, 0], [4, 0],
-        ], dtype=float)
+        positions = np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [2, 0],
+                [3, 0],
+                [4, 0],
+            ],
+            dtype=float,
+        )
         simplified = simplify_trajectory(positions, epsilon=0.1)
         assert len(simplified) == 2
         np.testing.assert_allclose(simplified[0], [0, 0])
         np.testing.assert_allclose(simplified[-1], [4, 0])
 
     def test_l_shape(self):
-        positions = np.array([
-            [0, 0], [1, 0], [2, 0], [2, 1], [2, 2],
-        ], dtype=float)
+        positions = np.array(
+            [
+                [0, 0],
+                [1, 0],
+                [2, 0],
+                [2, 1],
+                [2, 2],
+            ],
+            dtype=float,
+        )
         simplified = simplify_trajectory(positions, epsilon=0.1)
         # Should keep the corner point
         assert len(simplified) >= 3
@@ -427,9 +474,16 @@ class TestSimplifyTrajectory:
 
     def test_large_epsilon(self):
         # Very large epsilon should reduce to endpoints
-        positions = np.array([
-            [0, 0], [1, 1], [2, 0], [3, 1], [4, 0],
-        ], dtype=float)
+        positions = np.array(
+            [
+                [0, 0],
+                [1, 1],
+                [2, 0],
+                [3, 1],
+                [4, 0],
+            ],
+            dtype=float,
+        )
         simplified = simplify_trajectory(positions, epsilon=100.0)
         assert len(simplified) == 2
 

@@ -361,8 +361,18 @@ class TestWriteReport:
         invariants_data = {
             "overall_pass": False,
             "checks": [
-                {"name": "collision_free", "pass": False, "severity": "critical", "num_violations": 5},
-                {"name": "speed_limit", "pass": False, "severity": "low", "message": "minor overshoot"},
+                {
+                    "name": "collision_free",
+                    "pass": False,
+                    "severity": "critical",
+                    "num_violations": 5,
+                },
+                {
+                    "name": "speed_limit",
+                    "pass": False,
+                    "severity": "low",
+                    "message": "minor overshoot",
+                },
                 {"name": "goal_reached", "pass": True},
             ],
         }
@@ -399,9 +409,21 @@ class TestWriteReport:
             "status": "fail",
             "confidence": 0.4,
             "violations": [
-                {"type": "unsafe_proximity", "severity": "high", "evidence": "Robot too close to human at step 42"},
-                {"type": "odd_trajectory", "severity": "medium", "evidence": "Zigzag pattern detected"},
-                {"type": "minor_wobble", "severity": "low", "evidence": "Slight oscillation observed"},
+                {
+                    "type": "unsafe_proximity",
+                    "severity": "high",
+                    "evidence": "Robot too close to human at step 42",
+                },
+                {
+                    "type": "odd_trajectory",
+                    "severity": "medium",
+                    "evidence": "Zigzag pattern detected",
+                },
+                {
+                    "type": "minor_wobble",
+                    "severity": "low",
+                    "evidence": "Slight oscillation observed",
+                },
             ],
         }
         (bundle_dir / "judge.json").write_text(json.dumps(judge_data))

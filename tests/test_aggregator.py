@@ -95,17 +95,29 @@ class TestBatchAggregator:
             RunRecord(
                 scenario="hallway",
                 seed=1,
-                metrics={"success_rate": 1.0, "collisions_agent_agent": 0, "path_length_robot": 5.0},
+                metrics={
+                    "success_rate": 1.0,
+                    "collisions_agent_agent": 0,
+                    "path_length_robot": 5.0,
+                },
             ),
             RunRecord(
                 scenario="hallway",
                 seed=2,
-                metrics={"success_rate": 1.0, "collisions_agent_agent": 2, "path_length_robot": 6.0},
+                metrics={
+                    "success_rate": 1.0,
+                    "collisions_agent_agent": 2,
+                    "path_length_robot": 6.0,
+                },
             ),
             RunRecord(
                 scenario="crossing",
                 seed=1,
-                metrics={"success_rate": 0.0, "collisions_agent_agent": 5, "path_length_robot": 10.0},
+                metrics={
+                    "success_rate": 0.0,
+                    "collisions_agent_agent": 5,
+                    "path_length_robot": 10.0,
+                },
             ),
             RunRecord(
                 scenario="crossing",
@@ -217,10 +229,20 @@ class TestBatchSummaryToDict:
                     scenario="hallway",
                     num_runs=2,
                     num_successes=2,
-                    metrics={"success_rate": {"mean": 1.0, "std": 0.0, "min": 1.0, "max": 1.0, "median": 1.0}},
+                    metrics={
+                        "success_rate": {
+                            "mean": 1.0,
+                            "std": 0.0,
+                            "min": 1.0,
+                            "max": 1.0,
+                            "median": 1.0,
+                        }
+                    },
                 )
             ],
-            global_metrics={"success_rate": {"mean": 1.0, "std": 0.0, "min": 1.0, "max": 1.0, "median": 1.0}},
+            global_metrics={
+                "success_rate": {"mean": 1.0, "std": 0.0, "min": 1.0, "max": 1.0, "median": 1.0}
+            },
             timestamp="2026-01-01T00:00:00",
         )
         d = summary.to_dict()
@@ -248,10 +270,20 @@ class TestWriters:
                     scenario="hallway",
                     num_runs=2,
                     num_successes=1,
-                    metrics={"success_rate": {"mean": 0.5, "std": 0.5, "min": 0.0, "max": 1.0, "median": 0.5}},
+                    metrics={
+                        "success_rate": {
+                            "mean": 0.5,
+                            "std": 0.5,
+                            "min": 0.0,
+                            "max": 1.0,
+                            "median": 0.5,
+                        }
+                    },
                 )
             ],
-            global_metrics={"success_rate": {"mean": 0.5, "std": 0.5, "min": 0.0, "max": 1.0, "median": 0.5}},
+            global_metrics={
+                "success_rate": {"mean": 0.5, "std": 0.5, "min": 0.0, "max": 1.0, "median": 0.5}
+            },
             timestamp="2026-01-01T00:00:00",
         )
 

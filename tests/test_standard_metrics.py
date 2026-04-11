@@ -202,13 +202,15 @@ class TestStandardMetricsCompute:
         """Robot and human far apart — no collision."""
         rows = []
         for step in range(5):
-            rows.append({
-                "step": step,
-                "agents": [
-                    _make_agent(0, "robot", 0.0, 0.0, vx=0.1, goal_x=2.0, goal_y=0.0),
-                    _make_agent(1, "human", 0.0, 3.0, goal_x=0.0, goal_y=-1.0),
-                ],
-            })
+            rows.append(
+                {
+                    "step": step,
+                    "agents": [
+                        _make_agent(0, "robot", 0.0, 0.0, vx=0.1, goal_x=2.0, goal_y=0.0),
+                        _make_agent(1, "human", 0.0, 3.0, goal_x=0.0, goal_y=-1.0),
+                    ],
+                }
+            )
         report = self._run_metrics(rows, tmp_path=tmp_path)
         assert report["collisions_agent_agent"] == 0
         assert report["min_dist_robot_human_min"] > 2.0
@@ -239,12 +241,14 @@ class TestStandardMetricsCompute:
         rows = []
         for step in range(10):
             x = 0.01 * step
-            rows.append({
-                "step": step,
-                "agents": [
-                    _make_agent(0, "robot", x, 0.0, vx=0.1, goal_x=1.0, goal_y=0.0),
-                ],
-            })
+            rows.append(
+                {
+                    "step": step,
+                    "agents": [
+                        _make_agent(0, "robot", x, 0.0, vx=0.1, goal_x=1.0, goal_y=0.0),
+                    ],
+                }
+            )
         report = self._run_metrics(rows, tmp_path=tmp_path)
         assert report["path_length_robot"] == pytest.approx(0.09, abs=0.01)
 
@@ -258,12 +262,14 @@ class TestStandardMetricsCompute:
                 vx, vy = 1.0, 0.1
             else:
                 vx, vy = 1.0, -0.1
-            rows.append({
-                "step": step,
-                "agents": [
-                    _make_agent(0, "robot", 0.0, 0.0, vx=vx, vy=vy, goal_x=5.0, goal_y=5.0),
-                ],
-            })
+            rows.append(
+                {
+                    "step": step,
+                    "agents": [
+                        _make_agent(0, "robot", 0.0, 0.0, vx=vx, vy=vy, goal_x=5.0, goal_y=5.0),
+                    ],
+                }
+            )
         report = self._run_metrics(rows, tmp_path=tmp_path)
         # High oscillation expected
         assert report["oscillation_score"] > 0.0
@@ -274,12 +280,14 @@ class TestStandardMetricsCompute:
         for step in range(10):
             # Accelerating then decelerating
             vx = 0.1 * step if step < 5 else 0.1 * (10 - step)
-            rows.append({
-                "step": step,
-                "agents": [
-                    _make_agent(0, "robot", 0.0, 0.0, vx=vx, vy=0.0, goal_x=5.0, goal_y=0.0),
-                ],
-            })
+            rows.append(
+                {
+                    "step": step,
+                    "agents": [
+                        _make_agent(0, "robot", 0.0, 0.0, vx=vx, vy=0.0, goal_x=5.0, goal_y=0.0),
+                    ],
+                }
+            )
         report = self._run_metrics(rows, tmp_path=tmp_path)
         assert report["jerk_proxy"] > 0.0
 
@@ -306,16 +314,23 @@ class TestStandardMetricsCompute:
         rows = []
         # 100 steps of near-zero speed, far from goal
         for step in range(100):
-            rows.append({
-                "step": step,
-                "agents": [
-                    _make_agent(
-                        0, "robot", 0.0, 0.0,
-                        vx=0.001, vy=0.0,
-                        goal_x=5.0, goal_y=5.0,
-                    ),
-                ],
-            })
+            rows.append(
+                {
+                    "step": step,
+                    "agents": [
+                        _make_agent(
+                            0,
+                            "robot",
+                            0.0,
+                            0.0,
+                            vx=0.001,
+                            vy=0.0,
+                            goal_x=5.0,
+                            goal_y=5.0,
+                        ),
+                    ],
+                }
+            )
         report = self._run_metrics(rows, tmp_path=tmp_path)
         assert report["deadlock_count"] >= 1
 
@@ -379,17 +394,24 @@ class TestStandardMetricsCompute:
         """Agent with DONE behavior should not count as deadlocked."""
         rows = []
         for step in range(100):
-            rows.append({
-                "step": step,
-                "agents": [
-                    _make_agent(
-                        0, "robot", 0.0, 0.0,
-                        vx=0.0, vy=0.0,
-                        goal_x=5.0, goal_y=5.0,
-                        behavior="DONE",
-                    ),
-                ],
-            })
+            rows.append(
+                {
+                    "step": step,
+                    "agents": [
+                        _make_agent(
+                            0,
+                            "robot",
+                            0.0,
+                            0.0,
+                            vx=0.0,
+                            vy=0.0,
+                            goal_x=5.0,
+                            goal_y=5.0,
+                            behavior="DONE",
+                        ),
+                    ],
+                }
+            )
         report = self._run_metrics(rows, tmp_path=tmp_path)
         assert report["deadlock_count"] == 0
 

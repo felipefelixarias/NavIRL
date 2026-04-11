@@ -23,6 +23,7 @@ from navirl.logging.episode_log import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_agent_state(agent_id=0, kind="robot", x=1.0, y=2.0, vx=0.5, vy=0.3):
     return AgentState(
         agent_id=agent_id,
@@ -74,9 +75,12 @@ class TestAgentTrajectory:
         traj = AgentTrajectory(agent_id=0, kind="robot")
         for i in range(n):
             pt = TrajectoryPoint(
-                step=i, time_s=float(i) * 0.1,
-                x=float(i), y=float(i) * 0.5,
-                vx=1.0, vy=0.5,
+                step=i,
+                time_s=float(i) * 0.1,
+                x=float(i),
+                y=float(i) * 0.5,
+                vx=1.0,
+                vy=0.5,
                 speed=math.sqrt(1.0 + 0.25),
                 heading=math.atan2(0.5, 1.0),
             )
@@ -281,7 +285,9 @@ class TestEpisodeLogger:
 
     def test_write_reward(self, tmp_path):
         with EpisodeLogger(tmp_path / "ep") as logger:
-            logger.write_reward(0, 0.0, agent_id=1, reward=1.5, components={"goal": 1.0, "time": 0.5})
+            logger.write_reward(
+                0, 0.0, agent_id=1, reward=1.5, components={"goal": 1.0, "time": 0.5}
+            )
             history = logger.get_reward_history(agent_id=1)
             assert len(history) == 1
             assert history[0]["reward"] == 1.5

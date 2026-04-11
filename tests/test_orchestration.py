@@ -74,8 +74,12 @@ def sample_shard_result():
         shard_id=0,
         manifest_id="abc123",
         records=[
-            RunRecord(scenario="hallway", seed=42, metrics={"success_rate": 1.0}, status="completed"),
-            RunRecord(scenario="kitchen", seed=42, metrics={"success_rate": 0.5}, status="completed"),
+            RunRecord(
+                scenario="hallway", seed=42, metrics={"success_rate": 1.0}, status="completed"
+            ),
+            RunRecord(
+                scenario="kitchen", seed=42, metrics={"success_rate": 0.5}, status="completed"
+            ),
         ],
         status="completed",
         attempts=1,
@@ -200,7 +204,9 @@ class TestTaskStatus:
 
 class TestTaskShard:
     def test_creation(self):
-        shard = TaskShard(shard_id=0, tasks=[{"scenario": Path("a.yaml"), "seed": 1, "overrides": {}}])
+        shard = TaskShard(
+            shard_id=0, tasks=[{"scenario": Path("a.yaml"), "seed": 1, "overrides": {}}]
+        )
         assert shard.shard_id == 0
         assert shard.num_tasks == 1
 
@@ -209,14 +215,18 @@ class TestTaskShard:
         assert shard.num_tasks == 0
 
     def test_to_dict(self):
-        shard = TaskShard(shard_id=0, tasks=[{"scenario": Path("a.yaml"), "seed": 1, "overrides": {}}])
+        shard = TaskShard(
+            shard_id=0, tasks=[{"scenario": Path("a.yaml"), "seed": 1, "overrides": {}}]
+        )
         d = shard.to_dict()
         assert d["shard_id"] == 0
         assert len(d["tasks"]) == 1
         assert d["tasks"][0]["scenario"] == "a.yaml"
 
     def test_from_dict_roundtrip(self):
-        shard = TaskShard(shard_id=3, tasks=[{"scenario": Path("b.yaml"), "seed": 7, "overrides": {"x": 1}}])
+        shard = TaskShard(
+            shard_id=3, tasks=[{"scenario": Path("b.yaml"), "seed": 7, "overrides": {"x": 1}}]
+        )
         d = shard.to_dict()
         restored = TaskShard.from_dict(d)
         assert restored.shard_id == 3
@@ -385,16 +395,28 @@ class TestResultStore:
 
     def test_merge_results(self, tmp_path):
         store = ResultStore(tmp_path / "results")
-        store.save(ShardResult(
-            shard_id=0,
-            records=[RunRecord(scenario="a", seed=1, metrics={"success_rate": 1.0}, status="completed")],
-            status="completed",
-        ))
-        store.save(ShardResult(
-            shard_id=1,
-            records=[RunRecord(scenario="b", seed=2, metrics={"success_rate": 0.5}, status="completed")],
-            status="completed",
-        ))
+        store.save(
+            ShardResult(
+                shard_id=0,
+                records=[
+                    RunRecord(
+                        scenario="a", seed=1, metrics={"success_rate": 1.0}, status="completed"
+                    )
+                ],
+                status="completed",
+            )
+        )
+        store.save(
+            ShardResult(
+                shard_id=1,
+                records=[
+                    RunRecord(
+                        scenario="b", seed=2, metrics={"success_rate": 0.5}, status="completed"
+                    )
+                ],
+                status="completed",
+            )
+        )
         summary = store.merge_results(num_shards=2, template_name="test")
         assert isinstance(summary, BatchSummary)
         assert summary.total_runs == 2
@@ -402,11 +424,13 @@ class TestResultStore:
 
     def test_merge_with_missing_shard(self, tmp_path):
         store = ResultStore(tmp_path / "results")
-        store.save(ShardResult(
-            shard_id=0,
-            records=[RunRecord(scenario="a", seed=1, metrics={}, status="completed")],
-            status="completed",
-        ))
+        store.save(
+            ShardResult(
+                shard_id=0,
+                records=[RunRecord(scenario="a", seed=1, metrics={}, status="completed")],
+                status="completed",
+            )
+        )
         # Shard 1 is missing
         summary = store.merge_results(num_shards=2, template_name="test")
         assert summary.total_runs == 1
@@ -438,7 +462,9 @@ class TestOrchestratorConfig:
         assert cfg.video is False
 
     def test_custom_values(self):
-        cfg = OrchestratorConfig(num_shards=8, max_retries=5, max_workers=2, render=True, video=True)
+        cfg = OrchestratorConfig(
+            num_shards=8, max_retries=5, max_workers=2, render=True, video=True
+        )
         assert cfg.num_shards == 8
         assert cfg.max_retries == 5
         assert cfg.max_workers == 2
@@ -584,14 +610,18 @@ class TestLocalExecutor:
     @patch("navirl.orchestration.executor._worker_entry")
     def test_multiple_tasks_sequential(self, mock_worker, tmp_path):
         mock_worker.side_effect = [
-            {"task_id": f"t{i}", "status": "completed", "metrics": {}, "bundle_dir": "", "error": "", "wall_time_s": 0.1}
+            {
+                "task_id": f"t{i}",
+                "status": "completed",
+                "metrics": {},
+                "bundle_dir": "",
+                "error": "",
+                "wall_time_s": 0.1,
+            }
             for i in range(3)
         ]
         executor = LocalExecutor(max_workers=1)
-        tasks = [
-            SimulationTask(task_id=f"t{i}", scenario_path="s.yaml", seed=i)
-            for i in range(3)
-        ]
+        tasks = [SimulationTask(task_id=f"t{i}", scenario_path="s.yaml", seed=i) for i in range(3)]
         results = executor.execute_batch(tasks, str(tmp_path))
         assert len(results) == 3
         assert all(r.status == TaskStatus.COMPLETED for r in results)
@@ -624,7 +654,9 @@ class TestShardWorker:
 
             from navirl.orchestration.worker import ShardWorker
 
-            shard = TaskShard(shard_id=0, tasks=[{"scenario": Path("a.yaml"), "seed": 1, "overrides": {}}])
+            shard = TaskShard(
+                shard_id=0, tasks=[{"scenario": Path("a.yaml"), "seed": 1, "overrides": {}}]
+            )
             worker = ShardWorker(shard=shard, out_root=str(tmp_path))
             result = worker.run()
 
@@ -633,10 +665,14 @@ class TestShardWorker:
         assert result.records[0].status == "completed"
 
     def test_all_tasks_fail(self, tmp_path):
-        with patch("navirl.orchestration.worker.load_scenario", side_effect=FileNotFoundError("nope")):
+        with patch(
+            "navirl.orchestration.worker.load_scenario", side_effect=FileNotFoundError("nope")
+        ):
             from navirl.orchestration.worker import ShardWorker
 
-            shard = TaskShard(shard_id=0, tasks=[{"scenario": Path("bad.yaml"), "seed": 1, "overrides": {}}])
+            shard = TaskShard(
+                shard_id=0, tasks=[{"scenario": Path("bad.yaml"), "seed": 1, "overrides": {}}]
+            )
             worker = ShardWorker(shard=shard, out_root=str(tmp_path))
             result = worker.run()
 
@@ -647,10 +683,14 @@ class TestShardWorker:
     def test_saves_to_result_store(self, tmp_path):
         store = ResultStore(tmp_path / "results")
 
-        with patch("navirl.orchestration.worker.load_scenario", side_effect=FileNotFoundError("nope")):
+        with patch(
+            "navirl.orchestration.worker.load_scenario", side_effect=FileNotFoundError("nope")
+        ):
             from navirl.orchestration.worker import ShardWorker
 
-            shard = TaskShard(shard_id=0, tasks=[{"scenario": Path("x.yaml"), "seed": 1, "overrides": {}}])
+            shard = TaskShard(
+                shard_id=0, tasks=[{"scenario": Path("x.yaml"), "seed": 1, "overrides": {}}]
+            )
             worker = ShardWorker(shard=shard, out_root=str(tmp_path), result_store=store)
             worker.run()
 
@@ -692,7 +732,9 @@ class TestExecuteSingleTask:
         assert result.wall_time_s > 0
 
     def test_failed_execution_returns_error(self, tmp_path):
-        with patch("navirl.orchestration.executor.load_scenario", side_effect=FileNotFoundError("nope")):
+        with patch(
+            "navirl.orchestration.executor.load_scenario", side_effect=FileNotFoundError("nope")
+        ):
             task = SimulationTask(task_id="t1", scenario_path="nonexistent.yaml", seed=1)
             result = _execute_single_task(task, str(tmp_path))
 
@@ -723,14 +765,21 @@ class TestCLIOrchestrate:
         from navirl.cli import build_parser
 
         parser = build_parser()
-        args = parser.parse_args([
-            "orchestrate", "t.yaml",
-            "--shards", "8",
-            "--workers", "4",
-            "--retries", "3",
-            "--resume",
-            "--out", "/tmp/custom",
-        ])
+        args = parser.parse_args(
+            [
+                "orchestrate",
+                "t.yaml",
+                "--shards",
+                "8",
+                "--workers",
+                "4",
+                "--retries",
+                "3",
+                "--resume",
+                "--out",
+                "/tmp/custom",
+            ]
+        )
         assert args.shards == 8
         assert args.workers == 4
         assert args.retries == 3

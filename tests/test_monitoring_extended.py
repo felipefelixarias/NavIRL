@@ -196,11 +196,15 @@ class TestGetStatistics:
 class TestReset:
     def test_reset_clears_everything(self, monitor):
         alert = SafetyAlert(timestamp=1.0, severity=Severity.CRITICAL, constraint_name="c")
-        monitor.record_step(np.zeros(2), np.array([1.0, 0.0]), {
-            "violation": alert,
-            "shield_intervened": True,
-            "min_obstacle_dist": 0.3,
-        })
+        monitor.record_step(
+            np.zeros(2),
+            np.array([1.0, 0.0]),
+            {
+                "violation": alert,
+                "shield_intervened": True,
+                "min_obstacle_dist": 0.3,
+            },
+        )
         monitor.reset()
 
         stats = monitor.get_statistics()
@@ -227,18 +231,14 @@ class TestReset:
 
 class TestSafetyLogger:
     def test_log_alert_info(self, logger, caplog):
-        alert = SafetyAlert(
-            timestamp=1.0, severity=Severity.INFO, constraint_name="speed_check"
-        )
+        alert = SafetyAlert(timestamp=1.0, severity=Severity.INFO, constraint_name="speed_check")
         with caplog.at_level(logging.DEBUG, logger="navirl.safety"):
             logger.log_alert(alert)
         assert "speed_check" in caplog.text
         assert "INFO" in caplog.text
 
     def test_log_alert_warning(self, logger, caplog):
-        alert = SafetyAlert(
-            timestamp=1.0, severity=Severity.WARNING, constraint_name="distance"
-        )
+        alert = SafetyAlert(timestamp=1.0, severity=Severity.WARNING, constraint_name="distance")
         with caplog.at_level(logging.DEBUG, logger="navirl.safety"):
             logger.log_alert(alert)
         assert "distance" in caplog.text
@@ -246,7 +246,9 @@ class TestSafetyLogger:
 
     def test_log_alert_critical(self, logger, caplog):
         alert = SafetyAlert(
-            timestamp=1.0, severity=Severity.CRITICAL, constraint_name="collision",
+            timestamp=1.0,
+            severity=Severity.CRITICAL,
+            constraint_name="collision",
             details={"agent": "robot_1"},
         )
         with caplog.at_level(logging.DEBUG, logger="navirl.safety"):

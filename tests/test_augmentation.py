@@ -22,6 +22,7 @@ from navirl.data.trajectory import Trajectory
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_trajectory(n: int = 10, with_velocities: bool = True) -> Trajectory:
     """Create a simple straight-line trajectory for testing."""
     ts = np.linspace(0.0, 1.0, n)

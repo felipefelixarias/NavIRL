@@ -25,6 +25,7 @@ class TestRoutinePerformanceFixture(TestCase):
 
         # Verify it's actually a GoToGoal instance
         from navirl.models.behavior_tree import GoToGoal
+
         self.assertIsInstance(goto_goal_instance1, GoToGoal)
 
     def test_goto_target_reset_state(self) -> None:
