@@ -250,9 +250,7 @@ def build_repro_package(
                 runs=runs,
                 timestamp=pack_data.get("timestamp", ""),
             )
-            metric_keys = list(
-                {k for r in runs if r.status == "completed" for k in r.metrics}
-            )
+            metric_keys = list({k for r in runs if r.status == "completed" for k in r.metrics})
             expected_metrics = pr.aggregate(sorted(metric_keys))
         shutil.copy2(pack_result_path, results_dir / "pack_results.json")
 

@@ -47,8 +47,7 @@ class ChecklistReport:
             "total_checks": self.total,
             "passed_checks": self.passed_count,
             "results": [
-                {"name": r.name, "passed": r.passed, "message": r.message}
-                for r in self.results
+                {"name": r.name, "passed": r.passed, "message": r.message} for r in self.results
             ],
         }
 
@@ -193,9 +192,7 @@ def run_checklist(package_dir: Path) -> ChecklistReport:
         CheckResult(
             "package_checksum",
             has_checksum,
-            f"checksum={data.get('checksum', '?')[:16]}..."
-            if has_checksum
-            else "no checksum",
+            f"checksum={data.get('checksum', '?')[:16]}..." if has_checksum else "no checksum",
         )
     )
 
