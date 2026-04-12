@@ -50,8 +50,9 @@ jobs:
         run: |
           python -m pytest -m "not e2e" --cov=navirl --cov-report=term-missing --cov-report=xml
       - name: Run E2E regression tests
+        timeout-minutes: 10
         run: |
-          python -m pytest -m e2e
+          python -m pytest -m e2e --timeout=60
       - name: Run quick verification suite
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
         continue-on-error: true
