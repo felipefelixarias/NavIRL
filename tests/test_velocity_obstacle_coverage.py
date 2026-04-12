@@ -300,8 +300,11 @@ class TestVOHumanController:
         ctrl = self._make_controller(algo)
         states = self._make_states()
         actions = ctrl.step(
-            step=0, time_s=0.0, dt=0.1,
-            states=states, robot_id=0,
+            step=0,
+            time_s=0.0,
+            dt=0.1,
+            states=states,
+            robot_id=0,
             emit_event=lambda *a: None,
         )
         assert 1 in actions
@@ -319,8 +322,11 @@ class TestVOHumanController:
         }
         events = []
         ctrl.step(
-            step=0, time_s=0.0, dt=0.1,
-            states=states, robot_id=0,
+            step=0,
+            time_s=0.0,
+            dt=0.1,
+            states=states,
+            robot_id=0,
             emit_event=lambda name, hid, data: events.append(name),
         )
         assert "goal_swap" in events
@@ -337,8 +343,11 @@ class TestVOHumanController:
         # Only robot in states, no humans
         states = {0: _make_agent(0, x=0, y=0)}
         actions = ctrl.step(
-            step=0, time_s=0.0, dt=0.1,
-            states=states, robot_id=0,
+            step=0,
+            time_s=0.0,
+            dt=0.1,
+            states=states,
+            robot_id=0,
             emit_event=lambda *a: None,
         )
         assert len(actions) == 0

@@ -178,9 +178,7 @@ class TestRotatePoint:
         np.testing.assert_allclose(result, [0.0, 1.0], atol=1e-12)
 
     def test_around_center(self):
-        result = rotate_point(
-            np.array([2.0, 0.0]), math.pi, center=np.array([1.0, 0.0])
-        )
+        result = rotate_point(np.array([2.0, 0.0]), math.pi, center=np.array([1.0, 0.0]))
         np.testing.assert_allclose(result, [0.0, 0.0], atol=1e-12)
 
 
@@ -204,15 +202,11 @@ class TestRotatePoints:
 
 class TestClosestPointOnLine:
     def test_midpoint(self):
-        result = closest_point_on_line(
-            np.array([0.5, 1.0]), np.array([0, 0]), np.array([1, 0])
-        )
+        result = closest_point_on_line(np.array([0.5, 1.0]), np.array([0, 0]), np.array([1, 0]))
         np.testing.assert_allclose(result, [0.5, 0.0])
 
     def test_clamped_before_start(self):
-        result = closest_point_on_line(
-            np.array([-1.0, 0.0]), np.array([0, 0]), np.array([1, 0])
-        )
+        result = closest_point_on_line(np.array([-1.0, 0.0]), np.array([0, 0]), np.array([1, 0]))
         np.testing.assert_allclose(result, [0.0, 0.0])
 
     def test_unclamped(self):
@@ -225,17 +219,13 @@ class TestClosestPointOnLine:
         np.testing.assert_allclose(result, [-1.0, 0.0])
 
     def test_degenerate_segment(self):
-        result = closest_point_on_line(
-            np.array([5.0, 5.0]), np.array([1, 1]), np.array([1, 1])
-        )
+        result = closest_point_on_line(np.array([5.0, 5.0]), np.array([1, 1]), np.array([1, 1]))
         np.testing.assert_allclose(result, [1.0, 1.0])
 
 
 class TestPointToLineDistance:
     def test_distance_to_segment(self):
-        d = point_to_line_distance(
-            np.array([0.5, 1.0]), np.array([0, 0]), np.array([1, 0])
-        )
+        d = point_to_line_distance(np.array([0.5, 1.0]), np.array([0, 0]), np.array([1, 0]))
         assert d == pytest.approx(1.0)
 
     def test_distance_to_infinite_line(self):
@@ -310,64 +300,46 @@ class TestRaySegmentIntersection:
 
 class TestCircleCircleIntersection:
     def test_two_points(self):
-        pts = circle_circle_intersection(
-            np.array([0, 0]), 1.0, np.array([1, 0]), 1.0
-        )
+        pts = circle_circle_intersection(np.array([0, 0]), 1.0, np.array([1, 0]), 1.0)
         assert len(pts) == 2
 
     def test_tangent(self):
-        pts = circle_circle_intersection(
-            np.array([0, 0]), 1.0, np.array([2, 0]), 1.0
-        )
+        pts = circle_circle_intersection(np.array([0, 0]), 1.0, np.array([2, 0]), 1.0)
         assert len(pts) == 1
         np.testing.assert_allclose(pts[0], [1.0, 0.0], atol=1e-10)
 
     def test_too_far(self):
-        pts = circle_circle_intersection(
-            np.array([0, 0]), 1.0, np.array([5, 0]), 1.0
-        )
+        pts = circle_circle_intersection(np.array([0, 0]), 1.0, np.array([5, 0]), 1.0)
         assert len(pts) == 0
 
     def test_concentric(self):
-        pts = circle_circle_intersection(
-            np.array([0, 0]), 1.0, np.array([0, 0]), 2.0
-        )
+        pts = circle_circle_intersection(np.array([0, 0]), 1.0, np.array([0, 0]), 2.0)
         assert len(pts) == 0
 
     def test_one_inside_other(self):
-        pts = circle_circle_intersection(
-            np.array([0, 0]), 3.0, np.array([0.5, 0]), 1.0
-        )
+        pts = circle_circle_intersection(np.array([0, 0]), 3.0, np.array([0.5, 0]), 1.0)
         assert len(pts) == 0
 
 
 class TestCircleLineIntersection:
     def test_through_center(self):
-        pts = circle_line_intersection(
-            np.array([0, 0]), 1.0, np.array([-2, 0]), np.array([2, 0])
-        )
+        pts = circle_line_intersection(np.array([0, 0]), 1.0, np.array([-2, 0]), np.array([2, 0]))
         assert len(pts) == 2
 
     def test_tangent(self):
         # Line y=1 tangent to unit circle at (0,1)
-        pts = circle_line_intersection(
-            np.array([0, 0]), 1.0, np.array([-2, 1]), np.array([2, 1])
-        )
+        pts = circle_line_intersection(np.array([0, 0]), 1.0, np.array([-2, 1]), np.array([2, 1]))
         # Tangent line may produce 1 or 2 very close points depending on numerics
         assert len(pts) >= 1
         for p in pts:
             assert p[1] == pytest.approx(1.0, abs=1e-10)
 
     def test_miss(self):
-        pts = circle_line_intersection(
-            np.array([0, 0]), 1.0, np.array([-2, 3]), np.array([2, 3])
-        )
+        pts = circle_line_intersection(np.array([0, 0]), 1.0, np.array([-2, 3]), np.array([2, 3]))
         assert len(pts) == 0
 
     def test_degenerate_segment(self):
-        pts = circle_line_intersection(
-            np.array([0, 0]), 1.0, np.array([0, 0]), np.array([0, 0])
-        )
+        pts = circle_line_intersection(np.array([0, 0]), 1.0, np.array([0, 0]), np.array([0, 0]))
         assert len(pts) == 0
 
 
@@ -426,9 +398,7 @@ class TestPolygonCentroid:
 
 class TestConvexHull:
     def test_square_with_interior_point(self):
-        pts = np.array(
-            [[0, 0], [2, 0], [2, 2], [0, 2], [1, 1]], dtype=float
-        )
+        pts = np.array([[0, 0], [2, 0], [2, 2], [0, 2], [1, 1]], dtype=float)
         hull = convex_hull(pts)
         assert len(hull) == 4
 

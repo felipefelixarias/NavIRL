@@ -102,9 +102,7 @@ class TestSpatialHashGrid:
         grid = SpatialHashGrid(cell_size=2.0)
         grid.insert(0, np.array([0.0, 0.0]))
         grid.insert(1, np.array([1.0, 0.0]))
-        results = grid.query_with_distances(
-            np.array([0.0, 0.0]), radius=2.0, exclude_id=0
-        )
+        results = grid.query_with_distances(np.array([0.0, 0.0]), radius=2.0, exclude_id=0)
         assert len(results) == 1
         assert results[0][0] == 1
 
@@ -112,9 +110,7 @@ class TestSpatialHashGrid:
         grid = SpatialHashGrid(cell_size=2.0)
         for i in range(5):
             grid.insert(i, np.array([float(i), 0.0]))
-        results = grid.query_k_nearest(
-            np.array([0.0, 0.0]), k=2, max_radius=3.0
-        )
+        results = grid.query_k_nearest(np.array([0.0, 0.0]), k=2, max_radius=3.0)
         assert len(results) == 2
         assert results[0][0] == 0  # closest
 
@@ -213,24 +209,18 @@ class TestKDTree2D:
 
     def test_query_radius_with_exclude(self, tree_and_points):
         tree, _ = tree_and_points
-        results = tree.query_radius(
-            np.array([0.0, 0.0]), radius=1.5, exclude_id=0
-        )
+        results = tree.query_radius(np.array([0.0, 0.0]), radius=1.5, exclude_id=0)
         ids = [eid for eid, _ in results]
         assert 0 not in ids
 
     def test_query_rectangle(self, tree_and_points):
         tree, _ = tree_and_points
-        results = tree.query_rectangle(
-            np.array([0.0, 0.0]), np.array([1.5, 1.5])
-        )
+        results = tree.query_rectangle(np.array([0.0, 0.0]), np.array([1.5, 1.5]))
         assert set(results) == {0, 1, 2, 3}
 
     def test_query_rectangle_partial(self, tree_and_points):
         tree, _ = tree_and_points
-        results = tree.query_rectangle(
-            np.array([0.5, 0.5]), np.array([1.5, 1.5])
-        )
+        results = tree.query_rectangle(np.array([0.5, 0.5]), np.array([1.5, 1.5]))
         assert 3 in results  # (1,1)
         assert 0 not in results  # (0,0)
 
