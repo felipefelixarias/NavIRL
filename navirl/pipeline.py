@@ -881,12 +881,15 @@ def run_scenario_dict(
         render_cfg["video"] = bool(video_override)
 
     if render_cfg.get("enabled", True):
-        render_info = render_trace(
-            state_path=state_path,
-            out_dir=bundle_dir / "frames",
-            fps=int(render_cfg.get("fps", 12)),
-            video=bool(render_cfg.get("video", False)),
-        )
+        render_kwargs: dict = {
+            "state_path": state_path,
+            "out_dir": bundle_dir / "frames",
+            "fps": int(render_cfg.get("fps", 12)),
+            "video": bool(render_cfg.get("video", False)),
+        }
+        if render_cfg.get("max_frames") is not None:
+            render_kwargs["max_frames"] = int(render_cfg["max_frames"])
+        render_info = render_trace(**render_kwargs)
         summary["artifacts"].update(render_info)
 
     with (bundle_dir / "summary.json").open("w", encoding="utf-8") as f:

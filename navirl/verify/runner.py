@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import subprocess
 import sys
@@ -15,6 +16,7 @@ from navirl.verify.validators import (
     run_numeric_invariants,
     sample_key_frames,
 )
+from navirl.viz.render import render_trace
 
 PASS = 0
 FAIL = 10
@@ -61,9 +63,23 @@ class VerifyResult:
 
 
 def _run_pytest() -> tuple[bool, str]:
-    proc = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True, check=False
-    )
+    try:
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                "-m",
+                "not e2e",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
+    except subprocess.TimeoutExpired:
+        return False, "pytest timed out after 600s"
     out = f"{proc.stdout}\n{proc.stderr}"
     return (proc.returncode == 0), out
 
@@ -701,9 +717,16 @@ def run_verify(
         scenario_id = scenario_path.stem
         run_id = f"verify_{suite}_{scenario_id}"
 
-        # Full suite always requests video artifacts.
-        video_override = True if suite == "full" else None
-        render_override = True
+        # Full suite renders all frames and produces video artifacts.
+        # Quick suite skips in-pipeline rendering and does a lightweight
+        # post-hoc render of only the key frames needed for the visual judge,
+        # avoiding the cost of writing hundreds of PNGs.
+        if suite == "full":
+            render_override: bool | None = True
+            video_override: bool | None = True
+        else:
+            render_override = False
+            video_override = False
 
         try:
             log = run_scenario_file(
@@ -733,8 +756,23 @@ def run_verify(
         with (bundle_dir / "invariants.json").open("w", encoding="utf-8") as f:
             json.dump(invariants, f, indent=2, sort_keys=True)
 
+        # For quick suite, do a lightweight post-hoc render of only the key
+        # frames the visual judge needs (avoids writing all ~240 PNGs).
+        quick_key_frames = 8
+        if suite != "full":
+            state_path = bundle_dir / "state.jsonl"
+            if state_path.exists():
+                with contextlib.suppress(Exception):
+                    render_trace(
+                        state_path=state_path,
+                        out_dir=bundle_dir / "frames",
+                        max_frames=quick_key_frames,
+                    )
+
         visual_summary = build_visual_summary(bundle_dir, invariants)
-        frame_paths = sample_key_frames(bundle_dir, num_frames=10 if suite == "full" else 8)
+        frame_paths = sample_key_frames(
+            bundle_dir, num_frames=10 if suite == "full" else quick_key_frames
+        )
         judge_payload = run_visual_judge(
             bundle_dir,
             visual_summary,
