@@ -21,6 +21,15 @@ from navirl.pipeline import run_scenario_file
 from navirl.scenarios.load import load_scenario
 from navirl.verify.validators import run_numeric_invariants
 
+try:
+    import rvo2
+
+    _RVO2_AVAILABLE = True
+except ImportError:
+    _RVO2_AVAILABLE = False
+
+_requires_rvo2 = pytest.mark.skipif(not _RVO2_AVAILABLE, reason="rvo2 not installed")
+
 SCENARIO_LIB = Path(__file__).resolve().parent.parent / "navirl" / "scenarios" / "library"
 
 # Scenarios that reliably complete within the deadlock retry budget.
@@ -76,6 +85,7 @@ def _run_and_validate(scenario_name: str, tmp_path: Path) -> dict:
 # ---------------------------------------------------------------------------
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
 @pytest.mark.parametrize("scenario_name", RELIABLE_SCENARIOS)
@@ -94,6 +104,7 @@ def test_canonical_scenario_invariants_pass(scenario_name: str, tmp_path: Path) 
 # ---------------------------------------------------------------------------
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
 @pytest.mark.xfail(reason="Complex scenarios may deadlock or timeout under CI", strict=False)
@@ -120,6 +131,7 @@ def test_complex_scenario_invariants_pass(scenario_name: str, tmp_path: Path) ->
 # ---------------------------------------------------------------------------
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
 def test_hallway_pass_no_teleport(tmp_path: Path) -> None:
@@ -130,6 +142,7 @@ def test_hallway_pass_no_teleport(tmp_path: Path) -> None:
     assert teleport["pass"], f"Teleport violations: {teleport.get('violations', [])}"
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
 def test_doorway_token_exclusivity(tmp_path: Path) -> None:
@@ -142,6 +155,7 @@ def test_doorway_token_exclusivity(tmp_path: Path) -> None:
         )
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(60)
 def test_hallway_no_wall_penetration(tmp_path: Path) -> None:
@@ -159,6 +173,7 @@ def test_hallway_no_wall_penetration(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(120)
 def test_all_reliable_scenarios_produce_events_file(tmp_path: Path) -> None:
@@ -185,6 +200,7 @@ def test_scenario_horizon_configs_valid() -> None:
         assert expected_steps > 0, f"{name}: horizon.steps must be positive"
 
 
+@_requires_rvo2
 @pytest.mark.e2e
 @pytest.mark.timeout(120)
 def test_scenario_seeds_are_deterministic(tmp_path: Path) -> None:
