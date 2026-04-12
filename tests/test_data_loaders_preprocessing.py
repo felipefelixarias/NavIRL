@@ -373,9 +373,7 @@ class TestNormalizePositions:
 
     def test_preserves_timestamps(self, sample_trajectories):
         normed, _ = normalize_positions(sample_trajectories)
-        np.testing.assert_array_equal(
-            normed[0].timestamps, sample_trajectories[0].timestamps
-        )
+        np.testing.assert_array_equal(normed[0].timestamps, sample_trajectories[0].timestamps)
 
     def test_constant_positions_no_division_by_zero(self):
         t = Trajectory(
@@ -712,12 +710,8 @@ class TestWritePackMarkdown:
             runs=[
                 PackRunResult(entry_id="hallway", seed=42, metrics={"reward": 10.5, "time": 5.0}),
                 PackRunResult(entry_id="hallway", seed=43, metrics={"reward": 11.0, "time": 4.5}),
-                PackRunResult(
-                    entry_id="crossing", seed=42, metrics={"reward": 8.0, "time": 6.0}
-                ),
-                PackRunResult(
-                    entry_id="crossing", seed=99, status="failed", error="env crashed"
-                ),
+                PackRunResult(entry_id="crossing", seed=42, metrics={"reward": 8.0, "time": 6.0}),
+                PackRunResult(entry_id="crossing", seed=99, status="failed", error="env crashed"),
             ],
         )
 
