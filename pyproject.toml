@@ -53,6 +53,7 @@ dev = [
   "pytest-xdist>=3.0",  # Parallel test execution
   "pytest-mock>=3.10",
   "pytest-asyncio>=0.21",
+  "pytest-timeout>=2.2",  # Per-test and global timeout guards
   "Faker>=18.0",
   "ruff>=0.3",
   "black>=24.3",
@@ -81,10 +82,11 @@ version = { attr = "navirl._version.__version__" }
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
-addopts = "-ra -n auto --dist loadscope --strict-markers"
+addopts = "-ra -n auto --dist loadscope --strict-markers --timeout=120"
 markers = [
     "e2e: end-to-end regression tests that run full scenario pipelines",
 ]
+timeout_method = "signal"
 
 [tool.ruff]
 line-length = 100
