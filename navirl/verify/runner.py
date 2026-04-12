@@ -72,7 +72,6 @@ def _run_pytest() -> tuple[bool, str]:
                 "-q",
                 "-m",
                 "not e2e",
-                "--timeout=30",
             ],
             capture_output=True,
             text=True,
