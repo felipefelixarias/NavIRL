@@ -29,14 +29,24 @@ RELIABLE_SCENARIOS = [
     "doorway_token_yield.yaml",
     "kitchen_congestion.yaml",
     "routine_cook_dinner_micro.yaml",
+    "elevator_lobby_waiting.yaml",
+    "grocery_aisle_navigation.yaml",
+    "library_quiet_navigation.yaml",
+    "office_cubicle_navigation.yaml",
+    "restaurant_service_navigation.yaml",
 ]
 
 # Complex multi-agent scenarios that may deadlock stochastically under
-# resource-constrained CI.  Failures here are reported as xfail rather than
-# hard failures so they don't block the pipeline while still being visible.
+# resource-constrained CI, or require long horizons.  Failures here are
+# reported as xfail rather than hard failures so they don't block the
+# pipeline while still being visible.
 COMPLEX_SCENARIOS = [
     "group_cohesion.yaml",
     "robot_comfort_avoidance.yaml",
+    "hospital_corridor_navigation.yaml",
+    "office_daily_routines.yaml",
+    "restaurant_service_routines.yaml",
+    "wainscott_main_demo.yaml",
 ]
 
 ALL_CANONICAL = RELIABLE_SCENARIOS + COMPLEX_SCENARIOS
