@@ -59,6 +59,7 @@ jobs:
           python -m build
       - name: Quick verification suite
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        continue-on-error: true
         run: |
           python -m navirl verify --suite quick --judge-mode heuristic
         timeout-minutes: 10

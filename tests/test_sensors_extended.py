@@ -409,7 +409,8 @@ class TestPedestrianDetector:
         assert "shape" in space
 
     def test_no_agents(self):
-        sensor = PedestrianDetector()
+        cfg = PedestrianDetectorConfig(false_positive_rate=0.0)
+        sensor = PedestrianDetector(config=cfg)
         ws = _basic_world_state()
         obs = sensor.observe(ws)
         assert isinstance(obs, list)
