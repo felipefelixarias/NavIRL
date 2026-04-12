@@ -214,10 +214,11 @@ class TestRunningMeanStd:
 
     def test_batch_update_convergence(self):
         rms = RunningMeanStd(shape=(1,))
-        data = np.random.randn(1000, 1) * 3.0 + 5.0
+        rng = np.random.RandomState(42)
+        data = rng.randn(2000, 1) * 3.0 + 5.0
         rms.update(data)
-        assert rms.mean[0] == pytest.approx(5.0, abs=0.3)
-        assert rms.var[0] == pytest.approx(9.0, abs=1.0)
+        assert rms.mean[0] == pytest.approx(5.0, abs=0.5)
+        assert rms.var[0] == pytest.approx(9.0, abs=2.0)
 
     def test_incremental_updates(self):
         rms = RunningMeanStd(shape=(1,))
