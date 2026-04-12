@@ -20,6 +20,7 @@ from navirl.orchestration import Orchestrator, OrchestratorConfig
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
 from navirl.packs import load_pack, run_pack, write_pack_json, write_pack_markdown
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
+from navirl.repro import build_repro_package, run_checklist, verify_repro_package
 from navirl.scenarios import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
 from navirl.tune import run_tuning
@@ -467,6 +468,108 @@ def _create_orchestrate_parser(subparsers) -> None:
     p_orch.set_defaults(func=_cmd_orchestrate)
 
 
+def _cmd_repro_build(args: argparse.Namespace) -> int:
+    run_dir = Path(args.run_dir)
+    if not run_dir.is_dir():
+        raise FileNotFoundError(f"Run directory not found: {run_dir}")
+
+    scenario_paths = None
+    if args.scenarios:
+        scenario_paths = [Path(s) for s in args.scenarios]
+
+    pack_result_path = Path(args.pack_results) if args.pack_results else None
+    metadata = {}
+    if args.author:
+        metadata["author"] = args.author
+    if args.study:
+        metadata["study"] = args.study
+
+    package = build_repro_package(
+        name=args.name,
+        version=args.version,
+        description=args.description or "",
+        run_dir=run_dir,
+        scenario_paths=scenario_paths,
+        pack_result_path=pack_result_path,
+        out_dir=Path(args.out),
+        metadata=metadata,
+    )
+    print(f"Reproducibility package '{package.name}' v{package.version}")
+    print(f"  Artifacts: {len(package.artifacts)}")
+    print(f"  Checksum: {package.checksum()[:16]}...")
+    print(f"  Output: {args.out}/MANIFEST.json")
+    return 0
+
+
+def _cmd_repro_check(args: argparse.Namespace) -> int:
+    package_dir = Path(args.package_dir)
+    if not package_dir.is_dir():
+        raise FileNotFoundError(f"Package directory not found: {package_dir}")
+
+    report = run_checklist(package_dir)
+
+    if args.format == "markdown":
+        print(report.to_markdown())
+    else:
+        print(json.dumps(report.to_dict(), indent=2))
+
+    return 0 if report.passed else 1
+
+
+def _cmd_repro_verify(args: argparse.Namespace) -> int:
+    package_dir = Path(args.package_dir)
+    if not package_dir.is_dir():
+        raise FileNotFoundError(f"Package directory not found: {package_dir}")
+
+    ok, issues = verify_repro_package(package_dir)
+
+    if ok:
+        print("All artifact checksums verified.")
+        return 0
+
+    print(f"Integrity check failed ({len(issues)} issue(s)):")
+    for issue in issues:
+        print(f"  - {issue}")
+    return 1
+
+
+def _create_repro_parser(subparsers) -> None:
+    """Create the 'repro' command parser with build/check/verify subcommands."""
+    p_repro = subparsers.add_parser(
+        "repro",
+        help="Build and verify reproducibility packages",
+    )
+    repro_sub = p_repro.add_subparsers(dest="repro_command", required=True)
+
+    # repro build
+    p_build = repro_sub.add_parser("build", help="Build a reproducibility package")
+    p_build.add_argument("name", type=str, help="Package name")
+    p_build.add_argument("run_dir", type=str, help="Directory with experiment run outputs")
+    p_build.add_argument("--out", type=str, default="out/repro")
+    p_build.add_argument("--version", type=str, default="1.0")
+    p_build.add_argument("--description", type=str, default=None)
+    p_build.add_argument(
+        "--scenarios", nargs="*", default=None, help="Explicit scenario YAML paths"
+    )
+    p_build.add_argument("--pack-results", type=str, default=None, help="pack_results.json path")
+    p_build.add_argument("--author", type=str, default=None)
+    p_build.add_argument("--study", type=str, default=None)
+    p_build.set_defaults(func=_cmd_repro_build)
+
+    # repro check
+    p_check = repro_sub.add_parser("check", help="Run publication readiness checklist")
+    p_check.add_argument("package_dir", type=str, help="Path to reproducibility package")
+    p_check.add_argument(
+        "--format", choices=["json", "markdown"], default="markdown", help="Output format"
+    )
+    p_check.set_defaults(func=_cmd_repro_check)
+
+    # repro verify
+    p_verify = repro_sub.add_parser("verify", help="Verify artifact integrity")
+    p_verify.add_argument("package_dir", type=str, help="Path to reproducibility package")
+    p_verify.set_defaults(func=_cmd_repro_verify)
+
+
 def _create_layout_parser(subparsers) -> None:
     """Create the 'overseer-layout' command parser."""
     p_layout = subparsers.add_parser(
@@ -508,6 +611,7 @@ def build_parser() -> argparse.ArgumentParser:
     _create_experiment_parser(subparsers)
     _create_pack_parser(subparsers)
     _create_orchestrate_parser(subparsers)
+    _create_repro_parser(subparsers)
     _create_layout_parser(subparsers)
 
     return parser
