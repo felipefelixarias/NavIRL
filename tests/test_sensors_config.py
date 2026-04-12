@@ -37,7 +37,6 @@ from navirl.robots.sensors_config import (
     simulate_range_scan,
 )
 
-
 # ===================================================================
 # _wrap_angle
 # ===================================================================
@@ -213,17 +212,13 @@ class TestCheckPointVisibility:
         assert check_point_visibility(0, 0, 0, mount, point) is False
 
     def test_outside_fov(self):
-        mount = SensorMount(
-            max_range=10.0, min_range=0.1, fov_horizontal=math.pi / 4
-        )
+        mount = SensorMount(max_range=10.0, min_range=0.1, fov_horizontal=math.pi / 4)
         # Point directly behind
         point = np.array([-5.0, 0.0])
         assert check_point_visibility(0, 0, 0, mount, point) is False
 
     def test_edge_of_fov(self):
-        mount = SensorMount(
-            max_range=10.0, min_range=0.1, fov_horizontal=math.pi
-        )
+        mount = SensorMount(max_range=10.0, min_range=0.1, fov_horizontal=math.pi)
         # Point at exactly half-FOV angle
         angle = math.pi / 2 - 0.01
         point = np.array([5.0 * math.cos(angle), 5.0 * math.sin(angle)])
@@ -449,10 +444,12 @@ class TestSensorSuite:
         assert suite.get("b") is not None
 
     def test_enabled_mounts(self):
-        suite = SensorSuite([
-            SensorMount(name="on", enabled=True),
-            SensorMount(name="off", enabled=False),
-        ])
+        suite = SensorSuite(
+            [
+                SensorMount(name="on", enabled=True),
+                SensorMount(name="off", enabled=False),
+            ]
+        )
         enabled = suite.enabled_mounts()
         assert len(enabled) == 1
         assert enabled[0].name == "on"
@@ -467,10 +464,12 @@ class TestSensorSuite:
         assert sx == pytest.approx(0.5)
 
     def test_world_poses_2d_skips_disabled(self):
-        suite = SensorSuite([
-            SensorMount(name="on", enabled=True),
-            SensorMount(name="off", enabled=False),
-        ])
+        suite = SensorSuite(
+            [
+                SensorMount(name="on", enabled=True),
+                SensorMount(name="off", enabled=False),
+            ]
+        )
         poses = suite.world_poses_2d(0, 0, 0)
         assert len(poses) == 1
 
@@ -578,9 +577,7 @@ class TestFusePositionEstimates:
         np.testing.assert_array_equal(result, np.zeros(2))
 
     def test_single_estimate(self):
-        config = SensorFusionConfig(
-            weights=[FusionWeight(sensor_name="lidar", weight=1.0)]
-        )
+        config = SensorFusionConfig(weights=[FusionWeight(sensor_name="lidar", weight=1.0)])
         estimates = {"lidar": np.array([5.0, 3.0])}
         result = fuse_position_estimates(estimates, config)
         np.testing.assert_allclose(result, [5.0, 3.0])
@@ -611,9 +608,7 @@ class TestFusePositionEstimates:
         np.testing.assert_allclose(result, [3.0, 0.0])
 
     def test_3d_estimates(self):
-        config = SensorFusionConfig(
-            weights=[FusionWeight(sensor_name="s1", weight=1.0)]
-        )
+        config = SensorFusionConfig(weights=[FusionWeight(sensor_name="s1", weight=1.0)])
         estimates = {"s1": np.array([1.0, 2.0, 3.0])}
         result = fuse_position_estimates(estimates, config)
         assert result.shape == (3,)
