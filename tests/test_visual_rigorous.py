@@ -12,6 +12,8 @@ from navirl.verify.judge import run_visual_judge
 from navirl.verify.validators import build_visual_summary, run_numeric_invariants, sample_key_frames
 
 
+@pytest.mark.e2e
+@pytest.mark.timeout(60)
 def test_render_emits_diagnostics_with_arrows_and_trails(tmp_path: Path):
     scenario = load_scenario("navirl/scenarios/library/hallway_pass.yaml")
     scenario["horizon"]["steps"] = 28
@@ -65,6 +67,8 @@ def test_rigorous_judge_fails_when_diagnostics_missing():
     assert any(v["type"] == "missing_render_diagnostics" for v in payload["violations"])
 
 
+@pytest.mark.e2e
+@pytest.mark.timeout(120)
 def test_rigorous_judge_passes_on_real_bundle(tmp_path: Path):
     scenario = load_scenario("navirl/scenarios/library/doorway_token_yield.yaml")
     scenario["horizon"]["steps"] = 110
