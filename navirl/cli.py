@@ -20,7 +20,13 @@ from navirl.orchestration import Orchestrator, OrchestratorConfig
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
 from navirl.packs import load_pack, run_pack, write_pack_json, write_pack_markdown
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
-from navirl.repro import build_repro_package, run_checklist, verify_repro_package
+from navirl.repro import (
+    build_repro_package,
+    replay_package,
+    run_checklist,
+    scan_compliance,
+    verify_repro_package,
+)
 from navirl.scenarios import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
 from navirl.tune import run_tuning
@@ -533,6 +539,45 @@ def _cmd_repro_verify(args: argparse.Namespace) -> int:
     return 1
 
 
+def _cmd_repro_replay(args: argparse.Namespace) -> int:
+    package_dir = Path(args.package_dir)
+    if not package_dir.is_dir():
+        raise FileNotFoundError(f"Package directory not found: {package_dir}")
+
+    out_dir = Path(args.out) if args.out else None
+    report = replay_package(
+        package_dir,
+        out_dir=out_dir,
+        tolerance=args.tolerance,
+        seed_override=args.seed if hasattr(args, "seed") and args.seed is not None else None,
+    )
+
+    if args.format == "markdown":
+        print(report.to_markdown())
+    else:
+        print(json.dumps(report.to_dict(), indent=2))
+
+    return 0 if report.passed else 1
+
+
+def _cmd_repro_compliance(args: argparse.Namespace) -> int:
+    package_dir = Path(args.package_dir)
+    if not package_dir.is_dir():
+        raise FileNotFoundError(f"Package directory not found: {package_dir}")
+
+    report = scan_compliance(
+        package_dir,
+        check_pii=not args.no_pii,
+    )
+
+    if args.format == "markdown":
+        print(report.to_markdown())
+    else:
+        print(json.dumps(report.to_dict(), indent=2))
+
+    return 0 if report.passed else 1
+
+
 def _create_repro_parser(subparsers) -> None:
     """Create the 'repro' command parser with build/check/verify subcommands."""
     p_repro = subparsers.add_parser(
@@ -568,6 +613,34 @@ def _create_repro_parser(subparsers) -> None:
     p_verify = repro_sub.add_parser("verify", help="Verify artifact integrity")
     p_verify.add_argument("package_dir", type=str, help="Path to reproducibility package")
     p_verify.set_defaults(func=_cmd_repro_verify)
+
+    # repro replay
+    p_replay = repro_sub.add_parser(
+        "replay", help="Replay scenarios and diff against expected outputs"
+    )
+    p_replay.add_argument("package_dir", type=str, help="Path to reproducibility package")
+    p_replay.add_argument("--out", type=str, default=None, help="Output directory for replay runs")
+    p_replay.add_argument(
+        "--tolerance", type=float, default=0.1, help="Base metric comparison tolerance"
+    )
+    p_replay.add_argument("--seed", type=int, default=None, help="Override seed for all replays")
+    p_replay.add_argument(
+        "--format", choices=["json", "markdown"], default="markdown", help="Output format"
+    )
+    p_replay.set_defaults(func=_cmd_repro_replay)
+
+    # repro compliance
+    p_compliance = repro_sub.add_parser(
+        "compliance", help="Scan for credentials, PII, and sensitive data"
+    )
+    p_compliance.add_argument("package_dir", type=str, help="Path to reproducibility package")
+    p_compliance.add_argument(
+        "--no-pii", action="store_true", default=False, help="Skip PII pattern checks"
+    )
+    p_compliance.add_argument(
+        "--format", choices=["json", "markdown"], default="markdown", help="Output format"
+    )
+    p_compliance.set_defaults(func=_cmd_repro_compliance)
 
 
 def _create_layout_parser(subparsers) -> None:
