@@ -80,7 +80,7 @@ def _build_mock_gym() -> types.ModuleType:
             raise NotImplementedError
 
         def reset(self, **kwargs):
-            raise NotImplementedError
+            pass  # Base class no-op, matching real gymnasium.Env behaviour
 
         def close(self):
             pass
