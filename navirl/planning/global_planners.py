@@ -599,9 +599,13 @@ class PRMPlanner(Planner):
             low = np.minimum(start, goal) - 5.0
             high = np.maximum(start, goal) + 5.0
 
+        t0 = time.monotonic()
+
         # Sample nodes.
         nodes = [start.copy(), goal.copy()]
         for _ in range(self.num_samples):
+            if time.monotonic() - t0 > self.config.time_limit:
+                break
             pt = np.random.uniform(low, high)
             nodes.append(pt)
         nodes_arr = np.array(nodes)  # (M, 2)
@@ -610,6 +614,8 @@ class PRMPlanner(Planner):
         # Build adjacency (k-nearest neighbours, collision-checked).
         adjacency: dict[int, list[tuple[int, float]]] = {i: [] for i in range(M)}
         for i in range(M):
+            if time.monotonic() - t0 > self.config.time_limit:
+                break
             dists = np.linalg.norm(nodes_arr - nodes_arr[i], axis=1)
             neighbours = np.argsort(dists)[1 : self.k_neighbors + 1]
             for j in neighbours:

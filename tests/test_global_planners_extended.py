@@ -45,7 +45,7 @@ def config_grid():
 @pytest.fixture
 def config_sampling():
     """PlannerConfig for sampling-based planners."""
-    return PlannerConfig(max_iterations=5000, time_limit=5.0, resolution=0.05)
+    return PlannerConfig(max_iterations=2000, time_limit=2.0, resolution=0.05)
 
 
 # ---------------------------------------------------------------------------
