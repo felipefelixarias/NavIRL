@@ -2,70 +2,30 @@
 
 from __future__ import annotations
 
-import importlib
-import importlib.util
 import math
-import pathlib as _pathlib
-import sys
-import types
 
 import numpy as np
 import pytest
 
-# ---------------------------------------------------------------------------
-# Bootstrap: navirl.maps and navirl.rewards __init__.py files import
-# submodules that may not exist in this checkout. We register stub packages
-# and load the specific modules we need directly from their file paths.
-# ---------------------------------------------------------------------------
-
-_root = _pathlib.Path(__file__).resolve().parent.parent / "navirl"
-
-
-def _load_module(fqn: str, filepath: _pathlib.Path) -> types.ModuleType:
-    """Load a single Python file as *fqn* into sys.modules."""
-    spec = importlib.util.spec_from_file_location(fqn, filepath)
-    mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
-    sys.modules[fqn] = mod
-    spec.loader.exec_module(mod)  # type: ignore[union-attr]
-    return mod
-
-
-def _ensure_stub_package(fqn: str, path: _pathlib.Path) -> None:
-    """Register a lightweight stub package so child modules can be imported."""
-    if fqn not in sys.modules:
-        stub = types.ModuleType(fqn)
-        stub.__path__ = [str(path)]  # type: ignore[attr-defined]
-        stub.__package__ = fqn
-        sys.modules[fqn] = stub
-
-
-_ensure_stub_package("navirl.maps", _root / "maps")
-_ensure_stub_package("navirl.rewards", _root / "rewards")
-
-_grid_map = _load_module("navirl.maps.grid_map", _root / "maps" / "grid_map.py")
-_rewards_base = _load_module("navirl.rewards.base", _root / "rewards" / "base.py")
-_rewards_nav = _load_module("navirl.rewards.navigation", _root / "rewards" / "navigation.py")
-
-GridMap = _grid_map.GridMap
-FREE = _grid_map.FREE
-OCCUPIED = _grid_map.OCCUPIED
-UNKNOWN = _grid_map.UNKNOWN
-
-CompositeReward = _rewards_base.CompositeReward
-RewardClipper = _rewards_base.RewardClipper
-RewardComponent = _rewards_base.RewardComponent
-RewardFunction = _rewards_base.RewardFunction
-RewardNormalizer = _rewards_base.RewardNormalizer
-RewardShaper = _rewards_base.RewardShaper
-
-BoundaryPenalty = _rewards_nav.BoundaryPenalty
-CollisionPenalty = _rewards_nav.CollisionPenalty
-GoalReward = _rewards_nav.GoalReward
-PathFollowingReward = _rewards_nav.PathFollowingReward
-ProgressReward = _rewards_nav.ProgressReward
-SmoothnessReward = _rewards_nav.SmoothnessReward
-TimePenaltyReward = _rewards_nav.TimePenaltyReward
-VelocityReward = _rewards_nav.VelocityReward
+from navirl.maps.grid_map import FREE, OCCUPIED, UNKNOWN, GridMap
+from navirl.rewards.base import (
+    CompositeReward,
+    RewardClipper,
+    RewardComponent,
+    RewardFunction,
+    RewardNormalizer,
+    RewardShaper,
+)
+from navirl.rewards.navigation import (
+    BoundaryPenalty,
+    CollisionPenalty,
+    GoalReward,
+    PathFollowingReward,
+    ProgressReward,
+    SmoothnessReward,
+    TimePenaltyReward,
+    VelocityReward,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers

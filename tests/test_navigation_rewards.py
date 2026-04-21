@@ -2,37 +2,34 @@
 
 from __future__ import annotations
 
-import importlib.util
 import math
-import sys
-from pathlib import Path
 
 import numpy as np
 import pytest
 
-# Import the submodule directly from file to avoid the package __init__
-# which tries to import navirl.rewards.learned (may not exist).
-# First ensure the base module is loadable.
-_base_path = Path(__file__).resolve().parent.parent / "navirl" / "rewards" / "base.py"
-_base_spec = importlib.util.spec_from_file_location("navirl.rewards.base", _base_path)
-if "navirl.rewards.base" not in sys.modules:
-    _base_mod = importlib.util.module_from_spec(_base_spec)
-    sys.modules[_base_spec.name] = _base_mod
-    _base_spec.loader.exec_module(_base_mod)
+from navirl.rewards.navigation import (
+    BoundaryPenalty,
+    CollisionPenalty,
+    GoalReward,
+    PathFollowingReward,
+    ProgressReward,
+    SmoothnessReward,
+    TimePenaltyReward,
+    VelocityReward,
+)
 
-_nav_path = Path(__file__).resolve().parent.parent / "navirl" / "rewards" / "navigation.py"
-_nav_spec = importlib.util.spec_from_file_location("navirl.rewards.navigation", _nav_path)
-_nav = importlib.util.module_from_spec(_nav_spec)
-sys.modules[_nav_spec.name] = _nav
-_nav_spec.loader.exec_module(_nav)
-BoundaryPenalty = _nav.BoundaryPenalty
-CollisionPenalty = _nav.CollisionPenalty
-GoalReward = _nav.GoalReward
-PathFollowingReward = _nav.PathFollowingReward
-ProgressReward = _nav.ProgressReward
-SmoothnessReward = _nav.SmoothnessReward
-TimePenaltyReward = _nav.TimePenaltyReward
-VelocityReward = _nav.VelocityReward
+
+def test_rewards_package_imports_cleanly():
+    """Guard against phantom imports in navirl.rewards.__init__.
+
+    Past regression: __init__.py referenced modules (learned, social,
+    multi_objective) that were never created, making `import navirl.rewards`
+    fail with ModuleNotFoundError.
+    """
+    import navirl.rewards as r
+
+    for name in r.__all__:
+        assert hasattr(r, name), f"navirl.rewards.__all__ lists {name!r} but it is not importable"
 
 
 # ---------------------------------------------------------------------------
