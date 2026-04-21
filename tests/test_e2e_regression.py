@@ -38,6 +38,7 @@ RELIABLE_SCENARIOS = [
     "doorway_token_yield.yaml",
     "routine_cook_dinner_micro.yaml",
     "elevator_lobby_waiting.yaml",
+    "kitchen_congestion.yaml",
 ]
 
 # Complex multi-agent scenarios that may deadlock stochastically under
@@ -46,7 +47,6 @@ RELIABLE_SCENARIOS = [
 # rather than hard failures so they don't block the pipeline while still
 # being visible.
 COMPLEX_SCENARIOS = [
-    "kitchen_congestion.yaml",
     "group_cohesion.yaml",
     "robot_comfort_avoidance.yaml",
     "grocery_aisle_navigation.yaml",
