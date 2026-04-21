@@ -70,3 +70,7 @@ def __getattr__(name: str) -> object:
     value = getattr(module, name)
     globals()[name] = value
     return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(_EXPORTS))
