@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -20,7 +21,14 @@ from navirl.orchestration import Orchestrator, OrchestratorConfig
 from navirl.overseer import apply_layout_to_scenario, suggest_layout
 from navirl.packs import load_pack, run_pack, write_pack_json, write_pack_markdown
 from navirl.pipeline import expand_state_paths, run_batch, run_scenario_file
-from navirl.repro import build_repro_package, run_checklist, verify_repro_package
+from navirl.repro import (
+    GeneratorConfig,
+    build_repro_package,
+    generate_canonical_package,
+    generate_repro_package,
+    run_checklist,
+    verify_repro_package,
+)
 from navirl.scenarios import load_scenario
 from navirl.scenarios.validate import validate_scenario_dict
 from navirl.tune import run_tuning
@@ -501,6 +509,30 @@ def _cmd_repro_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_repro_generate(args: argparse.Namespace) -> int:
+    scenario_path = Path(args.scenario)
+    if not scenario_path.is_file():
+        raise FileNotFoundError(f"Scenario not found: {scenario_path}")
+
+    metadata: dict[str, Any] = {}
+    if args.author:
+        metadata["author"] = args.author
+
+    package = generate_canonical_package(
+        scenario_path=scenario_path,
+        out_dir=Path(args.out),
+        name=args.name,
+        version=args.version,
+        description=args.description or "",
+        metadata=metadata or None,
+    )
+    print(f"Generated reproducibility package '{package.name}' v{package.version}")
+    print(f"  Artifacts: {len(package.artifacts)}")
+    print(f"  Checksum: {package.checksum()[:16]}...")
+    print(f"  Output: {args.out}")
+    return 0
+
+
 def _cmd_repro_check(args: argparse.Namespace) -> int:
     package_dir = Path(args.package_dir)
     if not package_dir.is_dir():
@@ -555,6 +587,18 @@ def _create_repro_parser(subparsers) -> None:
     p_build.add_argument("--author", type=str, default=None)
     p_build.add_argument("--study", type=str, default=None)
     p_build.set_defaults(func=_cmd_repro_build)
+
+    # repro generate
+    p_gen = repro_sub.add_parser(
+        "generate", help="Generate a repro package from a single scenario file"
+    )
+    p_gen.add_argument("scenario", type=str, help="Path to scenario YAML file")
+    p_gen.add_argument("--out", type=str, default="out/repro", help="Output directory")
+    p_gen.add_argument("--name", type=str, default=None, help="Package name (defaults to scenario stem)")
+    p_gen.add_argument("--version", type=str, default="1.0")
+    p_gen.add_argument("--description", type=str, default=None)
+    p_gen.add_argument("--author", type=str, default=None)
+    p_gen.set_defaults(func=_cmd_repro_generate)
 
     # repro check
     p_check = repro_sub.add_parser("check", help="Run publication readiness checklist")
