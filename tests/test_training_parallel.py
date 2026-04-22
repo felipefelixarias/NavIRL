@@ -637,3 +637,163 @@ class TestSubprocVecEnv:
             np.testing.assert_array_equal(obs[0], [0.0, 0.0])
         finally:
             venv.close()
+
+    def test_close_with_pending_step(self):
+        """close() drains pending step results before shutdown."""
+        from navirl.training.parallel import SubprocVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=5)
+
+        venv = SubprocVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            venv.step_async(np.array([0, 0]))
+            # Do not call step_wait — close should drain the pipe
+            assert venv.waiting
+        finally:
+            venv.close()
+        assert venv.closed
+
+
+# ---------------------------------------------------------------------------
+# AsyncVecEnv
+# ---------------------------------------------------------------------------
+
+
+class TestAsyncVecEnv:
+    def test_step_and_reset(self):
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=3, episode_length=5)
+
+        venv = AsyncVecEnv([_make, _make], start_method="fork")
+        try:
+            obs = venv.reset()
+            assert obs.shape == (2, 3)
+            np.testing.assert_array_equal(obs, 0.0)
+
+            obs, rewards, dones, infos = venv.step(np.array([0, 0]))
+            assert obs.shape == (2, 3)
+            assert rewards.shape == (2,)
+            assert dones.shape == (2,)
+            assert len(infos) == 2
+        finally:
+            venv.close()
+
+    def test_step_async_and_wait(self):
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=5)
+
+        venv = AsyncVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            venv.step_async(np.array([0, 0]))
+            # All are pending
+            assert all(venv._pending)
+            obs, rewards, dones, infos = venv.step_wait()
+            assert obs.shape == (2, 2)
+            assert not any(venv._pending)
+        finally:
+            venv.close()
+
+    def test_step_env_and_recv_env(self):
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=5)
+
+        venv = AsyncVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            venv.step_env(0, np.array([0]))
+            assert venv._pending[0]
+            assert not venv._pending[1]
+
+            obs, reward, done, info = venv.recv_env(0)
+            assert obs.shape == (2,)
+            assert isinstance(reward, float)
+            assert isinstance(done, bool)
+            assert not venv._pending[0]
+            assert venv._last_results[0] is not None
+        finally:
+            venv.close()
+
+    def test_poll_returns_ready_indices(self):
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=5)
+
+        venv = AsyncVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            venv.step_env(0, np.array([0]))
+            # Wait briefly for subprocess to respond
+            import time
+
+            deadline = time.monotonic() + 2.0
+            ready: list[int] = []
+            while time.monotonic() < deadline:
+                ready = venv.poll()
+                if 0 in ready:
+                    break
+                time.sleep(0.02)
+            assert 0 in ready
+
+            # Drain so close doesn't deadlock
+            venv.recv_env(0)
+        finally:
+            venv.close()
+
+    def test_step_wait_uses_cached_result_for_non_pending(self):
+        """After recv_env'ing env 0, a subsequent step_wait returns the cached
+        result for env 0 (not pending) alongside fresh results for others."""
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=10)
+
+        venv = AsyncVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            # Step env 0 and consume it via recv_env
+            venv.step_env(0, np.array([0]))
+            prior = venv.recv_env(0)
+            # Step env 1 only
+            venv.step_env(1, np.array([0]))
+            obs, rewards, dones, infos = venv.step_wait()
+            # Env 0 result should match the previously-cached value
+            np.testing.assert_array_equal(obs[0], prior[0])
+            assert rewards[0] == prior[1]
+        finally:
+            venv.close()
+
+    def test_close_drains_pending(self):
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=5)
+
+        venv = AsyncVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            venv.step_async(np.array([0, 0]))
+            # Don't wait — close should drain
+        finally:
+            venv.close()
+        assert venv.closed
+
+    def test_close_idempotent(self):
+        from navirl.training.parallel import AsyncVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=5)
+
+        venv = AsyncVecEnv([_make], start_method="fork")
+        venv.reset()
+        venv.close()
+        venv.close()  # Second call is a no-op
