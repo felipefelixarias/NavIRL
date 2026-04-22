@@ -30,6 +30,12 @@ try:
     _TORCH_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _TORCH_AVAILABLE = False
+    # Minimal shim so module-level class definitions (Discriminator(nn.Module)
+    # etc.) succeed. Actual torch-using code paths are guarded by
+    # _TORCH_AVAILABLE checks and raise from GAILAgent.__init__ instead.
+    import types as _types
+
+    nn = _types.SimpleNamespace(Module=object)
 
 __all__ = ["Discriminator", "GAILAgent", "GAILConfig"]
 
