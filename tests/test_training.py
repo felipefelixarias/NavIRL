@@ -630,3 +630,123 @@ class TestResultsDB:
 
             results = db.query({"name": "special"})
             assert len(results) == 1
+
+    def test_update_experiment(self, tmp_path):
+        db_path = tmp_path / "results.db"
+        with ResultsDB(db_path) as db:
+            exp = Experiment(name="update_me", config={"lr": 0.1})
+            exp.start()
+            row_id = db.log_experiment(exp)
+
+            # Mutate and update
+            exp.complete({"reward": 42.0})
+            db.update_experiment(row_id, exp)
+
+            loaded = db.query()
+            assert len(loaded) == 1
+            assert loaded[0].status == ExperimentStatus.COMPLETED
+            assert loaded[0].results["reward"] == 42.0
+
+    def test_get_best_min_mode(self, tmp_path):
+        db_path = tmp_path / "results.db"
+        with ResultsDB(db_path) as db:
+            for i, loss in enumerate([0.5, 0.1, 0.3]):
+                exp = Experiment(name=f"run{i}", config={})
+                exp.start()
+                exp.complete({"loss": loss})
+                db.log_experiment(exp)
+            best = db.get_best("loss", n=1, mode="min")
+            assert best[0].results["loss"] == 0.1
+
+    def test_get_best_filters_out_incomplete(self, tmp_path):
+        db_path = tmp_path / "results.db"
+        with ResultsDB(db_path) as db:
+            exp = Experiment(name="incomplete")
+            db.log_experiment(exp)  # status = PENDING, no results
+
+            exp2 = Experiment(name="done")
+            exp2.start()
+            exp2.complete({"reward": 5.0})
+            db.log_experiment(exp2)
+
+            best = db.get_best("reward", n=5, mode="max")
+            assert len(best) == 1
+            assert best[0].name == "done"
+
+    def test_query_all_when_filters_none(self, tmp_path):
+        db_path = tmp_path / "results.db"
+        with ResultsDB(db_path) as db:
+            for i in range(3):
+                db.log_experiment(Experiment(name=f"r{i}"))
+            results = db.query()
+            assert len(results) == 3
+
+    def test_query_ignores_unknown_filter_keys(self, tmp_path):
+        """Unknown filter keys should not crash query; they're just skipped."""
+        db_path = tmp_path / "results.db"
+        with ResultsDB(db_path) as db:
+            db.log_experiment(Experiment(name="a"))
+            results = db.query({"nonexistent_col": "foo"})
+            # Returns all — filter did not narrow
+            assert len(results) == 1
+
+    def test_to_dataframe(self, tmp_path):
+        pytest.importorskip("pandas")
+
+        db_path = tmp_path / "results.db"
+        with ResultsDB(db_path) as db:
+            exp = Experiment(name="df_test", config={"lr": 0.01, "batch": 32})
+            exp.start()
+            exp.complete({"loss": 0.5, "acc": 0.9})
+            db.log_experiment(exp)
+
+            df = db.to_dataframe()
+            assert len(df) == 1
+            # Config values flattened to config.* columns
+            assert df.loc[0, "config.lr"] == 0.01
+            assert df.loc[0, "config.batch"] == 32
+            # Result values flattened to result.* columns
+            assert df.loc[0, "result.loss"] == 0.5
+            assert df.loc[0, "result.acc"] == 0.9
+            assert df.loc[0, "name"] == "df_test"
+
+
+class TestExperimentRandomCallable:
+    def test_callable_distribution(self):
+        """A callable distribution is sampled by calling it with no args."""
+        counter = {"count": 0}
+
+        def gen():
+            counter["count"] += 1
+            return 7
+
+        rand = ExperimentRandom(param_distributions={"k": gen}, seed=1)
+        configs = rand.generate_configs(n_trials=3)
+        assert counter["count"] == 3
+        assert all(c["k"] == 7 for c in configs)
+
+    def test_scalar_distribution_returned_as_is(self):
+        """A non-list/tuple/callable is returned as-is."""
+        rand = ExperimentRandom(param_distributions={"fixed": 42}, seed=1)
+        configs = rand.generate_configs(n_trials=2)
+        assert all(c["fixed"] == 42 for c in configs)
+
+    def test_uniform_float_range(self):
+        """Two-element numeric tuple → uniform float in [low, high)."""
+        rand = ExperimentRandom(
+            param_distributions={"x": (0.0, 1.0)},
+            seed=42,
+        )
+        configs = rand.generate_configs(n_trials=50)
+        xs = [c["x"] for c in configs]
+        assert all(0.0 <= x < 1.0 for x in xs)
+        # Different values expected across 50 draws
+        assert len(set(xs)) > 1
+
+    def test_reproducible_with_seed(self):
+        d = {"a": [1, 2, 3, 4, 5], "b": (0.0, 1.0)}
+        c1 = ExperimentRandom(param_distributions=d, seed=7).generate_configs(5)
+        c2 = ExperimentRandom(param_distributions=d, seed=7).generate_configs(5)
+        for x, y in zip(c1, c2, strict=False):
+            assert x["a"] == y["a"]
+            assert x["b"] == y["b"]

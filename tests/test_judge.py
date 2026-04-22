@@ -10,10 +10,13 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+import cv2
+import numpy as np
 import pytest
 
 from navirl.verify.judge import (
     JUDGE_OUTPUT_SCHEMA,
+    _frame_quality,
     _heuristic_judge,
     run_visual_judge,
     write_judge_output,
@@ -401,3 +404,179 @@ class TestWriteJudgeOutput:
         loaded = json.loads(out.read_text())
         assert loaded["overall_pass"] is True
         assert loaded["confidence"] == 0.95
+
+
+# ---------------------------------------------------------------------------
+# _frame_quality — real image processing
+# ---------------------------------------------------------------------------
+
+
+def _write_frames(tmp_path: Path, frames: list[np.ndarray]) -> list[str]:
+    """Persist frames to disk and return file paths."""
+    paths = []
+    for i, img in enumerate(frames):
+        p = tmp_path / f"frame_{i:04d}.png"
+        cv2.imwrite(str(p), img)
+        paths.append(str(p))
+    return paths
+
+
+class TestFrameQuality:
+    def test_empty_frame_paths(self):
+        result = _frame_quality([])
+        assert result == {"avg_edge_density": 0.0, "avg_motion": 0.0, "num_frames": 0}
+
+    def test_unreadable_frames_skipped(self, tmp_path):
+        paths = [str(tmp_path / "no_such_file.png")]
+        result = _frame_quality(paths)
+        # cv2.imread returns None for nonexistent files — all frames skipped
+        assert result["num_frames"] == 0
+        assert result["avg_edge_density"] == 0.0
+        assert result["avg_motion"] == 0.0
+
+    def test_uniform_frames_have_zero_edges_and_motion(self, tmp_path):
+        # 5 uniform gray frames — no edges, no motion
+        frames = [np.full((50, 50, 3), 128, dtype=np.uint8) for _ in range(5)]
+        paths = _write_frames(tmp_path, frames)
+        result = _frame_quality(paths)
+        assert result["num_frames"] == 5
+        assert result["avg_edge_density"] < 1e-6
+        assert result["avg_motion"] < 1e-6
+
+    def test_frames_with_edges(self, tmp_path):
+        # Checkerboard pattern produces many edges
+        frames = []
+        for _ in range(4):
+            img = np.zeros((60, 60, 3), dtype=np.uint8)
+            img[::4, :, :] = 255  # horizontal stripes every 4 pixels
+            frames.append(img)
+        paths = _write_frames(tmp_path, frames)
+        result = _frame_quality(paths)
+        assert result["num_frames"] == 4
+        assert result["avg_edge_density"] > 0.0
+
+    def test_frames_with_motion(self, tmp_path):
+        # Each frame is different — should register motion
+        frames = []
+        for i in range(4):
+            img = np.full((50, 50, 3), i * 60, dtype=np.uint8)
+            frames.append(img)
+        paths = _write_frames(tmp_path, frames)
+        result = _frame_quality(paths)
+        assert result["num_frames"] == 4
+        assert result["avg_motion"] > 0.0
+
+    def test_samples_at_most_12_frames(self, tmp_path):
+        # 40 frames — should sample down to 12
+        frames = [np.full((20, 20, 3), 100, dtype=np.uint8) for _ in range(40)]
+        paths = _write_frames(tmp_path, frames)
+        result = _frame_quality(paths)
+        assert result["num_frames"] == 12
+
+
+# ---------------------------------------------------------------------------
+# _heuristic_judge — additional threshold branches
+# ---------------------------------------------------------------------------
+
+
+class TestHeuristicJudgeArrowThresholds:
+    """Cover the avg_agents > 3.5 threshold branch for arrows."""
+
+    def test_insufficient_arrows_major_small_crowd(self):
+        # avg_agents <= 3.5, coverage between 0.45 and 0.62 → major
+        summary = _base_summary()
+        summary["render_diagnostics"]["total_arrows_drawn"] = 55
+        summary["render_diagnostics"]["total_agents_drawn"] = 100
+        summary["render_diagnostics"]["avg_agents_per_frame"] = 3.0
+        result = _heuristic_judge(summary, [], 0.6, False)
+        majors = [v for v in result["violations"] if v["severity"] == "major"]
+        assert any(v["type"] == "insufficient_direction_arrows" for v in majors)
+
+    def test_insufficient_arrows_blocker_large_crowd(self):
+        # avg_agents > 3.5, coverage < 0.55 → blocker
+        summary = _base_summary()
+        summary["render_diagnostics"]["total_arrows_drawn"] = 40
+        summary["render_diagnostics"]["total_agents_drawn"] = 100
+        summary["render_diagnostics"]["avg_agents_per_frame"] = 5.0
+        result = _heuristic_judge(summary, [], 0.6, False)
+        blockers = [v for v in result["violations"] if v["severity"] == "blocker"]
+        assert any(v["type"] == "insufficient_direction_arrows" for v in blockers)
+
+    def test_insufficient_arrows_major_large_crowd(self):
+        # avg_agents > 3.5, coverage between 0.55 and 0.70 → major
+        summary = _base_summary()
+        summary["render_diagnostics"]["total_arrows_drawn"] = 62
+        summary["render_diagnostics"]["total_agents_drawn"] = 100
+        summary["render_diagnostics"]["avg_agents_per_frame"] = 5.0
+        result = _heuristic_judge(summary, [], 0.6, False)
+        majors = [v for v in result["violations"] if v["severity"] == "major"]
+        assert any(v["type"] == "insufficient_direction_arrows" for v in majors)
+
+
+class TestHeuristicJudgeTrailThresholds:
+    def test_insufficient_trails_major(self):
+        # Trails between blocker and major thresholds: major only
+        summary = _base_summary()
+        summary["render_diagnostics"]["avg_trail_segments_per_frame"] = 4.0
+        summary["render_diagnostics"]["avg_agents_per_frame"] = 4.0
+        # blocker thresh = max(1.0, 4.0 * 0.9) = 3.6 → 4.0 passes
+        # major thresh = max(2.0, 4.0 * 1.6) = 6.4 → 4.0 fails → major
+        result = _heuristic_judge(summary, [], 0.6, False)
+        majors = [v for v in result["violations"] if v["severity"] == "major"]
+        assert any(v["type"] == "insufficient_trail_overlay" for v in majors)
+
+
+class TestHeuristicJudgeFrameQualityThresholds:
+    """Trigger real-frame-quality paths via the heuristic judge."""
+
+    def _frames_at(self, tmp_path, edge_density: str, motion: str, count=30):
+        """Generate frames yielding roughly specified edge/motion levels."""
+        frames = []
+        for i in range(count):
+            if edge_density == "low":
+                # uniform → low edges. Motion comes from whole-frame brightness shift.
+                fill = 80 + (i * 3) % 20 if motion == "high" else 128
+                base = np.full((60, 60, 3), fill, dtype=np.uint8)
+                img = base
+            else:
+                base = np.zeros((60, 60, 3), dtype=np.uint8)
+                base[::3, :] = 255
+                if motion == "low":
+                    img = base
+                else:
+                    img = base.copy()
+                    img[i % 60, :, :] = (i * 5) % 255
+            frames.append(img)
+        return _write_frames(tmp_path, frames)
+
+    def test_low_edge_density_blocker(self, tmp_path):
+        # Uniform frames with brightness shifts → very low edges, nonzero motion
+        paths = self._frames_at(tmp_path, edge_density="low", motion="high")
+        summary = _base_summary()
+        result = _heuristic_judge(summary, paths, 0.6, False)
+        vs = [v for v in result["violations"] if v["type"] == "low_visual_detail"]
+        assert any(v["severity"] == "blocker" for v in vs)
+
+    def test_low_motion_blocker(self, tmp_path):
+        paths = self._frames_at(tmp_path, edge_density="high", motion="low")
+        summary = _base_summary()
+        result = _heuristic_judge(summary, paths, 0.6, False)
+        vs = [v for v in result["violations"] if v["type"] == "low_scene_motion"]
+        assert any(v["severity"] == "blocker" for v in vs)
+
+    def test_too_few_decoded_frames_blocker(self, tmp_path):
+        # Only 3 readable frames → num_frames < 4 → blocker "frame_decode_failure"
+        frames = [np.full((20, 20, 3), 128, dtype=np.uint8) for _ in range(3)]
+        paths = _write_frames(tmp_path, frames)
+        summary = _base_summary()
+        result = _heuristic_judge(summary, paths, 0.6, False)
+        assert any(v["type"] == "frame_decode_failure" for v in result["violations"])
+
+    def test_low_motion_different_thresholds_by_crowd_size(self, tmp_path):
+        """Lines 422-429: thresholds depend on avg_agents bucket."""
+        paths = self._frames_at(tmp_path, edge_density="high", motion="low")
+        # avg_agents > 5 → blocker threshold 0.35, major 0.58
+        summary = _base_summary()
+        summary["render_diagnostics"]["avg_agents_per_frame"] = 6.0
+        result = _heuristic_judge(summary, paths, 0.6, False)
+        assert any(v["type"] == "low_scene_motion" for v in result["violations"])

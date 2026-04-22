@@ -412,3 +412,159 @@ class TestSimplePhysics:
         model = sp.get_model(0)
         assert isinstance(model, DynamicModel)
         assert model.max_force == 30.0
+
+
+# ---------------------------------------------------------------------------
+#  SimplePhysics.step() — end-to-end integration
+# ---------------------------------------------------------------------------
+
+
+class TestSimplePhysicsStep:
+    """Exercise the integrated step() pipeline: integration, walls, collisions,
+    velocity constraints, boundaries, and spatial index refresh."""
+
+    def _make_world(self, width=20.0, height=20.0):
+        from navirl.simulation.world import World
+
+        return World(width=width, height=height, cell_size=2.0)
+
+    def test_step_integrates_entity(self):
+        world = self._make_world()
+        eid = world.add_entity(position=[5.0, 5.0], velocity=[1.0, 0.0], radius=0.3)
+        sp = SimplePhysics()
+        sp.apply_force(eid, [1.0, 0.0])
+        sp.step(world, dt=0.1)
+        # Position should have moved in +x direction
+        assert world.entities[eid]["position"][0] > 5.0
+
+    def test_step_increments_step_count(self):
+        world = self._make_world()
+        sp = SimplePhysics()
+        assert sp.step_count == 0
+        sp.step(world, dt=0.1)
+        assert sp.step_count == 1
+        sp.step(world, dt=0.1)
+        assert sp.step_count == 2
+
+    def test_step_skips_inactive_entity(self):
+        world = self._make_world()
+        eid = world.add_entity(position=[5.0, 5.0], velocity=[2.0, 0.0], radius=0.3)
+        world.entities[eid]["active"] = False
+        sp = SimplePhysics()
+        sp.apply_force(eid, [10.0, 0.0])
+        pos_before = world.entities[eid]["position"].copy()
+        sp.step(world, dt=0.1)
+        # Inactive entity: position not updated
+        np.testing.assert_array_equal(world.entities[eid]["position"], pos_before)
+
+    def test_step_applies_wall_constraints(self):
+        world = self._make_world()
+        eid = world.add_entity(position=[5.0, 0.3], velocity=[0.0, -1.0], radius=0.4)
+        sp = SimplePhysics()
+        sp.add_wall_constraint([0.0, 0.0], [10.0, 0.0], restitution=0.0)
+        sp.step(world, dt=0.1)
+        # The wall should push the entity up (y >= radius)
+        assert world.entities[eid]["position"][1] >= 0.3 - 1e-6
+
+    def test_step_detects_and_resolves_entity_collision(self):
+        world = self._make_world()
+        # Two entities overlapping
+        e1 = world.add_entity(position=[5.0, 5.0], velocity=[1.0, 0.0], radius=0.4)
+        e2 = world.add_entity(position=[5.5, 5.0], velocity=[-1.0, 0.0], radius=0.4)
+        sp = SimplePhysics(collision_restitution=0.5)
+        cols = sp.step(world, dt=0.01)
+        # Expected: entity-entity collision detected and separated
+        assert len(cols) >= 1
+        assert sp.total_collisions >= 1
+        # Positions separated along x
+        p1 = world.entities[e1]["position"]
+        p2 = world.entities[e2]["position"]
+        assert p2[0] - p1[0] > 0.5  # they moved apart
+
+    def test_step_detects_wall_collision(self):
+        world = self._make_world()
+        world.add_wall([0.0, 5.0], [10.0, 5.0])
+        # Place entity penetrating the wall
+        world.add_entity(position=[5.0, 5.0], velocity=[0.0, 1.0], radius=0.5)
+        sp = SimplePhysics()
+        cols = sp.step(world, dt=0.01)
+        wall_cols = [c for c in cols if c.entity_b_id < 0]
+        assert len(wall_cols) >= 1
+
+    def test_step_applies_velocity_constraint(self):
+        world = self._make_world()
+        eid = world.add_entity(position=[5.0, 5.0], velocity=[0.0, 0.0], radius=0.3)
+        sp = SimplePhysics()
+        sp.add_velocity_constraint(eid, min_speed=0.0, max_speed=0.5)
+        # Apply large force to try to exceed max speed
+        sp.apply_force(eid, [100.0, 0.0])
+        sp.step(world, dt=0.1)
+        speed = float(np.linalg.norm(world.entities[eid]["velocity"]))
+        assert speed <= 0.5 + 1e-6
+
+    def test_step_refreshes_spatial_index(self):
+        world = self._make_world()
+        eid = world.add_entity(position=[5.0, 5.0], velocity=[0.0, 0.0], radius=0.3)
+        sp = SimplePhysics()
+        sp.apply_force(eid, [2.0, 0.0])
+        sp.step(world, dt=0.5)
+        # Query the new position - should find the entity
+        new_pos = world.entities[eid]["position"]
+        nearby = world.query_radius(new_pos[0], new_pos[1], 0.1)
+        assert eid in nearby
+
+    def test_sync_wall_constraints(self):
+        world = self._make_world()
+        world.add_wall([0, 0], [10, 0])
+        world.add_wall([10, 0], [10, 10])
+        sp = SimplePhysics(collision_restitution=0.7)
+        # Pre-populate with some fake entry that should be cleared
+        sp.add_wall_constraint([1, 1], [2, 2])
+        sp.sync_wall_constraints(world)
+        assert len(sp._wall_constraints) == 2
+        assert all(wc.restitution == 0.7 for wc in sp._wall_constraints)
+
+    def test_resolve_collision_separates_overlapping(self):
+        world = self._make_world()
+        e1 = world.add_entity(position=[5.0, 5.0], velocity=[0.0, 0.0], radius=0.5)
+        e2 = world.add_entity(position=[5.3, 5.0], velocity=[0.0, 0.0], radius=0.5)
+        sp = SimplePhysics(positional_correction_factor=1.0, collision_restitution=0.0)
+        sp.step(world, dt=0.01)
+        p1 = world.entities[e1]["position"]
+        p2 = world.entities[e2]["position"]
+        # After resolution, positions should be further apart than 0.3
+        assert abs(p2[0] - p1[0]) > 0.3
+
+    def test_resolve_collision_skips_when_vn_positive(self):
+        """When (vA - vB).normal > 0, _resolve_collision returns before applying impulse."""
+        world = self._make_world()
+        # Entities overlapping with rel_vel.normal = (+1 - -1) * 1 = +2 > 0 → early return
+        e1 = world.add_entity(position=[5.0, 5.0], velocity=[1.0, 0.0], radius=0.4)
+        e2 = world.add_entity(position=[5.5, 5.0], velocity=[-1.0, 0.0], radius=0.4)
+        sp = SimplePhysics(collision_restitution=0.8)
+        sp.step(world, dt=0.001)
+        v1_after = world.entities[e1]["velocity"]
+        v2_after = world.entities[e2]["velocity"]
+        # Velocities preserved (kinematic model only lightly decelerates with dt=0.001)
+        assert v1_after[0] > 0.95
+        assert v2_after[0] < -0.95
+
+    def test_step_returns_all_collisions(self):
+        world = self._make_world()
+        world.add_wall([0, 3], [10, 3])
+        world.add_entity(position=[5.0, 3.2], velocity=[0.0, -1.0], radius=0.4)
+        world.add_entity(position=[5.3, 3.2], velocity=[0.0, -1.0], radius=0.4)
+        sp = SimplePhysics()
+        cols = sp.step(world, dt=0.01)
+        # Should have both entity-entity and wall collisions in the returned list
+        assert len(cols) >= 2
+
+    def test_resolve_wall_collision_reflects_velocity(self):
+        """Velocity normal into a wall should be reflected with restitution."""
+        world = self._make_world()
+        world.add_wall([0.0, 5.0], [10.0, 5.0])
+        eid = world.add_entity(position=[5.0, 5.2], velocity=[0.0, -2.0], radius=0.5)
+        sp = SimplePhysics(collision_restitution=0.5)
+        sp.step(world, dt=0.001)
+        # Y velocity should have been nudged upward due to wall reflection
+        assert world.entities[eid]["velocity"][1] > -2.0
