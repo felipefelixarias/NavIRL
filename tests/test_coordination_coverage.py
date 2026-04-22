@@ -11,6 +11,7 @@ import time
 
 import pytest
 
+from navirl.coordination import marl
 from navirl.coordination.communication import (
     BroadcastChannel,
     DirectChannel,
@@ -52,6 +53,37 @@ class TestMARLConfig:
         assert cfg.gamma == 0.95
         assert cfg.lr == 1e-3
         assert cfg.num_agents == 5
+
+
+# ---------------------------------------------------------------------------
+# Torch-less placeholder classes (CentralizedCritic/QMIXMixer/MAPPOAgent)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(
+    marl._TORCH_AVAILABLE, reason="placeholders only active when PyTorch is absent"
+)
+class TestMARLPlaceholdersWithoutTorch:
+    """Without PyTorch, the torch-backed classes fall back to stubs whose
+    constructors raise ImportError. These tests guard the no-torch code path."""
+
+    def test_centralized_critic_raises(self):
+        with pytest.raises(ImportError, match="CentralizedCritic requires PyTorch"):
+            marl.CentralizedCritic(obs_dim=4, num_agents=2)
+
+    def test_qmix_mixer_raises(self):
+        with pytest.raises(ImportError, match="QMIXMixer requires PyTorch"):
+            marl.QMIXMixer(num_agents=2, state_dim=8)
+
+    def test_mappo_agent_raises(self):
+        with pytest.raises(ImportError, match="MAPPOAgent requires PyTorch"):
+            marl.MAPPOAgent(obs_dim=4, action_dim=2, num_agents=2)
+
+    def test_placeholders_accept_arbitrary_kwargs(self):
+        # The stubs have a permissive (*args, **kwargs) signature so calling
+        # code receives the informative ImportError rather than a TypeError.
+        with pytest.raises(ImportError):
+            marl.CentralizedCritic(99, 99, hidden_dim=16, extra="ignored")
 
 
 # ---------------------------------------------------------------------------
