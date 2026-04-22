@@ -442,3 +442,107 @@ class TestValidateAllPlugins:
         issues = validate_all_plugins()
         # Should detect the API version issue
         assert any("old_hc" in k for k in issues)
+
+    def test_detects_non_callable_factory(self):
+        # Insert a non-callable directly to trigger the factory-validation branch.
+        _BACKENDS["broken_be"] = "not_a_callable"
+        issues = validate_all_plugins()
+        assert "backend:broken_be" in issues
+        assert any("Factory validation" in msg for msg in issues["backend:broken_be"])
+
+    def test_detects_dangerous_class(self):
+        class DangerousPlugin(_DummyBase):
+            __navirl_api_version__ = "1.0"
+
+            def step(self):  # pragma: no cover - interface only
+                pass
+
+            def exec(self):  # triggers security validation failure
+                pass
+
+        _ROBOT_CONTROLLERS["danger_rc"] = DangerousPlugin
+        issues = validate_all_plugins()
+        assert "robot_controller:danger_rc" in issues
+        assert any("Security" in msg for msg in issues["robot_controller:danger_rc"])
+
+
+# ===================================================================
+# Failure paths in register_* helpers
+# ===================================================================
+
+
+class TestRegisterFailurePaths:
+    def test_backend_factory_validation_failure_is_propagated(self, caplog):
+        with caplog.at_level("ERROR"), pytest.raises(PluginValidationError):
+            register_backend("bad_be", "not_a_callable")
+        assert "Failed to register backend 'bad_be'" in caplog.text
+        assert "bad_be" not in _BACKENDS
+
+    def test_human_controller_factory_validation_failure_is_propagated(self, caplog):
+        with caplog.at_level("ERROR"), pytest.raises(PluginValidationError):
+            register_human_controller("bad_hc", "not_a_callable")
+        assert "Failed to register human controller 'bad_hc'" in caplog.text
+        assert "bad_hc" not in _HUMAN_CONTROLLERS
+
+    def test_human_controller_security_failure_is_propagated(self, caplog):
+        class BadPlugin(_DummyBase):
+            __navirl_api_version__ = "1.0"
+
+            def step(self):  # pragma: no cover - interface only
+                pass
+
+            def exec(self):  # triggers PluginSecurityError via validate_plugin_security
+                pass
+
+        with caplog.at_level("ERROR"), pytest.raises(PluginValidationError):
+            register_human_controller("bad_hc_sec", BadPlugin)
+        assert "Failed to register human controller 'bad_hc_sec'" in caplog.text
+
+    def test_robot_controller_factory_validation_failure_is_propagated(self, caplog):
+        with caplog.at_level("ERROR"), pytest.raises(PluginValidationError):
+            register_robot_controller("bad_rc", "not_a_callable")
+        assert "Failed to register robot controller 'bad_rc'" in caplog.text
+        assert "bad_rc" not in _ROBOT_CONTROLLERS
+
+    def test_robot_controller_override_warns(self, caplog):
+        register_robot_controller("dup_rc", _factory_fn)
+        with caplog.at_level("WARNING"):
+            register_robot_controller("dup_rc", _factory_fn)
+        assert "Overriding existing robot controller 'dup_rc'" in caplog.text
+
+    def test_human_controller_override_warns(self, caplog):
+        register_human_controller("dup_hc", _factory_fn)
+        with caplog.at_level("WARNING"):
+            register_human_controller("dup_hc", _factory_fn)
+        assert "Overriding existing human controller 'dup_hc'" in caplog.text
+
+
+# ===================================================================
+# get_plugin_info fallback when signature inspection fails
+# ===================================================================
+
+
+class TestGetPluginInfoSignatureFallback:
+    def test_signature_inspection_failure_falls_back(self, monkeypatch):
+        register_human_controller(
+            "sig_class", _GoodPlugin, enable_security_validation=False
+        )
+
+        original_signature = __import__("inspect").signature
+
+        def fake_signature(target, *args, **kwargs):
+            # Force the fallback for the registry's internal signature call
+            # on __init__, but leave all other callers untouched.
+            if getattr(target, "__qualname__", "") == "_GoodPlugin.__init__" or (
+                getattr(target, "__self__", None) is _GoodPlugin
+                and getattr(target, "__name__", "") == "__init__"
+            ):
+                raise ValueError("synthetic signature failure")
+            # The registry accesses ``factory.__init__``; match that path too.
+            if target is _GoodPlugin.__init__:
+                raise ValueError("synthetic signature failure")
+            return original_signature(target, *args, **kwargs)
+
+        monkeypatch.setattr("navirl.core.registry.inspect.signature", fake_signature)
+        info = get_plugin_info("human_controller", "sig_class")
+        assert info["init_parameters"] == "unknown"
