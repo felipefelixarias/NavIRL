@@ -259,6 +259,23 @@ class TestStagedCurriculum:
         sc.update(2, {"eval/success_rate": 0.8})
         assert sc.current_stage == 2
 
+    def test_get_difficulty_returns_active_stage_value(self, stages):
+        sc = StagedCurriculum(stages)
+        assert sc.get_difficulty(0) == pytest.approx(0.0)
+        sc.update(1, {"eval/success_rate": 0.9})
+        assert sc.get_difficulty(1) == pytest.approx(0.5)
+
+    def test_update_no_metrics_keeps_stage(self, stages):
+        sc = StagedCurriculum(stages)
+        sc.update(1, metrics=None)
+        assert sc.current_stage == 0
+
+    def test_update_missing_metric_key_is_no_op(self, stages):
+        sc = StagedCurriculum(stages)
+        # Metric_key absent from dict — must not promote nor raise.
+        sc.update(1, {"some_other_metric": 1.0})
+        assert sc.current_stage == 0
+
 
 class TestCurriculumManager:
     def test_manager_updates_dimensions(self):
@@ -272,6 +289,13 @@ class TestCurriculumManager:
         config = mgr.get_env_config()
         assert config["density"] == pytest.approx(10.5)
         assert config["speed"] == pytest.approx(1.25)
+
+    def test_manager_get_difficulty_delegates_to_scheduler(self):
+        dims = [DifficultyDimension("density", 1.0, 20.0)]
+        scheduler = LinearCurriculum(0.0, 1.0, total_steps=100)
+        mgr = CurriculumManager(dims, scheduler)
+        assert mgr.get_difficulty(50) == pytest.approx(0.5)
+        assert mgr.get_difficulty(100) == pytest.approx(1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -306,6 +330,12 @@ class TestCosineAnnealingSchedule:
         s = CosineAnnealingSchedule(max_value=1.0, min_value=0.0, total_steps=100, warmup_steps=20)
         assert s.value(0) == pytest.approx(0.0)
         assert s.value(20) == pytest.approx(1.0)
+
+    def test_warmup_eq_total_steps_returns_min(self):
+        # warmup_steps == total_steps means decay_steps == 0; post-warmup falls
+        # straight to min_value rather than dividing by zero.
+        s = CosineAnnealingSchedule(max_value=1.0, min_value=0.25, total_steps=20, warmup_steps=20)
+        assert s.value(25) == pytest.approx(0.25)
 
 
 class TestStepSchedule:
@@ -343,6 +373,17 @@ class TestCyclicSchedule:
         val = s.value(25)
         assert 0.0 <= val <= 1.0
 
+    def test_triangular_descending_half(self):
+        # Triangular mode repeats up/down twice per cycle; the descending
+        # branch (half_pos > 0.5) is exercised at step 38 of a 100-step cycle.
+        s = CyclicSchedule(base_value=0.0, max_value=1.0, cycle_steps=100, mode="triangular")
+        # Peak at 25 (half_pos == 0.5), descending after.
+        peak = s.value(25)
+        descending = s.value(38)
+        assert peak == pytest.approx(1.0)
+        assert descending < peak
+        assert descending > 0.0
+
 
 class TestExplorationSchedule:
     def test_linear_decay(self):
@@ -354,6 +395,11 @@ class TestExplorationSchedule:
         s = ExplorationSchedule(1.0, 0.01, total_steps=100, mode="exponential")
         assert s.value(0) == pytest.approx(1.0)
         assert s.value(100) == pytest.approx(0.01, abs=1e-3)
+
+    def test_exponential_zero_initial_returns_final(self):
+        # Avoid division-by-zero when initial_eps is non-positive.
+        s = ExplorationSchedule(0.0, 0.05, total_steps=100, mode="exponential")
+        assert s.value(50) == pytest.approx(0.05)
 
 
 class TestWarmupSchedule:
@@ -415,6 +461,11 @@ class TestCompositeSchedule:
     def test_past_all_phases(self):
         s = CompositeSchedule([(LinearSchedule(1.0, 0.0, 10), 10)])
         assert s.value(100) == pytest.approx(0.0)
+
+    def test_empty_phases_returns_zero(self):
+        s = CompositeSchedule([])
+        assert s.value(0) == pytest.approx(0.0)
+        assert s.value(99999) == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------

@@ -637,3 +637,51 @@ class TestSubprocVecEnv:
             np.testing.assert_array_equal(obs[0], [0.0, 0.0])
         finally:
             venv.close()
+
+    def test_default_start_method_is_auto_detected(self):
+        """When start_method is None, SubprocVecEnv picks forkserver if
+        available else spawn — both branches must yield a working env."""
+        import multiprocessing as mp
+
+        from navirl.training.parallel import SubprocVecEnv
+
+        venv = SubprocVecEnv([_make_simple_env, _make_simple_env])
+        try:
+            obs = venv.reset()
+            assert obs.shape == (2, 4)
+            assert venv.num_envs == 2
+        finally:
+            venv.close()
+
+        # Sanity: the path we exercised matches what get_all_start_methods
+        # would surface, i.e. at least one of the two acceptable methods
+        # exists on this platform.
+        methods = mp.get_all_start_methods()
+        assert "forkserver" in methods or "spawn" in methods
+
+    def test_close_drains_pending_step(self):
+        """Calling close() while step_async is still in-flight must drain
+        the pipes (`waiting=True` branch) without deadlocking."""
+        from navirl.training.parallel import SubprocVecEnv
+
+        def _make():
+            return SimpleEnv(obs_dim=2, episode_length=10)
+
+        venv = SubprocVecEnv([_make, _make], start_method="fork")
+        try:
+            venv.reset()
+            venv.step_async(np.array([0, 0]))
+            assert venv.waiting is True
+            # close() must consume the pending step results before sending
+            # the close command.
+            venv.close()
+            assert venv.closed is True
+        finally:
+            if not venv.closed:
+                venv.close()
+
+
+def _make_simple_env():
+    """Module-level factory required for the spawn/forkserver start methods,
+    which pickle the callable into worker processes."""
+    return SimpleEnv(obs_dim=4, episode_length=5)
