@@ -576,3 +576,156 @@ class TestTrainerNullUpdate:
         )
         summary = trainer.train()
         assert summary["total_timesteps"] >= 5
+
+
+# ---------------------------------------------------------------------------
+# Trainer — periodic checkpoint saving
+# ---------------------------------------------------------------------------
+
+
+class TestTrainerPeriodicCheckpoint:
+    def test_save_interval_creates_step_checkpoint(self, tmp_path):
+        """With n_envs=1 and save_interval=2, a step-N checkpoint dir appears."""
+        cfg = TrainerConfig(
+            total_timesteps=4,
+            eval_interval=100,
+            save_interval=2,
+            log_interval=100,
+            n_envs=1,
+            checkpoint_dir=str(tmp_path / "ckpt"),
+            log_dir=str(tmp_path / "log"),
+        )
+        trainer = Trainer(
+            agent=MockAgent(),
+            env_fn=lambda: MockEnv(episode_length=10),
+            config=cfg,
+        )
+        trainer.train()
+
+        ckpt_root = tmp_path / "ckpt"
+        # Step-keyed checkpoint dirs should be present alongside any best_model.
+        step_dirs = [
+            p
+            for p in ckpt_root.iterdir()
+            if p.is_dir() and p.name.startswith("checkpoint_")
+        ]
+        assert step_dirs, f"expected step checkpoints under {ckpt_root}, got {list(ckpt_root.iterdir())}"
+        # Each step checkpoint must carry the trainer metadata file.
+        for d in step_dirs:
+            assert (d / "trainer_meta.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# Trainer._make_envs branches
+# ---------------------------------------------------------------------------
+
+
+class TestTrainerMakeEnvs:
+    def test_make_envs_returns_dummy_when_n_envs_one(self, tmp_path):
+        from navirl.training.parallel import DummyVecEnv
+
+        cfg = TrainerConfig(
+            n_envs=1,
+            checkpoint_dir=str(tmp_path / "ckpt"),
+            log_dir=str(tmp_path / "log"),
+        )
+        trainer = Trainer(
+            agent=MockAgent(),
+            env_fn=lambda: MockEnv(episode_length=2),
+            config=cfg,
+        )
+        envs = trainer._make_envs()
+        try:
+            assert isinstance(envs, DummyVecEnv)
+            assert envs.num_envs == 1
+        finally:
+            envs.close()
+
+    def test_make_envs_returns_subproc_when_n_envs_gt_one(self, tmp_path):
+        from navirl.training.parallel import SubprocVecEnv
+
+        cfg = TrainerConfig(
+            n_envs=2,
+            checkpoint_dir=str(tmp_path / "ckpt"),
+            log_dir=str(tmp_path / "log"),
+        )
+        # SubprocVecEnv pickles env_fn into worker processes, so the callable
+        # has to be picklable — module-level helper rather than a closure.
+        trainer = Trainer(
+            agent=MockAgent(),
+            env_fn=_picklable_env_fn,
+            config=cfg,
+        )
+        envs = trainer._make_envs()
+        try:
+            assert isinstance(envs, SubprocVecEnv)
+            assert envs.num_envs == 2
+        finally:
+            envs.close()
+
+    def test_make_envs_falls_back_to_shim_on_import_error(self, tmp_path, monkeypatch):
+        """When the parallel module fails to import, _make_envs returns a
+        single-env shim instead of raising."""
+        import builtins
+
+        cfg = TrainerConfig(
+            n_envs=2,
+            checkpoint_dir=str(tmp_path / "ckpt"),
+            log_dir=str(tmp_path / "log"),
+        )
+        trainer = Trainer(
+            agent=MockAgent(),
+            env_fn=lambda: MockEnv(episode_length=2),
+            config=cfg,
+        )
+
+        real_import = builtins.__import__
+
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "navirl.training.parallel":
+                raise ImportError("simulated parallel import failure")
+            return real_import(name, globals, locals, fromlist, level)
+
+        monkeypatch.setattr(builtins, "__import__", fake_import)
+        envs = trainer._make_envs()
+        # _SingleEnvShim is the fallback wrapper.
+        assert isinstance(envs, _SingleEnvShim)
+
+
+class _PicklableSpace:
+    def __init__(self, shape):
+        self.shape = shape
+
+
+class _PicklableEnv:
+    """Minimal picklable env for SubprocVecEnv tests; MockEnv uses MagicMock
+    spaces which cannot survive a process boundary."""
+
+    def __init__(self, obs_dim: int = 4, episode_length: int = 3) -> None:
+        self.obs_dim = obs_dim
+        self.episode_length = episode_length
+        self._step_count = 0
+        self.observation_space = _PicklableSpace((obs_dim,))
+        self.action_space = _PicklableSpace((1,))
+
+    def reset(self):
+        self._step_count = 0
+        return np.zeros(self.obs_dim, dtype=np.float32)
+
+    def step(self, action):
+        self._step_count += 1
+        obs = np.full(self.obs_dim, self._step_count, dtype=np.float32)
+        reward = 1.0
+        done = self._step_count >= self.episode_length
+        info = {"is_success": True} if done else {}
+        return obs, reward, done, info
+
+    def close(self):
+        pass
+
+
+def _picklable_env_fn():
+    """Top-level factory used by SubprocVecEnv tests — closures and lambdas
+    referencing test-local classes are not picklable across spawn/forkserver
+    boundaries."""
+    return _PicklableEnv(obs_dim=4, episode_length=3)
